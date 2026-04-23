@@ -155,7 +155,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -213,7 +213,8 @@
             "testStrategy": "Vitest + MSW로 시나리오 테스트: 401 응답 → refresh 호출 → 재시도 성공, refresh 실패 → authStore.clear() 호출 확인, 동시 요청 시 refresh 1회만 호출 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-23T14:44:33.097Z"
       },
       {
         "id": "4",
@@ -310,9 +311,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-23T14:06:21.432Z",
+      "lastModified": "2026-04-23T14:44:33.101Z",
       "taskCount": 10,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "master"
       ]
