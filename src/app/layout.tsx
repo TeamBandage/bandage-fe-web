@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
 import { Noto_Sans_KR } from 'next/font/google';
+
+import { ErrorBoundary, Toaster } from '@/components/feedback';
+import { QueryProvider } from '@/global/providers/query-provider';
+
 import './globals.css';
 
 const notoSansKr = Noto_Sans_KR({
@@ -21,7 +25,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={`dark ${notoSansKr.variable}`}>
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        <QueryProvider>
+          <ErrorBoundary>{children}</ErrorBoundary>
+          <Toaster />
+        </QueryProvider>
+      </body>
     </html>
   );
 }

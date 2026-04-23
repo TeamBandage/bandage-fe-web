@@ -241,8 +241,65 @@
           "3",
           "4"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Toast 시스템 구현 (Store + 컴포넌트 + 훅)",
+            "description": "전역 알림을 위한 Toast 시스템을 구현합니다. Zustand 기반 toastStore, Toast UI 컴포넌트, useToast 훅, 그리고 전역 Toaster 컴포넌트를 포함합니다.",
+            "dependencies": [],
+            "details": "1. src/global/store/toastStore.ts - Zustand store 생성:\n   - ToastType: 'success' | 'error' | 'info' | 'warn'\n   - Toast 인터페이스: { id, type, message, duration }\n   - add, remove, clear 액션\n   - 최대 3개 토스트 제한 로직\n\n2. src/components/feedback/toast.tsx - 개별 Toast 컴포넌트:\n   - 타입별 아이콘 및 색상 (success=green, error=red, info=blue, warn=yellow)\n   - lucide-react 아이콘 사용 (CheckCircle, XCircle, Info, AlertTriangle)\n   - 닫기 버튼 포함\n   - animate-toast-in 애니메이션 적용\n\n3. src/components/feedback/toaster.tsx - 전역 Toaster 컨테이너:\n   - toastStore 구독\n   - 모바일: bottom-center, 데스크탑: bottom-right 포지셔닝\n   - z-index: 9999\n\n4. src/hooks/useToast.ts - 편의 훅:\n   - success(message, duration?), error(...), info(...), warn(...) 메서드\n   - 기본 duration: 3000ms\n\n5. src/app/layout.tsx에 Toaster 컴포넌트 추가",
+            "status": "pending",
+            "testStrategy": "toast({ type: 'success', message: '저장 완료' }) 호출 시 화면 하단에 토스트 표시 확인, 3초 후 자동 닫힘 확인, 닫기 버튼 클릭 시 즉시 닫힘 확인, 4개 이상 토스트 추가 시 가장 오래된 것부터 제거 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "레이아웃 컴포넌트 구현 (BottomNav, Header, Container)",
+            "description": "앱 전체에서 사용할 레이아웃 컴포넌트들을 구현합니다. 5탭 BottomNav, 유연한 Header, 그리고 콘텐츠 래퍼 Container를 포함합니다.",
+            "dependencies": [],
+            "details": "1. src/components/layout/bottom-nav.tsx:\n   - 5개 탭: 홈(Home), 밴드(Users), 합주(Music), 공연(CalendarDays), MY(User)\n   - usePathname()으로 현재 경로 감지\n   - ROUTES 상수 사용 (global/config/routes.ts)\n   - active 상태: accent 색상, inactive: foreground-muted\n   - fixed bottom-0, safe-area-inset-bottom 적용\n   - bg-surface border-t border-border\n\n2. src/components/layout/header.tsx:\n   - Props: title (string | ReactNode), left?, right?, className?\n   - left: 기본 뒤로가기 버튼 (ChevronLeft 아이콘)\n   - right: 액션 버튼 슬롯\n   - sticky top-0, bg-surface/95 backdrop-blur\n   - h-14, px-4 기본 스타일\n\n3. src/components/layout/container.tsx:\n   - Props: maxWidth?, padding?, className?, children\n   - maxWidth: 'sm' | 'md' | 'lg' | 'xl' | 'full' (기본: 'lg')\n   - padding: boolean (기본: true, px-4)\n   - mx-auto 중앙 정렬\n\n4. src/components/layout/page-title.tsx:\n   - Props: title, description?, action?\n   - text-xl font-bold text-foreground\n   - description: text-foreground-sub",
+            "status": "pending",
+            "testStrategy": "BottomNav에서 각 탭 클릭 시 해당 경로로 이동 확인, 현재 경로에 따라 active 탭 하이라이트 확인, Header의 뒤로가기 버튼 동작 확인, Container maxWidth 옵션별 너비 제한 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "피드백 컴포넌트 구현 (ErrorBoundary, EmptyState, ErrorState)",
+            "description": "에러 처리와 빈 상태를 위한 피드백 컴포넌트들을 구현합니다. React ErrorBoundary, 빈 목록 표시용 EmptyState, 에러 발생 시 표시할 ErrorState를 포함합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/components/feedback/error-boundary.tsx:\n   - React Class Component 기반 ErrorBoundary\n   - Props: children, fallback?: ReactNode | ((error: Error, reset: () => void) => ReactNode)\n   - componentDidCatch에서 에러 로깅\n   - 기본 fallback: ErrorState 컴포넌트 사용\n   - reset 기능 (this.setState로 hasError false 설정)\n\n2. src/components/feedback/empty-state.tsx:\n   - Props: icon?: LucideIcon, title: string, description?: string, action?: { label: string, onClick: () => void }\n   - 중앙 정렬 레이아웃\n   - icon: text-foreground-muted, 48px\n   - title: text-lg font-medium\n   - description: text-foreground-sub text-sm\n   - action: Button variant='secondary'\n\n3. src/components/feedback/error-state.tsx:\n   - Props: title?, description?, onRetry?: () => void\n   - 기본 title: '오류가 발생했습니다'\n   - 기본 description: '잠시 후 다시 시도해주세요'\n   - onRetry 있을 경우 '다시 시도' 버튼 표시\n   - AlertTriangle 아이콘 사용, text-danger\n\n4. src/components/feedback/index.ts - 배럴 export 파일",
+            "status": "pending",
+            "testStrategy": "ErrorBoundary 내부 컴포넌트에서 throw Error 발생 시 fallback UI 표시 확인, reset 버튼 클릭 시 컴포넌트 재렌더링 확인, EmptyState의 action 버튼 클릭 이벤트 확인, ErrorState onRetry 콜백 호출 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "커스텀 훅 구현 (useInfiniteCursor, useDebounce, useConfirmDialog)",
+            "description": "공통으로 사용할 커스텀 훅들을 구현합니다. 커서 기반 무한 스크롤 훅, 디바운스 훅, 확인 다이얼로그 상태 관리 훅을 포함합니다.",
+            "dependencies": [],
+            "details": "1. src/hooks/useInfiniteCursor.ts:\n   - TanStack Query useInfiniteQuery 래퍼\n   - 제네릭: <T, C> (T: 아이템 타입, C: 커서 타입)\n   - Parameters: queryKey, fetcher, pageSize(기본 10), options\n   - fetcher 시그니처: (params: { lastId?: C; pageSize: number }) => Promise<CursorResponse<T, C>>\n   - getNextPageParam: lastPage.hasNext ? lastPage.nextCursor : undefined\n   - initialPageParam: undefined\n\n2. src/hooks/useDebounce.ts:\n   - 제네릭: <T>(value: T, delay?: number) => T\n   - 기본 delay: 300ms\n   - useEffect + setTimeout으로 구현\n   - cleanup에서 clearTimeout\n\n3. src/hooks/useConfirmDialog.ts:\n   - Zustand 미사용, useState 기반 훅\n   - 상태: isOpen, title?, description?, onConfirm?, isLoading\n   - 메서드: open({ title, description, onConfirm }), close()\n   - Dialog 컴포넌트와 함께 사용하도록 설계\n   - 비동기 onConfirm 지원 (isLoading 상태)\n\n4. src/hooks/index.ts - 배럴 export 파일",
+            "status": "pending",
+            "testStrategy": "useInfiniteCursor로 mock API 호출 시 페이지네이션 동작 확인 (hasNext true/false에 따른 fetchNextPage 호출), useDebounce로 빠른 입력 시 지정된 delay 후에만 값 변경 확인, useConfirmDialog open/close 상태 전환 및 onConfirm 콜백 실행 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "날짜 유틸 및 (main) 레이아웃 통합",
+            "description": "KST 기반 날짜 포맷 유틸리티를 구현하고, (main) route group에 BottomNav와 Header를 적용한 레이아웃을 구성합니다. root layout에 QueryClientProvider와 Toaster를 설정합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. src/lib/date.ts:\n   - date-fns + date-fns-tz 사용\n   - KST = 'Asia/Seoul' 상수\n   - FORMAT = 'yyyy-MM-dd HH:mm' 상수\n   - formatKst(date: Date): string - toZonedTime으로 KST 변환 후 format\n   - parseKst(dateString: string): Date - parse 후 fromZonedTime으로 UTC 변환\n   - formatRelative(date: Date): string - '방금 전', '5분 전', '어제' 등 상대 시간\n\n2. src/global/providers/query-provider.tsx:\n   - 'use client' 컴포넌트\n   - QueryClient 인스턴스 생성 (useState로 한 번만)\n   - 기본 옵션: staleTime 60초, retry 1회, refetchOnWindowFocus false\n   - QueryClientProvider로 children 래핑\n\n3. src/app/layout.tsx 수정:\n   - QueryProvider로 body 래핑\n   - Toaster 컴포넌트 추가\n\n4. src/app/(main)/layout.tsx 생성:\n   - Props: children\n   - BottomNav 하단 고정\n   - main 영역에 pb-16 (BottomNav 높이만큼 패딩)\n   - Container로 children 래핑\n\n5. src/app/(main)/home/page.tsx, bands/page.tsx 등 플레이스홀더 페이지 생성",
+            "status": "pending",
+            "testStrategy": "formatKst(new Date())가 'yyyy-MM-dd HH:mm' 형식의 KST 시간 반환 확인, parseKst 후 다시 formatKst 시 동일 문자열 반환 확인 (라운드트립), (main) 레이아웃 적용된 페이지에서 BottomNav 표시 및 탭 전환 동작 확인, QueryClientProvider 적용 후 TanStack Query devtools 접근 가능 확인",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-23T16:17:02.050Z"
       },
       {
         "id": "6",
@@ -312,9 +369,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-23T15:49:27.748Z",
+      "lastModified": "2026-04-23T16:17:02.054Z",
       "taskCount": 10,
-      "completedCount": 4,
+      "completedCount": 5,
       "tags": [
         "master"
       ]
