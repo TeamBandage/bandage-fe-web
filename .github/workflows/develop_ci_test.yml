@@ -1,0 +1,54 @@
+name: Develop PR CI & Test
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-test:
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'develop') || (github.event_name == 'push' && github.ref_name == 'develop') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Unit tests (Vitest)
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: E2E tests (Playwright)
+        run: pnpm test:e2e

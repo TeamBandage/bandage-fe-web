@@ -1,0 +1,301 @@
+/* ===== Screen-specific styles ===== */
+
+/* --- Home / Dashboard --- */
+.home-header { margin-bottom: 28px; }
+.home-header__greeting { font-size: 24px; font-weight: 800; }
+.home-header__sub { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+.home-stats { margin-bottom: 32px; }
+.home-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+.home-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.home-item:hover { border-color: var(--border-hi); background: var(--card-hover); }
+.home-item__info { flex: 1; min-width: 0; }
+.home-item__title { font-size: 14px; font-weight: 700; }
+.home-item__sub { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+.home-item__meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.home-item__meta span { display: flex; align-items: center; gap: 3px; }
+
+/* --- List item cards (band/practice/performance) --- */
+.list-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.list-item:hover { background: var(--card); }
+.list-item.is-selected {
+  background: var(--accent-dim);
+  border-color: oklch(0.62 0.22 250 / 0.26);
+}
+.list-item.is-selected--amber {
+  background: var(--amber-dim);
+  border-color: oklch(0.72 0.18 48 / 0.26);
+}
+.list-item__body { flex: 1; min-width: 0; }
+.list-item__title-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+}
+.list-item__title { font-size: 13px; font-weight: 700; color: var(--text); }
+.list-item__sub { font-size: 12px; color: var(--text-sub); }
+.list-item__meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.list-item__meta span { display: flex; align-items: center; gap: 3px; }
+
+/* --- Search bar --- */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.search-bar input {
+  flex: 1; background: none; border: none; font-size: 13px;
+  color: var(--text);
+}
+
+/* --- Tabs --- */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0 28px;
+}
+.tab {
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.tab.is-active {
+  color: var(--accent);
+  font-weight: 700;
+  border-bottom-color: var(--accent);
+}
+
+/* --- Member / participant list --- */
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+}
+.member-row__info { flex: 1; }
+.member-row__name { font-size: 14px; font-weight: 600; }
+.member-row__sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* --- Session row --- */
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.session-row__body { flex: 1; }
+.session-row__label { font-size: 13px; font-weight: 600; }
+.session-row__participant { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+.session-row__participant--empty { color: var(--text-muted); }
+.session-row__delete {
+  padding: 4px;
+  color: var(--text-muted);
+}
+
+/* --- Performance hero --- */
+.perf-hero {
+  background: var(--amber-dim);
+  border: 1px solid oklch(0.72 0.18 48 / 0.2);
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.perf-hero__body { flex: 1; }
+.perf-hero__title { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
+.perf-hero__meta { display: flex; gap: 20px; flex-wrap: wrap; }
+.perf-hero__meta-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+
+/* --- Select-card picker (song, practice list) --- */
+.select-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--card);
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.select-card:hover { border-color: var(--border-hi); }
+.select-card.is-selected {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+.select-card__body { flex: 1; }
+.select-card__title { font-size: 13px; font-weight: 600; }
+.select-card__sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+/* --- Settings list --- */
+.settings-list { padding: 0; overflow: hidden; }
+.settings-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.settings-row:hover:not(.is-disabled) { background: var(--card-hover); }
+.settings-row.is-disabled { cursor: default; }
+.settings-row__body { flex: 1; }
+.settings-row__label { font-size: 14px; }
+.settings-row__sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.settings-row--danger .settings-row__label,
+.settings-row--danger .settings-row__icon { color: var(--danger); }
+
+/* --- Add-button dashed --- */
+.add-dashed {
+  width: 100%;
+  background: none;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r-md);
+  padding: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.add-dashed:hover { border-color: var(--border-hi); color: var(--text-sub); }
+
+/* --- Band pill (for performance bands) --- */
+.band-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border-radius: var(--r-pill);
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.band-pill__name { font-size: 13px; font-weight: 600; }
+
+/* --- Checkbox --- */
+.checkbox {
+  width: 22px; height: 22px;
+  border-radius: var(--r-sm);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.checkbox.is-checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* --- Social login group --- */
+.social-group {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  margin-top: 28px;
+}
+.social-group__label { text-align: center; font-size: 12px; color: var(--text-muted); margin-bottom: 14px; }
+.social-group__buttons { display: flex; gap: 10px; }
+.social-btn {
+  flex: 1;
+  padding: 10px;
+  background: var(--card);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* --- Hint box --- */
+.hint-box {
+  background: var(--accent-dim);
+  border: 1px solid oklch(0.62 0.22 250 / 0.26);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.hint-box__label { font-size: 12px; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+.hint-box__body { font-size: 13px; }
+
+/* --- Profile card --- */
+.profile-card { padding: 28px 32px; }
+.profile-card__row { display: flex; align-items: center; gap: 24px; }
+.profile-card__avatar-wrap { position: relative; }
+.profile-card__camera {
+  position: absolute;
+  bottom: 0; right: 0;
+  background: var(--accent);
+  border-radius: 50%;
+  width: 26px; height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--card);
+  cursor: pointer;
+  color: #fff;
+}
+.profile-card__info { flex: 1; }
+.profile-card__name { font-size: 22px; font-weight: 800; }
+.profile-card__sub { font-size: 14px; color: var(--text-muted); margin-top: 4px; }

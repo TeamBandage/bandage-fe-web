@@ -1,0 +1,72 @@
+/* ===== Bandage Design Tokens ===== */
+:root {
+  /* Surfaces */
+  --bg:         #0D0D12;
+  --surface:    #161620;
+  --card:       #1E1E2A;
+  --card-hover: #252535;
+  --border:     #2A2A3A;
+  --border-hi:  #35354A;
+
+  /* Text */
+  --text:       #F4F4F8;
+  --text-sub:   #B4B4C4;
+  --text-muted: #6B6B80;
+
+  /* Accent - Blue */
+  --accent:      oklch(0.62 0.22 250);
+  --accent-dim:  oklch(0.62 0.22 250 / 0.14);
+  --accent-soft: oklch(0.62 0.22 250 / 0.08);
+  --accent-hi:   oklch(0.72 0.20 250);
+
+  /* Semantic */
+  --success:      oklch(0.70 0.18 155);
+  --success-dim:  oklch(0.70 0.18 155 / 0.15);
+  --warn:         oklch(0.76 0.17 85);
+  --warn-dim:     oklch(0.76 0.17 85 / 0.15);
+  --amber:        oklch(0.72 0.18 48);
+  --amber-dim:    oklch(0.72 0.18 48 / 0.15);
+  --danger:       oklch(0.65 0.23 25);
+  --danger-dim:   oklch(0.65 0.23 25 / 0.15);
+
+  /* Role colors */
+  --role-leader: oklch(0.72 0.18 48);
+  --role-admin:  oklch(0.62 0.22 250);
+  --role-member: #6B6B80;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+
+  /* Typography */
+  --font-sans: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Layout */
+  --sidebar-w: 240px;
+  --list-pane-w: 340px;
+  --band-list-pane-w: 360px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.25);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.45);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 120ms;
+  --t-med:  200ms;
+}
