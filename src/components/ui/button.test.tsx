@@ -1,0 +1,38 @@
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
+import { Button } from './button';
+
+describe('Button', () => {
+  it('기본 렌더는 primary/md 변형을 반영한다', () => {
+    const { asFragment } = render(<Button>저장</Button>);
+    expect(asFragment()).toMatchSnapshot();
+  });
+
+  it('variant 와 size props에 따라 클래스가 바뀐다', () => {
+    const { asFragment } = render(
+      <Button variant="danger" size="lg">
+        삭제
+      </Button>,
+    );
+    expect(asFragment()).toMatchSnapshot();
+  });
+
+  it('loading 상태에서 Spinner 가 표시되고 aria-busy 가 설정된다', () => {
+    render(<Button loading>저장 중</Button>);
+    const btn = screen.getByRole('button', { name: /저장 중/ });
+    expect(btn).toHaveAttribute('aria-busy', 'true');
+    expect(btn).toBeDisabled();
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('asChild 로 렌더되면 전달된 요소가 사용된다', () => {
+    render(
+      <Button asChild>
+        <a href="/bands">밴드로 이동</a>
+      </Button>,
+    );
+    const link = screen.getByRole('link', { name: '밴드로 이동' });
+    expect(link).toHaveAttribute('href', '/bands');
+  });
+});

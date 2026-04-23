@@ -50,6 +50,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   const Comp = asChild ? Slot : 'button';
   const isDisabled = disabled || loading;
 
+  const content = asChild ? (
+    children
+  ) : (
+    <>
+      {loading && <Spinner size={size === 'lg' ? 'md' : 'sm'} label="로딩 중" />}
+      {children}
+    </>
+  );
+
   return (
     <Comp
       ref={ref}
@@ -61,8 +70,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={asChild ? undefined : (type ?? 'button')}
       {...props}
     >
-      {loading && <Spinner size={size === 'lg' ? 'md' : 'sm'} label="로딩 중" />}
-      {children}
+      {content}
     </Comp>
   );
 });
