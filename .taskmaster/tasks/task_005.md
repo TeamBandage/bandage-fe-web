@@ -2,7 +2,7 @@
 
 **Title:** 레이아웃 컴포넌트 및 피드백 시스템 구축
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** 3 ✓, 4 ✓
 

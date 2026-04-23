@@ -16,6 +16,12 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'develop') || (github.event_name == 'push' && github.ref_name == 'develop') }}
     runs-on: ubuntu-latest
 
+    env:
+      # 실제 API 키가 아니며, env.ts(zod) 런타임 검증을 통과시키기 위한 CI 전용 더미 값.
+      # 운영/스테이지 배포 환경에서는 배포 플랫폼(예: Vercel)의 환경 변수로 주입되어야 함.
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_APP_ENV: dev
+
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
