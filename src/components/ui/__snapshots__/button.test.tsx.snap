@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Button > variant 와 size props에 따라 클래스가 바뀐다 1`] = `
+<DocumentFragment>
+  <button
+    class="inline-flex items-center justify-center gap-2 font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:pointer-events-none bg-danger text-foreground hover:opacity-90 h-12 px-6 text-base"
+    type="button"
+  >
+    삭제
+  </button>
+</DocumentFragment>
+`;
+
+exports[`Button > 기본 렌더는 primary/md 변형을 반영한다 1`] = `
+<DocumentFragment>
+  <button
+    class="inline-flex items-center justify-center gap-2 font-medium rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:pointer-events-none bg-accent text-foreground hover:bg-accent-hi h-10 px-4 text-sm"
+    type="button"
+  >
+    저장
+  </button>
+</DocumentFragment>
+`;

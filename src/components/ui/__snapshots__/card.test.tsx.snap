@@ -1,0 +1,39 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Card > header/footer 가 없을 때 기본 구성 1`] = `
+<DocumentFragment>
+  <div
+    class="bg-card border-border flex flex-col overflow-hidden rounded-md border"
+  >
+    <div
+      class="p-4"
+    >
+      body
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Card > header/footer/padding 조합 1`] = `
+<DocumentFragment>
+  <div
+    class="bg-card border-border flex flex-col overflow-hidden rounded-md border hover:bg-card-hover cursor-pointer transition-colors"
+  >
+    <div
+      class="border-border border-b px-4 py-3 text-sm font-semibold"
+    >
+      타이틀
+    </div>
+    <div
+      class="p-6"
+    >
+      본문 영역
+    </div>
+    <div
+      class="border-border text-foreground-sub border-t px-4 py-3 text-xs"
+    >
+      푸터
+    </div>
+  </div>
+</DocumentFragment>
+`;
