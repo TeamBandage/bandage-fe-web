@@ -218,5 +218,46 @@ feat: 밴드 생성 페이지 구현
 #12
 ```
 
+## Task-master ↔ GitHub Issue Sync Workflow
+
+Task-master 태스크를 실행하라는 지시를 받으면 반드시 이 워크플로우를 따릅니다.
+
+### 1. GitHub 이슈 등록
+- 구현을 시작하기 **전**에 태스크 내용을 GitHub 이슈로 등록합니다. 먼저 `gh issue list`로 동일/유사 제목의 이슈가 이미 있는지 확인하고, 있다면 그 이슈를 사용합니다(신규 생성 금지).
+- 이슈 제목은 `{Type}: {task title}` 형식. Type은 커밋 컨벤션의 타입을 **Title Case**로 사용: `Feat`, `Design`, `Chore`, `Fix`, `Refactor`, `Style`, `Test`, `Ai`.
+- 본문은 `.github/ISSUE_TEMPLATE/` 하위의 해당 타입 템플릿(`✨-feature.md`, `🎨-design.md`, `⚙️-chore.md`, `🛸-ai.md`, `🐛-fix.md`, `♻️-refactor.md`, `🪄-style.md`, `✅-test.md`)을 채워 작성.
+- 라벨을 타입에 맞게 부여: `✨ feature`, `🎨 design`, `⚙️ chore`, `🛸 ai`, `🐛 bug/error`, `♻️ refactor`, `🪄 style`, `✅ test`.
+
+### 2. "Bandage Project" 자동 편입
+- 별도 지시가 없는 한 새로 만든 모든 이슈는 GitHub Project **"Bandage Project"** 에 `Todo` 상태로 편입합니다.
+- 프로젝트 식별 정보 (gh로 확인됨):
+  - owner: `willjsw`
+  - project number: `2`
+  - node ID: `PVT_kwHOBjXLOM4BPjMO`
+- 편입 명령: `gh project item-add 2 --owner willjsw --url <issue-url>`.
+- 프로젝트 목록 재확인이 필요하면 `gh project list --owner willjsw`.
+
+### 3. 작업 단위(태스크) 별 커밋
+- Task-master 태스크의 서브태스크(또는 논리적 작업 단위) 하나 = 커밋 하나.
+- 여러 서브태스크 변경을 한 커밋에 몰아넣지 않습니다.
+- 커밋 메시지는 위의 Commit Convention을 그대로 따르며, 본문 말미에 `#{issue-number}` 필수 포함.
+
+### 4. PR은 명시 지시가 있을 때만 진행, Squash and Merge
+- 사용자가 "PR 생성" / "PR 올려줘" 등 명시적으로 지시한 경우에만 PR을 엽니다(자동으로 열지 않음).
+- PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md`의 섹션 구조를 그대로 채웁니다.
+- PR 생성 시 메타데이터를 **원본 이슈와 동일하게** 표기:
+  - `--assignee` — 이슈 assignee (보통 현재 git user `@me`)
+  - `--label` — 이슈 라벨과 동일
+  - `--milestone` — 이슈에 마일스톤이 있으면 동일하게 지정 (없으면 생략)
+- 머지는 **Squash and Merge** 고정: `gh pr merge <N> --squash --delete-branch`.
+- 머지 직후 로컬을 동기화: `git checkout develop && git pull`.
+
+### 5. 머지 오류 대응
+- 머지 중 오류(충돌, 필수 체크 실패, 브랜치 보호 규칙 위반 등)가 발생하면 즉시 멈추고 사용자에게 다음을 보고한 뒤 지시를 기다립니다:
+  1. **무엇이 실패했는지** — 오류 메시지 원문 / 실패한 체크 이름 / 충돌 파일 목록
+  2. **왜 실패했는지** — 직관적인 원인 (예: develop 뒤처짐, CI 실패, 리뷰 미승인)
+  3. **제안하는 해결 방안** — 하나 이상 (예: `git fetch && git rebase origin/develop`, CI 재실행, 리뷰어 지정)
+- `--force`/`--no-verify` 등 파괴적·우회적 해결은 사용자 명시 승인 없이 사용 금지.
+
 
 
