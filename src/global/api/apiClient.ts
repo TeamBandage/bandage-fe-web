@@ -23,6 +23,8 @@ type ErrorPayload = Partial<ApiResponse<unknown>> & {
   fieldErrors?: ApiErrorFieldErrors;
 };
 
+const REFRESH_PATH = '/api/v1/auth/refresh';
+
 let unauthorizedHandler: () => void = () => {
   if (typeof window !== 'undefined') {
     window.location.assign(ROUTES.LOGIN);
@@ -69,14 +71,45 @@ function toApiError(payload: unknown, status: number, fallbackMessage: string): 
   );
 }
 
-export async function request<T>(
-  method: Method,
-  path: string,
-  body?: unknown,
-  config: RequestConfig = {},
-): Promise<T> {
-  const url = buildUrl(path, config.query);
+// --- 401 Interceptor / token refresh --------------------------------------
 
+let refreshPromise: Promise<string> | null = null;
+
+async function refreshAccessToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      const data = await request<{ accessToken: string } | null>('POST', REFRESH_PATH, undefined, {
+        _skipAuthRefresh: true,
+        _skipAuthHeader: true,
+      });
+      const token = data?.accessToken;
+      if (!token) {
+        throw new ApiError('REFRESH_FAILED', 'Refresh response missing accessToken', 401);
+      }
+      useAuthStore.getState().setAccessToken(token);
+      return token;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
+function handleAuthFailure(): ApiError {
+  useAuthStore.getState().clear();
+  triggerUnauthorized();
+  return new ApiError('UNAUTHORIZED', 'Session expired', 401);
+}
+
+// --- Core request ---------------------------------------------------------
+
+async function dispatch(
+  method: Method,
+  url: string,
+  body: unknown,
+  config: RequestConfig,
+): Promise<Response> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(config.headers ?? {}),
@@ -87,17 +120,46 @@ export async function request<T>(
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
+  return fetch(url, {
+    method,
+    credentials: 'include',
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: config.signal,
+  });
+}
+
+export async function request<T>(
+  method: Method,
+  path: string,
+  body?: unknown,
+  config: RequestConfig = {},
+): Promise<T> {
+  const url = buildUrl(path, config.query);
+
   let response: Response;
   try {
-    response = await fetch(url, {
-      method,
-      credentials: 'include',
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal: config.signal,
-    });
+    response = await dispatch(method, url, body, config);
   } catch {
     throw new ApiError('NETWORK_ERROR', 'Network request failed', 0);
+  }
+
+  if (response.status === 401 && !config._skipAuthRefresh) {
+    try {
+      await refreshAccessToken();
+    } catch {
+      throw handleAuthFailure();
+    }
+
+    try {
+      response = await dispatch(method, url, body, config);
+    } catch {
+      throw new ApiError('NETWORK_ERROR', 'Network request failed', 0);
+    }
+
+    if (response.status === 401) {
+      throw handleAuthFailure();
+    }
   }
 
   const parsed = await parseBody(response);
