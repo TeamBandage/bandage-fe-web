@@ -1,26 +1,200 @@
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:where(.dark, .dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  /* Surfaces */
+  --color-bg: #0d0d12;
+  --color-surface: #161620;
+  --color-card: #1e1e2a;
+  --color-card-hover: #252535;
+  --color-border: #2a2a3a;
+  --color-border-hi: #35354a;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Text */
+  --color-foreground: #f4f4f8;
+  --color-foreground-sub: #b4b4c4;
+  --color-foreground-muted: #6b6b80;
+
+  /* Accent - Blue */
+  --color-accent: oklch(0.62 0.22 250);
+  --color-accent-dim: oklch(0.62 0.22 250 / 0.14);
+  --color-accent-soft: oklch(0.62 0.22 250 / 0.08);
+  --color-accent-hi: oklch(0.72 0.2 250);
+
+  /* Semantic */
+  --color-success: oklch(0.7 0.18 155);
+  --color-success-dim: oklch(0.7 0.18 155 / 0.15);
+  --color-warn: oklch(0.76 0.17 85);
+  --color-warn-dim: oklch(0.76 0.17 85 / 0.15);
+  --color-danger: oklch(0.65 0.23 25);
+  --color-danger-dim: oklch(0.65 0.23 25 / 0.15);
+
+  /* Role colors */
+  --color-role-leader: oklch(0.72 0.18 48);
+  --color-role-admin: oklch(0.62 0.22 250);
+  --color-role-member: #6b6b80;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  /* Motion */
+  --ease-default: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+
+  /* Font */
+  --font-sans:
+    var(--font-noto-sans-kr), 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+
+  /* Keyframes & animations */
+  --animate-fade-in: fade-in var(--duration-normal) var(--ease-default);
+  --animate-modal-in: modal-in var(--duration-normal) var(--ease-default);
+  --animate-toast-in: toast-in var(--duration-normal) var(--ease-default);
+  --animate-shimmer: shimmer 1.4s linear infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -400px 0;
+    }
+    100% {
+      background-position: 400px 0;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-bg text-foreground font-sans;
+    line-height: 1.5;
+  }
+
+  a {
+    @apply text-accent;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  button {
+    font-family: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: opacity var(--duration-fast) var(--ease-default);
+  }
+
+  button:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    outline: none;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-foreground-muted;
+  }
+
+  img {
+    max-width: 100%;
+    display: block;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-sm;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-border-hi;
+  }
+
+  ::selection {
+    background: oklch(0.62 0.22 250 / 0.3);
+  }
+}
+
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }
