@@ -2,9 +2,9 @@
 
 **Title:** Tailwind CSS v4 디자인 토큰 및 globals.css 설정
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 1
+**Dependencies:** 1 ✓
 
 **Priority:** high
 

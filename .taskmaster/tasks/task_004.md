@@ -2,9 +2,9 @@
 
 **Title:** UI 프리미티브 컴포넌트 라이브러리 구축
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 2
+**Dependencies:** 2 ✓
 
 **Priority:** high
 

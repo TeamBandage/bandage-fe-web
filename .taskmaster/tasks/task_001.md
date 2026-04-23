@@ -2,7 +2,7 @@
 
 **Title:** Next.js 15 프로젝트 부트스트랩 및 의존성 설치
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 

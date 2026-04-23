@@ -2,9 +2,9 @@
 
 **Title:** 횡단 관심사 인프라 구축 (apiClient, 환경변수, 라우트 상수, 전역 타입)
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 1
+**Dependencies:** 1 ✓
 
 **Priority:** high
 
