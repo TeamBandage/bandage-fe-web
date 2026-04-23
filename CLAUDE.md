@@ -10,18 +10,12 @@ pnpm build                 # Production build
 pnpm start                 # Run production build
 pnpm lint                  # ESLint (must pass before commit)
 pnpm typecheck             # tsc --noEmit (must pass before commit)
-pnpm format                # Prettier write (로컬 커밋 전 자동 포맷)
-pnpm format:check          # Prettier check (CI/검증 전용, 파일 수정 없음)
+pnpm format                # Prettier write (must pass before commit)
 pnpm test                  # Vitest (unit)
 pnpm test:e2e              # Playwright (E2E)
 ```
 
 A pre-commit hook at `scripts/pre-commit` runs `pnpm lint`, `pnpm typecheck`, and `pnpm format` automatically on commit.
-
-**Prettier 적용 원칙** — 모든 소스 파일은 Prettier 포맷팅을 반드시 통과해야 합니다.
-- **로컬/커밋**: `pnpm format`으로 실제 파일을 수정하여 포맷을 정렬합니다. pre-commit 훅이 자동 실행합니다.
-- **CI**: `pnpm format:check`로 포맷 위반만 검출합니다(파일을 수정하지 않음). CI 파이프라인에서는 절대 `pnpm format`(write)을 호출하지 않습니다.
-- `package.json`의 scripts에 `"format": "prettier --write ."`와 `"format:check": "prettier --check ."`를 나란히 정의합니다.
 
 ## Architecture
 
