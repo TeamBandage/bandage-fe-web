@@ -1,0 +1,19 @@
+node_modules
+.next
+out
+build
+coverage
+dist
+pnpm-lock.yaml
+next-env.d.ts
+public
+
+# Project-external assets and docs
+design
+.taskmaster
+.github
+.vscode
+.claude
+CLAUDE.md
+API_SPEC.md
+README.md
