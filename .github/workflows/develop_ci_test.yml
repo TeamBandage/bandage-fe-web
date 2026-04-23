@@ -47,8 +47,10 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
-      - name: E2E tests (Playwright)
-        run: pnpm test:e2e
+      # Playwright 단계는 브라우저 캐싱 미적용으로 매 실행마다 시간이 오래 걸려 임시로 비활성화합니다.
+      # 캐싱 전략 정리 또는 E2E 테스트 도입 시점에 다시 활성화하세요.
+      # - name: Install Playwright browsers
+      #   run: pnpm exec playwright install --with-deps
+      #
+      # - name: E2E tests (Playwright)
+      #   run: pnpm test:e2e
