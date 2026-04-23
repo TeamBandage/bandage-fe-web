@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+echo "Running lint..."
+pnpm lint
+
+echo "Running typecheck..."
+pnpm typecheck
+
+echo "Running format check..."
+pnpm format:check
+
+echo "All checks passed!"
