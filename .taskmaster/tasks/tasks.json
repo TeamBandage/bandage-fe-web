@@ -82,7 +82,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -142,7 +142,8 @@
             "testStrategy": "/playground 페이지에 접속하여 각 토큰 색상이 design/dist/css/tokens.css의 값과 일치하는지 시각적으로 확인합니다. 브라우저 개발자 도구에서 computed style을 확인하여 값이 올바른지 검증합니다.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-23T14:06:21.428Z"
       },
       {
         "id": "3",
@@ -309,9 +310,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-23T13:27:07.433Z",
+      "lastModified": "2026-04-23T14:06:21.432Z",
       "taskCount": 10,
-      "completedCount": 1,
+      "completedCount": 2,
       "tags": [
         "master"
       ]
