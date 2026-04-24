@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(pnpm test *)",
+      "Bash(task-master set-status *)",
+      "Bash(git push *)",
+      "Bash(gh project *)",
+      "Bash(pnpm prettier *)",
+      "Bash(gh api *)",
+      "Read(//Users/sunwoo/Desktop/my-workspace/v1/**)",
+      "Bash(curl -si -c /tmp/c.txt -X POST http://localhost:8080/api/v1/auth/login -H 'Origin: http://localhost:3100' -H 'Content-Type: application/json' -d '{\"email\":\"nonexistent@bandage.com\",\"password\":\"nonexistent1234\"}')",
+      "Bash(curl -s \"http://localhost:8080/api/v1/tmp/\")",
+      "Bash(curl -si -X GET \"http://localhost:8080/api/v1/practices\" -H \"Origin: http://localhost:3100\")",
+      "Bash(curl -si -X POST http://localhost:8080/api/v1/members/join -H 'Origin: http://localhost:3100' -H 'Content-Type: application/json' -d '{\"email\":\"test-debug@bandage.com\",\"password\":\"password1234\",\"name\":\"테스트\",\"contact\":\"010-1234-5678\"}')",
+      "Bash(curl -si -c /tmp/jar.txt -X POST http://localhost:8080/api/v1/auth/login -H 'Origin: http://localhost:3100' -H 'Content-Type: application/json' -d '{\"email\":\"test-debug@bandage.com\",\"password\":\"password1234\"}')",
+      "Read(//private/tmp/**)",
+      "Bash(curl -s -X POST \"http://localhost:8080/api/v1/auth/login\" -H \"Origin: http://localhost:3100\" -H \"Content-Type: application/json\" -d '{\"email\":\"test-debug@bandage.com\",\"password\":\"password1234\"}')",
+      "Bash(./gradlew spotlessApply)",
+      "Bash(./gradlew compileKotlin)",
+      "Bash(ps -p 23613 -o command)",
+      "Bash(./gradlew build *)",
+      "Bash(./gradlew test *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm test:e2e *)",
+      "Bash(pnpm dev *)"
+    ],
+    "additionalDirectories": [
+      "/Users/sunwoo/Desktop/my-workspace/v1/src/main/kotlin/com/bandage/v1/global/error/handler"
+    ]
+  }
+}
