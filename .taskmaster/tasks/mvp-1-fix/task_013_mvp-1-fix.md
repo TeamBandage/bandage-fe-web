@@ -2,7 +2,7 @@
 
 **Title:** 한글 줄바꿈(word-break) 점검 및 보정
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 

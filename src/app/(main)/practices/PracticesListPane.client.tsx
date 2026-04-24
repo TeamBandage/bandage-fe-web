@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+import { PracticeCreateModal } from '@/domain/practice/components/PracticeCreateModal.client';
 import { usePractices } from '@/domain/practice/hooks/usePractices';
 import { ROUTES } from '@/global/config/routes';
 import { cn } from '@/lib/cn';
@@ -26,11 +27,13 @@ export function PracticesListPane() {
     >
       <div className="border-border px-s-5 py-s-4 flex items-center justify-between border-b">
         <h2 className="text-subtitle font-bold">합주</h2>
-        <Button asChild size="sm" variant="accent-outline">
-          <Link href={ROUTES.PRACTICE_NEW} aria-label="새 합주 만들기">
-            <Plus className="h-4 w-4" /> 새 합주
-          </Link>
-        </Button>
+        <PracticeCreateModal
+          trigger={
+            <Button size="sm" variant="accent-outline" aria-label="새 합주 만들기">
+              <Plus className="h-4 w-4" /> 새 합주
+            </Button>
+          }
+        />
       </div>
       <div className="px-s-2 py-s-2 flex-1 overflow-y-auto">
         {isLoading ? (

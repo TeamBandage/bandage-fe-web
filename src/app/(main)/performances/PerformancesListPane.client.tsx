@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+import { PerformanceCreateModal } from '@/domain/performance/components/PerformanceCreateModal.client';
 import { usePerformanceList } from '@/domain/performance/hooks/usePerformanceList';
 import { ROUTES } from '@/global/config/routes';
 import { cn } from '@/lib/cn';
@@ -25,11 +26,13 @@ export function PerformancesListPane() {
     >
       <div className="border-border px-s-5 py-s-4 flex items-center justify-between border-b">
         <h2 className="text-subtitle font-bold">공연</h2>
-        <Button asChild size="sm" variant="accent-outline">
-          <Link href={ROUTES.PERFORMANCE_NEW} aria-label="새 공연 만들기">
-            <Plus className="h-4 w-4" /> 새 공연
-          </Link>
-        </Button>
+        <PerformanceCreateModal
+          trigger={
+            <Button size="sm" variant="accent-outline" aria-label="새 공연 만들기">
+              <Plus className="h-4 w-4" /> 새 공연
+            </Button>
+          }
+        />
       </div>
       <div className="px-s-2 py-s-2 flex-1 overflow-y-auto">
         {isLoading ? (

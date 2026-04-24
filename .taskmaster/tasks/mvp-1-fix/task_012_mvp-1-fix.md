@@ -2,7 +2,7 @@
 
 **Title:** 디자인 요소 간 간격(spacing) 감사 및 보정
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 
