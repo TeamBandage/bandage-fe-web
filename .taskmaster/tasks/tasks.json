@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Next.js 15 프로젝트 부트스트랩 및 의존성 설치",
         "description": "Next.js 15 App Router 기반 프로젝트를 생성하고, PRD에서 정의한 모든 프로덕션/개발 의존성을 설치합니다. TypeScript strict 모드, ESLint flat config, Prettier, Vitest, Playwright 설정을 완료합니다.",
         "details": "1. Next.js 프로젝트 생성:\n```bash\npnpm create next-app@latest . --typescript --tailwind --app --src-dir --no-eslint --import-alias \"@/*\"\n```\n\n2. 프로덕션 의존성 설치:\n```bash\npnpm add zustand @tanstack/react-query @tanstack/react-query-devtools \\\n  react-hook-form zod @hookform/resolvers \\\n  clsx tailwind-merge date-fns date-fns-tz \\\n  @radix-ui/react-dialog @radix-ui/react-slot \\\n  @radix-ui/react-tabs @radix-ui/react-tooltip \\\n  @radix-ui/react-dropdown-menu lucide-react\n```\n\n3. 개발 의존성 설치:\n```bash\npnpm add -D eslint @eslint/js typescript-eslint \\\n  eslint-config-next eslint-config-prettier \\\n  prettier prettier-plugin-tailwindcss \\\n  vitest @vitejs/plugin-react \\\n  @testing-library/react @testing-library/jest-dom jsdom @playwright/test\n```\n\n4. Playwright 브라우저 설치: `pnpm exec playwright install --with-deps`\n\n5. package.json scripts 정의:\n```json\n{\n  \"dev\": \"next dev\",\n  \"build\": \"next build\",\n  \"start\": \"next start\",\n  \"lint\": \"next lint\",\n  \"typecheck\": \"tsc --noEmit\",\n  \"format\": \"prettier --write .\",\n  \"format:check\": \"prettier --check .\",\n  \"test\": \"vitest run\",\n  \"test:watch\": \"vitest\",\n  \"test:e2e\": \"playwright test\"\n}\n```\n\n6. tsconfig.json에 strict 모드, baseUrl: \"src\", paths: { \"@/*\": [\"*\"] } 설정\n\n7. eslint.config.mjs (flat config): next/core-web-vitals + typescript-eslint + prettier 통합\n\n8. .prettierrc 설정: semi, singleQuote, trailingComma: \"all\"\n\n9. vitest.config.ts: jsdom 환경, setupFiles 설정\n\n10. playwright.config.ts: 기본 E2E 설정\n\n11. scripts/pre-commit 훅 생성 (lint, typecheck, format 실행)",
@@ -73,7 +73,7 @@
         "updatedAt": "2026-04-23T13:27:07.428Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Tailwind CSS v4 디자인 토큰 및 globals.css 설정",
         "description": "/design/dist/css/tokens.css의 디자인 토큰을 Tailwind v4 @theme 문법으로 이식하고, 다크 테마 기반의 시맨틱 토큰 시스템을 구축합니다.",
         "details": "1. src/app/globals.css에 Tailwind v4 @theme 블록 작성:\n```css\n@import \"tailwindcss\";\n\n@theme {\n  /* Surfaces */\n  --color-bg: #0D0D12;\n  --color-surface: #161620;\n  --color-card: #1E1E2A;\n  --color-card-hover: #252535;\n  --color-border: #2A2A3A;\n  --color-border-hi: #35354A;\n  \n  /* Text */\n  --color-foreground: #F4F4F8;\n  --color-foreground-sub: #B4B4C4;\n  --color-foreground-muted: #6B6B80;\n  \n  /* Accent - Blue */\n  --color-accent: oklch(0.62 0.22 250);\n  --color-accent-dim: oklch(0.62 0.22 250 / 0.14);\n  --color-accent-soft: oklch(0.62 0.22 250 / 0.08);\n  --color-accent-hi: oklch(0.72 0.20 250);\n  \n  /* Semantic */\n  --color-success: oklch(0.70 0.18 155);\n  --color-success-dim: oklch(0.70 0.18 155 / 0.15);\n  --color-warn: oklch(0.76 0.17 85);\n  --color-warn-dim: oklch(0.76 0.17 85 / 0.15);\n  --color-danger: oklch(0.65 0.23 25);\n  --color-danger-dim: oklch(0.65 0.23 25 / 0.15);\n  \n  /* Role colors */\n  --color-role-leader: oklch(0.72 0.18 48);\n  --color-role-admin: oklch(0.62 0.22 250);\n  --color-role-member: #6B6B80;\n  \n  /* Radii */\n  --radius-sm: 6px;\n  --radius-md: 10px;\n  --radius-lg: 14px;\n  --radius-xl: 20px;\n  --radius-pill: 999px;\n  \n  /* Spacing - Tailwind 기본 스케일 확장 */\n  /* Shadow */\n  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);\n  --shadow-md: 0 4px 12px rgba(0,0,0,0.25);\n  --shadow-lg: 0 12px 32px rgba(0,0,0,0.45);\n  \n  /* Motion */\n  --ease-default: cubic-bezier(0.2, 0.8, 0.2, 1);\n  --duration-fast: 120ms;\n  --duration-normal: 200ms;\n  \n  /* Font */\n  --font-sans: \"Noto Sans KR\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n}\n```\n\n2. html에 dark 클래스 기본 적용 설정 (src/app/layout.tsx)\n\n3. 베이스 리셋 스타일 추가 (body bg-bg text-foreground 등)",
@@ -146,7 +146,7 @@
         "updatedAt": "2026-04-23T14:06:21.428Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "횡단 관심사 인프라 구축 (apiClient, 환경변수, 라우트 상수, 전역 타입)",
         "description": "API 통신 기반, 환경 변수 검증, 라우트 상수, QueryKey 상수, 공용 타입(ApiResponse, CursorResponse)을 구현합니다. 401 인터셉터와 자동 토큰 갱신 로직을 포함합니다.",
         "details": "1. src/global/config/env.ts - zod로 NEXT_PUBLIC_* 환경변수 검증:\n```ts\nimport { z } from 'zod';\n\nconst envSchema = z.object({\n  NEXT_PUBLIC_API_BASE_URL: z.string().url(),\n  NEXT_PUBLIC_APP_ENV: z.enum(['local', 'dev', 'prod']),\n});\n\nexport const env = envSchema.parse({\n  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,\n  NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,\n});\n```\n\n2. src/global/config/routes.ts - 모든 경로 상수화:\n```ts\nexport const ROUTES = {\n  LOGIN: '/login',\n  JOIN: '/join',\n  PASSWORD_CHANGE: '/password-change',\n  HOME: '/home',\n  BANDS: '/bands',\n  BAND_NEW: '/bands/new',\n  BAND_DETAIL: (bandId: string) => `/bands/${bandId}`,\n  PRACTICES: '/practices',\n  PRACTICE_NEW: '/practices/new',\n  PRACTICE_DETAIL: (id: string) => `/practices/${id}`,\n  PERFORMANCES: '/performances',\n  PERFORMANCE_NEW: '/performances/new',\n  PERFORMANCE_DETAIL: (id: string) => `/performances/${id}`,\n  ME: '/me',\n} as const;\n```\n\n3. src/global/config/queryKeys.ts - TanStack Query 키 팩토리:\n```ts\nexport const queryKeys = {\n  auth: { refresh: ['auth', 'refresh'] as const },\n  member: { me: ['member', 'me'] as const },\n  band: {\n    all: ['band'] as const,\n    list: () => [...queryKeys.band.all, 'list'] as const,\n    detail: (id: string) => [...queryKeys.band.all, id] as const,\n    members: (id: string) => [...queryKeys.band.all, id, 'members'] as const,\n    applications: (id: string, status?: string) => [...queryKeys.band.all, id, 'applications', status] as const,\n  },\n  // practice, performance 동일 패턴\n};\n```\n\n4. src/global/types/ApiResponse.ts:\n```ts\nexport type ApiResponse<T> = {\n  success: boolean;\n  message: string | null;\n  data: T | null;\n  timestamp: string;\n};\n\nexport type CursorResponse<T, C> = {\n  content: T[];\n  nextCursor: C | null;\n  hasNext: boolean;\n};\n\nexport type BandRole = 'LEADER' | 'ADMIN' | 'MEMBER';\nexport type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'LEAVED';\nexport type SessionType = 'VOCAL' | 'CHORUS' | 'GUITAR' | 'BASS' | 'DRUM' | 'PERCUSSION' | 'SYNTH' | 'ETC';\n```\n\n5. src/global/error/ApiError.ts:\n```ts\nexport class ApiError extends Error {\n  constructor(\n    public code: string,\n    message: string,\n    public status: number,\n    public fieldErrors?: Record<string, string>\n  ) {\n    super(message);\n    this.name = 'ApiError';\n  }\n}\n```\n\n6. src/global/api/apiClient.ts - fetch 래퍼:\n- Authorization 헤더 자동 주입 (authStore에서 accessToken 읽기)\n- 401 응답 시 /auth/refresh 자동 호출 (1회 한정, 재귀 방지 플래그)\n- 실패 시 authStore.clear() + /login 리다이렉트\n- ApiResponse<T> 언래핑하여 data만 반환\n- 실패 시 ApiError throw\n\n7. src/global/store/authStore.ts - Zustand persist(sessionStorage):\n```ts\nimport { create } from 'zustand';\nimport { persist, createJSONStorage } from 'zustand/middleware';\n\ninterface AuthState {\n  accessToken: string | null;\n  setAccessToken: (token: string | null) => void;\n  clear: () => void;\n}\n\nexport const useAuthStore = create<AuthState>()(\n  persist(\n    (set) => ({\n      accessToken: null,\n      setAccessToken: (token) => set({ accessToken: token }),\n      clear: () => set({ accessToken: null }),\n    }),\n    { name: 'bandage-auth', storage: createJSONStorage(() => sessionStorage) }\n  )\n);\n```",
@@ -217,7 +217,7 @@
         "updatedAt": "2026-04-23T14:44:33.097Z"
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "UI 프리미티브 컴포넌트 라이브러리 구축",
         "description": "Button, Input, Textarea, Select, Dialog, BottomSheet, Card, Badge, Chip, Avatar, Tabs, Skeleton 등 shadcn/ui 스타일의 재사용 가능한 프리미티브 컴포넌트를 구현합니다.",
         "details": "1. src/lib/cn.ts - clsx + tailwind-merge 유틸:\n```ts\nimport { clsx, type ClassValue } from 'clsx';\nimport { twMerge } from 'tailwind-merge';\n\nexport function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n```\n\n2. src/components/ui/button.tsx:\n```tsx\nimport { Slot } from '@radix-ui/react-slot';\nimport { cn } from '@/lib/cn';\nimport { Loader2 } from 'lucide-react';\n\ninterface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {\n  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';\n  size?: 'sm' | 'md' | 'lg';\n  loading?: boolean;\n  asChild?: boolean;\n}\n\nexport function Button({ variant = 'primary', size = 'md', loading, asChild, className, children, disabled, ...props }: ButtonProps) {\n  const Comp = asChild ? Slot : 'button';\n  return (\n    <Comp\n      className={cn(\n        'inline-flex items-center justify-center font-medium transition-colors rounded-md disabled:opacity-50 disabled:pointer-events-none',\n        // variant styles\n        // size styles\n        className\n      )}\n      disabled={disabled || loading}\n      {...props}\n    >\n      {loading && <Loader2 className=\"mr-2 h-4 w-4 animate-spin\" />}\n      {children}\n    </Comp>\n  );\n}\n```\n\n3. src/components/ui/input.tsx - error, label, hint props 포함\n\n4. src/components/ui/textarea.tsx\n\n5. src/components/ui/select.tsx - Radix Select 기반 또는 native select\n\n6. src/components/ui/dialog.tsx - Radix Dialog 기반, 모바일에서는 풀스크린 옵션\n\n7. src/components/ui/bottom-sheet.tsx - 모바일 전용 하단 시트\n\n8. src/components/ui/card.tsx - header, footer, padding props\n\n9. src/components/ui/badge.tsx - variant prop (default, success, warn, danger)\n\n10. src/components/ui/chip.tsx - interactive prop, 세션 타입별 색상 지원\n\n11. src/components/ui/avatar.tsx - src, fallback(이니셜), size props\n\n12. src/components/ui/tabs.tsx - Radix Tabs 기반\n\n13. src/components/ui/skeleton.tsx - w, h, rounded props\n\n14. src/components/ui/spinner.tsx - 로딩 인디케이터",
@@ -231,7 +231,7 @@
         "updatedAt": "2026-04-23T15:49:27.743Z"
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "레이아웃 컴포넌트 및 피드백 시스템 구축",
         "description": "BottomNav(5탭), Header, Container 레이아웃 컴포넌트와 Toast, ErrorBoundary, EmptyState, ErrorState 피드백 컴포넌트를 구현합니다. 공통 훅(useInfiniteCursor, useDebounce, useConfirmDialog)과 날짜 유틸도 포함합니다.",
         "details": "1. src/components/layout/bottom-nav.tsx:\n```tsx\n'use client';\nimport Link from 'next/link';\nimport { usePathname } from 'next/navigation';\nimport { Home, Users, Music, CalendarDays, User } from 'lucide-react';\nimport { ROUTES } from '@/global/config/routes';\n\nconst tabs = [\n  { href: ROUTES.HOME, icon: Home, label: '홈' },\n  { href: ROUTES.BANDS, icon: Users, label: '밴드' },\n  { href: ROUTES.PRACTICES, icon: Music, label: '합주' },\n  { href: ROUTES.PERFORMANCES, icon: CalendarDays, label: '공연' },\n  { href: ROUTES.ME, icon: User, label: 'MY' },\n];\n\nexport function BottomNav() {\n  const pathname = usePathname();\n  // 탭별 active 상태 판정 및 렌더링\n}\n```\n\n2. src/components/layout/header.tsx - title, left(뒤로가기 등), right(액션 버튼) props\n\n3. src/components/layout/container.tsx - maxWidth, padding props\n\n4. src/components/layout/page-title.tsx - 페이지 제목 표시용\n\n5. src/components/feedback/toast.tsx + toaster.tsx:\n- Radix Toast 또는 커스텀 구현\n- toast({ type: 'success' | 'error' | 'info', message, duration }) API\n- 전역 Toaster 컴포넌트\n\n6. src/components/feedback/error-boundary.tsx - React ErrorBoundary, fallback prop\n\n7. src/components/feedback/empty-state.tsx - icon, title, description, action props\n\n8. src/components/feedback/error-state.tsx - 재시도 버튼 포함\n\n9. src/hooks/useInfiniteCursor.ts:\n```ts\nimport { useInfiniteQuery, UseInfiniteQueryOptions } from '@tanstack/react-query';\nimport { CursorResponse } from '@/global/types/ApiResponse';\n\nexport function useInfiniteCursor<T, C>(\n  queryKey: unknown[],\n  fetcher: (params: { lastId?: C; pageSize: number }) => Promise<CursorResponse<T, C>>,\n  pageSize = 10,\n  options?: Omit<UseInfiniteQueryOptions, 'queryKey' | 'queryFn' | 'getNextPageParam' | 'initialPageParam'>\n) {\n  return useInfiniteQuery({\n    queryKey,\n    queryFn: ({ pageParam }) => fetcher({ lastId: pageParam as C | undefined, pageSize }),\n    getNextPageParam: (lastPage) => lastPage.hasNext ? lastPage.nextCursor : undefined,\n    initialPageParam: undefined as C | undefined,\n    ...options,\n  });\n}\n```\n\n10. src/hooks/useDebounce.ts - 값 디바운싱 훅\n\n11. src/hooks/useConfirmDialog.ts - 확인 다이얼로그 상태 관리 훅\n\n12. src/lib/date.ts:\n```ts\nimport { format, parse } from 'date-fns';\nimport { toZonedTime, fromZonedTime } from 'date-fns-tz';\n\nconst KST = 'Asia/Seoul';\nconst FORMAT = 'yyyy-MM-dd HH:mm';\n\nexport function formatKst(date: Date): string {\n  return format(toZonedTime(date, KST), FORMAT);\n}\n\nexport function parseKst(dateString: string): Date {\n  return fromZonedTime(parse(dateString, FORMAT, new Date()), KST);\n}\n```\n\n13. src/app/(main)/layout.tsx - BottomNav + Header + Container 적용\n\n14. src/app/layout.tsx - QueryClientProvider, Toaster, 전역 ErrorBoundary 설정",
@@ -302,7 +302,7 @@
         "updatedAt": "2026-04-23T16:17:02.050Z"
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "인증(Auth) 및 회원(Member) 도메인 구현",
         "description": "로그인, 회원가입, 비밀번호 변경, 로그아웃, 회원 정보 조회/수정, 회원 탈퇴 기능을 구현합니다. Auth Guard 미들웨어로 비인증 사용자의 (main) 라우트 접근을 차단합니다.",
         "details": "1. src/domain/auth/types/req.ts:\n```ts\nexport interface LoginRequest {\n  email: string;\n  password: string;\n}\n\nexport interface PasswordChangeRequest {\n  originalPassword: string;\n  newPassword: string;\n}\n```\n\n2. src/domain/auth/types/res.ts:\n```ts\nexport interface LoginResponse {\n  accessToken: string;\n}\n\nexport interface RefreshResponse {\n  accessToken: string;\n}\n```\n\n3. src/domain/auth/types/schema.ts - zod 스키마 (email, password 검증)\n\n4. src/domain/auth/api/login.ts, logout.ts, refresh.ts, changePassword.ts\n\n5. src/domain/auth/hooks/useLogin.ts, useLogout.ts, useChangePassword.ts - useMutation 래퍼\n\n6. src/domain/member/types/req.ts:\n```ts\nexport interface JoinRequest {\n  email: string;\n  password: string;\n  name: string;\n  contact: string;\n}\n\nexport interface UpdateMeRequest {\n  name?: string;\n  contact?: string;\n}\n```\n\n7. src/domain/member/types/res.ts, schema.ts\n\n8. src/domain/member/api/join.ts, getMe.ts, updateMe.ts, withdraw.ts\n\n9. src/domain/member/hooks/useJoin.ts, useMe.ts, useUpdateMe.ts, useWithdraw.ts\n\n10. src/app/(auth)/layout.tsx - 비인증 레이아웃 (BottomNav 없음)\n\n11. src/app/(auth)/login/page.tsx + LoginForm.client.tsx:\n- react-hook-form + zod resolver\n- 로그인 성공 시 accessToken 저장 + /home 리다이렉트\n- 에러 시 인라인 메시지\n\n12. src/app/(auth)/join/page.tsx + JoinForm.client.tsx:\n- 이메일/비밀번호/이름/연락처 필드\n- 가입 성공 시 자동 로그인 또는 /login 리다이렉트\n\n13. src/app/(auth)/password-change/page.tsx + PasswordChangeForm.client.tsx\n\n14. src/app/(main)/me/page.tsx:\n- 내 정보 표시 (useMe)\n- 이름/연락처 수정 폼 (useUpdateMe)\n- 비밀번호 변경 링크\n- 로그아웃 버튼 (useLogout)\n- 회원 탈퇴 버튼 (확인 다이얼로그 + useWithdraw)\n\n15. src/middleware.ts - Auth Guard:\n```ts\nimport { NextResponse } from 'next/server';\nimport type { NextRequest } from 'next/server';\n\nexport function middleware(request: NextRequest) {\n  const token = request.cookies.get('refreshToken') || /* sessionStorage 대안 */;\n  const isAuthPage = request.nextUrl.pathname.startsWith('/login') || ...;\n  \n  if (!token && !isAuthPage) {\n    return NextResponse.redirect(new URL('/login', request.url));\n  }\n  return NextResponse.next();\n}\n\nexport const config = {\n  matcher: ['/(main)/:path*'],\n};\n```",
@@ -311,7 +311,7 @@
         "dependencies": [
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -320,7 +320,8 @@
             "dependencies": [],
             "details": "1. src/domain/auth/types/req.ts 생성:\n   - LoginRequest: email(string), password(string)\n   - PasswordChangeRequest: originalPassword(string), newPassword(string)\n\n2. src/domain/auth/types/res.ts 생성:\n   - LoginResponse: accessToken(string)\n   - RefreshResponse: accessToken(string)\n\n3. src/domain/auth/types/schema.ts 생성:\n   - loginSchema: zod 스키마 (email: z.string().email(), password: z.string().min(8))\n   - passwordChangeSchema: originalPassword, newPassword 검증\n\n4. src/domain/auth/api/ 디렉토리에 API 함수 구현:\n   - login.ts: POST /api/v1/auth/login, apiClient 사용, 성공 시 authStore.setAccessToken() 호출\n   - logout.ts: POST /api/v1/auth/logout, authStore.clear() 호출\n   - refresh.ts: POST /api/v1/auth/refresh (이미 apiClient에 자동 처리 로직 있음, 수동 호출용)\n   - changePassword.ts: POST /api/v1/auth/password-change\n\n5. src/domain/auth/types/index.ts에서 모든 타입 re-export",
             "status": "pending",
-            "testStrategy": "Vitest 단위 테스트: login API 함수가 올바른 엔드포인트 호출하고 응답에서 accessToken을 추출하는지 확인. 스키마 검증이 잘못된 이메일/짧은 비밀번호를 거부하는지 테스트."
+            "testStrategy": "Vitest 단위 테스트: login API 함수가 올바른 엔드포인트 호출하고 응답에서 accessToken을 추출하는지 확인. 스키마 검증이 잘못된 이메일/짧은 비밀번호를 거부하는지 테스트.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -331,7 +332,8 @@
             ],
             "details": "1. src/domain/member/types/req.ts 생성:\n   - JoinRequest: email, password, name, contact\n   - UpdateMeRequest: name?(optional), contact?(optional)\n\n2. src/domain/member/types/res.ts 생성:\n   - MemberInfoResponse: id, email, name, contact, createdAt\n   - JoinResponse: accessToken (자동 로그인용)\n\n3. src/domain/member/types/schema.ts 생성:\n   - joinSchema: 모든 필드 검증 (email, password.min(8), name.min(2), contact 패턴)\n   - updateMeSchema: 선택적 필드 검증\n\n4. src/domain/member/api/ 디렉토리에 API 함수 구현:\n   - join.ts: POST /api/v1/members/join, 성공 시 authStore.setAccessToken() 호출\n   - getMe.ts: GET /api/v1/members/me\n   - updateMe.ts: PATCH /api/v1/members/me\n   - withdraw.ts: DELETE /api/v1/members/me, authStore.clear() 호출\n\n5. src/domain/member/hooks/ 디렉토리에 TanStack Query 훅 구현:\n   - useMe.ts: useQuery 래퍼, queryKeys.member.me 사용\n   - useJoin.ts: useMutation 래퍼\n   - useUpdateMe.ts: useMutation 래퍼, 성공 시 queryClient.invalidateQueries()\n   - useWithdraw.ts: useMutation 래퍼",
             "status": "pending",
-            "testStrategy": "Vitest 단위 테스트: useMe 훅이 올바른 쿼리 키를 사용하는지, API 함수들이 올바른 HTTP 메서드와 엔드포인트를 호출하는지 확인. joinSchema가 잘못된 입력을 거부하는지 테스트."
+            "testStrategy": "Vitest 단위 테스트: useMe 훅이 올바른 쿼리 키를 사용하는지, API 함수들이 올바른 HTTP 메서드와 엔드포인트를 호출하는지 확인. joinSchema가 잘못된 입력을 거부하는지 테스트.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -343,7 +345,8 @@
             ],
             "details": "1. src/app/(auth)/layout.tsx 생성:\n   - BottomNav 없는 심플한 레이아웃\n   - 다크 테마 배경, 중앙 정렬 컨테이너\n   - 이미 인증된 사용자는 /home으로 리다이렉트 (useIsAuthenticated 체크)\n\n2. src/app/(auth)/login/page.tsx 생성:\n   - RSC 페이지, 메타데이터(title: '로그인')\n   - LoginForm.client.tsx 임포트\n\n3. src/app/(auth)/login/LoginForm.client.tsx 생성:\n   - 'use client' 선언\n   - react-hook-form + zodResolver(loginSchema) 사용\n   - Input 컴포넌트로 email, password 필드\n   - Button 컴포넌트로 제출 (loading 상태 처리)\n   - 로그인 성공 시 router.push(ROUTES.HOME)\n   - 에러 시 useToast().error() 호출 및 필드별 인라인 메시지\n   - '회원가입' 링크 → ROUTES.JOIN\n\n4. src/app/(auth)/join/page.tsx 생성:\n   - RSC 페이지, 메타데이터(title: '회원가입')\n\n5. src/app/(auth)/join/JoinForm.client.tsx 생성:\n   - email, password, name, contact 4개 필드\n   - useJoin 훅 사용\n   - 가입 성공 시 자동 로그인 후 router.push(ROUTES.HOME)\n   - '로그인' 링크 → ROUTES.LOGIN",
             "status": "pending",
-            "testStrategy": "수동 테스트: 로그인 폼 제출 시 유효성 검증 에러 표시 확인, 올바른 입력 시 API 호출 및 리다이렉트 확인. 회원가입 폼도 동일하게 테스트. 인증된 상태에서 /login 접근 시 /home으로 리다이렉트 확인."
+            "testStrategy": "수동 테스트: 로그인 폼 제출 시 유효성 검증 에러 표시 확인, 올바른 입력 시 API 호출 및 리다이렉트 확인. 회원가입 폼도 동일하게 테스트. 인증된 상태에서 /login 접근 시 /home으로 리다이렉트 확인.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -355,7 +358,8 @@
             ],
             "details": "1. src/app/(auth)/password-change/page.tsx 생성:\n   - RSC 페이지, 메타데이터(title: '비밀번호 변경')\n\n2. src/app/(auth)/password-change/PasswordChangeForm.client.tsx 생성:\n   - originalPassword, newPassword, confirmPassword 3개 필드\n   - passwordChangeSchema로 검증 (newPassword === confirmPassword 커스텀 검증)\n   - useChangePassword 훅 사용 (domain/auth/hooks/useChangePassword.ts 필요시 추가)\n   - 성공 시 toast.success() + router.push(ROUTES.ME)\n\n3. src/app/(main)/me/page.tsx 구현 (기존 플레이스홀더 교체):\n   - RSC 페이지, Suspense로 MeContent.client.tsx 래핑\n   - Skeleton 로딩 상태 표시\n\n4. src/app/(main)/me/MeContent.client.tsx 생성:\n   - useMe 훅으로 회원 정보 조회\n   - 이름/연락처 표시 (수정 버튼 → UpdateMeForm 모달 또는 인라인)\n   - useUpdateMe로 정보 수정\n   - 비밀번호 변경 링크 → ROUTES.PASSWORD_CHANGE\n   - 로그아웃 버튼: useLogout 훅 → authStore.clear() → router.push(ROUTES.LOGIN)\n   - 회원 탈퇴 버튼: Dialog 확인 → useWithdraw → router.push(ROUTES.LOGIN)\n\n5. src/domain/auth/hooks/useLogout.ts, useChangePassword.ts 추가:\n   - useMutation 래퍼, 성공/실패 시 토스트 및 리다이렉트 처리",
             "status": "pending",
-            "testStrategy": "수동 테스트: 마이페이지에서 회원 정보가 올바르게 표시되는지, 수정 폼이 동작하는지, 로그아웃 시 세션 클리어 및 /login 리다이렉트 확인. 회원 탈퇴 시 확인 다이얼로그 표시 및 삭제 후 리다이렉트 확인."
+            "testStrategy": "수동 테스트: 마이페이지에서 회원 정보가 올바르게 표시되는지, 수정 폼이 동작하는지, 로그아웃 시 세션 클리어 및 /login 리다이렉트 확인. 회원 탈퇴 시 확인 다이얼로그 표시 및 삭제 후 리다이렉트 확인.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -367,12 +371,14 @@
             ],
             "details": "1. src/middleware.ts 생성:\n   - NextRequest에서 refreshToken 쿠키 확인 (HttpOnly이므로 서버에서 접근 가능)\n   - matcher: ['/(main)/:path*']로 (main) 라우트 그룹만 보호\n   - 토큰 없으면 NextResponse.redirect(new URL('/login', request.url))\n   - 토큰 있으면 NextResponse.next()\n   - /login, /join 등 인증 페이지는 matcher에서 제외\n\n2. 클라이언트 측 보조 가드 (선택적):\n   - src/global/auth/AuthGuard.tsx 컴포넌트 또는 useAuthGuard 훅\n   - useIsAuthenticated() + useEffect로 클라이언트 측 리다이렉트\n   - 미들웨어가 커버하지 못하는 엣지 케이스 대응\n\n3. Playwright E2E 테스트 작성 (e2e/auth.spec.ts):\n   - 시나리오 1: 비인증 사용자가 /home 접근 시 /login으로 리다이렉트\n   - 시나리오 2: 회원가입 → 자동 로그인 → /home 접근 성공\n   - 시나리오 3: 로그인 → /me 접근 → 회원 정보 표시 확인\n   - 시나리오 4: 로그아웃 → /home 접근 시 /login 리다이렉트\n   - 시나리오 5: 잘못된 로그인 정보 입력 시 에러 메시지 표시\n\n4. 테스트 유틸리티:\n   - e2e/fixtures/auth.ts: 테스트용 로그인/회원가입 헬퍼 함수\n   - Mock API 또는 테스트 계정 활용",
             "status": "pending",
-            "testStrategy": "Playwright E2E 테스트 실행: pnpm test:e2e로 전체 인증 플로우(회원가입 → 로그인 → /me 접근 → 로그아웃 → /home 재접근 시 리다이렉트) 자동화 테스트 통과 확인."
+            "testStrategy": "Playwright E2E 테스트 실행: pnpm test:e2e로 전체 인증 플로우(회원가입 → 로그인 → /me 접근 → 로그아웃 → /home 재접근 시 리다이렉트) 자동화 테스트 통과 확인.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-23T22:14:29.764Z"
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "밴드(Band) 도메인 구현",
         "description": "밴드 생성, 목록 조회(무한 스크롤), 상세 조회, 멤버 관리, 가입 신청/승인/거절, 리더 위임, 탈퇴 기능을 구현합니다. 역할 기반 UI 가드를 적용합니다.",
         "details": "1. src/domain/band/types/req.ts:\n```ts\nexport interface CreateBandRequest {\n  name: string;\n  description?: string;\n  profileImg?: string;\n}\n```\n\n2. src/domain/band/types/res.ts:\n```ts\nexport interface CreateBandResponse {\n  bandId: string;\n  bandName: string;\n}\n\nexport interface BandInfoResponse {\n  bandId: string;\n  bandName: string;\n  description?: string;\n  profileImg?: string;\n}\n\nexport interface BandMemberInfoResponse {\n  bandMemberId: string;\n  memberId: number;\n  role: BandRole;\n}\n\nexport interface BandApplicationInfoResponse {\n  bandApplicationId: string;\n  memberId: number;\n  status: ApplicationStatus;\n}\n```\n\n3. src/domain/band/types/schema.ts - zod 스키마\n\n4. src/domain/band/api/:\n- createBand.ts, getBand.ts, listBands.ts\n- getBandMember.ts, listBandMembers.ts\n- applyBand.ts, withdrawApplication.ts, listApplications.ts, decideApplication.ts\n- delegateLeader.ts, leaveBand.ts\n\n5. src/domain/band/hooks/:\n- useCreateBand.ts (useMutation)\n- useBandList.ts (useInfiniteCursor)\n- useBandDetail.ts (useQuery)\n- useBandMembers.ts (useInfiniteCursor)\n- useBandMember.ts (useQuery)\n- useBandApplications.ts (useInfiniteCursor)\n- useApplyBand.ts, useWithdrawApplication.ts, useDecideApplication.ts (useMutation)\n- useDelegateLeader.ts, useLeaveBand.ts (useMutation)\n\n6. src/global/auth/useBandRole.ts - 현재 유저의 밴드 내 역할 조회 훅\n\n7. src/global/auth/RoleGuard.tsx:\n```tsx\n'use client';\nimport { useBandRole } from './useBandRole';\nimport { BandRole } from '@/global/types/ApiResponse';\n\nconst roleHierarchy: Record<BandRole, number> = { LEADER: 3, ADMIN: 2, MEMBER: 1 };\n\nexport function RoleGuard({ bandId, role, children, fallback = null }: {\n  bandId: string;\n  role: BandRole;\n  children: React.ReactNode;\n  fallback?: React.ReactNode;\n}) {\n  const { data: userRole } = useBandRole(bandId);\n  if (!userRole || roleHierarchy[userRole] < roleHierarchy[role]) return fallback;\n  return <>{children}</>;\n}\n```\n\n8. src/domain/band/components/:\n- BandCard.tsx - 목록용 카드\n- BandListItem.tsx - 간단한 목록 아이템\n- BandMemberRow.tsx - 멤버 행\n- BandApplicationRow.tsx - 신청 행 (승인/거절 버튼)\n- BandRoleBadge.tsx - LEADER/ADMIN/MEMBER 배지\n\n9. src/app/(main)/bands/page.tsx - 무한 스크롤 목록 + 생성 FAB\n\n10. src/app/(main)/bands/new/page.tsx + BandCreateForm.client.tsx\n\n11. src/app/(main)/bands/[bandId]/page.tsx:\n- Tabs: 개요 / 멤버 / 가입신청(LEADER/ADMIN만)\n- 개요: 밴드 정보 + 가입 신청 버튼(비멤버) / 탈퇴 버튼(멤버)\n- 멤버: 무한 스크롤 멤버 목록 + 리더 위임 버튼(LEADER만)\n- 가입신청: 신청 목록 + 승인/거절 액션",
@@ -390,7 +396,8 @@
             "dependencies": [],
             "details": "1. src/domain/band/types/req.ts 생성:\n   - CreateBandRequest: name(필수), description?(선택), profileImg?(선택)\n   - ApplyBandRequest: message?(선택)\n   - DecideBandApplicationRequest: applicationId, decision('APPROVED'|'REJECTED')\n   - DelegateLeaderRequest: newLeaderId\n\n2. src/domain/band/types/res.ts 생성:\n   - CreateBandResponse: bandId, bandName\n   - BandInfoResponse: bandId, bandName, description?, profileImg?, memberCount?, myRole?\n   - BandMemberInfoResponse: bandMemberId, memberId, memberName, role(BandRole), profileImg?\n   - BandApplicationInfoResponse: bandApplicationId, memberId, memberName, status(ApplicationStatus), message?, appliedAt\n\n3. src/domain/band/types/schema.ts 생성:\n   - createBandSchema: name(1~50자, 필수), description(최대 200자), profileImg(URL 형식)\n   - applyBandSchema: message(최대 200자)\n   - 백엔드 NotBlank, Size 어노테이션과 동일한 검증 규칙 적용",
             "status": "pending",
-            "testStrategy": "Zod 스키마로 유효한 입력과 무효한 입력(빈 문자열, 길이 초과 등)을 파싱하여 safeParse 결과 검증. TypeScript 타입 체크가 빌드 시 통과하는지 확인."
+            "testStrategy": "Zod 스키마로 유효한 입력과 무효한 입력(빈 문자열, 길이 초과 등)을 파싱하여 safeParse 결과 검증. TypeScript 타입 체크가 빌드 시 통과하는지 확인.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -401,7 +408,8 @@
             ],
             "details": "1. src/domain/band/api/ 디렉토리에 API 함수 생성:\n   - getBands.ts: GET /api/v1/bands (커서 페이징, lastId, pageSize 파라미터)\n   - getBandDetail.ts: GET /api/v1/bands/{bandId}\n   - createBand.ts: POST /api/v1/bands\n   - getBandMembers.ts: GET /api/v1/bands/{bandId}/members (커서 페이징)\n   - applyBand.ts: POST /api/v1/bands/{bandId}/applications\n   - withdrawApplication.ts: DELETE /api/v1/bands/{bandId}/applications\n   - getBandApplications.ts: GET /api/v1/bands/{bandId}/applications (LEADER/ADMIN용)\n   - decideApplication.ts: PATCH /api/v1/bands/{bandId}/applications/{applicationId}\n   - delegateLeader.ts: PATCH /api/v1/bands/{bandId}/leader\n   - leaveBand.ts: DELETE /api/v1/bands/{bandId}/members/me\n\n2. src/domain/band/hooks/ 디렉토리에 훅 생성:\n   - useBandList.ts: useInfiniteCursor 래퍼 (queryKeys.band.list() 사용)\n   - useBandDetail.ts: useQuery 래퍼 (queryKeys.band.detail(id) 사용)\n   - useBandMembers.ts: useInfiniteCursor 래퍼\n   - useBandApplications.ts: useInfiniteCursor 래퍼 (상태 필터 지원)\n   - useCreateBand.ts: useMutation (성공 시 목록 invalidate, 토스트)\n   - useApplyBand.ts, useWithdrawApplication.ts, useDecideApplication.ts: useMutation\n   - useDelegateLeader.ts, useLeaveBand.ts: useMutation (확인 다이얼로그 연동)",
             "status": "pending",
-            "testStrategy": "각 API 함수가 올바른 엔드포인트를 호출하는지 확인. 훅이 queryClient를 적절히 invalidate하는지, 에러 시 토스트가 표시되는지 수동 테스트."
+            "testStrategy": "각 API 함수가 올바른 엔드포인트를 호출하는지 확인. 훅이 queryClient를 적절히 invalidate하는지, 에러 시 토스트가 표시되는지 수동 테스트.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -412,7 +420,8 @@
             ],
             "details": "1. src/global/auth/useBandRole.ts 생성:\n   - useBandRole(bandId: string) 훅: 현재 유저의 해당 밴드 내 역할(BandRole) 반환\n   - useBandDetail 훅의 myRole 필드 활용 또는 별도 API 호출\n   - 비멤버인 경우 null 반환\n\n2. src/global/auth/RoleGuard.tsx 생성:\n   - Props: bandId, role(BandRole), children, fallback?\n   - roleHierarchy: { LEADER: 3, ADMIN: 2, MEMBER: 1 } 정의\n   - 현재 유저 역할이 요구 역할 이상일 때만 children 렌더링\n   - 권한 부족 시 fallback 렌더링 (기본값 null)\n   - 로딩 중일 때 Skeleton 또는 null 반환\n\n3. 권한별 UI 가드 사용 예시:\n   - <RoleGuard bandId={id} role=\"LEADER\">리더 위임 버튼</RoleGuard>\n   - <RoleGuard bandId={id} role=\"ADMIN\">가입 신청 탭</RoleGuard>\n   - 버튼 disabled 처리: disabled={userRole !== 'LEADER'}",
             "status": "pending",
-            "testStrategy": "LEADER 계정으로 모든 기능 표시 확인, MEMBER 계정으로 제한된 기능만 표시 확인, 비멤버 계정으로 가입 신청 버튼만 표시 확인."
+            "testStrategy": "LEADER 계정으로 모든 기능 표시 확인, MEMBER 계정으로 제한된 기능만 표시 확인, 비멤버 계정으로 가입 신청 버튼만 표시 확인.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -424,7 +433,8 @@
             ],
             "details": "1. src/domain/band/components/ 디렉토리 생성 및 컴포넌트 구현:\n\n2. BandCard.tsx - 밴드 목록용 카드:\n   - Card 컴포넌트 활용, interactive={true}\n   - Avatar(프로필 이미지), 밴드명, 설명(2줄 truncate), 멤버 수\n   - 클릭 시 상세 페이지로 이동 (ROUTES.BAND_DETAIL(bandId))\n\n3. BandRoleBadge.tsx - 역할 배지:\n   - Badge 컴포넌트 활용\n   - LEADER: accent 색상, ADMIN: success 색상, MEMBER: default 색상\n   - 한글 라벨: '리더', '관리자', '멤버'\n\n4. BandMemberRow.tsx - 멤버 목록 행:\n   - Avatar, 멤버명, BandRoleBadge, 리더 위임 버튼(LEADER만 표시)\n   - RoleGuard로 위임 버튼 감싸기\n\n5. BandApplicationRow.tsx - 가입 신청 행:\n   - Avatar, 신청자명, 신청 메시지(truncate), 신청일시\n   - 승인/거절 버튼 (useDecideApplication 연동)\n   - 승인/거절 시 확인 다이얼로그\n\n6. BandCreateForm.client.tsx - 밴드 생성 폼:\n   - react-hook-form + zodResolver(createBandSchema) 사용\n   - Input(밴드명), Textarea(설명), 이미지 업로드(향후 확장)\n   - useCreateBand 훅 연동, 성공 시 상세 페이지로 이동",
             "status": "pending",
-            "testStrategy": "각 컴포넌트에 다양한 props 전달하여 렌더링 확인. BandCard 클릭 시 네비게이션 동작, BandApplicationRow 승인/거절 후 목록 갱신 확인."
+            "testStrategy": "각 컴포넌트에 다양한 props 전달하여 렌더링 확인. BandCard 클릭 시 네비게이션 동작, BandApplicationRow 승인/거절 후 목록 갱신 확인.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -436,12 +446,13 @@
             ],
             "details": "1. src/app/(main)/bands/page.tsx - 밴드 목록 페이지:\n   - useBandList 훅으로 무한 스크롤 구현\n   - BandCard 컴포넌트로 각 밴드 렌더링\n   - EmptyState: 밴드 없을 때 '아직 참여 중인 밴드가 없습니다'\n   - FAB(Floating Action Button): 우하단에 밴드 생성 버튼 (+)\n   - Header: title='밴드', left=false (뒤로가기 숨김)\n\n2. src/app/(main)/bands/new/page.tsx - 밴드 생성 페이지:\n   - Header: title='밴드 만들기', left=뒤로가기\n   - BandCreateForm.client.tsx 렌더링\n\n3. src/app/(main)/bands/[bandId]/page.tsx - 밴드 상세 페이지:\n   - useBandDetail 훅으로 밴드 정보 조회\n   - Tabs 컴포넌트로 3개 탭 구성:\n     a. 개요 탭: 밴드 정보, 가입 신청 버튼(비멤버), 탈퇴 버튼(멤버)\n     b. 멤버 탭: useBandMembers 무한 스크롤, 리더 위임 버튼(LEADER만)\n     c. 가입 신청 탭: RoleGuard role=\"ADMIN\", useBandApplications 무한 스크롤\n   - ErrorState: 밴드를 찾을 수 없을 때 404 처리\n   - 탈퇴/리더 위임 시 확인 다이얼로그 (useConfirmDialog)\n\n4. 낙관적 업데이트 적용:\n   - 가입 신청 승인/거절 후 신청 목록에서 즉시 제거\n   - 멤버 탈퇴 후 멤버 목록에서 즉시 제거",
             "status": "pending",
-            "testStrategy": "밴드 생성 → 상세 조회 → 다른 계정으로 가입 신청 → 리더가 승인 → 멤버 목록에 반영 → 리더 위임 → 탈퇴 플로우 전체 수동 테스트. 무한 스크롤이 올바르게 작동하는지 확인."
+            "testStrategy": "밴드 생성 → 상세 조회 → 다른 계정으로 가입 신청 → 리더가 승인 → 멤버 목록에 반영 → 리더 위임 → 탈퇴 플로우 전체 수동 테스트. 무한 스크롤이 올바르게 작동하는지 확인.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "합주(Practice) 및 합주곡(Practice-Song) 도메인 구현",
         "description": "합주 생성/상세 조회/일정·장소 변경/삭제, 세션 생성/삭제, 멤버 추가, 세션 배정/해제, 곡 참조 링크 관리 기능을 구현합니다.",
         "details": "1. src/domain/practice/types/req.ts:\n```ts\nexport interface CreatePracticeRequest {\n  title?: string;\n  song: string; // songId\n  venue?: string;\n  startAt: string; // yyyy-MM-dd HH:mm\n  durationMinutes: number;\n}\n\nexport interface UpdateScheduleRequest {\n  startAt: string;\n  durationMinutes: number;\n}\n\nexport interface UpdateVenueRequest {\n  venue: string;\n}\n\nexport interface CreateSessionRequest {\n  label: string;\n  type: SessionType;\n}\n\nexport interface AddParticipantRequest {\n  memberId: number;\n}\n```\n\n2. src/domain/practice/types/res.ts:\n```ts\nexport interface CreatePracticeResponse {\n  practiceId: string;\n  practiceTitle: string;\n}\n\nexport interface PracticeDetailResponse {\n  practiceId: string;\n  title: string;\n  venue?: string;\n  startAt: string;\n  durationMinutes: number;\n  song: { songId: string; title: string; artist: string; };\n  sessions: PracticeSessionResponse[];\n  participants: PracticeParticipantResponse[];\n}\n\nexport interface PracticeSessionResponse {\n  sessionId: string;\n  label: string;\n  type: SessionType;\n  participant: { participantId: string; memberId: number; } | null;\n}\n\nexport interface PracticeParticipantResponse {\n  participantId: string;\n  memberId: number;\n}\n```\n\n3. src/domain/practice/api/:\n- createPractice.ts, getPractice.ts, deletePractice.ts\n- updateSchedule.ts, updateVenue.ts\n- createSession.ts, deleteSession.ts\n- addParticipant.ts, assignSession.ts, unassignSession.ts\n\n4. src/domain/practice/hooks/: 각 API에 대응하는 useMutation/useQuery 훅\n\n5. src/domain/practice-song/types/req.ts:\n```ts\nexport interface UpsertRefLinkRequest {\n  refLink: string;\n}\n```\n\n6. src/domain/practice-song/api/upsertRefLink.ts, deleteRefLink.ts\n\n7. src/domain/practice-song/hooks/useUpsertSongRefLink.ts, useDeleteSongRefLink.ts\n\n8. src/domain/practice/components/:\n- PracticeCard.tsx - 목록용\n- PracticeScheduleBadge.tsx - 일정 표시\n- PracticeVenueInline.tsx - 장소 인라인 편집\n- SessionChip.tsx - 세션 타입별 색상(VOCAL: pink, GUITAR: orange 등)\n- SessionRow.tsx - 세션 + 배정 상태 + 배정/해제 버튼\n- SessionAssignButton.tsx - 낙관적 업데이트 처리\n- SongRefLinkEditor.tsx - 곡 참조 링크 인라인 편집\n\n9. src/app/(main)/practices/page.tsx - 내 밴드 합주 목록\n\n10. src/app/(main)/practices/new/page.tsx + PracticeCreateForm.client.tsx:\n- 제목/곡 선택/장소/시작시간/소요시간 입력\n\n11. src/app/(main)/practices/[practiceId]/page.tsx:\n- 일정/장소 편집 (인라인 또는 모달)\n- 세션 편성 섹션: 세션 추가 버튼 + 각 세션에 배정 상태\n- 참여자 목록 섹션\n- 곡 참조 링크 섹션\n- 삭제 버튼 (확인 다이얼로그)",
@@ -459,7 +470,8 @@
             "dependencies": [],
             "details": "1. src/domain/practice/types/req.ts 생성:\n   - CreatePracticeRequest: title(선택), song(songId), venue(선택), startAt(yyyy-MM-dd HH:mm), durationMinutes\n   - UpdateScheduleRequest: startAt, durationMinutes\n   - UpdateVenueRequest: venue\n   - CreateSessionRequest: label, type(SessionType)\n   - AddParticipantRequest: memberId\n   - AssignSessionRequest: participantId\n\n2. src/domain/practice/types/res.ts 생성:\n   - CreatePracticeResponse: practiceId, practiceTitle\n   - PracticeDetailResponse: practiceId, title, venue, startAt, durationMinutes, song(songId, title, artist), sessions[], participants[]\n   - PracticeSessionResponse: sessionId, label, type, participant(participantId, memberId) | null\n   - PracticeParticipantResponse: participantId, memberId\n   - PracticeSummaryResponse: 목록용 간단 응답 타입\n\n3. src/domain/practice/api/ 함수들 생성 (apiClient 활용):\n   - createPractice.ts: POST /api/v1/practices\n   - getPractice.ts: GET /api/v1/practices/:id\n   - getPractices.ts: GET /api/v1/practices (밴드 필터 지원)\n   - deletePractice.ts: DELETE /api/v1/practices/:id\n   - updateSchedule.ts: PATCH /api/v1/practices/:id/schedule\n   - updateVenue.ts: PATCH /api/v1/practices/:id/venue\n   - createSession.ts: POST /api/v1/practices/:id/sessions\n   - deleteSession.ts: DELETE /api/v1/practices/:id/sessions/:sessionId\n   - addParticipant.ts: POST /api/v1/practices/:id/participants\n   - assignSession.ts: POST /api/v1/practices/:id/sessions/:sessionId/assign\n   - unassignSession.ts: DELETE /api/v1/practices/:id/sessions/:sessionId/assign\n\n4. src/domain/practice-song/types/req.ts:\n   - UpsertRefLinkRequest: refLink\n\n5. src/domain/practice-song/api/:\n   - upsertRefLink.ts: PUT /api/v1/practice-songs/:songId/ref-link\n   - deleteRefLink.ts: DELETE /api/v1/practice-songs/:songId/ref-link",
             "status": "pending",
-            "testStrategy": "각 API 함수의 타입 추론이 올바른지 TypeScript 컴파일로 확인. Mock 서버로 요청/응답 형식 검증. pnpm typecheck 통과 확인."
+            "testStrategy": "각 API 함수의 타입 추론이 올바른지 TypeScript 컴파일로 확인. Mock 서버로 요청/응답 형식 검증. pnpm typecheck 통과 확인.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -470,7 +482,8 @@
             ],
             "details": "1. src/domain/practice/hooks/ 생성:\n   - usePractice.ts: useQuery로 단일 합주 조회 (queryKeys.practice.detail 활용)\n   - usePractices.ts: useInfiniteCursor로 합주 목록 조회 (밴드 필터 지원, queryKeys.practice.list 활용)\n   - useCreatePractice.ts: useMutation + onSuccess에서 practice list invalidate\n   - useDeletePractice.ts: useMutation + onSuccess에서 practice list invalidate + 성공 토스트\n   - useUpdateSchedule.ts: useMutation + 낙관적 업데이트 (queryClient.setQueryData)\n   - useUpdateVenue.ts: useMutation + 낙관적 업데이트\n   - useCreateSession.ts: useMutation + practice detail invalidate\n   - useDeleteSession.ts: useMutation + practice detail invalidate\n   - useAddParticipant.ts: useMutation + practice detail invalidate\n   - useAssignSession.ts: useMutation + 낙관적 업데이트 (세션 배정 즉시 반영)\n   - useUnassignSession.ts: useMutation + 낙관적 업데이트\n\n2. src/domain/practice-song/hooks/ 생성:\n   - useUpsertSongRefLink.ts: useMutation\n   - useDeleteSongRefLink.ts: useMutation\n\n3. 낙관적 업데이트 구현 시:\n   - onMutate에서 이전 데이터 스냅샷 저장\n   - queryClient.setQueryData로 UI 즉시 반영\n   - onError에서 롤백\n   - onSettled에서 invalidate\n\n4. useToast 훅을 활용하여 성공/실패 토스트 표시",
             "status": "pending",
-            "testStrategy": "Vitest로 useMutation 훅의 낙관적 업데이트 로직 단위 테스트. 캐시 무효화 및 롤백 동작 검증. useAssignSession의 낙관적 업데이트 시나리오 테스트."
+            "testStrategy": "Vitest로 useMutation 훅의 낙관적 업데이트 로직 단위 테스트. 캐시 무효화 및 롤백 동작 검증. useAssignSession의 낙관적 업데이트 시나리오 테스트.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -481,7 +494,8 @@
             ],
             "details": "1. src/domain/practice/components/ 생성:\n\n2. PracticeCard.tsx:\n   - Card 컴포넌트 기반\n   - 제목, 곡 정보, 일정(PracticeScheduleBadge), 장소 표시\n   - interactive 옵션으로 클릭 시 상세 이동\n\n3. PracticeScheduleBadge.tsx:\n   - Badge 컴포넌트 기반\n   - startAt, durationMinutes를 받아 '4월 25일 14:00 (90분)' 형식 표시\n   - formatKst 헬퍼 활용\n\n4. PracticeVenueInline.tsx:\n   - 장소 인라인 편집 컴포넌트\n   - 읽기 모드: 텍스트 + 편집 아이콘\n   - 편집 모드: Input + 저장/취소 버튼\n   - useUpdateVenue 훅 연동\n\n5. SessionChip.tsx:\n   - Chip 컴포넌트의 session prop 활용\n   - SessionType별 색상 (VOCAL: 250, GUITAR: 40, BASS: 10, DRUM: 140 등 기존 정의 활용)\n   - label 텍스트 표시\n\n6. SessionRow.tsx:\n   - 세션 정보 + 배정 상태 표시\n   - SessionChip + 배정된 멤버 이름 또는 '미배정'\n   - SessionAssignButton 포함\n   - 세션 삭제 버튼 (권한 있을 때만)\n\n7. SessionAssignButton.tsx:\n   - 미배정 시: '배정하기' 버튼 → 참여자 선택 드롭다운\n   - 배정됨 시: '해제' 버튼\n   - useAssignSession, useUnassignSession 훅 연동\n   - 낙관적 업데이트로 즉각 반영\n\n8. SongRefLinkEditor.tsx:\n   - 곡 참조 링크 인라인 편집\n   - 링크 있으면: 링크 표시 + 편집/삭제 버튼\n   - 링크 없으면: 추가 버튼\n   - useUpsertSongRefLink, useDeleteSongRefLink 훅 연동",
             "status": "pending",
-            "testStrategy": "Storybook 또는 /playground에서 각 컴포넌트 시각적 확인. SessionChip의 SessionType별 색상 렌더링 테스트. SessionAssignButton 인터랙션 수동 테스트."
+            "testStrategy": "Storybook 또는 /playground에서 각 컴포넌트 시각적 확인. SessionChip의 SessionType별 색상 렌더링 테스트. SessionAssignButton 인터랙션 수동 테스트.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -493,7 +507,8 @@
             ],
             "details": "1. src/app/(main)/practices/page.tsx 수정:\n   - PageTitle 컴포넌트 활용\n   - Suspense + Skeleton으로 로딩 상태\n   - usePractices 훅으로 목록 조회 (무한 스크롤)\n   - PracticeCard로 목록 렌더링\n   - EmptyState: '등록된 합주가 없습니다' + 새 합주 만들기 버튼\n   - 밴드 필터 (선택사항)\n   - FAB 또는 헤더에 '새 합주' 버튼 → ROUTES.PRACTICE_NEW로 이동\n\n2. src/app/(main)/practices/new/page.tsx 생성:\n   - RSC로 페이지 구조\n   - PracticeCreateForm.client.tsx 클라이언트 컴포넌트 임포트\n\n3. src/domain/practice/components/PracticeCreateForm.client.tsx 생성:\n   - 'use client' 선언\n   - react-hook-form + zod 스키마\n   - 필드: title(선택), song(songId - Select 또는 검색), venue(선택), startAt(datetime-local), durationMinutes(number)\n   - CreatePracticeRequest에 맞춰 폼 데이터 변환\n   - useCreatePractice 훅 연동\n   - 성공 시: 토스트 + ROUTES.PRACTICE_DETAIL(practiceId)로 리다이렉트\n   - 실패 시: 에러 메시지 표시\n\n4. zod 스키마 (src/domain/practice/types/schema.ts):\n   - title: z.string().max(100).optional()\n   - song: z.string().min(1, '곡을 선택해주세요')\n   - venue: z.string().max(200).optional()\n   - startAt: z.string().datetime 또는 커스텀 검증\n   - durationMinutes: z.number().min(15).max(480)",
             "status": "pending",
-            "testStrategy": "합주 생성 → 목록에 새 항목 표시 → 클릭 시 상세로 이동 플로우 수동 테스트. 폼 유효성 검사(빈 곡, 잘못된 시간 등) 동작 확인. EmptyState 표시 조건 확인."
+            "testStrategy": "합주 생성 → 목록에 새 항목 표시 → 클릭 시 상세로 이동 플로우 수동 테스트. 폼 유효성 검사(빈 곡, 잘못된 시간 등) 동작 확인. EmptyState 표시 조건 확인.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -505,12 +520,13 @@
             ],
             "details": "1. src/app/(main)/practices/[practiceId]/page.tsx 생성:\n   - RSC로 practiceId params 추출\n   - Suspense + Skeleton으로 로딩\n   - PracticeDetail.client.tsx 클라이언트 컴포넌트 임포트\n\n2. src/domain/practice/components/PracticeDetail.client.tsx 생성:\n   - 'use client' 선언\n   - usePractice(practiceId) 훅으로 상세 조회\n   - ErrorState/Loading 상태 처리\n\n3. 일정 섹션:\n   - PracticeScheduleBadge로 현재 일정 표시\n   - 편집 버튼 → 모달 또는 인라인 폼\n   - useUpdateSchedule 훅 연동\n\n4. 장소 섹션:\n   - PracticeVenueInline 컴포넌트 사용\n   - 인라인 편집 지원\n\n5. 세션 편성 섹션:\n   - '세션 추가' 버튼 → 모달(label, type 선택)\n   - useCreateSession 훅 연동\n   - 세션 목록: SessionRow 컴포넌트로 렌더링\n   - 각 세션에 배정/해제 버튼 (SessionAssignButton)\n   - 세션 삭제: useConfirmDialog + useDeleteSession\n\n6. 참여자 섹션:\n   - 현재 참여자 목록 표시\n   - '참여자 추가' 버튼 → 멤버 선택 드롭다운\n   - useAddParticipant 훅 연동\n\n7. 곡 참조 링크 섹션:\n   - SongRefLinkEditor 컴포넌트 사용\n   - practice.song 정보 표시\n\n8. 삭제 기능:\n   - '합주 삭제' 버튼 (danger variant)\n   - useConfirmDialog로 확인 다이얼로그\n   - useDeletePractice 훅 연동\n   - 성공 시: 토스트 + ROUTES.PRACTICES로 리다이렉트\n\n9. 권한 체크:\n   - 편집/삭제 버튼은 LEADER/ADMIN 권한 시에만 표시 (향후 useBandRole 연동)",
             "status": "pending",
-            "testStrategy": "합주 생성 → 세션 3개 추가 → 2명이 각각 세션 배정 → 장소 변경 → 곡 링크 추가/수정 → 삭제 플로우 수동 테스트. 세션 배정 낙관적 업데이트 즉시 반영 확인. 삭제 확인 다이얼로그 동작 확인."
+            "testStrategy": "합주 생성 → 세션 3개 추가 → 2명이 각각 세션 배정 → 장소 변경 → 곡 링크 추가/수정 → 삭제 플로우 수동 테스트. 세션 배정 낙관적 업데이트 즉시 반영 확인. 삭제 확인 다이얼로그 동작 확인.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "공연(Performance) 도메인 구현",
         "description": "공연 생성/목록(밴드 필터)/상세 조회/수정/삭제, 공연 합주 추가(신규 생성/기존 연결), 합주 연결 해제 기능을 구현합니다. PerformanceManager 권한 체크를 적용합니다.",
         "details": "1. src/domain/performance/types/req.ts:\n```ts\nexport interface CreatePerformanceRequest {\n  title: string;\n  bandIds?: string[];\n  startAt: string;\n  durationMinutes: number;\n  venue?: string;\n}\n\nexport interface UpdatePerformanceRequest {\n  title?: string;\n  startAt?: string;\n  durationMinutes?: number;\n  venue?: string;\n}\n\nexport interface AddPerformancePracticeRequest {\n  title?: string;\n  songId: string;\n  startAt: string;\n  durationMinutes: number;\n  venue?: string;\n}\n\nexport interface BatchAddPerformancePracticeRequest {\n  practiceIds: string[];\n}\n```\n\n2. src/domain/performance/types/res.ts:\n```ts\nexport interface CreatePerformanceResponse {\n  performanceId: string;\n  title: string;\n}\n\nexport interface PerformanceListResponse {\n  performanceId: string;\n  title: string;\n  startAt: string;\n  durationMinutes: number;\n  venue?: string;\n}\n\nexport interface PerformanceDetailResponse {\n  performanceId: string;\n  title: string;\n  startAt: string;\n  durationMinutes: number;\n  venue?: string;\n  bandIds: string[];\n  managerIds: number[];\n  practiceIds: string[];\n}\n\nexport interface PerformancePracticeResponse {\n  performancePracticeId: string;\n  practiceId: string;\n}\n```\n\n3. src/domain/performance/api/:\n- createPerformance.ts, listPerformances.ts, getPerformance.ts\n- updatePerformance.ts, deletePerformance.ts\n- addPerformancePractice.ts, batchAddPerformancePractices.ts, removePerformancePractice.ts\n\n4. src/domain/performance/hooks/:\n- useCreatePerformance.ts, usePerformanceList.ts (무한), usePerformanceDetail.ts\n- useUpdatePerformance.ts, useDeletePerformance.ts\n- useAddPerformancePractice.ts, useBatchAddPerformancePractices.ts, useRemovePerformancePractice.ts\n\n5. src/global/auth/useIsPerformanceManager.ts - 현재 유저가 공연 매니저인지 확인 훅\n\n6. src/domain/performance/components/:\n- PerformanceCard.tsx - 목록용\n- PerformanceBandChips.tsx - 참여 밴드 칩들\n- PerformancePracticeRow.tsx - 연결된 합주 행 + 연결 해제 버튼\n\n7. src/app/(main)/performances/page.tsx:\n- 무한 스크롤 목록\n- 쿼리스트링 bandId로 필터링 지원\n- 생성 FAB\n\n8. src/app/(main)/performances/new/page.tsx + PerformanceCreateForm.client.tsx:\n- 제목/밴드 선택(multi-select)/일정/장소 입력\n\n9. src/app/(main)/performances/[performanceId]/page.tsx:\n- 공연 정보 표시 + 수정 버튼(매니저만)\n- 참여 밴드 칩 목록\n- 연결된 합주 목록 + 연결 해제 버튼(매니저만)\n- 합주 연결 모달: 기존 합주 선택 또는 신규 합주 생성\n- 삭제 버튼(매니저만, 확인 다이얼로그)",
@@ -528,7 +544,8 @@
             "dependencies": [],
             "details": "1. src/domain/performance/types/req.ts 생성:\n   - CreatePerformanceRequest: { title: string; bandIds?: string[]; startAt: string; durationMinutes: number; venue?: string }\n   - UpdatePerformanceRequest: { title?: string; startAt?: string; durationMinutes?: number; venue?: string }\n   - AddPerformancePracticeRequest: { title?: string; songId: string; startAt: string; durationMinutes: number; venue?: string }\n   - BatchAddPerformancePracticeRequest: { practiceIds: string[] }\n\n2. src/domain/performance/types/res.ts 생성:\n   - CreatePerformanceResponse: { performanceId: string; title: string }\n   - PerformanceListResponse: { performanceId: string; title: string; startAt: string; durationMinutes: number; venue?: string }\n   - PerformanceDetailResponse: { performanceId: string; title: string; startAt: string; durationMinutes: number; venue?: string; bandIds: string[]; managerIds: number[]; practiceIds: string[] }\n   - PerformancePracticeResponse: { performancePracticeId: string; practiceId: string }\n\n3. src/domain/performance/api/ 디렉토리에 API 함수들 구현:\n   - createPerformance.ts: POST /api/v1/performances\n   - getPerformanceList.ts: GET /api/v1/performances (커서 페이징, bandId 쿼리 파라미터)\n   - getPerformanceDetail.ts: GET /api/v1/performances/{performanceId}\n   - updatePerformance.ts: PATCH /api/v1/performances/{performanceId}\n   - deletePerformance.ts: DELETE /api/v1/performances/{performanceId}\n   - addPerformancePractice.ts: POST /api/v1/performances/{performanceId}/practices\n   - batchAddPerformancePractices.ts: POST /api/v1/performances/{performanceId}/practices/batch\n   - removePerformancePractice.ts: DELETE /api/v1/performances/{performanceId}/practices/{practiceId}\n\n기존 apiClient (src/global/api/apiClient.ts) 패턴을 따르며, CursorResponse<T, C> 타입 활용",
             "status": "pending",
-            "testStrategy": "각 API 함수에 대해 TypeScript 컴파일 검증 후, 실제 백엔드 연동 시 요청/응답 형식이 올바른지 개발자 도구 네트워크 탭에서 확인"
+            "testStrategy": "각 API 함수에 대해 TypeScript 컴파일 검증 후, 실제 백엔드 연동 시 요청/응답 형식이 올바른지 개발자 도구 네트워크 탭에서 확인",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -539,7 +556,8 @@
             ],
             "details": "1. src/domain/performance/hooks/ 디렉토리 생성 및 훅 구현:\n   - useCreatePerformance.ts: useMutation 활용, 성공 시 목록 캐시 무효화, useToast로 피드백\n   - usePerformanceList.ts: useInfiniteCursor 활용 (queryKeys.performance.list 사용), bandId 필터 옵션 지원\n   - usePerformanceDetail.ts: useQuery 활용 (queryKeys.performance.detail 사용)\n   - useUpdatePerformance.ts: useMutation, 성공 시 상세 캐시 무효화\n   - useDeletePerformance.ts: useMutation, 확인 후 목록 캐시 무효화\n   - useAddPerformancePractice.ts: useMutation, 상세 캐시 무효화\n   - useBatchAddPerformancePractices.ts: useMutation, 상세 캐시 무효화\n   - useRemovePerformancePractice.ts: useMutation, 낙관적 업데이트 적용\n   - index.ts: 모든 훅 re-export\n\n2. src/global/auth/useIsPerformanceManager.ts 생성:\n   - performanceId를 받아 현재 유저가 해당 공연의 매니저인지 확인\n   - PerformanceDetailResponse의 managerIds와 현재 유저 ID 비교\n   - 로딩/에러 상태 포함한 { isManager: boolean; isLoading: boolean } 반환\n\n기존 useInfiniteCursor (src/hooks/useInfiniteCursor.ts) 및 queryKeys (src/global/config/queryKeys.ts) 패턴 준수",
             "status": "pending",
-            "testStrategy": "목록 훅의 무한 스크롤 동작 확인, 뮤테이션 훅의 캐시 무효화 및 낙관적 업데이트 동작을 React Query Devtools로 검증"
+            "testStrategy": "목록 훅의 무한 스크롤 동작 확인, 뮤테이션 훅의 캐시 무효화 및 낙관적 업데이트 동작을 React Query Devtools로 검증",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -550,7 +568,8 @@
             ],
             "details": "1. src/domain/performance/components/PerformanceCard.tsx:\n   - PerformanceListResponse 타입 props\n   - Card 컴포넌트(src/components/ui/card.tsx) 활용, interactive: true\n   - 제목, 일정(formatKst 사용), 장소 표시\n   - D-day 뱃지 (7일 이내: danger, 14일 이내: amber)\n   - 클릭 시 상세 페이지 이동 (ROUTES.PERFORMANCE_DETAIL 사용)\n\n2. src/domain/performance/components/PerformanceBandChips.tsx:\n   - bandIds: string[] props\n   - Chip 컴포넌트(src/components/ui/chip.tsx) 활용\n   - 각 밴드명 표시 (밴드 정보 조회 필요 시 별도 로직)\n\n3. src/domain/performance/components/PerformancePracticeRow.tsx:\n   - practiceId, performanceId props\n   - 연결된 합주 정보 표시 (제목, 곡명 등)\n   - 연결 해제 버튼 (매니저만 표시, useIsPerformanceManager 활용)\n   - 클릭 시 합주 상세로 이동 옵션\n\n4. src/domain/performance/components/index.ts: 모든 컴포넌트 re-export\n\n기존 Card, Chip, Badge 컴포넌트 스타일 및 formatKst (src/lib/date.ts) 활용",
             "status": "pending",
-            "testStrategy": "Storybook 또는 /playground 페이지에서 각 컴포넌트의 다양한 상태(로딩, 데이터 있음/없음, D-day 표시) 시각적 확인"
+            "testStrategy": "Storybook 또는 /playground 페이지에서 각 컴포넌트의 다양한 상태(로딩, 데이터 있음/없음, D-day 표시) 시각적 확인",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -562,7 +581,8 @@
             ],
             "details": "1. src/app/(main)/performances/page.tsx 수정:\n   - 서버 컴포넌트로 유지, 클라이언트 컴포넌트 분리\n   - PageTitle + 생성 FAB 버튼 (ROUTES.PERFORMANCE_NEW 링크)\n   - 쿼리스트링 bandId로 필터링 지원 (useSearchParams)\n\n2. src/app/(main)/performances/PerformanceList.client.tsx 생성:\n   - 'use client' 선언\n   - usePerformanceList 훅으로 무한 스크롤 목록\n   - PerformanceCard 컴포넌트로 각 항목 렌더링\n   - EmptyState (공연 없음), Skeleton (로딩) 처리\n   - 하단 스크롤 감지하여 fetchNextPage 호출\n\n3. src/app/(main)/performances/new/page.tsx 생성:\n   - 서버 컴포넌트, PageTitle '공연 생성'\n\n4. src/app/(main)/performances/new/PerformanceCreateForm.client.tsx 생성:\n   - 'use client' 선언\n   - react-hook-form + zod 스키마로 폼 검증\n   - 필드: 제목(필수), 밴드 선택(multi-select), 일시(datetime-local), 소요 시간, 장소\n   - useCreatePerformance 훅으로 생성 요청\n   - 성공 시 ROUTES.PERFORMANCES로 리다이렉트 + 토스트\n\n기존 Field (src/components/ui/field.tsx), Button, Dialog 컴포넌트 활용",
             "status": "pending",
-            "testStrategy": "공연 생성 폼 입력 → 검증 오류 메시지 확인 → 유효한 데이터로 생성 요청 → 목록 페이지 이동 및 생성된 공연 표시 확인"
+            "testStrategy": "공연 생성 폼 입력 → 검증 오류 메시지 확인 → 유효한 데이터로 생성 요청 → 목록 페이지 이동 및 생성된 공연 표시 확인",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -574,12 +594,13 @@
             ],
             "details": "1. src/app/(main)/performances/[performanceId]/page.tsx 생성:\n   - 서버 컴포넌트, params에서 performanceId 추출\n   - Suspense 경계로 클라이언트 컴포넌트 래핑\n\n2. src/app/(main)/performances/[performanceId]/PerformanceDetail.client.tsx:\n   - 'use client' 선언\n   - usePerformanceDetail 훅으로 데이터 조회\n   - 공연 정보 표시: 제목, 일정, 장소, 소요 시간\n   - PerformanceBandChips로 참여 밴드 목록 표시\n   - 매니저 목록 Avatar + 이름 표시\n   - 연결된 합주 목록 (PerformancePracticeRow)\n   - 수정/삭제 버튼 (useIsPerformanceManager로 권한 체크)\n\n3. 수정 모달/바텀시트 구현:\n   - Dialog 또는 BottomSheet 활용\n   - useUpdatePerformance 훅으로 업데이트\n   - 성공 시 토스트 + 캐시 갱신\n\n4. 삭제 기능:\n   - useConfirmDialog로 확인 다이얼로그\n   - useDeletePerformance 훅으로 삭제\n   - 성공 시 ROUTES.PERFORMANCES로 리다이렉트 + 토스트\n\n5. 합주 연결 모달:\n   - Dialog로 모달 구현\n   - 탭 2개: '기존 합주 선택' / '새 합주 생성'\n   - 기존 합주 선택: 체크박스 리스트 + useBatchAddPerformancePractices\n   - 새 합주 생성: AddPerformancePracticeRequest 폼 + useAddPerformancePractice\n\n기존 Dialog, BottomSheet, useConfirmDialog, useToast 활용",
             "status": "pending",
-            "testStrategy": "공연 상세 접근 → 정보 확인 → 수정 버튼 클릭(매니저만 표시) → 수정 완료 → 기존 합주 3개 연결 → 합주 목록 확인 → 합주 연결 해제 → 공연 삭제 확인 다이얼로그 → 삭제 후 목록 이동 플로우 수동 테스트"
+            "testStrategy": "공연 상세 접근 → 정보 확인 → 수정 버튼 클릭(매니저만 표시) → 수정 완료 → 기존 합주 3개 연결 → 합주 목록 확인 → 합주 연결 해제 → 공연 삭제 확인 다이얼로그 → 삭제 후 목록 이동 플로우 수동 테스트",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "홈 대시보드 및 최종 마무리",
         "description": "홈 대시보드(/home)에 가까운 합주, 내 밴드, 예정 공연 요약을 표시합니다. 전체 화면의 Skeleton/EmptyState/ErrorState 적용을 감사하고, 접근성 및 E2E 테스트를 확장합니다.",
         "details": "1. src/app/(main)/home/page.tsx:\n```tsx\nimport { Suspense } from 'react';\nimport { UpcomingPractices } from '@/domain/practice/components/UpcomingPractices';\nimport { MyBands } from '@/domain/band/components/MyBands';\nimport { UpcomingPerformances } from '@/domain/performance/components/UpcomingPerformances';\nimport { Skeleton } from '@/components/ui/skeleton';\n\nexport default function HomePage() {\n  return (\n    <div className=\"space-y-6 p-4\">\n      <section>\n        <h2 className=\"text-lg font-semibold mb-3\">가까운 합주</h2>\n        <Suspense fallback={<Skeleton className=\"h-32\" />}>\n          <UpcomingPractices limit={3} />\n        </Suspense>\n      </section>\n      <section>\n        <h2 className=\"text-lg font-semibold mb-3\">내 밴드</h2>\n        <Suspense fallback={<Skeleton className=\"h-24\" />}>\n          <MyBands />\n        </Suspense>\n      </section>\n      <section>\n        <h2 className=\"text-lg font-semibold mb-3\">예정 공연</h2>\n        <Suspense fallback={<Skeleton className=\"h-32\" />}>\n          <UpcomingPerformances limit={2} />\n        </Suspense>\n      </section>\n    </div>\n  );\n}\n```\n\n2. src/domain/practice/components/UpcomingPractices.tsx - 기존 훅 재사용\n\n3. src/domain/band/components/MyBands.tsx - 내가 속한 밴드 목록 (새 API 필요 시 백엔드 요청)\n\n4. src/domain/performance/components/UpcomingPerformances.tsx - 기존 훅 재사용\n\n5. 전체 화면 감사(audit):\n- 모든 목록 페이지에 Skeleton, EmptyState, ErrorState 적용 확인\n- 누락된 곳 수정\n\n6. 접근성 감사:\n- 모든 Dialog/BottomSheet에 포커스 트랩 확인\n- 버튼/링크에 aria-label 확인\n- 키보드 내비게이션(Tab, Enter, Escape) 테스트\n\n7. Playwright E2E 테스트 확장 (tests/e2e/):\n- auth.spec.ts: 회원가입 → 로그인 → 마이페이지 → 로그아웃\n- band.spec.ts: 밴드 생성 → 상세 조회 → 가입 신청 → 승인\n- practice.spec.ts: 합주 생성 → 세션 추가 → 배정 → 삭제\n- performance.spec.ts: 공연 생성 → 합주 연결 → 삭제\n- home.spec.ts: 홈 대시보드 3개 섹션 렌더링 확인\n\n8. CI 그린 확인: pnpm lint, typecheck, format:check, test, build, test:e2e 모두 통과\n\n9. src/app/error.tsx, src/app/not-found.tsx 최종 확인",
@@ -597,7 +618,8 @@
             "dependencies": [],
             "details": "1. src/domain/practice/, src/domain/band/, src/domain/performance/ 디렉토리 구조 생성\n2. 각 도메인별 types/req.ts, types/res.ts 파일 작성 (PracticeInfoResponse, BandInfoResponse, PerformanceInfoResponse 등)\n3. 각 도메인별 api/ 함수 구현:\n   - practice/api/getPractices.ts (가까운 합주 목록)\n   - band/api/getMyBands.ts (내 밴드 목록)\n   - performance/api/getPerformances.ts (예정 공연 목록)\n4. 각 도메인별 hooks/ 구현:\n   - practice/hooks/useUpcomingPractices.ts\n   - band/hooks/useMyBands.ts\n   - performance/hooks/useUpcomingPerformances.ts\n5. global/config/queryKeys.ts의 기존 쿼리 키 구조 활용\n6. useInfiniteCursor 훅 또는 useQuery 적절히 활용",
             "status": "pending",
-            "testStrategy": "각 도메인 훅이 올바르게 데이터를 반환하는지 단위 테스트 작성, MSW로 API 모킹하여 로딩/성공/에러 상태 테스트"
+            "testStrategy": "각 도메인 훅이 올바르게 데이터를 반환하는지 단위 테스트 작성, MSW로 API 모킹하여 로딩/성공/에러 상태 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -608,7 +630,8 @@
             ],
             "details": "1. src/domain/practice/components/UpcomingPractices.tsx 구현:\n   - useUpcomingPractices(limit: 3) 훅 사용\n   - 로딩 시 Skeleton, 데이터 없을 때 EmptyState, 에러 시 ErrorState 적용\n   - PracticeCard 또는 간단한 리스트 아이템 렌더링\n2. src/domain/band/components/MyBands.tsx 구현:\n   - useMyBands() 훅 사용\n   - 밴드 카드 리스트 또는 가로 스크롤 형태\n3. src/domain/performance/components/UpcomingPerformances.tsx 구현:\n   - useUpcomingPerformances(limit: 2) 훅 사용\n   - 공연 카드 렌더링\n4. src/app/(main)/home/page.tsx 업데이트:\n   - Suspense 경계 내에 각 위젯 배치\n   - 섹션별 제목과 간격 적용\n5. 각 위젯 컴포넌트는 use client 지시어 사용",
             "status": "pending",
-            "testStrategy": "각 위젯 컴포넌트의 세 가지 상태(로딩/빈 상태/성공) 렌더링 테스트, 홈 페이지 통합 시 올바른 섹션 구조 확인"
+            "testStrategy": "각 위젯 컴포넌트의 세 가지 상태(로딩/빈 상태/성공) 렌더링 테스트, 홈 페이지 통합 시 올바른 섹션 구조 확인",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -619,7 +642,8 @@
             ],
             "details": "1. 감사 대상 페이지:\n   - src/app/(main)/bands/page.tsx\n   - src/app/(main)/practices/page.tsx\n   - src/app/(main)/performances/page.tsx\n   - src/app/(main)/me/page.tsx\n2. 각 페이지에서 확인할 사항:\n   - 데이터 로딩 중 Skeleton 표시 여부\n   - 데이터가 비어있을 때 EmptyState 컴포넌트 사용 여부 (적절한 아이콘, 제목, 설명, 액션 버튼)\n   - 에러 발생 시 ErrorState 컴포넌트 사용 여부 (재시도 버튼 포함)\n3. src/app/error.tsx 전역 에러 바운더리 페이지 구현:\n   - ErrorState 컴포넌트 활용\n   - reset 함수로 재시도 기능 제공\n4. src/app/not-found.tsx 404 페이지 구현:\n   - EmptyState 스타일로 구현\n   - 홈으로 돌아가기 버튼\n5. 누락된 곳 수정 및 일관성 확보",
             "status": "pending",
-            "testStrategy": "각 페이지의 로딩/빈 상태/에러 상태를 수동으로 트리거하여 UI 확인, error.tsx와 not-found.tsx 렌더링 테스트"
+            "testStrategy": "각 페이지의 로딩/빈 상태/에러 상태를 수동으로 트리거하여 UI 확인, error.tsx와 not-found.tsx 렌더링 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -630,7 +654,8 @@
             ],
             "details": "1. Dialog/BottomSheet 접근성 확인:\n   - components/ui/dialog.tsx, components/ui/bottom-sheet.tsx에 포커스 트랩 적용 여부\n   - ESC 키로 닫기 동작 확인\n   - 열릴 때 첫 번째 포커스 가능 요소로 포커스 이동\n   - 닫힐 때 트리거 요소로 포커스 복귀\n2. 버튼/링크 접근성:\n   - 아이콘만 있는 버튼에 aria-label 적용 확인\n   - 비활성화된 버튼에 aria-disabled 적용\n3. 네비게이션 접근성:\n   - Tab 키로 모든 인터랙티브 요소 접근 가능\n   - Enter/Space로 버튼 활성화\n   - 현재 페이지 표시 (aria-current)\n4. 폼 접근성:\n   - 입력 필드와 레이블 연결 (htmlFor/id)\n   - 에러 메시지 연결 (aria-describedby)\n5. 수정이 필요한 컴포넌트 업데이트",
             "status": "pending",
-            "testStrategy": "키보드만으로 전체 앱 네비게이션 테스트, 스크린 리더(VoiceOver/NVDA)로 주요 플로우 테스트, axe-core 또는 Lighthouse 접근성 점수 확인"
+            "testStrategy": "키보드만으로 전체 앱 네비게이션 테스트, 스크린 리더(VoiceOver/NVDA)로 주요 플로우 테스트, axe-core 또는 Lighthouse 접근성 점수 확인",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -641,21 +666,20 @@
             ],
             "details": "1. tests/e2e/ 디렉토리 생성\n2. E2E 테스트 파일 작성:\n   - tests/e2e/auth.spec.ts: 회원가입 → 로그인 → 마이페이지 → 로그아웃 플로우\n   - tests/e2e/band.spec.ts: 밴드 생성 → 상세 조회 → 가입 신청 → 승인 플로우\n   - tests/e2e/practice.spec.ts: 합주 생성 → 세션 추가 → 배정 → 삭제 플로우\n   - tests/e2e/performance.spec.ts: 공연 생성 → 합주 연결 → 삭제 플로우\n   - tests/e2e/home.spec.ts: 홈 대시보드 3개 섹션 렌더링 확인\n3. 테스트 유틸리티 설정:\n   - tests/e2e/fixtures/ 디렉토리에 공통 fixture 정의\n   - 로그인 상태 유지를 위한 storageState 활용\n4. CI 검증:\n   - pnpm lint 통과 확인\n   - pnpm typecheck 통과 확인\n   - pnpm format:check 통과 확인\n   - pnpm test 통과 확인\n   - pnpm build 통과 확인\n   - pnpm test:e2e 통과 확인\n5. 실패하는 테스트 수정",
             "status": "pending",
-            "testStrategy": "로컬에서 pnpm test:e2e로 전체 E2E 테스트 실행 확인, GitHub Actions CI에서 모든 체크 그린 상태 확인"
+            "testStrategy": "로컬에서 pnpm test:e2e로 전체 E2E 테스트 실행 확인, GitHub Actions CI에서 모든 체크 그린 상태 확인",
+            "parentId": "undefined"
           }
         ]
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-23T16:17:02.054Z",
+      "lastModified": "2026-04-23T22:14:29.769Z",
       "taskCount": 10,
-      "completedCount": 5,
+      "completedCount": 6,
       "tags": [
         "master"
-      ],
-      "created": "2026-04-23T16:28:19.672Z",
-      "description": "Tasks for master context"
+      ]
     }
   }
 }
