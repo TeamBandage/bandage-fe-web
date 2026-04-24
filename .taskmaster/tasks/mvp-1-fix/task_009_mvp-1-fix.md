@@ -2,9 +2,9 @@
 
 **Title:** 모바일 반응형 감사 및 회귀 방지 테스트 확장
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 8
+**Dependencies:** 8 ✓
 
 **Priority:** medium
 
@@ -43,7 +43,7 @@
 
 ### 9.1. 컴포넌트 반응형 패딩/타이포그래피 감사 및 수정
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 Container, PageTitle, Header 컴포넌트의 반응형 패딩과 타이포그래피를 PRD 기준에 맞게 감사하고 수정한다.
@@ -72,7 +72,7 @@ Container, PageTitle, Header 컴포넌트의 반응형 패딩과 타이포그래
 
 ### 9.2. 터치 타겟 감사 및 접근성 수정
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 9.1  
 
 모든 인터랙티브 요소가 최소 40x40px 터치 타겟을 충족하는지 감사하고 미달 요소를 수정한다.
@@ -101,7 +101,7 @@ Container, PageTitle, Header 컴포넌트의 반응형 패딩과 타이포그래
 
 ### 9.3. Playwright E2E 뷰포트 확장 및 도메인별 해피패스 테스트 추가
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 9.1, 9.2  
 
 Playwright 설정에 데스크톱(1440x900)+모바일(375x812) 뷰포트를 추가하고, 6개 도메인별 해피패스 시나리오를 구현한다.
@@ -127,7 +127,7 @@ Playwright 설정에 데스크톱(1440x900)+모바일(375x812) 뷰포트를 추�
 
 ### 9.4. /playground 페이지 토큰/컴포넌트 매트릭스 완성
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 9.1  
 
 /playground 페이지에 디자인 토큰 매트릭스(색상, 간격, 타이포, 반경)와 컴포넌트 variant 매트릭스(Button, Badge, Card, Chip, Dialog 등)를 완성한다.
@@ -154,7 +154,7 @@ Playwright 설정에 데스크톱(1440x900)+모바일(375x812) 뷰포트를 추�
 
 ### 9.5. MVP-1 반응형 감사 리포트 작성
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 9.1, 9.2, 9.3, 9.4  
 
 .taskmaster/report/mvp-1-fix-audit-YYYY-MM-DD.md 파일로 시각 회귀, 남은 이슈, 성능 참고 점수를 정리한 최종 감사 리포트를 작성한다.

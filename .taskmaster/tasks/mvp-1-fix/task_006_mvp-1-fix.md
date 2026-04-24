@@ -2,9 +2,9 @@
 
 **Title:** Home 화면 재구성 (StatCard 그리드 + 섹션 레이아웃)
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 3 ✓, 5
+**Dependencies:** 3 ✓, 5 ✓
 
 **Priority:** medium
 
@@ -44,7 +44,7 @@
 
 ### 6.1. StatCard 컴포넌트 구현 (src/components/ui/stat-card.tsx)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 디자인 시스템의 Stat 컴포넌트를 React/Tailwind로 구현한다. IconTile + 수치/라벨 조합의 통계 카드 컴포넌트를 생성한다.
@@ -61,7 +61,7 @@
 
 ### 6.2. SectionTitle 컴포넌트 구현 (src/components/layout/section-title.tsx)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 각 섹션 헤더에 사용할 SectionTitle 컴포넌트를 구현한다. 제목 텍스트와 우측 action 슬롯을 지원한다.
@@ -79,7 +79,7 @@
 
 ### 6.3. 홈 통계 데이터 훅 구현 (useHomeStats)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 홈 화면의 StatCard에 표시할 통계 데이터(소속 밴드 수, 예정 합주 수, 예정 공연 수, 참여 세션 수)를 집계하는 커스텀 훅을 구현한다.
@@ -96,7 +96,7 @@
 
 ### 6.4. Home 페이지 레이아웃 재구성 (page.tsx)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 6.1, 6.2, 6.3  
 
 src/app/(main)/home/page.tsx를 디자인 원본 기준으로 재구성한다. 인사말 헤더, 4열 StatCard 그리드, 2열 섹션 그리드, 3열 공연 그리드를 구현한다.
@@ -118,7 +118,7 @@ src/app/(main)/home/page.tsx를 디자인 원본 기준으로 재구성한다. �
 
 ### 6.5. Topbar 연동 및 반응형 테스트
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 6.4  
 
 데스크톱에서 Topbar에 '홈' 타이틀이 표시되도록 연동하고, Playwright E2E 테스트로 데스크톱/모바일 양쪽 레이아웃을 검증한다.

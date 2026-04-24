@@ -2,7 +2,7 @@
 
 **Title:** 온보딩(랜딩) 페이지 구현
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 
@@ -22,7 +22,7 @@ No test strategy provided.
 
 ### 10.1. ROUTES 상수에 ONBOARDING 추가 및 기본 라우트 구조 생성
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 온보딩 페이지를 위한 라우트 상수를 추가하고 기본 페이지 파일 구조를 생성합니다.
@@ -37,7 +37,7 @@ No test strategy provided.
 
 ### 10.2. 온보딩 Hero 섹션 구현 (gradient 배경 + rings + 로고 + CTA)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 10.1  
 
 AuthBrand 스타일의 gradient 배경과 decorative rings, 로고, 타이틀, CTA 버튼을 포함한 Hero 섹션을 구현합니다.
@@ -58,7 +58,7 @@ AuthBrand 스타일의 gradient 배경과 decorative rings, 로고, 타이틀, C
 
 ### 10.3. 온보딩 Features 섹션 구현 (3대 축 기능 소개)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 10.2  
 
 합주 일정 관리, 세션 편성, 공연 연결 세 가지 핵심 기능을 소개하는 Features 섹션을 구현합니다.
@@ -82,7 +82,7 @@ AuthBrand 스타일의 gradient 배경과 decorative rings, 로고, 타이틀, C
 
 ### 10.4. middleware.ts 수정 - 비인증 루트 리다이렉트 타깃을 /onboarding으로 변경
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 10.1  
 
 기존 비인증 사용자의 보호 라우트 접근 시 /login 대신 /onboarding으로 리다이렉트하도록 middleware를 수정합니다.
@@ -100,7 +100,7 @@ AuthBrand 스타일의 gradient 배경과 decorative rings, 로고, 타이틀, C
 
 ### 10.5. Playwright E2E 테스트 작성 및 기존 테스트 업데이트
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 10.2, 10.3, 10.4  
 
 온보딩 페이지 E2E 테스트를 신규 작성하고, 기존 auth/home 테스트의 리다이렉트 기대값을 /onboarding으로 수정합니다.

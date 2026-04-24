@@ -2,9 +2,9 @@
 
 **Title:** Band 마스터-디테일 레이아웃 구현
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 3 ✓, 5
+**Dependencies:** 3 ✓, 5 ✓
 
 **Priority:** medium
 
@@ -45,7 +45,7 @@
 
 ### 7.1. 마스터-디테일 레이아웃 컴포넌트 생성 (PaneSplit, PaneList, PaneDetail)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 데스크톱 마스터-디테일 구조를 위한 핵심 레이아웃 컴포넌트들을 src/components/layout/에 구현한다. lg: 브레이크포인트(960px)에서 좌우 분할, 그 미만에서는 children만 렌더링하는 반응형 처리를 포함한다.
@@ -75,7 +75,7 @@
 
 ### 7.2. bands 라우트 layout.tsx 생성 및 반응형 분기 처리
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 7.1  
 
 src/app/(main)/bands/layout.tsx를 생성하여 데스크톱에서는 PaneSplit으로 마스터-디테일 구조를, 모바일에서는 기존 선형 구조를 유지하도록 구현한다.
@@ -102,7 +102,7 @@ src/app/(main)/bands/layout.tsx를 생성하여 데스크톱에서는 PaneSplit�
 
 ### 7.3. BandListPane 컴포넌트 구현 (검색 + 필터 + 목록)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 7.1  
 
 마스터 패널에 표시될 BandListPane 컴포넌트를 구현한다. 기존 BandsList.client.tsx의 목록 로직을 재사용하면서 검색창, 역할 필터 칩, 선택 상태 하이라이트를 추가한다.
@@ -135,7 +135,7 @@ src/app/(main)/bands/layout.tsx를 생성하여 데스크톱에서는 PaneSplit�
 
 ### 7.4. BandDetailPane 탭 구조 재구성 (정보/멤버/신청 현황)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 7.1, 7.2  
 
 기존 BandDetailContent를 PaneDetail 내부에서 동작하도록 수정하고, 데스크톱용 Topbar + 탭 레이아웃으로 재구성한다. 디자인 와이어프레임의 탭 구조(정보/멤버/신청 현황)를 적용한다.
@@ -168,7 +168,7 @@ src/app/(main)/bands/layout.tsx를 생성하여 데스크톱에서는 PaneSplit�
 
 ### 7.5. EmptyPane 컴포넌트 및 URL 직접 접근 처리
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 7.2, 7.3, 7.4  
 
 /bands 단독 접근 시 우측에 표시될 EmptyPane 컴포넌트를 구현하고, /bands/[bandId] 직접 URL 접근 시 좌측 목록과 우측 상세가 동시에 정상 렌더링되도록 보장한다.

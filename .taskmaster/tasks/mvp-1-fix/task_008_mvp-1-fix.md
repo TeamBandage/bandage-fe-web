@@ -2,9 +2,9 @@
 
 **Title:** Practice/Performance 마스터-디테일 및 Me 재구성
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 7
+**Dependencies:** 7 ✓
 
 **Priority:** medium
 
@@ -42,7 +42,7 @@
 
 ### 8.1. PaneSplit/PaneList/PaneDetail 레이아웃 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 데스크톱 마스터-디테일 레이아웃을 위한 핵심 Pane 컴포넌트들을 src/components/layout/에 구현한다.
@@ -72,7 +72,7 @@
 
 ### 8.2. Practice 마스터-디테일 레이아웃 적용
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 8.1  
 
 /practices 라우트에 PaneSplit 패턴을 적용하여 데스크톱에서 좌측 목록 + 우측 상세 구조로 렌더링한다.
@@ -101,7 +101,7 @@
 
 ### 8.3. Performance 마스터-디테일 레이아웃 적용
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 8.1  
 
 /performances 라우트에 PaneSplit 패턴을 적용하여 데스크톱에서 좌측 목록 + 우측 상세 구조로 렌더링한다.
@@ -133,7 +133,7 @@
 
 ### 8.4. Me 페이지 데스크톱 Pane-split 재구성
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 8.1  
 
 /me 페이지를 데스크톱에서 좌측 메뉴 + 우측 폼 구조로 재구성하고, 모바일에서는 기존 단일 스크롤을 유지한다.
@@ -167,7 +167,7 @@
 
 ### 8.5. Topbar 연동 및 반응형 통합 테스트
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 8.2, 8.3, 8.4  
 
 Practice/Performance/Me 상세 페이지에 Topbar를 연동하고, 전체 마스터-디테일 패턴의 반응형 동작을 통합 테스트한다.

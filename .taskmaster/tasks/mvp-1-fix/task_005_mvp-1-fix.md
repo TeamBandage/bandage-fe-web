@@ -2,7 +2,7 @@
 
 **Title:** 공용 컴포넌트 신규 구현 및 기존 컴포넌트 variant 보정
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** 1 ✓
 
@@ -53,7 +53,7 @@
 
 ### 5.1. 신규 기본 UI 컴포넌트 구현 (RoleBadge, SectionTitle, Divider)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 RoleBadge, SectionTitle, Divider 3개의 기본 UI 컴포넌트를 src/components/ui/에 신규 구현한다.
@@ -81,7 +81,7 @@ RoleBadge, SectionTitle, Divider 3개의 기본 UI 컴포넌트를 src/component
 
 ### 5.2. StatCard, EmptyPane 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 5.1  
 
 Home 통계 그리드용 StatCard와 PaneDetail 플레이스홀더용 EmptyPane 컴포넌트를 구현한다.
@@ -107,7 +107,7 @@ Home 통계 그리드용 StatCard와 PaneDetail 플레이스홀더용 EmptyPane 
 
 ### 5.3. ResponsiveSheet 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 5.1  
 
 데스크톱(lg: 이상)에서는 Dialog, 모바일에서는 BottomSheet로 자동 전환되는 ResponsiveSheet 컴포넌트를 구현한다.
@@ -132,7 +132,7 @@ Home 통계 그리드용 StatCard와 PaneDetail 플레이스홀더용 EmptyPane 
 
 ### 5.4. Button, Badge 컴포넌트 variant 보정
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 Button에 accent-outline variant 추가, Badge에 amber/muted variant 추가하고 padding/font를 디자인 토큰화한다.
@@ -155,7 +155,7 @@ Button에 accent-outline variant 추가, Badge에 amber/muted variant 추가하�
 
 ### 5.5. Chip sessionTypeToken 유틸 추출 및 Dialog sheetOnMobile 옵션 검토
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 5.3  
 
 Chip 컴포넌트의 하드코딩된 OKLCH 세션 색상을 유틸 함수로 추출하고, Dialog에 sheetOnMobile 옵션 추가 가능성을 검토한다.
