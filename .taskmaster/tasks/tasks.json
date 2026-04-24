@@ -777,7 +777,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -785,9 +785,10 @@
             "description": "데스크톱 마스터-디테일 레이아웃의 최상위 컨테이너인 Shell 컴포넌트와 좌측 목록/우측 상세 영역을 분리하는 PaneSplit 컴포넌트를 구현한다.",
             "dependencies": [],
             "details": "1. src/components/layout/shell.tsx 생성:\n   - props: children (ReactNode)\n   - Tailwind 클래스: flex w-screen h-screen overflow-hidden\n   - design/dist/css/layout.css의 .shell 스펙 참조\n\n2. src/components/layout/pane-split.tsx 생성:\n   - props: children (ReactNode)\n   - Tailwind 클래스: flex-1 flex overflow-hidden\n   - PaneList와 PaneDetail을 children으로 수용하는 컨테이너 역할\n   - design/dist/css/layout.css의 .pane-split 스펙 참조",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Vitest 스냅샷 테스트로 기본 렌더링 확인. children이 올바르게 전달되는지 검증.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:22:08.275Z"
           },
           {
             "id": 2,
@@ -797,9 +798,10 @@
               1
             ],
             "details": "1. src/components/layout/pane-list.tsx 생성:\n   - props: width ('list' | 'band-list'), header? (ReactNode), children (ReactNode)\n   - width='list' → 340px (--list-pane-w), width='band-list' → 360px (--band-list-pane-w)\n   - Tailwind: flex-shrink-0 border-r border-border bg-surface flex flex-col\n   - header 영역: padding 20px, border-b\n   - body 영역: flex-1 overflow-y-auto padding 10px 12px\n   - design/dist/css/layout.css의 .pane-list, .pane-list--wide, .pane-list__header, .pane-list__body 참조\n\n2. src/components/layout/pane-detail.tsx 생성:\n   - props: children (ReactNode)\n   - Tailwind: flex-1 flex flex-col overflow-hidden\n   - body 영역: flex-1 overflow-y-auto padding 24px 28px\n   - design/dist/css/layout.css의 .pane-detail, .pane-detail__body 참조",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Vitest 스냅샷 테스트. width prop에 따른 너비 클래스 적용 확인. header/children 슬롯 렌더링 검증.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:22:12.831Z"
           },
           {
             "id": 3,
@@ -809,9 +811,10 @@
               1
             ],
             "details": "1. src/components/layout/sidebar.tsx 생성 ('use client' 필요 - usePathname 사용):\n   - 고정 너비 240px (w-[240px] 또는 CSS 변수 --sidebar-w 활용)\n   - lg: 미만에서 hidden 처리 (hidden lg:flex)\n\n2. brand 영역 구현:\n   - 로고 36x36px, border-radius rounded-md, bg-accent-dim\n   - 'Bandage' 타이틀: text-xl font-black text-accent\n   - 하단 border-b\n\n3. nav 영역 구현:\n   - 아이템: home, bands, practices, performances (ROUTES 상수 사용)\n   - lucide-react 아이콘: Home, Users, Music, CalendarDays\n   - nav-item 스타일: flex items-center gap-3 px-3.5 py-2.5 rounded-md text-sm font-medium text-foreground-sub hover:bg-card hover:text-foreground\n   - active 상태: bg-accent-dim text-accent font-bold\n   - usePathname 훅으로 현재 경로 판별 (BottomNav의 isActive 로직 재사용)\n\n4. footer 영역 구현:\n   - border-t, Avatar 컴포넌트 사용 (size='md')\n   - 사용자 이름 표시, 마이페이지 링크 (/me)\n   - 현재 인증 정보가 없으면 하드코딩 placeholder 사용 (추후 authStore 연동)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Vitest 스냅샷 테스트. active 상태 스타일링 검증. 브라우저에서 lg: 미만 hidden 동작 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:22:17.087Z"
           },
           {
             "id": 4,
@@ -821,9 +824,10 @@
               1
             ],
             "details": "1. src/components/layout/topbar.tsx 생성:\n   - props: title (string), breadcrumb? (ReactNode), actions? (ReactNode)\n   - Tailwind: flex items-center justify-between px-7 py-4.5 border-b border-border bg-surface min-h-[68px] flex-shrink-0 sticky top-0 z-10\n\n2. 좌측 영역:\n   - breadcrumb이 있으면 breadcrumb 렌더링 (text-xs text-foreground-muted mb-0.5)\n   - title 렌더링 (text-lg font-bold text-foreground)\n   - 두 요소를 flex flex-col로 감싸기\n\n3. 우측 영역:\n   - actions 슬롯 렌더링 (flex gap-2)\n   - design/dist/css/layout.css의 .topbar, .topbar__title, .topbar__breadcrumb, .topbar__actions 참조",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Vitest 스냅샷 테스트. breadcrumb/actions optional props 유무에 따른 렌더링 검증. min-height 68px 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:22:24.222Z"
           },
           {
             "id": 5,
@@ -836,11 +840,13 @@
               4
             ],
             "details": "1. src/components/layout/index.ts 생성 또는 수정:\n   - 기존 컴포넌트 export 유지: BottomNav, Container, Header, PageTitle\n   - 신규 컴포넌트 추가: Shell, Sidebar, Topbar, PaneSplit, PaneList, PaneDetail\n   - 명명된 export 사용 (default export 지양)\n\n2. /playground 페이지에 Shell 레이아웃 데모 섹션 추가 (선택적):\n   - Shell + Sidebar + PaneSplit(PaneList + PaneDetail) 조합 예시\n   - 각 컴포넌트의 props 변형 시연\n   - 반응형 동작(960px 기준) 확인용\n\n3. 컴포넌트 상호작용 검증:\n   - Shell 내부에 Sidebar + main 영역이 올바르게 배치되는지 확인\n   - PaneSplit 내부에 PaneList + PaneDetail이 flex로 분리되는지 확인\n   - Topbar가 sticky로 상단 고정되는지 확인",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "모든 컴포넌트 조합 상태로 Vitest 스냅샷 테스트. /playground에서 960px 이상/미만 브라우저 테스트. Task 3 (main 레이아웃 개편) 준비 완료 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:22:28.673Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T15:22:28.673Z"
       },
       {
         "id": "3",
@@ -1355,9 +1361,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T15:04:42.677Z",
+      "lastModified": "2026-04-24T15:22:28.674Z",
       "taskCount": 9,
-      "completedCount": 1,
+      "completedCount": 2,
       "tags": [
         "mvp-1-fix"
       ]
