@@ -2,7 +2,7 @@
 
 **Title:** 날짜·시간 입력 UI 현대화 (달력/스크롤 피커)
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 

@@ -2,7 +2,7 @@
 
 **Title:** 실서버 연동 검증 리포트 작성 (실데이터 시나리오)
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 
@@ -22,7 +22,7 @@ No test strategy provided.
 
 ### 15.1. 백엔드 서버 기동 및 E2E 환경 준비
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 로컬 백엔드(http://localhost:8080) 기동 상태 확인 및 Playwright E2E 테스트 환경 준비
@@ -38,7 +38,7 @@ No test strategy provided.
 
 ### 15.2. 인증/회원 시나리오 실데이터 검증
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 15.1  
 
 회원가입(/join) → 로그인(/login) → 내 정보(/me) → 비밀번호 변경 플로우 전체 검증
@@ -55,7 +55,7 @@ No test strategy provided.
 
 ### 15.3. 밴드/합주/공연 CRUD 시나리오 실데이터 검증
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 15.2  
 
 밴드 생성 → 목록 → 상세 이동, 합주 생성 → 세션 편성, 공연 생성 → 합주 연결 플로우 검증
@@ -73,7 +73,7 @@ No test strategy provided.
 
 ### 15.4. 실패 케이스 수집 및 백엔드 로그 분석
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 15.2, 15.3  
 
 모든 검증 시나리오의 실패 케이스에 대해 HTTP status + ApiResponse body + 백엔드 로그 발췌 기록
@@ -92,7 +92,7 @@ No test strategy provided.
 
 ### 15.5. 통합 검증 리포트 작성 및 커밋
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 15.4  
 
 .taskmaster/report/mvp-1-fix-integration-YYYY-MM-DD.md 파일 작성 및 커밋

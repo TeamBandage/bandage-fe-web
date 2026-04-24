@@ -2,7 +2,7 @@
 
 **Title:** OAuth 로그인 화면 (빈 버튼: 카카오/구글/애플) 추가
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 
