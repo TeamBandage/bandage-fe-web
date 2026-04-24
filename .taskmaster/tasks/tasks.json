@@ -387,7 +387,7 @@
         "dependencies": [
           "6"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -449,7 +449,8 @@
             "testStrategy": "밴드 생성 → 상세 조회 → 다른 계정으로 가입 신청 → 리더가 승인 → 멤버 목록에 반영 → 리더 위임 → 탈퇴 플로우 전체 수동 테스트. 무한 스크롤이 올바르게 작동하는지 확인.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T01:54:21.134Z"
       },
       {
         "id": "8",
@@ -674,9 +675,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-23T22:14:29.769Z",
+      "lastModified": "2026-04-24T01:54:21.138Z",
       "taskCount": 10,
-      "completedCount": 6,
+      "completedCount": 7,
       "tags": [
         "master"
       ]
