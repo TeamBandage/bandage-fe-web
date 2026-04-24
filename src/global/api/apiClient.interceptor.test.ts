@@ -8,15 +8,17 @@ type MockResponseInit = {
   status?: number;
   body?: unknown;
   statusText?: string;
+  headers?: Record<string, string>;
 };
 
-function mockResponse({ status = 200, body, statusText = 'OK' }: MockResponseInit = {}) {
+function mockResponse({ status = 200, body, statusText = 'OK', headers }: MockResponseInit = {}) {
   const text = body === undefined ? '' : JSON.stringify(body);
   return {
     status,
     ok: status >= 200 && status < 300,
     statusText,
     text: async () => text,
+    headers: new Headers(headers ?? {}),
   } as Response;
 }
 
@@ -106,6 +108,31 @@ describe('apiClient 401 interceptor', () => {
     await apiClient.get('/api/v1/bands').catch(() => undefined);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('401 이지만 Allow 헤더가 있으면 405 로 간주하고 refresh 루프를 건너뛴다', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      mockResponse({
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: { Allow: 'POST' },
+        body: {
+          success: false,
+          message: '인증되지 않은 회원입니다.',
+          data: null,
+          timestamp: 't',
+        },
+      }),
+    );
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const err = await apiClient.get('/api/v1/practices').catch((e: unknown) => e);
+
+    expect(err).toBeInstanceOf(ApiError);
+    expect((err as ApiError).status).toBe(405);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().accessToken).toBe('old_token');
+    expect(unauthorized).not.toHaveBeenCalled();
   });
 
   it('동시에 발생한 401 은 한 번만 refresh 를 호출한다', async () => {
