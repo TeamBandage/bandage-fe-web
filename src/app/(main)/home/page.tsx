@@ -1,38 +1,61 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { PageTitle } from '@/components/layout/page-title';
+import { SectionTitle } from '@/components/ui/section-title';
 import { MyBands } from '@/domain/band/components/MyBands';
 import { UpcomingPerformances } from '@/domain/performance/components/UpcomingPerformances';
 import { UpcomingPractices } from '@/domain/practice/components/UpcomingPractices';
+import { ROUTES } from '@/global/config/routes';
+
+import { HomeStatCards } from './HomeStatCards.client';
 
 export const metadata: Metadata = {
   title: '홈 | Bandage',
 };
 
+function ViewAllLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="text-accent hover:text-accent-hi text-micro font-semibold"
+      aria-label={label}
+    >
+      전체 보기 →
+    </Link>
+  );
+}
+
 export default function HomePage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-s-8">
       <PageTitle title="홈" description="오늘의 합주와 공연을 한눈에 확인하세요." />
 
-      <section aria-labelledby="home-upcoming-practices" className="space-y-3">
-        <h2 id="home-upcoming-practices" className="text-foreground text-base font-semibold">
-          가까운 합주
-        </h2>
-        <UpcomingPractices limit={3} />
-      </section>
+      <HomeStatCards />
 
-      <section aria-labelledby="home-my-bands" className="space-y-3">
-        <h2 id="home-my-bands" className="text-foreground text-base font-semibold">
-          내 밴드
-        </h2>
-        <MyBands limit={6} />
-      </section>
+      <div className="gap-s-6 grid grid-cols-1 lg:grid-cols-2">
+        <section aria-labelledby="home-my-bands">
+          <SectionTitle
+            title="내 밴드"
+            action={<ViewAllLink href={ROUTES.BANDS} label="전체 밴드 보기" />}
+          />
+          <MyBands limit={6} />
+        </section>
+        <section aria-labelledby="home-upcoming-practices">
+          <SectionTitle
+            title="다가오는 합주"
+            action={<ViewAllLink href={ROUTES.PRACTICES} label="전체 합주 보기" />}
+          />
+          <UpcomingPractices limit={3} />
+        </section>
+      </div>
 
-      <section aria-labelledby="home-upcoming-performances" className="space-y-3">
-        <h2 id="home-upcoming-performances" className="text-foreground text-base font-semibold">
-          예정 공연
-        </h2>
-        <UpcomingPerformances limit={2} />
+      <section aria-labelledby="home-upcoming-performances">
+        <SectionTitle
+          title="다가오는 공연"
+          action={<ViewAllLink href={ROUTES.PERFORMANCES} label="전체 공연 보기" />}
+        />
+        <UpcomingPerformances limit={3} />
       </section>
     </div>
   );
