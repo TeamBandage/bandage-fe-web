@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Next.js 15 프로젝트 부트스트랩 및 의존성 설치",
         "description": "Next.js 15 App Router 기반 프로젝트를 생성하고, PRD에서 정의한 모든 프로덕션/개발 의존성을 설치합니다. TypeScript strict 모드, ESLint flat config, Prettier, Vitest, Playwright 설정을 완료합니다.",
         "details": "1. Next.js 프로젝트 생성:\n```bash\npnpm create next-app@latest . --typescript --tailwind --app --src-dir --no-eslint --import-alias \"@/*\"\n```\n\n2. 프로덕션 의존성 설치:\n```bash\npnpm add zustand @tanstack/react-query @tanstack/react-query-devtools \\\n  react-hook-form zod @hookform/resolvers \\\n  clsx tailwind-merge date-fns date-fns-tz \\\n  @radix-ui/react-dialog @radix-ui/react-slot \\\n  @radix-ui/react-tabs @radix-ui/react-tooltip \\\n  @radix-ui/react-dropdown-menu lucide-react\n```\n\n3. 개발 의존성 설치:\n```bash\npnpm add -D eslint @eslint/js typescript-eslint \\\n  eslint-config-next eslint-config-prettier \\\n  prettier prettier-plugin-tailwindcss \\\n  vitest @vitejs/plugin-react \\\n  @testing-library/react @testing-library/jest-dom jsdom @playwright/test\n```\n\n4. Playwright 브라우저 설치: `pnpm exec playwright install --with-deps`\n\n5. package.json scripts 정의:\n```json\n{\n  \"dev\": \"next dev\",\n  \"build\": \"next build\",\n  \"start\": \"next start\",\n  \"lint\": \"next lint\",\n  \"typecheck\": \"tsc --noEmit\",\n  \"format\": \"prettier --write .\",\n  \"format:check\": \"prettier --check .\",\n  \"test\": \"vitest run\",\n  \"test:watch\": \"vitest\",\n  \"test:e2e\": \"playwright test\"\n}\n```\n\n6. tsconfig.json에 strict 모드, baseUrl: \"src\", paths: { \"@/*\": [\"*\"] } 설정\n\n7. eslint.config.mjs (flat config): next/core-web-vitals + typescript-eslint + prettier 통합\n\n8. .prettierrc 설정: semi, singleQuote, trailingComma: \"all\"\n\n9. vitest.config.ts: jsdom 환경, setupFiles 설정\n\n10. playwright.config.ts: 기본 E2E 설정\n\n11. scripts/pre-commit 훅 생성 (lint, typecheck, format 실행)",
@@ -73,7 +73,7 @@
         "updatedAt": "2026-04-23T13:27:07.428Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Tailwind CSS v4 디자인 토큰 및 globals.css 설정",
         "description": "/design/dist/css/tokens.css의 디자인 토큰을 Tailwind v4 @theme 문법으로 이식하고, 다크 테마 기반의 시맨틱 토큰 시스템을 구축합니다.",
         "details": "1. src/app/globals.css에 Tailwind v4 @theme 블록 작성:\n```css\n@import \"tailwindcss\";\n\n@theme {\n  /* Surfaces */\n  --color-bg: #0D0D12;\n  --color-surface: #161620;\n  --color-card: #1E1E2A;\n  --color-card-hover: #252535;\n  --color-border: #2A2A3A;\n  --color-border-hi: #35354A;\n  \n  /* Text */\n  --color-foreground: #F4F4F8;\n  --color-foreground-sub: #B4B4C4;\n  --color-foreground-muted: #6B6B80;\n  \n  /* Accent - Blue */\n  --color-accent: oklch(0.62 0.22 250);\n  --color-accent-dim: oklch(0.62 0.22 250 / 0.14);\n  --color-accent-soft: oklch(0.62 0.22 250 / 0.08);\n  --color-accent-hi: oklch(0.72 0.20 250);\n  \n  /* Semantic */\n  --color-success: oklch(0.70 0.18 155);\n  --color-success-dim: oklch(0.70 0.18 155 / 0.15);\n  --color-warn: oklch(0.76 0.17 85);\n  --color-warn-dim: oklch(0.76 0.17 85 / 0.15);\n  --color-danger: oklch(0.65 0.23 25);\n  --color-danger-dim: oklch(0.65 0.23 25 / 0.15);\n  \n  /* Role colors */\n  --color-role-leader: oklch(0.72 0.18 48);\n  --color-role-admin: oklch(0.62 0.22 250);\n  --color-role-member: #6B6B80;\n  \n  /* Radii */\n  --radius-sm: 6px;\n  --radius-md: 10px;\n  --radius-lg: 14px;\n  --radius-xl: 20px;\n  --radius-pill: 999px;\n  \n  /* Spacing - Tailwind 기본 스케일 확장 */\n  /* Shadow */\n  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);\n  --shadow-md: 0 4px 12px rgba(0,0,0,0.25);\n  --shadow-lg: 0 12px 32px rgba(0,0,0,0.45);\n  \n  /* Motion */\n  --ease-default: cubic-bezier(0.2, 0.8, 0.2, 1);\n  --duration-fast: 120ms;\n  --duration-normal: 200ms;\n  \n  /* Font */\n  --font-sans: \"Noto Sans KR\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n}\n```\n\n2. html에 dark 클래스 기본 적용 설정 (src/app/layout.tsx)\n\n3. 베이스 리셋 스타일 추가 (body bg-bg text-foreground 등)",
@@ -146,7 +146,7 @@
         "updatedAt": "2026-04-23T14:06:21.428Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "횡단 관심사 인프라 구축 (apiClient, 환경변수, 라우트 상수, 전역 타입)",
         "description": "API 통신 기반, 환경 변수 검증, 라우트 상수, QueryKey 상수, 공용 타입(ApiResponse, CursorResponse)을 구현합니다. 401 인터셉터와 자동 토큰 갱신 로직을 포함합니다.",
         "details": "1. src/global/config/env.ts - zod로 NEXT_PUBLIC_* 환경변수 검증:\n```ts\nimport { z } from 'zod';\n\nconst envSchema = z.object({\n  NEXT_PUBLIC_API_BASE_URL: z.string().url(),\n  NEXT_PUBLIC_APP_ENV: z.enum(['local', 'dev', 'prod']),\n});\n\nexport const env = envSchema.parse({\n  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,\n  NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,\n});\n```\n\n2. src/global/config/routes.ts - 모든 경로 상수화:\n```ts\nexport const ROUTES = {\n  LOGIN: '/login',\n  JOIN: '/join',\n  PASSWORD_CHANGE: '/password-change',\n  HOME: '/home',\n  BANDS: '/bands',\n  BAND_NEW: '/bands/new',\n  BAND_DETAIL: (bandId: string) => `/bands/${bandId}`,\n  PRACTICES: '/practices',\n  PRACTICE_NEW: '/practices/new',\n  PRACTICE_DETAIL: (id: string) => `/practices/${id}`,\n  PERFORMANCES: '/performances',\n  PERFORMANCE_NEW: '/performances/new',\n  PERFORMANCE_DETAIL: (id: string) => `/performances/${id}`,\n  ME: '/me',\n} as const;\n```\n\n3. src/global/config/queryKeys.ts - TanStack Query 키 팩토리:\n```ts\nexport const queryKeys = {\n  auth: { refresh: ['auth', 'refresh'] as const },\n  member: { me: ['member', 'me'] as const },\n  band: {\n    all: ['band'] as const,\n    list: () => [...queryKeys.band.all, 'list'] as const,\n    detail: (id: string) => [...queryKeys.band.all, id] as const,\n    members: (id: string) => [...queryKeys.band.all, id, 'members'] as const,\n    applications: (id: string, status?: string) => [...queryKeys.band.all, id, 'applications', status] as const,\n  },\n  // practice, performance 동일 패턴\n};\n```\n\n4. src/global/types/ApiResponse.ts:\n```ts\nexport type ApiResponse<T> = {\n  success: boolean;\n  message: string | null;\n  data: T | null;\n  timestamp: string;\n};\n\nexport type CursorResponse<T, C> = {\n  content: T[];\n  nextCursor: C | null;\n  hasNext: boolean;\n};\n\nexport type BandRole = 'LEADER' | 'ADMIN' | 'MEMBER';\nexport type ApplicationStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN' | 'LEAVED';\nexport type SessionType = 'VOCAL' | 'CHORUS' | 'GUITAR' | 'BASS' | 'DRUM' | 'PERCUSSION' | 'SYNTH' | 'ETC';\n```\n\n5. src/global/error/ApiError.ts:\n```ts\nexport class ApiError extends Error {\n  constructor(\n    public code: string,\n    message: string,\n    public status: number,\n    public fieldErrors?: Record<string, string>\n  ) {\n    super(message);\n    this.name = 'ApiError';\n  }\n}\n```\n\n6. src/global/api/apiClient.ts - fetch 래퍼:\n- Authorization 헤더 자동 주입 (authStore에서 accessToken 읽기)\n- 401 응답 시 /auth/refresh 자동 호출 (1회 한정, 재귀 방지 플래그)\n- 실패 시 authStore.clear() + /login 리다이렉트\n- ApiResponse<T> 언래핑하여 data만 반환\n- 실패 시 ApiError throw\n\n7. src/global/store/authStore.ts - Zustand persist(sessionStorage):\n```ts\nimport { create } from 'zustand';\nimport { persist, createJSONStorage } from 'zustand/middleware';\n\ninterface AuthState {\n  accessToken: string | null;\n  setAccessToken: (token: string | null) => void;\n  clear: () => void;\n}\n\nexport const useAuthStore = create<AuthState>()(\n  persist(\n    (set) => ({\n      accessToken: null,\n      setAccessToken: (token) => set({ accessToken: token }),\n      clear: () => set({ accessToken: null }),\n    }),\n    { name: 'bandage-auth', storage: createJSONStorage(() => sessionStorage) }\n  )\n);\n```",
@@ -217,7 +217,7 @@
         "updatedAt": "2026-04-23T14:44:33.097Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "UI 프리미티브 컴포넌트 라이브러리 구축",
         "description": "Button, Input, Textarea, Select, Dialog, BottomSheet, Card, Badge, Chip, Avatar, Tabs, Skeleton 등 shadcn/ui 스타일의 재사용 가능한 프리미티브 컴포넌트를 구현합니다.",
         "details": "1. src/lib/cn.ts - clsx + tailwind-merge 유틸:\n```ts\nimport { clsx, type ClassValue } from 'clsx';\nimport { twMerge } from 'tailwind-merge';\n\nexport function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n```\n\n2. src/components/ui/button.tsx:\n```tsx\nimport { Slot } from '@radix-ui/react-slot';\nimport { cn } from '@/lib/cn';\nimport { Loader2 } from 'lucide-react';\n\ninterface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {\n  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';\n  size?: 'sm' | 'md' | 'lg';\n  loading?: boolean;\n  asChild?: boolean;\n}\n\nexport function Button({ variant = 'primary', size = 'md', loading, asChild, className, children, disabled, ...props }: ButtonProps) {\n  const Comp = asChild ? Slot : 'button';\n  return (\n    <Comp\n      className={cn(\n        'inline-flex items-center justify-center font-medium transition-colors rounded-md disabled:opacity-50 disabled:pointer-events-none',\n        // variant styles\n        // size styles\n        className\n      )}\n      disabled={disabled || loading}\n      {...props}\n    >\n      {loading && <Loader2 className=\"mr-2 h-4 w-4 animate-spin\" />}\n      {children}\n    </Comp>\n  );\n}\n```\n\n3. src/components/ui/input.tsx - error, label, hint props 포함\n\n4. src/components/ui/textarea.tsx\n\n5. src/components/ui/select.tsx - Radix Select 기반 또는 native select\n\n6. src/components/ui/dialog.tsx - Radix Dialog 기반, 모바일에서는 풀스크린 옵션\n\n7. src/components/ui/bottom-sheet.tsx - 모바일 전용 하단 시트\n\n8. src/components/ui/card.tsx - header, footer, padding props\n\n9. src/components/ui/badge.tsx - variant prop (default, success, warn, danger)\n\n10. src/components/ui/chip.tsx - interactive prop, 세션 타입별 색상 지원\n\n11. src/components/ui/avatar.tsx - src, fallback(이니셜), size props\n\n12. src/components/ui/tabs.tsx - Radix Tabs 기반\n\n13. src/components/ui/skeleton.tsx - w, h, rounded props\n\n14. src/components/ui/spinner.tsx - 로딩 인디케이터",
@@ -231,7 +231,7 @@
         "updatedAt": "2026-04-23T15:49:27.743Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "레이아웃 컴포넌트 및 피드백 시스템 구축",
         "description": "BottomNav(5탭), Header, Container 레이아웃 컴포넌트와 Toast, ErrorBoundary, EmptyState, ErrorState 피드백 컴포넌트를 구현합니다. 공통 훅(useInfiniteCursor, useDebounce, useConfirmDialog)과 날짜 유틸도 포함합니다.",
         "details": "1. src/components/layout/bottom-nav.tsx:\n```tsx\n'use client';\nimport Link from 'next/link';\nimport { usePathname } from 'next/navigation';\nimport { Home, Users, Music, CalendarDays, User } from 'lucide-react';\nimport { ROUTES } from '@/global/config/routes';\n\nconst tabs = [\n  { href: ROUTES.HOME, icon: Home, label: '홈' },\n  { href: ROUTES.BANDS, icon: Users, label: '밴드' },\n  { href: ROUTES.PRACTICES, icon: Music, label: '합주' },\n  { href: ROUTES.PERFORMANCES, icon: CalendarDays, label: '공연' },\n  { href: ROUTES.ME, icon: User, label: 'MY' },\n];\n\nexport function BottomNav() {\n  const pathname = usePathname();\n  // 탭별 active 상태 판정 및 렌더링\n}\n```\n\n2. src/components/layout/header.tsx - title, left(뒤로가기 등), right(액션 버튼) props\n\n3. src/components/layout/container.tsx - maxWidth, padding props\n\n4. src/components/layout/page-title.tsx - 페이지 제목 표시용\n\n5. src/components/feedback/toast.tsx + toaster.tsx:\n- Radix Toast 또는 커스텀 구현\n- toast({ type: 'success' | 'error' | 'info', message, duration }) API\n- 전역 Toaster 컴포넌트\n\n6. src/components/feedback/error-boundary.tsx - React ErrorBoundary, fallback prop\n\n7. src/components/feedback/empty-state.tsx - icon, title, description, action props\n\n8. src/components/feedback/error-state.tsx - 재시도 버튼 포함\n\n9. src/hooks/useInfiniteCursor.ts:\n```ts\nimport { useInfiniteQuery, UseInfiniteQueryOptions } from '@tanstack/react-query';\nimport { CursorResponse } from '@/global/types/ApiResponse';\n\nexport function useInfiniteCursor<T, C>(\n  queryKey: unknown[],\n  fetcher: (params: { lastId?: C; pageSize: number }) => Promise<CursorResponse<T, C>>,\n  pageSize = 10,\n  options?: Omit<UseInfiniteQueryOptions, 'queryKey' | 'queryFn' | 'getNextPageParam' | 'initialPageParam'>\n) {\n  return useInfiniteQuery({\n    queryKey,\n    queryFn: ({ pageParam }) => fetcher({ lastId: pageParam as C | undefined, pageSize }),\n    getNextPageParam: (lastPage) => lastPage.hasNext ? lastPage.nextCursor : undefined,\n    initialPageParam: undefined as C | undefined,\n    ...options,\n  });\n}\n```\n\n10. src/hooks/useDebounce.ts - 값 디바운싱 훅\n\n11. src/hooks/useConfirmDialog.ts - 확인 다이얼로그 상태 관리 훅\n\n12. src/lib/date.ts:\n```ts\nimport { format, parse } from 'date-fns';\nimport { toZonedTime, fromZonedTime } from 'date-fns-tz';\n\nconst KST = 'Asia/Seoul';\nconst FORMAT = 'yyyy-MM-dd HH:mm';\n\nexport function formatKst(date: Date): string {\n  return format(toZonedTime(date, KST), FORMAT);\n}\n\nexport function parseKst(dateString: string): Date {\n  return fromZonedTime(parse(dateString, FORMAT, new Date()), KST);\n}\n```\n\n13. src/app/(main)/layout.tsx - BottomNav + Header + Container 적용\n\n14. src/app/layout.tsx - QueryClientProvider, Toaster, 전역 ErrorBoundary 설정",
@@ -302,7 +302,7 @@
         "updatedAt": "2026-04-23T16:17:02.050Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "인증(Auth) 및 회원(Member) 도메인 구현",
         "description": "로그인, 회원가입, 비밀번호 변경, 로그아웃, 회원 정보 조회/수정, 회원 탈퇴 기능을 구현합니다. Auth Guard 미들웨어로 비인증 사용자의 (main) 라우트 접근을 차단합니다.",
         "details": "1. src/domain/auth/types/req.ts:\n```ts\nexport interface LoginRequest {\n  email: string;\n  password: string;\n}\n\nexport interface PasswordChangeRequest {\n  originalPassword: string;\n  newPassword: string;\n}\n```\n\n2. src/domain/auth/types/res.ts:\n```ts\nexport interface LoginResponse {\n  accessToken: string;\n}\n\nexport interface RefreshResponse {\n  accessToken: string;\n}\n```\n\n3. src/domain/auth/types/schema.ts - zod 스키마 (email, password 검증)\n\n4. src/domain/auth/api/login.ts, logout.ts, refresh.ts, changePassword.ts\n\n5. src/domain/auth/hooks/useLogin.ts, useLogout.ts, useChangePassword.ts - useMutation 래퍼\n\n6. src/domain/member/types/req.ts:\n```ts\nexport interface JoinRequest {\n  email: string;\n  password: string;\n  name: string;\n  contact: string;\n}\n\nexport interface UpdateMeRequest {\n  name?: string;\n  contact?: string;\n}\n```\n\n7. src/domain/member/types/res.ts, schema.ts\n\n8. src/domain/member/api/join.ts, getMe.ts, updateMe.ts, withdraw.ts\n\n9. src/domain/member/hooks/useJoin.ts, useMe.ts, useUpdateMe.ts, useWithdraw.ts\n\n10. src/app/(auth)/layout.tsx - 비인증 레이아웃 (BottomNav 없음)\n\n11. src/app/(auth)/login/page.tsx + LoginForm.client.tsx:\n- react-hook-form + zod resolver\n- 로그인 성공 시 accessToken 저장 + /home 리다이렉트\n- 에러 시 인라인 메시지\n\n12. src/app/(auth)/join/page.tsx + JoinForm.client.tsx:\n- 이메일/비밀번호/이름/연락처 필드\n- 가입 성공 시 자동 로그인 또는 /login 리다이렉트\n\n13. src/app/(auth)/password-change/page.tsx + PasswordChangeForm.client.tsx\n\n14. src/app/(main)/me/page.tsx:\n- 내 정보 표시 (useMe)\n- 이름/연락처 수정 폼 (useUpdateMe)\n- 비밀번호 변경 링크\n- 로그아웃 버튼 (useLogout)\n- 회원 탈퇴 버튼 (확인 다이얼로그 + useWithdraw)\n\n15. src/middleware.ts - Auth Guard:\n```ts\nimport { NextResponse } from 'next/server';\nimport type { NextRequest } from 'next/server';\n\nexport function middleware(request: NextRequest) {\n  const token = request.cookies.get('refreshToken') || /* sessionStorage 대안 */;\n  const isAuthPage = request.nextUrl.pathname.startsWith('/login') || ...;\n  \n  if (!token && !isAuthPage) {\n    return NextResponse.redirect(new URL('/login', request.url));\n  }\n  return NextResponse.next();\n}\n\nexport const config = {\n  matcher: ['/(main)/:path*'],\n};\n```",
@@ -378,7 +378,7 @@
         "updatedAt": "2026-04-23T22:14:29.764Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "밴드(Band) 도메인 구현",
         "description": "밴드 생성, 목록 조회(무한 스크롤), 상세 조회, 멤버 관리, 가입 신청/승인/거절, 리더 위임, 탈퇴 기능을 구현합니다. 역할 기반 UI 가드를 적용합니다.",
         "details": "1. src/domain/band/types/req.ts:\n```ts\nexport interface CreateBandRequest {\n  name: string;\n  description?: string;\n  profileImg?: string;\n}\n```\n\n2. src/domain/band/types/res.ts:\n```ts\nexport interface CreateBandResponse {\n  bandId: string;\n  bandName: string;\n}\n\nexport interface BandInfoResponse {\n  bandId: string;\n  bandName: string;\n  description?: string;\n  profileImg?: string;\n}\n\nexport interface BandMemberInfoResponse {\n  bandMemberId: string;\n  memberId: number;\n  role: BandRole;\n}\n\nexport interface BandApplicationInfoResponse {\n  bandApplicationId: string;\n  memberId: number;\n  status: ApplicationStatus;\n}\n```\n\n3. src/domain/band/types/schema.ts - zod 스키마\n\n4. src/domain/band/api/:\n- createBand.ts, getBand.ts, listBands.ts\n- getBandMember.ts, listBandMembers.ts\n- applyBand.ts, withdrawApplication.ts, listApplications.ts, decideApplication.ts\n- delegateLeader.ts, leaveBand.ts\n\n5. src/domain/band/hooks/:\n- useCreateBand.ts (useMutation)\n- useBandList.ts (useInfiniteCursor)\n- useBandDetail.ts (useQuery)\n- useBandMembers.ts (useInfiniteCursor)\n- useBandMember.ts (useQuery)\n- useBandApplications.ts (useInfiniteCursor)\n- useApplyBand.ts, useWithdrawApplication.ts, useDecideApplication.ts (useMutation)\n- useDelegateLeader.ts, useLeaveBand.ts (useMutation)\n\n6. src/global/auth/useBandRole.ts - 현재 유저의 밴드 내 역할 조회 훅\n\n7. src/global/auth/RoleGuard.tsx:\n```tsx\n'use client';\nimport { useBandRole } from './useBandRole';\nimport { BandRole } from '@/global/types/ApiResponse';\n\nconst roleHierarchy: Record<BandRole, number> = { LEADER: 3, ADMIN: 2, MEMBER: 1 };\n\nexport function RoleGuard({ bandId, role, children, fallback = null }: {\n  bandId: string;\n  role: BandRole;\n  children: React.ReactNode;\n  fallback?: React.ReactNode;\n}) {\n  const { data: userRole } = useBandRole(bandId);\n  if (!userRole || roleHierarchy[userRole] < roleHierarchy[role]) return fallback;\n  return <>{children}</>;\n}\n```\n\n8. src/domain/band/components/:\n- BandCard.tsx - 목록용 카드\n- BandListItem.tsx - 간단한 목록 아이템\n- BandMemberRow.tsx - 멤버 행\n- BandApplicationRow.tsx - 신청 행 (승인/거절 버튼)\n- BandRoleBadge.tsx - LEADER/ADMIN/MEMBER 배지\n\n9. src/app/(main)/bands/page.tsx - 무한 스크롤 목록 + 생성 FAB\n\n10. src/app/(main)/bands/new/page.tsx + BandCreateForm.client.tsx\n\n11. src/app/(main)/bands/[bandId]/page.tsx:\n- Tabs: 개요 / 멤버 / 가입신청(LEADER/ADMIN만)\n- 개요: 밴드 정보 + 가입 신청 버튼(비멤버) / 탈퇴 버튼(멤버)\n- 멤버: 무한 스크롤 멤버 목록 + 리더 위임 버튼(LEADER만)\n- 가입신청: 신청 목록 + 승인/거절 액션",
@@ -453,7 +453,7 @@
         "updatedAt": "2026-04-24T01:54:21.134Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "합주(Practice) 및 합주곡(Practice-Song) 도메인 구현",
         "description": "합주 생성/상세 조회/일정·장소 변경/삭제, 세션 생성/삭제, 멤버 추가, 세션 배정/해제, 곡 참조 링크 관리 기능을 구현합니다.",
         "details": "1. src/domain/practice/types/req.ts:\n```ts\nexport interface CreatePracticeRequest {\n  title?: string;\n  song: string; // songId\n  venue?: string;\n  startAt: string; // yyyy-MM-dd HH:mm\n  durationMinutes: number;\n}\n\nexport interface UpdateScheduleRequest {\n  startAt: string;\n  durationMinutes: number;\n}\n\nexport interface UpdateVenueRequest {\n  venue: string;\n}\n\nexport interface CreateSessionRequest {\n  label: string;\n  type: SessionType;\n}\n\nexport interface AddParticipantRequest {\n  memberId: number;\n}\n```\n\n2. src/domain/practice/types/res.ts:\n```ts\nexport interface CreatePracticeResponse {\n  practiceId: string;\n  practiceTitle: string;\n}\n\nexport interface PracticeDetailResponse {\n  practiceId: string;\n  title: string;\n  venue?: string;\n  startAt: string;\n  durationMinutes: number;\n  song: { songId: string; title: string; artist: string; };\n  sessions: PracticeSessionResponse[];\n  participants: PracticeParticipantResponse[];\n}\n\nexport interface PracticeSessionResponse {\n  sessionId: string;\n  label: string;\n  type: SessionType;\n  participant: { participantId: string; memberId: number; } | null;\n}\n\nexport interface PracticeParticipantResponse {\n  participantId: string;\n  memberId: number;\n}\n```\n\n3. src/domain/practice/api/:\n- createPractice.ts, getPractice.ts, deletePractice.ts\n- updateSchedule.ts, updateVenue.ts\n- createSession.ts, deleteSession.ts\n- addParticipant.ts, assignSession.ts, unassignSession.ts\n\n4. src/domain/practice/hooks/: 각 API에 대응하는 useMutation/useQuery 훅\n\n5. src/domain/practice-song/types/req.ts:\n```ts\nexport interface UpsertRefLinkRequest {\n  refLink: string;\n}\n```\n\n6. src/domain/practice-song/api/upsertRefLink.ts, deleteRefLink.ts\n\n7. src/domain/practice-song/hooks/useUpsertSongRefLink.ts, useDeleteSongRefLink.ts\n\n8. src/domain/practice/components/:\n- PracticeCard.tsx - 목록용\n- PracticeScheduleBadge.tsx - 일정 표시\n- PracticeVenueInline.tsx - 장소 인라인 편집\n- SessionChip.tsx - 세션 타입별 색상(VOCAL: pink, GUITAR: orange 등)\n- SessionRow.tsx - 세션 + 배정 상태 + 배정/해제 버튼\n- SessionAssignButton.tsx - 낙관적 업데이트 처리\n- SongRefLinkEditor.tsx - 곡 참조 링크 인라인 편집\n\n9. src/app/(main)/practices/page.tsx - 내 밴드 합주 목록\n\n10. src/app/(main)/practices/new/page.tsx + PracticeCreateForm.client.tsx:\n- 제목/곡 선택/장소/시작시간/소요시간 입력\n\n11. src/app/(main)/practices/[practiceId]/page.tsx:\n- 일정/장소 편집 (인라인 또는 모달)\n- 세션 편성 섹션: 세션 추가 버튼 + 각 세션에 배정 상태\n- 참여자 목록 섹션\n- 곡 참조 링크 섹션\n- 삭제 버튼 (확인 다이얼로그)",
@@ -528,7 +528,7 @@
         "updatedAt": "2026-04-24T04:52:41.897Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "공연(Performance) 도메인 구현",
         "description": "공연 생성/목록(밴드 필터)/상세 조회/수정/삭제, 공연 합주 추가(신규 생성/기존 연결), 합주 연결 해제 기능을 구현합니다. PerformanceManager 권한 체크를 적용합니다.",
         "details": "1. src/domain/performance/types/req.ts:\n```ts\nexport interface CreatePerformanceRequest {\n  title: string;\n  bandIds?: string[];\n  startAt: string;\n  durationMinutes: number;\n  venue?: string;\n}\n\nexport interface UpdatePerformanceRequest {\n  title?: string;\n  startAt?: string;\n  durationMinutes?: number;\n  venue?: string;\n}\n\nexport interface AddPerformancePracticeRequest {\n  title?: string;\n  songId: string;\n  startAt: string;\n  durationMinutes: number;\n  venue?: string;\n}\n\nexport interface BatchAddPerformancePracticeRequest {\n  practiceIds: string[];\n}\n```\n\n2. src/domain/performance/types/res.ts:\n```ts\nexport interface CreatePerformanceResponse {\n  performanceId: string;\n  title: string;\n}\n\nexport interface PerformanceListResponse {\n  performanceId: string;\n  title: string;\n  startAt: string;\n  durationMinutes: number;\n  venue?: string;\n}\n\nexport interface PerformanceDetailResponse {\n  performanceId: string;\n  title: string;\n  startAt: string;\n  durationMinutes: number;\n  venue?: string;\n  bandIds: string[];\n  managerIds: number[];\n  practiceIds: string[];\n}\n\nexport interface PerformancePracticeResponse {\n  performancePracticeId: string;\n  practiceId: string;\n}\n```\n\n3. src/domain/performance/api/:\n- createPerformance.ts, listPerformances.ts, getPerformance.ts\n- updatePerformance.ts, deletePerformance.ts\n- addPerformancePractice.ts, batchAddPerformancePractices.ts, removePerformancePractice.ts\n\n4. src/domain/performance/hooks/:\n- useCreatePerformance.ts, usePerformanceList.ts (무한), usePerformanceDetail.ts\n- useUpdatePerformance.ts, useDeletePerformance.ts\n- useAddPerformancePractice.ts, useBatchAddPerformancePractices.ts, useRemovePerformancePractice.ts\n\n5. src/global/auth/useIsPerformanceManager.ts - 현재 유저가 공연 매니저인지 확인 훅\n\n6. src/domain/performance/components/:\n- PerformanceCard.tsx - 목록용\n- PerformanceBandChips.tsx - 참여 밴드 칩들\n- PerformancePracticeRow.tsx - 연결된 합주 행 + 연결 해제 버튼\n\n7. src/app/(main)/performances/page.tsx:\n- 무한 스크롤 목록\n- 쿼리스트링 bandId로 필터링 지원\n- 생성 FAB\n\n8. src/app/(main)/performances/new/page.tsx + PerformanceCreateForm.client.tsx:\n- 제목/밴드 선택(multi-select)/일정/장소 입력\n\n9. src/app/(main)/performances/[performanceId]/page.tsx:\n- 공연 정보 표시 + 수정 버튼(매니저만)\n- 참여 밴드 칩 목록\n- 연결된 합주 목록 + 연결 해제 버튼(매니저만)\n- 합주 연결 모달: 기존 합주 선택 또는 신규 합주 생성\n- 삭제 버튼(매니저만, 확인 다이얼로그)",
@@ -603,7 +603,7 @@
         "updatedAt": "2026-04-24T05:34:54.222Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "홈 대시보드 및 최종 마무리",
         "description": "홈 대시보드(/home)에 가까운 합주, 내 밴드, 예정 공연 요약을 표시합니다. 전체 화면의 Skeleton/EmptyState/ErrorState 적용을 감사하고, 접근성 및 E2E 테스트를 확장합니다.",
         "details": "1. src/app/(main)/home/page.tsx:\n```tsx\nimport { Suspense } from 'react';\nimport { UpcomingPractices } from '@/domain/practice/components/UpcomingPractices';\nimport { MyBands } from '@/domain/band/components/MyBands';\nimport { UpcomingPerformances } from '@/domain/performance/components/UpcomingPerformances';\nimport { Skeleton } from '@/components/ui/skeleton';\n\nexport default function HomePage() {\n  return (\n    <div className=\"space-y-6 p-4\">\n      <section>\n        <h2 className=\"text-lg font-semibold mb-3\">가까운 합주</h2>\n        <Suspense fallback={<Skeleton className=\"h-32\" />}>\n          <UpcomingPractices limit={3} />\n        </Suspense>\n      </section>\n      <section>\n        <h2 className=\"text-lg font-semibold mb-3\">내 밴드</h2>\n        <Suspense fallback={<Skeleton className=\"h-24\" />}>\n          <MyBands />\n        </Suspense>\n      </section>\n      <section>\n        <h2 className=\"text-lg font-semibold mb-3\">예정 공연</h2>\n        <Suspense fallback={<Skeleton className=\"h-32\" />}>\n          <UpcomingPerformances limit={2} />\n        </Suspense>\n      </section>\n    </div>\n  );\n}\n```\n\n2. src/domain/practice/components/UpcomingPractices.tsx - 기존 훅 재사용\n\n3. src/domain/band/components/MyBands.tsx - 내가 속한 밴드 목록 (새 API 필요 시 백엔드 요청)\n\n4. src/domain/performance/components/UpcomingPerformances.tsx - 기존 훅 재사용\n\n5. 전체 화면 감사(audit):\n- 모든 목록 페이지에 Skeleton, EmptyState, ErrorState 적용 확인\n- 누락된 곳 수정\n\n6. 접근성 감사:\n- 모든 Dialog/BottomSheet에 포커스 트랩 확인\n- 버튼/링크에 aria-label 확인\n- 키보드 내비게이션(Tab, Enter, Escape) 테스트\n\n7. Playwright E2E 테스트 확장 (tests/e2e/):\n- auth.spec.ts: 회원가입 → 로그인 → 마이페이지 → 로그아웃\n- band.spec.ts: 밴드 생성 → 상세 조회 → 가입 신청 → 승인\n- practice.spec.ts: 합주 생성 → 세션 추가 → 배정 → 삭제\n- performance.spec.ts: 공연 생성 → 합주 연결 → 삭제\n- home.spec.ts: 홈 대시보드 3개 섹션 렌더링 확인\n\n8. CI 그린 확인: pnpm lint, typecheck, format:check, test, build, test:e2e 모두 통과\n\n9. src/app/error.tsx, src/app/not-found.tsx 최종 확인",
@@ -682,7 +682,630 @@
       "completedCount": 9,
       "tags": [
         "master"
-      ]
+      ],
+      "created": "2026-04-24T10:51:59.087Z",
+      "description": "Tasks for master context"
+    }
+  },
+  "mvp-1-fix": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "디자인 토큰 재이식 및 글로벌 CSS 확장",
+        "description": "src/app/globals.css의 @theme에 누락된 디자인 토큰(Spacing scale, Layout 변수, Typography scale, Breakpoint override, Auth gradient)을 design/dist/css/tokens.css 기반으로 전부 반영한다.",
+        "details": "1. globals.css의 @theme 섹션에 다음 토큰들을 추가:\n   - Spacing scale: --spacing-s-1(4px) ~ --spacing-s-12(48px)\n   - Layout: --sidebar-w(240px), --list-pane-w(340px), --band-list-pane-w(360px)\n   - Typography: --text-display(40px), --text-title-lg(26px), --text-title(20px), --text-subtitle(18px), --text-body(14px), --text-caption(13px), --text-micro(11px)\n   - Breakpoint override: --breakpoint-sm(480px), --breakpoint-md(768px), --breakpoint-lg(960px), --breakpoint-xl(1280px)\n   - Auth gradient: --gradient-auth-brand: linear-gradient(145deg, #0D0D1E 0%, #111128 100%)\n   - Amber 색상 추가: --color-amber, --color-amber-dim\n\n2. Tailwind v4에서 커스텀 브레이크포인트 960px를 lg로 오버라이드:\n   ```css\n   @theme {\n     --breakpoint-lg: 960px;\n   }\n   ```\n\n3. /playground 페이지에 토큰 매트릭스 섹션 추가:\n   - src/app/playground/page.tsx 생성\n   - 모든 색상, 간격, 타이포그래피 토큰을 시각적으로 렌더링",
+        "testStrategy": "1. pnpm dev 실행 후 /playground 페이지에서 모든 토큰이 올바르게 렌더링되는지 시각 확인\n2. Tailwind 클래스(lg:, bg-amber 등)가 960px 기준으로 작동하는지 브라우저 DevTools에서 확인\n3. 기존 페이지들이 스타일 깨짐 없이 렌더링되는지 회귀 테스트",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Spacing scale 및 Layout 변수 토큰 추가",
+            "description": "globals.css의 @theme 섹션에 Spacing scale(--spacing-s-1 ~ --spacing-s-12)과 Layout 변수(--sidebar-w, --list-pane-w, --band-list-pane-w)를 design/dist/css/tokens.css 기반으로 추가한다.",
+            "dependencies": [],
+            "details": "globals.css의 @theme 블록 내에 다음 토큰들을 추가:\n\n1. Spacing scale (design/dist/css/tokens.css의 --s-* 매핑):\n   - --spacing-s-1: 4px\n   - --spacing-s-2: 8px\n   - --spacing-s-3: 12px\n   - --spacing-s-4: 16px\n   - --spacing-s-5: 20px\n   - --spacing-s-6: 24px\n   - --spacing-s-8: 32px\n   - --spacing-s-10: 40px\n   - --spacing-s-12: 48px\n\n2. Layout 변수 (Shell 컴포넌트에서 사용):\n   - --sidebar-w: 240px (사이드바 고정 너비)\n   - --list-pane-w: 340px (마스터-디테일 목록 패널)\n   - --band-list-pane-w: 360px (밴드 목록 패널, 넓은 버전)\n\nTailwind v4에서 --spacing-s-* 는 spacing() 함수나 s-1, s-2 같은 클래스로 자동 노출됨.",
+            "status": "pending",
+            "testStrategy": "1. pnpm dev 실행 후 개발자 도구에서 :root에 spacing/layout 변수가 선언되었는지 확인\n2. s-4, s-8 같은 Tailwind 클래스가 올바른 값으로 적용되는지 확인\n3. 기존 spacing 사용 컴포넌트들이 정상 렌더링되는지 회귀 확인"
+          },
+          {
+            "id": 2,
+            "title": "Typography scale 토큰 추가",
+            "description": "globals.css의 @theme 섹션에 Typography scale 토큰(--text-display, --text-title-lg, --text-title, --text-subtitle, --text-body, --text-caption, --text-micro)을 추가한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "globals.css의 @theme 블록 내에 다음 Typography 토큰들을 추가:\n\n- --text-display: 40px (Auth 브랜드 타이틀용)\n- --text-title-lg: 26px (페이지 대제목, Auth form title)\n- --text-title: 20px (섹션 제목, Sidebar title)\n- --text-subtitle: 18px (Topbar title)\n- --text-body: 14px (본문 기본)\n- --text-caption: 13px (보조 텍스트, 메타 정보)\n- --text-micro: 11px (라벨, 힌트, 매우 작은 텍스트)\n\nTailwind v4에서 text-display, text-title-lg 같은 클래스로 사용 가능하도록 네이밍.\n기존 playground Typography 섹션은 font-sans만 표시하므로 새 토큰 시각화는 subtask 5에서 처리.",
+            "status": "pending",
+            "testStrategy": "1. 개발자 도구에서 typography 변수들이 올바른 px 값으로 선언되었는지 확인\n2. text-display, text-body 같은 Tailwind 클래스 적용 시 font-size가 올바르게 적용되는지 확인"
+          },
+          {
+            "id": 3,
+            "title": "Breakpoint override 및 Auth gradient 토큰 추가",
+            "description": "Tailwind v4의 breakpoint를 960px 기준 lg로 오버라이드하고, Auth gradient 및 Amber 색상 토큰을 globals.css @theme에 추가한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "@theme 블록 내에 다음 토큰들을 추가:\n\n1. Breakpoint override (Tailwind v4 커스텀 브레이크포인트):\n   - --breakpoint-sm: 480px\n   - --breakpoint-md: 768px\n   - --breakpoint-lg: 960px (디자인 명세 기준, 기본 1024px에서 변경)\n   - --breakpoint-xl: 1280px\n\n2. Auth gradient:\n   - --gradient-auth-brand: linear-gradient(145deg, #0D0D1E 0%, #111128 100%)\n   (design/dist/css/layout.css의 .auth-brand 배경과 일치)\n\n3. Amber 색상 (design/dist/css/tokens.css 참조):\n   - --color-amber: oklch(0.72 0.18 48)\n   - --color-amber-dim: oklch(0.72 0.18 48 / 0.15)\n\nBreakpoint 오버라이드로 lg: 클래스가 960px 기준으로 동작하게 됨.",
+            "status": "pending",
+            "testStrategy": "1. lg: 클래스가 960px에서 활성화되는지 브라우저 DevTools 반응형 모드로 확인\n2. bg-amber, bg-amber-dim 클래스가 올바른 색상으로 적용되는지 확인\n3. gradient 변수가 선언되었는지 개발자 도구에서 확인"
+          },
+          {
+            "id": 4,
+            "title": "기존 페이지 스타일 회귀 테스트 및 토큰 충돌 검증",
+            "description": "새로 추가된 토큰들이 기존 페이지들과 충돌하지 않는지 검증하고, 필요 시 기존 토큰 네이밍과 조정한다.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "새 토큰 추가 후 기존 코드베이스와의 호환성을 검증:\n\n1. 네이밍 충돌 검사:\n   - 기존 --color-* 토큰과 새 --color-amber* 충돌 없음 확인\n   - 기존 text-* 클래스(text-foreground 등)와 새 typography 토큰 충돌 검사\n   - Tailwind의 기본 spacing scale과 새 --spacing-s-* 병존 확인\n\n2. 회귀 테스트 대상 페이지:\n   - /login, /signup (Auth 관련)\n   - /home (홈 대시보드)\n   - /bands, /bands/[id] (밴드 목록/상세)\n   - /practices (합주 목록)\n   - /me (마이페이지)\n\n3. 확인 사항:\n   - 레이아웃 깨짐 없음\n   - 색상/간격/타이포가 기존과 동일\n   - 반응형 동작 유지\n\n4. 필요 시 토큰명 조정 (예: --text-* 충돌 시 --font-size-* 로 변경 검토)",
+            "status": "pending",
+            "testStrategy": "1. pnpm dev 실행 후 각 주요 페이지 시각적 확인\n2. pnpm typecheck 및 pnpm lint 통과 확인\n3. 브라우저 콘솔에 CSS 관련 경고/에러 없음 확인"
+          },
+          {
+            "id": 5,
+            "title": "Playground 페이지에 토큰 매트릭스 섹션 확장",
+            "description": "src/app/playground/page.tsx에 새로 추가된 토큰들(Spacing, Typography, Breakpoint, Amber, Gradient)을 시각적으로 렌더링하는 섹션을 추가한다.",
+            "dependencies": [
+              4
+            ],
+            "details": "기존 playground 페이지(src/app/playground/page.tsx)에 다음 섹션들을 추가:\n\n1. Spacing Scale 섹션:\n   - s-1 ~ s-12 각 간격을 박스 너비/높이로 시각화\n   - 각 박스에 토큰명과 px 값 라벨 표시\n\n2. Typography Scale 섹션:\n   - display, title-lg, title, subtitle, body, caption, micro 각 크기로 샘플 텍스트 렌더링\n   - 토큰명과 px 값 표시\n\n3. Layout 변수 섹션:\n   - sidebar-w, list-pane-w, band-list-pane-w 너비를 시각적 막대로 표현\n\n4. Breakpoint 섹션:\n   - 각 브레이크포인트(sm/md/lg/xl) 값과 현재 뷰포트 너비 대비 활성 상태 표시\n\n5. Amber 색상 + Gradient 섹션:\n   - semanticSwatches 배열에 amber/amber-dim 추가\n   - Auth gradient 시각화 (gradient 박스)\n\n기존 Section, SwatchGrid 컴포넌트 재사용.",
+            "status": "pending",
+            "testStrategy": "1. /playground 페이지에서 모든 새 섹션이 올바르게 렌더링되는지 시각 확인\n2. 각 토큰 값이 정확한 px/색상으로 표시되는지 확인\n3. 반응형 동작 (모바일/태블릿/데스크톱) 에서 레이아웃 깨짐 없음 확인"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Shell 레이아웃 시스템 컴포넌트 구현",
+        "description": "데스크톱 마스터-디테일 레이아웃을 위한 핵심 Shell 컴포넌트들(Shell, Sidebar, Topbar, PaneSplit, PaneList, PaneDetail)을 src/components/layout/에 구현한다.",
+        "details": "1. src/components/layout/shell.tsx 구현:\n   - props: children\n   - flex w-screen h-screen overflow-hidden 구조\n\n2. src/components/layout/sidebar.tsx 구현:\n   - 240px 고정 너비(--sidebar-w)\n   - brand 영역(로고 36x36 + 'Bandage' 타이틀)\n   - nav 영역(home/bands/practices/performances 아이템, 각각 아이콘 + 라벨)\n   - active 상태 스타일링(bg-accent-dim, text-accent)\n   - footer 영역(user avatar + 이름 + 마이페이지 링크)\n   - lg: 미만에서 hidden 처리\n\n3. src/components/layout/topbar.tsx 구현:\n   - props: title, breadcrumb?, actions?\n   - min-height 68px, sticky top-0\n   - breadcrumb + title 좌측, actions 슬롯 우측\n\n4. src/components/layout/pane-split.tsx 구현:\n   - flex-1 flex overflow-hidden\n   - children으로 PaneList와 PaneDetail 수용\n\n5. src/components/layout/pane-list.tsx 구현:\n   - props: width?: 'list'|'band-list', header?, children\n   - width='list'면 340px, 'band-list'면 360px\n   - border-r, header 영역 + scrollable body\n\n6. src/components/layout/pane-detail.tsx 구현:\n   - props: children\n   - flex-1, padding 24px 28px\n   - overflow-y auto",
+        "testStrategy": "1. 각 컴포넌트에 대해 Vitest 스냅샷 테스트 작성\n2. /playground 페이지에 컴포넌트 조합 데모 섹션 추가\n3. 960px 이상/미만에서 Sidebar 표시/숨김 동작 브라우저 확인",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Shell 기본 컴포넌트 구현 (shell.tsx, pane-split.tsx)",
+            "description": "데스크톱 마스터-디테일 레이아웃의 최상위 컨테이너인 Shell 컴포넌트와 좌측 목록/우측 상세 영역을 분리하는 PaneSplit 컴포넌트를 구현한다.",
+            "dependencies": [],
+            "details": "1. src/components/layout/shell.tsx 생성:\n   - props: children (ReactNode)\n   - Tailwind 클래스: flex w-screen h-screen overflow-hidden\n   - design/dist/css/layout.css의 .shell 스펙 참조\n\n2. src/components/layout/pane-split.tsx 생성:\n   - props: children (ReactNode)\n   - Tailwind 클래스: flex-1 flex overflow-hidden\n   - PaneList와 PaneDetail을 children으로 수용하는 컨테이너 역할\n   - design/dist/css/layout.css의 .pane-split 스펙 참조",
+            "status": "pending",
+            "testStrategy": "Vitest 스냅샷 테스트로 기본 렌더링 확인. children이 올바르게 전달되는지 검증."
+          },
+          {
+            "id": 2,
+            "title": "PaneList 및 PaneDetail 컴포넌트 구현",
+            "description": "마스터-디테일 패턴의 좌측 목록 패널(PaneList)과 우측 상세 패널(PaneDetail) 컴포넌트를 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/components/layout/pane-list.tsx 생성:\n   - props: width ('list' | 'band-list'), header? (ReactNode), children (ReactNode)\n   - width='list' → 340px (--list-pane-w), width='band-list' → 360px (--band-list-pane-w)\n   - Tailwind: flex-shrink-0 border-r border-border bg-surface flex flex-col\n   - header 영역: padding 20px, border-b\n   - body 영역: flex-1 overflow-y-auto padding 10px 12px\n   - design/dist/css/layout.css의 .pane-list, .pane-list--wide, .pane-list__header, .pane-list__body 참조\n\n2. src/components/layout/pane-detail.tsx 생성:\n   - props: children (ReactNode)\n   - Tailwind: flex-1 flex flex-col overflow-hidden\n   - body 영역: flex-1 overflow-y-auto padding 24px 28px\n   - design/dist/css/layout.css의 .pane-detail, .pane-detail__body 참조",
+            "status": "pending",
+            "testStrategy": "Vitest 스냅샷 테스트. width prop에 따른 너비 클래스 적용 확인. header/children 슬롯 렌더링 검증."
+          },
+          {
+            "id": 3,
+            "title": "Sidebar 컴포넌트 구현",
+            "description": "데스크톱 좌측 네비게이션 Sidebar 컴포넌트를 구현한다. 브랜드 영역, 네비게이션 아이템, 사용자 정보 푸터를 포함한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/components/layout/sidebar.tsx 생성 ('use client' 필요 - usePathname 사용):\n   - 고정 너비 240px (w-[240px] 또는 CSS 변수 --sidebar-w 활용)\n   - lg: 미만에서 hidden 처리 (hidden lg:flex)\n\n2. brand 영역 구현:\n   - 로고 36x36px, border-radius rounded-md, bg-accent-dim\n   - 'Bandage' 타이틀: text-xl font-black text-accent\n   - 하단 border-b\n\n3. nav 영역 구현:\n   - 아이템: home, bands, practices, performances (ROUTES 상수 사용)\n   - lucide-react 아이콘: Home, Users, Music, CalendarDays\n   - nav-item 스타일: flex items-center gap-3 px-3.5 py-2.5 rounded-md text-sm font-medium text-foreground-sub hover:bg-card hover:text-foreground\n   - active 상태: bg-accent-dim text-accent font-bold\n   - usePathname 훅으로 현재 경로 판별 (BottomNav의 isActive 로직 재사용)\n\n4. footer 영역 구현:\n   - border-t, Avatar 컴포넌트 사용 (size='md')\n   - 사용자 이름 표시, 마이페이지 링크 (/me)\n   - 현재 인증 정보가 없으면 하드코딩 placeholder 사용 (추후 authStore 연동)",
+            "status": "pending",
+            "testStrategy": "Vitest 스냅샷 테스트. active 상태 스타일링 검증. 브라우저에서 lg: 미만 hidden 동작 확인."
+          },
+          {
+            "id": 4,
+            "title": "Topbar 컴포넌트 구현",
+            "description": "페이지 상단 헤더 역할의 Topbar 컴포넌트를 구현한다. 제목, breadcrumb, 액션 버튼 슬롯을 제공한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/components/layout/topbar.tsx 생성:\n   - props: title (string), breadcrumb? (ReactNode), actions? (ReactNode)\n   - Tailwind: flex items-center justify-between px-7 py-4.5 border-b border-border bg-surface min-h-[68px] flex-shrink-0 sticky top-0 z-10\n\n2. 좌측 영역:\n   - breadcrumb이 있으면 breadcrumb 렌더링 (text-xs text-foreground-muted mb-0.5)\n   - title 렌더링 (text-lg font-bold text-foreground)\n   - 두 요소를 flex flex-col로 감싸기\n\n3. 우측 영역:\n   - actions 슬롯 렌더링 (flex gap-2)\n   - design/dist/css/layout.css의 .topbar, .topbar__title, .topbar__breadcrumb, .topbar__actions 참조",
+            "status": "pending",
+            "testStrategy": "Vitest 스냅샷 테스트. breadcrumb/actions optional props 유무에 따른 렌더링 검증. min-height 68px 확인."
+          },
+          {
+            "id": 5,
+            "title": "레이아웃 컴포넌트 통합 및 barrel export 구성",
+            "description": "구현된 Shell 레이아웃 컴포넌트들을 통합하고, src/components/layout/index.ts에 barrel export를 구성하여 import 편의성을 높인다.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "1. src/components/layout/index.ts 생성 또는 수정:\n   - 기존 컴포넌트 export 유지: BottomNav, Container, Header, PageTitle\n   - 신규 컴포넌트 추가: Shell, Sidebar, Topbar, PaneSplit, PaneList, PaneDetail\n   - 명명된 export 사용 (default export 지양)\n\n2. /playground 페이지에 Shell 레이아웃 데모 섹션 추가 (선택적):\n   - Shell + Sidebar + PaneSplit(PaneList + PaneDetail) 조합 예시\n   - 각 컴포넌트의 props 변형 시연\n   - 반응형 동작(960px 기준) 확인용\n\n3. 컴포넌트 상호작용 검증:\n   - Shell 내부에 Sidebar + main 영역이 올바르게 배치되는지 확인\n   - PaneSplit 내부에 PaneList + PaneDetail이 flex로 분리되는지 확인\n   - Topbar가 sticky로 상단 고정되는지 확인",
+            "status": "pending",
+            "testStrategy": "모든 컴포넌트 조합 상태로 Vitest 스냅샷 테스트. /playground에서 960px 이상/미만 브라우저 테스트. Task 3 (main 레이아웃 개편) 준비 완료 확인."
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "(main) 레이아웃 개편 - Shell 기반 반응형 구조",
+        "description": "src/app/(main)/layout.tsx를 Shell 기반으로 재작성하여 960px 이상에서는 Sidebar + 메인 영역, 미만에서는 기존 BottomNav + Container 구조가 동작하도록 한다.",
+        "details": "1. src/app/(main)/layout.tsx 수정:\n   ```tsx\n   export default function MainLayout({ children }) {\n     return (\n       <>\n         {/* Desktop: Shell + Sidebar */}\n         <div className=\"hidden lg:flex h-screen w-screen overflow-hidden\">\n           <Shell>\n             <Sidebar />\n             <div className=\"flex-1 flex flex-col overflow-hidden\">\n               {children}\n             </div>\n           </Shell>\n         </div>\n         \n         {/* Mobile: 기존 구조 */}\n         <div className=\"lg:hidden min-h-screen pb-16\">\n           <Container>{children}</Container>\n           <BottomNav />\n         </div>\n       </>\n     );\n   }\n   ```\n\n2. Sidebar 네비게이션 아이템 클릭 시 해당 라우트로 이동 연결\n   - usePathname() 활용하여 active 상태 판별\n   - ROUTES 상수 활용\n\n3. Sidebar footer의 user 정보는 useAuthStore에서 가져오기\n\n4. 기존 Container 컴포넌트의 padding을 토큰화:\n   - 모바일: 16px\n   - 태블릿(md): 20px",
+        "testStrategy": "1. pnpm dev 실행 후 브라우저 창 크기 조절하여 960px 기준 레이아웃 전환 확인\n2. 각 네비게이션 아이템 클릭 시 라우트 이동 및 active 상태 확인\n3. 기존 모바일 레이아웃(BottomNav)이 정상 동작하는지 확인\n4. Playwright E2E: 데스크톱/모바일 뷰포트에서 레이아웃 렌더링 테스트",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "MainLayout 반응형 분기 구조 작성",
+            "description": "src/app/(main)/layout.tsx를 수정하여 960px(lg) 기준으로 데스크톱/모바일 레이아웃이 분기되도록 구조를 작성한다.",
+            "dependencies": [],
+            "details": "layout.tsx 파일을 수정하여 lg:hidden / hidden lg:flex CSS 클래스 기반 분기 구조를 작성한다. 데스크톱 영역에는 Shell + Sidebar placeholder, 모바일 영역에는 기존 Container + BottomNav를 유지한다. Task 2에서 Shell/Sidebar 컴포넌트가 완성되면 import로 연결할 수 있도록 구조를 준비한다. 모바일 영역은 min-h-screen pb-16으로 기존 패딩 유지, 데스크톱은 h-screen w-screen overflow-hidden flex 구조로 작성한다.",
+            "status": "pending",
+            "testStrategy": "pnpm dev 실행 후 브라우저 DevTools에서 960px 기준으로 레이아웃 요소가 올바르게 표시/숨김되는지 확인한다."
+          },
+          {
+            "id": 2,
+            "title": "Sidebar 네비게이션 연동 (usePathname + ROUTES)",
+            "description": "Sidebar 컴포넌트에서 usePathname 훅을 활용해 현재 경로를 판별하고, ROUTES 상수 기반으로 네비게이션 아이템을 렌더링한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "Task 2에서 생성된 sidebar.tsx를 수정하여 다음을 구현한다: (1) usePathname()으로 현재 경로 가져오기 (2) ROUTES.HOME, ROUTES.BANDS, ROUTES.PRACTICES, ROUTES.PERFORMANCES, ROUTES.ME에 대응하는 네비게이션 아이템 배열 정의 (3) bottom-nav.tsx의 isActive 로직을 재사용하여 active 상태 판별 (4) active 아이템에 bg-accent-dim text-accent 스타일 적용 (5) Next.js Link 컴포넌트로 클릭 시 라우트 이동 연결",
+            "status": "pending",
+            "testStrategy": "각 네비게이션 아이템 클릭 시 해당 라우트로 이동하는지 확인하고, 현재 경로에 맞게 active 스타일이 적용되는지 DevTools로 검증한다."
+          },
+          {
+            "id": 3,
+            "title": "Sidebar footer 사용자 정보 연동 (useMe 훅)",
+            "description": "Sidebar footer 영역에 useMe 훅을 통해 현재 로그인한 사용자의 이름, 이메일을 표시하고 마이페이지 링크를 추가한다.",
+            "dependencies": [
+              2
+            ],
+            "details": "sidebar.tsx의 footer 영역을 수정하여 다음을 구현한다: (1) useMe() 훅으로 MemberInfoResponse(id, email, name) 가져오기 (2) Avatar 컴포넌트에 name 전달 (3) 사용자 이름과 이메일 표시 (text overflow ellipsis 처리) (4) footer 전체를 Link로 감싸서 ROUTES.ME로 이동 가능하게 연결 (5) 로딩 상태에서는 Skeleton UI 표시 (6) lg 미만에서는 user 정보 숨김 처리 유지",
+            "status": "pending",
+            "testStrategy": "로그인 상태에서 Sidebar footer에 사용자 이름/이메일이 올바르게 표시되는지 확인하고, 클릭 시 /me 페이지로 이동하는지 검증한다."
+          },
+          {
+            "id": 4,
+            "title": "Container 컴포넌트 패딩 토큰화",
+            "description": "기존 Container 컴포넌트의 padding을 디자인 토큰 기반으로 변경하여 모바일 16px, 태블릿(md) 20px 간격을 적용한다.",
+            "dependencies": [],
+            "details": "src/components/layout/container.tsx를 수정한다: (1) 기존 px-4를 px-4 md:px-5로 변경하여 반응형 패딩 적용 (모바일 16px = 1rem = px-4, 태블릿 20px = 1.25rem = px-5) (2) Tailwind v4에서 spacing scale이 올바르게 동작하는지 확인 (3) Task 1에서 추가되는 spacing 토큰(--s-4, --s-5)과 일관성 유지",
+            "status": "pending",
+            "testStrategy": "브라우저 DevTools에서 768px 기준으로 Container padding이 16px에서 20px로 변경되는지 확인한다."
+          },
+          {
+            "id": 5,
+            "title": "데스크톱/모바일 레이아웃 통합 테스트 및 Playwright E2E 추가",
+            "description": "완성된 반응형 레이아웃이 960px 기준으로 올바르게 전환되는지 수동 테스트 후 Playwright E2E 테스트 케이스를 추가한다.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "다음 항목을 검증한다: (1) 960px 이상에서 Sidebar가 보이고 BottomNav가 숨겨지는지 확인 (2) 960px 미만에서 BottomNav가 보이고 Sidebar가 숨겨지는지 확인 (3) Sidebar 네비게이션 클릭 시 라우트 이동 및 active 상태 갱신 확인 (4) 기존 모바일 레이아웃 기능이 정상 동작하는지 회귀 테스트 (5) e2e/layout.spec.ts 파일을 생성하여 viewport 1440x900과 375x812에서 레이아웃 요소 가시성 테스트 작성",
+            "status": "pending",
+            "testStrategy": "pnpm test:e2e 실행하여 레이아웃 테스트 통과 확인, pnpm dev로 수동 테스트하여 960px 기준 레이아웃 전환이 매끄럽게 작동하는지 검증한다."
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Auth 분할 레이아웃 및 관련 컴포넌트 구현",
+        "description": "(auth) 레이아웃을 데스크톱에서 좌측 AuthBrand 패널 + 우측 480px AuthFormPanel 구조로 개편하고, StepIndicator와 PasswordStrength 컴포넌트를 구현한다.",
+        "details": "1. src/components/layout/auth-split.tsx 구현:\n   - AuthBrand: gradient 배경(--gradient-auth-brand) + 장식 링 3개 + 로고(72x72) + 타이틀(40px) + tagline + feature chips\n   - AuthFormPanel: width 480px, max-w 360px inner, 중앙 정렬\n\n2. src/components/ui/step-indicator.tsx 구현:\n   - props: steps: string[], current: number\n   - 현재 단계는 accent 색상, 완료 단계는 체크 아이콘\n   - 단계 사이 연결 라인\n\n3. src/components/ui/password-strength.tsx 구현:\n   - props: password: string\n   - 규칙 기반 4단계 점수: 8자 이상, 대문자, 숫자, 특수문자\n   - 4단 막대 UI + 레벨 라벨(약함/보통/강함/매우 강함)\n\n4. src/app/(auth)/layout.tsx 수정:\n   - 960px 이상: AuthBrand(hidden lg:flex) + AuthFormPanel\n   - 960px 미만: 기존 중앙 정렬 유지\n\n5. /join 페이지에 StepIndicator 적용 (기본 정보 → 계정 설정)\n6. /join, /password-change 페이지에 PasswordStrength 적용",
+        "testStrategy": "1. 각 새 컴포넌트에 Vitest 스냅샷 테스트 작성\n2. 데스크톱(1440px)에서 AuthBrand + AuthFormPanel 분할 렌더링 확인\n3. 모바일(375px)에서 AuthBrand 숨김, 기존 중앙 정렬 확인\n4. Playwright E2E: 로그인/회원가입 플로우 데스크톱+모바일 테스트",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "AuthBrand 및 AuthFormPanel 컴포넌트 구현",
+            "description": "데스크톱 Auth 분할 레이아웃을 위한 AuthBrand(좌측 브랜딩 패널)와 AuthFormPanel(우측 폼 패널) 컴포넌트를 src/components/layout/auth-split.tsx에 구현한다.",
+            "dependencies": [],
+            "details": "1. src/components/layout/auth-split.tsx 파일 생성\n2. AuthBrand 컴포넌트 구현:\n   - gradient 배경: linear-gradient(145deg, #0D0D1E 0%, #111128 100%)\n   - 장식 링 3개 (lg: 400px, md: 280px, sm: 160px with accent-soft fill)\n   - 로고 영역 (72x72px, rounded-xl, accent-dim 배경)\n   - 타이틀 'Bandage' (text-[40px] font-black tracking-tight)\n   - tagline 텍스트 (text-foreground-sub, max-w-[280px])\n   - feature chips 3개: '합주 일정 관리', '세션 배정', '공연 연결' (체크 아이콘 포함)\n3. AuthFormPanel 컴포넌트 구현:\n   - width: 480px 고정\n   - inner container: max-w-[360px] 중앙 정렬\n   - bg-surface 배경, flex column 레이아웃\n4. AuthSplit 래퍼 컴포넌트: AuthBrand + AuthFormPanel 조합\n5. 반응형: AuthBrand는 lg: 이상에서만 표시 (hidden lg:flex)",
+            "status": "pending",
+            "testStrategy": "1. Vitest 스냅샷 테스트로 컴포넌트 렌더링 검증\n2. Storybook 또는 /playground에서 1440px 뷰포트로 분할 레이아웃 시각 확인\n3. 375px 뷰포트에서 AuthBrand 숨김 확인"
+          },
+          {
+            "id": 2,
+            "title": "StepIndicator 컴포넌트 구현",
+            "description": "다단계 폼 진행 상태를 표시하는 StepIndicator 컴포넌트를 src/components/ui/step-indicator.tsx에 구현한다.",
+            "dependencies": [],
+            "details": "1. src/components/ui/step-indicator.tsx 파일 생성\n2. Props 인터페이스 정의:\n   - steps: string[] (단계 라벨 배열)\n   - current: number (현재 단계 인덱스, 0-based)\n   - className?: string\n3. 스타일링 구현 (design/dist/css/components.css 277-298 참조):\n   - 각 단계는 dot(26x26px) + label로 구성\n   - 단계 사이 연결 바 (h-[2px], flex-1)\n   - 상태별 스타일:\n     * 미완료(i > current): bg-card, border-border, text-muted\n     * 현재(i === current): bg-accent, border-accent, text-white\n     * 완료(i < current): bg-accent-dim, border-accent, text-accent + 체크 아이콘\n   - 완료된 연결 바: bg-accent\n4. 접근성: aria-current='step' (현재), aria-label (각 단계)\n5. cn() 유틸로 조건부 클래스 적용",
+            "status": "pending",
+            "testStrategy": "1. Vitest 스냅샷 테스트 (steps=['기본 정보', '계정 설정'], current=0/1)\n2. 각 상태(미완료/현재/완료)별 스타일 렌더링 확인\n3. /playground 페이지에 데모 섹션 추가"
+          },
+          {
+            "id": 3,
+            "title": "PasswordStrength 컴포넌트 구현",
+            "description": "비밀번호 강도를 시각적으로 표시하는 PasswordStrength 컴포넌트를 src/components/ui/password-strength.tsx에 구현한다.",
+            "dependencies": [],
+            "details": "1. src/components/ui/password-strength.tsx 파일 생성\n2. Props 인터페이스 정의:\n   - password: string (평가할 비밀번호)\n   - className?: string\n3. 강도 평가 규칙 구현 (4점 만점):\n   - +1: 8자 이상\n   - +1: 대문자 + 소문자 포함\n   - +1: 숫자 포함\n   - +1: 특수문자 포함\n4. 레벨 매핑:\n   - 0-1점: weak (약함), danger 색상\n   - 2-3점: medium (보통), warn 색상\n   - 4점: strong (강함), success 색상\n5. UI 구현 (design/dist/css/components.css 300-314 참조):\n   - 4단 막대 (각각 flex-1, gap-[3px], h-1)\n   - 점수에 따라 채워진 막대 개수 및 색상 결정\n   - 하단 레벨 라벨 + 힌트 텍스트 ('8자 이상, 대소문자, 숫자, 특수문자 권장')\n6. 빈 비밀번호 처리: 막대만 표시 (모두 비활성)",
+            "status": "pending",
+            "testStrategy": "1. Vitest 단위 테스트: 각 규칙별 점수 계산 검증\n2. 스냅샷 테스트: 빈 값, weak, medium, strong 각 상태\n3. /playground 페이지에 인터랙티브 데모 추가"
+          },
+          {
+            "id": 4,
+            "title": "(auth) layout.tsx 반응형 분할 레이아웃 적용",
+            "description": "src/app/(auth)/layout.tsx를 데스크톱에서 AuthBrand + AuthFormPanel 분할 구조로, 모바일에서는 기존 중앙 정렬을 유지하도록 수정한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/app/(auth)/layout.tsx 수정:\n   - 기존 단순 중앙 정렬 레이아웃을 AuthSplit 컴포넌트로 교체\n   - 960px(lg:) 이상: AuthBrand(hidden lg:flex) + AuthFormPanel 분할\n   - 960px 미만: AuthBrand 숨김, AuthFormPanel만 전체 너비로 중앙 정렬\n2. AuthFormPanel 내부에 children 배치\n3. AuthRedirectIfAuthenticated 유지\n4. 레이아웃 구조:\n   - 외부: flex w-screen h-screen overflow-hidden\n   - AuthBrand: flex-1, 데스크톱 전용 (hidden lg:flex)\n   - AuthFormPanel: w-[480px] lg:w-[480px] / 모바일 w-full\n5. 기존 max-w-sm 로직은 AuthFormPanel 내부 max-w-[360px]로 대체\n6. 최소 높이: min-h-screen 유지",
+            "status": "pending",
+            "testStrategy": "1. Playwright E2E: 로그인 페이지 데스크톱(1440px) + 모바일(375px) 렌더링 확인\n2. 브라우저 DevTools로 960px 경계에서 레이아웃 전환 확인\n3. AuthRedirectIfAuthenticated 동작 유지 검증"
+          },
+          {
+            "id": 5,
+            "title": "/join 및 /password-change 페이지에 StepIndicator, PasswordStrength 적용",
+            "description": "/join 페이지에 StepIndicator를 적용하고(기본 정보 -> 계정 설정), /join과 /password-change 페이지에 PasswordStrength를 적용한다.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "1. src/app/(auth)/join/JoinForm.client.tsx 수정:\n   - StepIndicator 추가: steps=['기본 정보', '계정 설정'], current=step\n   - Step 0: 이름, 연락처 필드\n   - Step 1: 이메일, 비밀번호 필드 + PasswordStrength\n   - Step 전환 로직 유지 (다음/이전 버튼)\n2. src/app/(auth)/password-change/PasswordChangeForm.client.tsx 수정:\n   - 새 비밀번호 Input 아래에 PasswordStrength 추가\n   - password prop으로 newPassword 상태 전달\n3. 폼 레이아웃 조정:\n   - StepIndicator는 폼 상단 (auth-form__heading 아래)\n   - PasswordStrength는 비밀번호 Input 바로 아래 (-mt-2 mb-4 정도)\n4. 기존 zod 스키마 및 react-hook-form 연동 유지\n5. 접근성: 각 단계 전환 시 포커스 관리",
+            "status": "pending",
+            "testStrategy": "1. Vitest: JoinForm에서 step 변경 시 StepIndicator current 값 변경 확인\n2. Playwright E2E: 회원가입 플로우 (step 0 -> 1 전환, 비밀번호 입력 시 강도 표시)\n3. 비밀번호 변경 페이지에서 PasswordStrength 동작 확인\n4. 데스크톱 + 모바일 양쪽에서 UI 깨짐 없음 확인"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "공용 컴포넌트 신규 구현 및 기존 컴포넌트 variant 보정",
+        "description": "RoleBadge, SectionTitle, Divider, StatCard, EmptyPane, ResponsiveSheet 등 신규 컴포넌트를 구현하고, Button/Badge/Card/Chip/Dialog 등 기존 컴포넌트의 variant를 디자인 원본과 일치시킨다.",
+        "details": "1. 신규 컴포넌트 구현 (src/components/ui/):\n   - role-badge.tsx: role('LEADER'|'ADMIN'|'MEMBER') → 역할별 색상(--color-role-*) 적용\n   - section-title.tsx: title + optional action 슬롯, uppercase, 12px, letterSpacing\n   - divider.tsx: h-px bg-border, optional inset prop\n   - stat-card.tsx: icon + label + value, Home 통계 그리드용\n\n2. src/components/feedback/empty-pane.tsx 구현:\n   - 아이콘 + 타이틀 + 설명, PaneDetail 플레이스홀더용\n\n3. src/components/ui/responsive-sheet.tsx 구현:\n   - 데스크톱(lg:)에서는 Dialog, 모바일에서는 BottomSheet로 자동 전환\n\n4. Button variant 보정:\n   - accent-outline variant 추가\n   - padding/font를 토큰화\n\n5. Badge variant 보정:\n   - amber, muted variant 추가\n   - 기존 코드베이스에서 사용 중인 variant 마이그레이션\n\n6. Card 보정:\n   - interactive prop이 --color-card-hover 토큰 사용하도록 확인\n\n7. Chip 보정:\n   - sessionTypeToken 유틸 추출 (src/lib/session-type.ts)\n   - 하드코딩된 oklch 값을 유틸 함수로 대체\n\n8. Dialog 보정:\n   - sheetOnMobile prop 추가 옵션",
+        "testStrategy": "1. 모든 신규 컴포넌트에 Vitest 스냅샷 테스트 작성\n2. 기존 컴포넌트 variant 변경 시 기존 테스트 갱신(pnpm test -u)\n3. /playground 페이지에 컴포넌트 매트릭스 섹션 업데이트\n4. 사용처에서 스타일 깨짐 없는지 수동 회귀 확인",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "신규 기본 UI 컴포넌트 구현 (RoleBadge, SectionTitle, Divider)",
+            "description": "RoleBadge, SectionTitle, Divider 3개의 기본 UI 컴포넌트를 src/components/ui/에 신규 구현한다.",
+            "dependencies": [],
+            "details": "1. **role-badge.tsx** 구현:\n   - Props: `role: 'LEADER' | 'ADMIN' | 'MEMBER'`, `className?`\n   - 기존 `--color-role-leader`, `--color-role-admin`, `--color-role-member` 토큰 활용\n   - 역할별 배경색(dim)/텍스트색 조합: LEADER(orange), ADMIN(blue), MEMBER(gray)\n   - 라벨: 리더/관리자/멤버\n   - 기존 BandRoleBadge(도메인 컴포넌트)는 이 공용 RoleBadge를 래핑하도록 리팩토링\n\n2. **section-title.tsx** 구현:\n   - Props: `title: string`, `action?: ReactNode`, `className?`\n   - 스타일: uppercase, text-xs(12px), tracking-wider, text-foreground-muted\n   - action 슬롯: 우측 정렬, 주로 '전체 보기 →' 링크용\n   - flex justify-between items-center 레이아웃\n\n3. **divider.tsx** 구현:\n   - Props: `inset?: boolean`, `className?`\n   - 기본: h-px bg-border w-full\n   - inset=true: mx-4 (양쪽 여백)\n   - 시맨틱: role='separator', aria-orientation='horizontal'",
+            "status": "pending",
+            "testStrategy": "1. 각 컴포넌트에 Vitest 스냅샷 테스트 작성\n2. RoleBadge: LEADER/ADMIN/MEMBER 3가지 role에 대한 렌더링 검증\n3. SectionTitle: title만 렌더링 / title+action 렌더링 케이스 검증\n4. Divider: 기본 / inset=true 케이스 검증"
+          },
+          {
+            "id": 2,
+            "title": "StatCard, EmptyPane 컴포넌트 구현",
+            "description": "Home 통계 그리드용 StatCard와 PaneDetail 플레이스홀더용 EmptyPane 컴포넌트를 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. **stat-card.tsx** (src/components/ui/) 구현:\n   - Props: `icon: LucideIcon`, `label: string`, `value: string | number`, `className?`\n   - 레이아웃: Card 기반, flex items-center gap-3\n   - 아이콘: 40x40 bg-accent-dim rounded-md 컨테이너 내 24x24 text-accent\n   - label: text-foreground-sub text-xs\n   - value: text-foreground text-xl font-semibold\n   - padding='md' 기본값\n\n2. **empty-pane.tsx** (src/components/feedback/) 구현:\n   - Props: `icon?: LucideIcon`, `title: string`, `description?: string`, `className?`\n   - 기존 EmptyState와 유사하나 PaneDetail(마스터-디테일 우측 패널) 플레이스홀더 전용\n   - 레이아웃: flex flex-col items-center justify-center h-full\n   - 아이콘: h-16 w-16 text-foreground-muted\n   - title: text-foreground-sub text-lg\n   - description: text-foreground-muted text-sm\n   - 액션 버튼 슬롯 없음 (EmptyState와의 차이점)",
+            "status": "pending",
+            "testStrategy": "1. StatCard: icon/label/value 조합 렌더링 스냅샷 테스트\n2. StatCard: value가 숫자일 때 올바르게 렌더링되는지 확인\n3. EmptyPane: icon 유무에 따른 렌더링 검증\n4. EmptyPane: description 유무에 따른 조건부 렌더링 검증"
+          },
+          {
+            "id": 3,
+            "title": "ResponsiveSheet 컴포넌트 구현",
+            "description": "데스크톱(lg: 이상)에서는 Dialog, 모바일에서는 BottomSheet로 자동 전환되는 ResponsiveSheet 컴포넌트를 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. **responsive-sheet.tsx** (src/components/ui/) 구현:\n   - 기존 Dialog, BottomSheet 컴포넌트를 조합\n   - useMediaQuery 또는 Tailwind lg: breakpoint(960px) 기준 분기\n   - Props: Dialog/BottomSheet 공통 props 통합 (open, onOpenChange, children)\n   - 내보내기: ResponsiveSheet, ResponsiveSheetTrigger, ResponsiveSheetContent, ResponsiveSheetHeader, ResponsiveSheetBody, ResponsiveSheetFooter, ResponsiveSheetTitle, ResponsiveSheetDescription, ResponsiveSheetClose\n\n2. **useMediaQuery 훅** (src/hooks/use-media-query.ts) 구현 (없을 경우):\n   - matchMedia API 활용\n   - SSR 안전 처리 (초기값 false)\n   - resize 이벤트 리스너 등록/해제\n\n3. ResponsiveSheetContent 구현 로직:\n   - const isDesktop = useMediaQuery('(min-width: 960px)')\n   - isDesktop ? DialogContent : BottomSheetContent 렌더링\n   - Header/Body/Footer도 동일하게 조건부 렌더링",
+            "status": "pending",
+            "testStrategy": "1. useMediaQuery 훅 유닛 테스트: matchMedia mock으로 true/false 케이스 검증\n2. ResponsiveSheet: 뷰포트 960px 이상에서 Dialog 렌더링 확인\n3. ResponsiveSheet: 뷰포트 960px 미만에서 BottomSheet 렌더링 확인\n4. /playground에서 수동 리사이즈 테스트"
+          },
+          {
+            "id": 4,
+            "title": "Button, Badge 컴포넌트 variant 보정",
+            "description": "Button에 accent-outline variant 추가, Badge에 amber/muted variant 추가하고 padding/font를 디자인 토큰화한다.",
+            "dependencies": [],
+            "details": "1. **Button variant 보정** (src/components/ui/button.tsx):\n   - 새 variant 추가: `accent-outline` (border-accent text-accent bg-transparent hover:bg-accent-dim)\n   - ButtonVariant 타입에 'accent-outline' 추가\n   - variantClasses Record에 accent-outline 스타일 추가\n   - sizeClasses의 px/text 값을 토큰 기반으로 정리 (현재 하드코딩된 값 유지 가능, 일관성 확인)\n\n2. **Badge variant 보정** (src/components/ui/badge.tsx):\n   - 새 variant 추가: `amber` (bg-[oklch(0.76_0.17_85_/_0.15)] text-[oklch(0.76_0.17_85)] - warn 색상 계열)\n   - 새 variant 추가: `muted` (bg-surface text-foreground-muted border-transparent)\n   - BadgeVariant 타입 확장: 'default' | 'accent' | 'success' | 'warn' | 'danger' | 'amber' | 'muted'\n   - 기존 사용처 확인 후 호환성 유지\n\n3. 기존 코드베이스에서 Badge 사용처 검색하여 마이그레이션 필요 여부 확인",
+            "status": "pending",
+            "testStrategy": "1. Button: accent-outline variant 스냅샷 테스트 추가\n2. Badge: amber, muted variant 스냅샷 테스트 추가\n3. 기존 variant 테스트가 있다면 -u로 갱신\n4. 사용처에서 스타일 깨짐 없는지 수동 회귀 확인"
+          },
+          {
+            "id": 5,
+            "title": "Chip sessionTypeToken 유틸 추출 및 Dialog sheetOnMobile 옵션 검토",
+            "description": "Chip 컴포넌트의 하드코딩된 OKLCH 세션 색상을 유틸 함수로 추출하고, Dialog에 sheetOnMobile 옵션 추가 가능성을 검토한다.",
+            "dependencies": [
+              3
+            ],
+            "details": "1. **sessionTypeToken 유틸 추출** (src/lib/session-type.ts):\n   - Chip의 sessionClasses Record를 별도 유틸로 분리\n   - 함수: `getSessionTypeClasses(session: SessionType): { bg: string; text: string }`\n   - 또는 Record export: `SESSION_TYPE_CLASSES: Record<SessionType, string>`\n   - Chip 컴포넌트에서 이 유틸 import하여 사용하도록 리팩토링\n   - 다른 컴포넌트(예: 세션 관련 Badge, 리스트 아이템)에서 재사용 가능\n\n2. **Chip 리팩토링** (src/components/ui/chip.tsx):\n   - 하드코딩된 sessionClasses를 session-type.ts 유틸로 대체\n   - 기존 동작 유지 확인\n\n3. **Dialog sheetOnMobile 옵션 검토**:\n   - ResponsiveSheet가 이미 이 역할을 수행하므로 Dialog 자체에 옵션 추가는 불필요할 수 있음\n   - 대안: Dialog 사용처에서 ResponsiveSheet로 대체하도록 가이드 문서화\n   - 또는 DialogContent에 `asSheet?: boolean` prop 추가하여 모바일에서 BottomSheet 스타일 적용 (optional)",
+            "status": "pending",
+            "testStrategy": "1. session-type.ts 유닛 테스트: 모든 SessionType에 대해 올바른 클래스 반환 검증\n2. Chip 리팩토링 후 기존 스냅샷 테스트 통과 확인\n3. SessionType이 사용되는 다른 컴포넌트에서 유틸 적용 시 스타일 일관성 확인\n4. Dialog sheetOnMobile 구현 시 ResponsiveSheet와 동일 동작 검증"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Home 화면 재구성 (StatCard 그리드 + 섹션 레이아웃)",
+        "description": "/home 화면을 디자인 원본 기준으로 재구성한다. 데스크톱에서는 4-StatCard 그리드 + grid-2(내 밴드/다가오는 합주) + grid-3(다가오는 공연), 모바일에서는 단일 컬럼 스택 구조로 구현한다.",
+        "details": "1. src/app/(main)/home/page.tsx 재구성:\n   - PageTitle(greeting + sub): \"안녕하세요, {name}님\" + \"오늘도 좋은 합주 되세요.\"\n   - StatCard x4 그리드: 소속 밴드 / 예정 합주 / 예정 공연 / 참여 세션\n     - 데스크톱: grid-cols-4\n     - 모바일: grid-cols-2\n   - 내 밴드 + 다가오는 합주 2열 그리드\n     - 데스크톱: grid-cols-2\n     - 모바일: 단일 컬럼\n   - 다가오는 공연 3열 그리드\n     - 데스크톱: grid-cols-3\n     - 모바일: 단일 컬럼\n\n2. SectionTitle 컴포넌트 활용하여 각 섹션 헤더 구성\n   - action 슬롯에 \"전체 보기 →\" 링크\n\n3. 통계 데이터 훅 구현/활용:\n   - useMyBands, useUpcomingPractices, useUpcomingPerformances 기존 훅에서 count 파생\n   - 세션 참여 수는 TanStack Query select로 계산\n\n4. Topbar 연동: 데스크톱에서는 Topbar에 \"홈\" 타이틀 표시",
+        "testStrategy": "1. 데스크톱(1440px)에서 4열/2열/3열 그리드 레이아웃 확인\n2. 모바일(375px)에서 단일 컬럼 스택 확인\n3. StatCard 숫자가 실제 API 데이터와 일치하는지 확인\n4. Playwright E2E: 홈 화면 렌더링 데스크톱+모바일 테스트",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "StatCard 컴포넌트 구현 (src/components/ui/stat-card.tsx)",
+            "description": "디자인 시스템의 Stat 컴포넌트를 React/Tailwind로 구현한다. IconTile + 수치/라벨 조합의 통계 카드 컴포넌트를 생성한다.",
+            "dependencies": [],
+            "details": "1. src/components/ui/stat-card.tsx 파일 생성\n2. Props 정의: { label: string; value: number | string; icon: LucideIcon; tone: 'accent' | 'success' | 'amber' | 'warn' }\n3. 디자인 참조: design/dist/css/components.css의 .stat 스타일 (.stat { padding: 20px; gap: 14px; border-radius: var(--r-lg) })\n4. IconTile 영역: 44x44 정사각형, tone별 배경색(accent-dim, success-dim 등) + 아이콘\n5. 수치 영역: .stat__value (text-2xl font-extrabold), .stat__label (text-xs text-foreground-muted)\n6. Tailwind 클래스로 스타일 적용: bg-card, border border-border, rounded-lg, p-5, flex items-center gap-3.5\n7. 반응형: 모바일에서는 padding 축소(p-4), 아이콘 크기 축소(36x36) 고려",
+            "status": "pending",
+            "testStrategy": "Vitest 스냅샷 테스트로 각 tone별 렌더링 확인. /playground 페이지에 4가지 tone의 StatCard 데모 추가."
+          },
+          {
+            "id": 2,
+            "title": "SectionTitle 컴포넌트 구현 (src/components/layout/section-title.tsx)",
+            "description": "각 섹션 헤더에 사용할 SectionTitle 컴포넌트를 구현한다. 제목 텍스트와 우측 action 슬롯을 지원한다.",
+            "dependencies": [],
+            "details": "1. src/components/layout/section-title.tsx 파일 생성\n2. Props 정의: { title: string; action?: ReactNode; className?: string }\n3. 디자인 참조: design/dist/js/components.js의 SectionTitle 함수 (class: 'section-title')\n4. 레이아웃: flex justify-between items-center\n5. 제목: text-sm font-semibold text-foreground\n6. action 슬롯: '전체 보기 →' 링크 등을 받아 우측에 렌더링\n7. action 슬롯 스타일: text-xs text-accent hover:underline\n8. next/link의 Link 컴포넌트로 href 전달 가능하도록 action을 ReactNode로 유지",
+            "status": "pending",
+            "testStrategy": "action 슬롯 유무에 따른 렌더링 확인. 클릭 이벤트 동작 테스트."
+          },
+          {
+            "id": 3,
+            "title": "홈 통계 데이터 훅 구현 (useHomeStats)",
+            "description": "홈 화면의 StatCard에 표시할 통계 데이터(소속 밴드 수, 예정 합주 수, 예정 공연 수, 참여 세션 수)를 집계하는 커스텀 훅을 구현한다.",
+            "dependencies": [],
+            "details": "1. src/domain/member/hooks/useHomeStats.ts 파일 생성 (또는 src/app/(main)/home/ 하위에 로컬 훅으로)\n2. 기존 훅 활용: useMyBands, useUpcomingPractices, useUpcomingPerformances\n3. 각 훅에서 data?.length를 통해 count 파생\n4. 참여 세션 수: useUpcomingPractices 결과에서 participant로 참여한 세션 수를 TanStack Query select로 계산 (또는 별도 API가 없으면 일단 practices.flatMap(p => p.sessions).filter(s => s.assignee === me).length)\n5. 반환 타입: { bandCount: number; practiceCount: number; performanceCount: number; sessionCount: number; isLoading: boolean }\n6. 로딩/에러 상태 병합: isLoading = 모든 쿼리가 로딩 중, isError = 하나라도 에러\n7. staleTime 설정으로 불필요한 재요청 방지",
+            "status": "pending",
+            "testStrategy": "Mock 데이터로 훅 반환값 테스트. 각 도메인 훅의 count가 정확히 파생되는지 확인."
+          },
+          {
+            "id": 4,
+            "title": "Home 페이지 레이아웃 재구성 (page.tsx)",
+            "description": "src/app/(main)/home/page.tsx를 디자인 원본 기준으로 재구성한다. 인사말 헤더, 4열 StatCard 그리드, 2열 섹션 그리드, 3열 공연 그리드를 구현한다.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "1. PageTitle을 인사말 형식으로 변경: title='안녕하세요, {name}님', description='오늘도 좋은 합주 되세요.'\n2. useMe 훅으로 현재 사용자 이름 가져오기\n3. StatCard 그리드 섹션 추가:\n   - grid grid-cols-2 md:grid-cols-4 gap-4\n   - StatCard x4: 소속 밴드(band/accent), 예정 합주(practice/success), 예정 공연(performance/amber), 참여 세션(music/warn)\n4. 내 밴드 + 다가오는 합주 2열 그리드:\n   - grid grid-cols-1 lg:grid-cols-2 gap-6\n   - 각 섹션에 SectionTitle(action='전체 보기 →' Link) + 기존 MyBands/UpcomingPractices 컴포넌트\n5. 다가오는 공연 3열 그리드:\n   - SectionTitle + grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4\n   - UpcomingPerformances limit 조정\n6. 반응형 스택: 모바일에서 모든 그리드 단일 컬럼",
+            "status": "pending",
+            "testStrategy": "데스크톱(1440px)에서 4열/2열/3열 그리드 확인. 모바일(375px)에서 단일 컬럼 스택 확인. 인사말에 실제 사용자 이름 표시 확인."
+          },
+          {
+            "id": 5,
+            "title": "Topbar 연동 및 반응형 테스트",
+            "description": "데스크톱에서 Topbar에 '홈' 타이틀이 표시되도록 연동하고, Playwright E2E 테스트로 데스크톱/모바일 양쪽 레이아웃을 검증한다.",
+            "dependencies": [
+              4
+            ],
+            "details": "1. Shell 레이아웃 시스템(Task 2)이 완료되면 Topbar 연동\n   - Topbar가 아직 없으면 이 서브태스크는 Topbar props로 title 전달하는 구조만 준비\n   - 현재는 PageTitle이 타이틀 역할을 대신하므로 큰 변경 불필요\n2. Playwright E2E 테스트 작성 (e2e/home.spec.ts):\n   - 데스크톱(1440x900) 뷰포트에서 StatCard 4열 표시 확인\n   - 모바일(375x812) 뷰포트에서 StatCard 2열 표시 확인\n   - 인사말 텍스트 존재 확인 ('안녕하세요' 포함)\n   - 각 섹션 헤더(내 밴드, 다가오는 합주, 다가오는 공연) 존재 확인\n3. 기존 home E2E 테스트가 있다면 뷰포트 파라미터 추가하여 확장",
+            "status": "pending",
+            "testStrategy": "Playwright E2E: 데스크톱+모바일 양쪽 뷰포트에서 홈 화면 렌더링 테스트. StatCard 개수, 그리드 레이아웃, 섹션 헤더 존재 여부 검증."
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Band 마스터-디테일 레이아웃 구현",
+        "description": "/bands와 /bands/[bandId] 라우트를 데스크톱에서 마스터-디테일 구조로 렌더링한다. 좌측 PaneList(360px)에 검색+필터+밴드 목록, 우측 PaneDetail에 선택된 밴드 상세(탭: 정보/멤버/신청 현황)를 표시한다.",
+        "details": "1. src/app/(main)/bands/layout.tsx 생성:\n   - 데스크톱(lg:): PaneSplit 컴포넌트로 감싸기\n   - 모바일: 기존처럼 children만 렌더\n\n2. src/app/(main)/bands/page.tsx 수정:\n   - 데스크톱: PaneList(width='band-list') 안에 검색 + 필터 chips + BandCard 목록\n   - 선택된 밴드가 없으면 우측에 EmptyPane 표시\n   - 모바일: 기존 목록 페이지 유지\n\n3. src/app/(main)/bands/[bandId]/page.tsx 수정:\n   - 데스크톱: PaneDetail 안에 Topbar(밴드명) + 탭(정보/멤버/신청 현황)\n   - 모바일: 기존 상세 페이지 유지\n\n4. URL 호환성 유지:\n   - /bands 단독 접근: 좌측 목록 + 우측 EmptyPane\n   - /bands/[bandId] 직접 접근: 좌측 목록 + 우측 해당 밴드 상세\n\n5. RoleBadge 컴포넌트를 밴드 카드/멤버 목록에 적용\n\n6. 역할 가드(RoleGuard) 유지: 가입 신청 탭, 승인/거절 버튼",
+        "testStrategy": "1. /bands URL 접근 시 좌측 목록 + 우측 EmptyPane 확인\n2. 밴드 클릭 시 URL 변경 없이 우측 상세 갱신(데스크톱) 확인\n3. /bands/[bandId] 직접 URL 접근 시 정상 렌더링 확인\n4. 모바일에서 기존 목록→상세 풀스크린 이동 확인\n5. Playwright E2E: Band 도메인 해피패스 데스크톱+모바일",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          5
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "마스터-디테일 레이아웃 컴포넌트 생성 (PaneSplit, PaneList, PaneDetail)",
+            "description": "데스크톱 마스터-디테일 구조를 위한 핵심 레이아웃 컴포넌트들을 src/components/layout/에 구현한다. lg: 브레이크포인트(960px)에서 좌우 분할, 그 미만에서는 children만 렌더링하는 반응형 처리를 포함한다.",
+            "dependencies": [],
+            "details": "1. src/components/layout/pane-split.tsx 생성:\n   - props: { children: ReactNode }\n   - 데스크톱(lg:): flex w-full h-[calc(100vh-env(safe-area-inset-top))] overflow-hidden\n   - 모바일: 단순히 children만 렌더 (분할 없음)\n   - CSS: lg:flex lg:h-screen lg:overflow-hidden\n\n2. src/components/layout/pane-list.tsx 생성:\n   - props: { children: ReactNode; width?: 'default' | 'band-list' }\n   - 데스크톱(lg:): w-[var(--list-pane-w)] 또는 w-[var(--band-list-pane-w)], border-r, overflow-y-auto, flex-shrink-0\n   - 모바일: hidden (lg:block)\n   - CSS: lg:w-[340px] lg:border-r lg:border-border lg:overflow-y-auto lg:flex-shrink-0\n   - band-list variant: lg:w-[360px]\n\n3. src/components/layout/pane-detail.tsx 생성:\n   - props: { children: ReactNode }\n   - 데스크톱(lg:): flex-1 overflow-y-auto bg-bg\n   - 모바일: 기존 전체 화면 유지\n   - CSS: lg:flex-1 lg:overflow-y-auto\n\n4. src/components/layout/index.ts에서 모든 컴포넌트 re-export",
+            "status": "pending",
+            "testStrategy": "1. Vitest 스냅샷 테스트로 각 컴포넌트 렌더링 확인\n2. 브라우저 DevTools에서 960px 이상/미만 전환 시 레이아웃 변경 확인\n3. PaneSplit 내부에 PaneList + PaneDetail 조합 시 정상 분할 확인"
+          },
+          {
+            "id": 2,
+            "title": "bands 라우트 layout.tsx 생성 및 반응형 분기 처리",
+            "description": "src/app/(main)/bands/layout.tsx를 생성하여 데스크톱에서는 PaneSplit으로 마스터-디테일 구조를, 모바일에서는 기존 선형 구조를 유지하도록 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/app/(main)/bands/layout.tsx 신규 생성:\n   - import { PaneSplit } from '@/components/layout/pane-split'\n   - children과 함께 slot 패턴 사용 (parallel routes 또는 조건부 렌더링)\n   \n2. 레이아웃 구조:\n   - 데스크톱(lg:): PaneSplit으로 감싸고 좌측에 BandListPane, 우측에 children(상세) 렌더\n   - 모바일: children만 렌더 (목록/상세 각각 독립 페이지)\n   \n3. 반응형 처리 방식:\n   - 'use client' 디렉티브로 클라이언트 컴포넌트화\n   - useMediaQuery 훅 또는 CSS 기반 lg:hidden/lg:block 처리\n   - CSS-only 접근 권장: lg:flex로 패널 표시, lg 미만에서 hidden\n\n4. URL 호환성:\n   - /bands 접근 시: 좌측 목록 + 우측 빈 상태(EmptyPane)\n   - /bands/[bandId] 접근 시: 좌측 목록 + 우측 해당 밴드 상세\n   - usePathname()으로 현재 상세 페이지 여부 판별",
+            "status": "pending",
+            "testStrategy": "1. /bands URL 접근 시 데스크톱에서 좌측 목록 + 우측 빈 상태 렌더 확인\n2. /bands/[bandId] URL 접근 시 좌측 목록 + 우측 상세 동시 렌더 확인\n3. 모바일(960px 미만)에서 기존 단일 페이지 동작 유지 확인"
+          },
+          {
+            "id": 3,
+            "title": "BandListPane 컴포넌트 구현 (검색 + 필터 + 목록)",
+            "description": "마스터 패널에 표시될 BandListPane 컴포넌트를 구현한다. 기존 BandsList.client.tsx의 목록 로직을 재사용하면서 검색창, 역할 필터 칩, 선택 상태 하이라이트를 추가한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/app/(main)/bands/BandListPane.client.tsx 생성:\n   - 기존 BandsList.client.tsx 로직 기반 (useBandList 훅 재사용)\n   - 상단: 제목('밴드 탐색') + 밴드 만들기 버튼\n   - 검색창: Input 컴포넌트 + search 아이콘, 밴드명/설명 필터링\n   - 필터 칩: 전체/내 밴드 토글 (선택적)\n\n2. BandCard 수정:\n   - selectedBandId prop 추가하여 선택 상태 스타일링\n   - 선택 시: bg-accent-dim border-accent/40 적용\n   - BandRoleBadge 표시 (myRole이 있는 경우)\n\n3. 선택 상태 관리:\n   - useParams()로 현재 선택된 bandId 추출\n   - 카드 클릭 시 router.push(ROUTES.BAND_DETAIL(bandId)) 호출\n   - 데스크톱에서는 목록 유지 + 상세 갱신 (layout이 처리)\n\n4. 스크롤 영역:\n   - PaneList 내부에서 overflow-y-auto 적용\n   - 무한 스크롤 loadMoreRef 유지\n\n5. 디자인 토큰 적용:\n   - 패딩: 20px 상단, 12px 하단\n   - 카드 간격: space-y-1 (4px)",
+            "status": "pending",
+            "testStrategy": "1. 검색어 입력 시 밴드명/설명 필터링 동작 확인\n2. 밴드 카드 클릭 시 URL 변경 및 선택 스타일 적용 확인\n3. 무한 스크롤 동작 확인 (스크롤 하단 도달 시 추가 로딩)\n4. BandRoleBadge가 내 밴드에 정상 표시되는지 확인"
+          },
+          {
+            "id": 4,
+            "title": "BandDetailPane 탭 구조 재구성 (정보/멤버/신청 현황)",
+            "description": "기존 BandDetailContent를 PaneDetail 내부에서 동작하도록 수정하고, 데스크톱용 Topbar + 탭 레이아웃으로 재구성한다. 디자인 와이어프레임의 탭 구조(정보/멤버/신청 현황)를 적용한다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. src/app/(main)/bands/[bandId]/page.tsx 수정:\n   - 데스크톱: PaneDetail 내부에 BandDetailPane 렌더\n   - 모바일: 기존 BandDetailContent 유지 (풀스크린)\n\n2. BandDetailPane 또는 BandDetailContent 수정:\n   - 상단 Topbar 영역: breadcrumb('밴드 탐색') + 밴드명 + 액션 버튼들\n     - LEADER/ADMIN: 밴드 설정 버튼\n     - 비멤버: 가입 신청 버튼\n     - 멤버(LEADER 제외): 밴드 탈퇴 버튼\n   \n3. 탭 구조 (Tabs 컴포넌트 사용):\n   - 정보(info): 커버 이미지 영역 + 밴드명 + 설명\n   - 멤버(members): 2열 그리드 멤버 목록 + BandRoleBadge\n   - 신청 현황(applications): RoleGuard(ADMIN 이상) + 상태 필터 칩(대기/승인/거절) + 신청 목록\n\n4. 탭 스타일링:\n   - 디자인 와이어프레임 참고: 하단 보더 방식 active 표시\n   - padding: 0 28px (px-7)\n   - 콘텐츠 영역: padding 24px 28px (p-6 px-7)\n\n5. 역할 기반 렌더링:\n   - hasRole(myRole, 'ADMIN') 체크로 신청 현황 탭 조건부 표시\n   - RoleGuard로 신청 목록 감싸기",
+            "status": "pending",
+            "testStrategy": "1. 각 탭 클릭 시 콘텐츠 전환 확인\n2. 권한별 탭/버튼 표시 여부 확인 (LEADER/ADMIN/MEMBER/비멤버)\n3. 신청 현황 탭에서 상태 필터 동작 확인\n4. 모바일에서 기존 상세 페이지 레이아웃 유지 확인"
+          },
+          {
+            "id": 5,
+            "title": "EmptyPane 컴포넌트 및 URL 직접 접근 처리",
+            "description": "/bands 단독 접근 시 우측에 표시될 EmptyPane 컴포넌트를 구현하고, /bands/[bandId] 직접 URL 접근 시 좌측 목록과 우측 상세가 동시에 정상 렌더링되도록 보장한다.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "1. src/components/layout/empty-pane.tsx 생성:\n   - props: { icon?: LucideIcon; title: string; description?: string }\n   - 중앙 정렬 레이아웃 (flex flex-col items-center justify-center h-full)\n   - 아이콘 + 제목 + 설명 표시\n   - 기본 메시지: '밴드를 선택하세요', '왼쪽 목록에서 밴드를 선택하면 상세 정보를 볼 수 있습니다.'\n\n2. bands/layout.tsx 수정:\n   - usePathname()으로 /bands 정확히 매칭 시 EmptyPane 표시\n   - /bands/[bandId] 경로면 children(상세 페이지) 표시\n   \n3. URL 직접 접근 시나리오 처리:\n   - /bands/b1 직접 접근: 좌측 BandListPane에서 b1 자동 선택 + 우측 상세\n   - useParams()의 bandId로 선택 상태 동기화\n   - SSR 시점에도 정상 렌더링 보장\n\n4. 모바일 URL 접근:\n   - /bands: 목록 페이지만 표시 (기존 동작)\n   - /bands/[bandId]: 상세 페이지만 표시 (기존 동작)\n   - 뒤로가기로 목록 복귀\n\n5. 에러 경계 처리:\n   - 존재하지 않는 bandId 접근 시 ErrorState 표시\n   - useBandDetail의 isError 상태 활용",
+            "status": "pending",
+            "testStrategy": "1. /bands URL 직접 접근 시 좌측 목록 + 우측 EmptyPane 확인\n2. /bands/[bandId] URL 직접 접근 시 좌측 목록(해당 밴드 선택) + 우측 상세 확인\n3. 존재하지 않는 bandId URL 접근 시 에러 상태 표시 확인\n4. 모바일에서 각 URL 접근 시 기존 풀스크린 동작 유지 확인\n5. Playwright E2E: Band 도메인 해피패스 데스크톱(1440px) + 모바일(375px) 테스트"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Practice/Performance 마스터-디테일 및 Me 재구성",
+        "description": "/practices, /performances 라우트에 Band와 동일한 마스터-디테일 패턴을 적용하고, /me 페이지를 데스크톱에서 pane-split(좌측 메뉴/우측 폼)으로 재구성한다.",
+        "details": "1. Practice 마스터-디테일 (src/app/(main)/practices/):\n   - layout.tsx: PaneSplit 적용\n   - page.tsx: PaneList(340px) + 밴드 필터 드롭다운 + 합주 목록\n   - [practiceId]/page.tsx: PaneDetail + 섹션(일정·장소, 곡 정보, 세션 grid, 참여자)\n   - 모바일: Accordion으로 섹션 감싸 밀도 확보\n\n2. Performance 마스터-디테일 (src/app/(main)/performances/):\n   - layout.tsx: PaneSplit 적용\n   - page.tsx: PaneList(340px) + 공연 목록\n   - [performanceId]/page.tsx: PaneDetail + Cover + Info + Practice 연결 목록\n\n3. Me 재구성 (src/app/(main)/me/):\n   - 데스크톱: PaneList(좌측 메뉴: 내 정보/비밀번호 변경/로그아웃/탈퇴) + PaneDetail(선택된 섹션 폼)\n   - 모바일: 기존 단일 스크롤 유지\n\n4. SectionTitle, Divider 컴포넌트 활용하여 상세 페이지 섹션 구조화\n\n5. Topbar 연동: 각 상세 페이지에서 제목/breadcrumb 표시",
+        "testStrategy": "1. Practice/Performance/Me 각각 마스터-디테일 동작 확인\n2. 상세 페이지 직접 URL 접근 시 정상 렌더링 확인\n3. 모바일에서 기존 동작 유지 확인\n4. Playwright E2E: 각 도메인 해피패스 데스크톱+모바일",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "PaneSplit/PaneList/PaneDetail 레이아웃 컴포넌트 구현",
+            "description": "데스크톱 마스터-디테일 레이아웃을 위한 핵심 Pane 컴포넌트들을 src/components/layout/에 구현한다.",
+            "dependencies": [],
+            "details": "1. src/components/layout/pane-split.tsx 구현:\n   - flex 컨테이너로 좌/우 pane을 가로 배치\n   - lg: 미만에서는 children만 렌더링 (모바일 유지)\n   - lg: 이상에서 flex + overflow-hidden 적용\n\n2. src/components/layout/pane-list.tsx 구현:\n   - width prop으로 'default'(340px) 또는 'band'(360px) 지원\n   - flex-shrink-0, border-right, overflow-y-auto\n   - 모바일에서는 full-width로 동작\n\n3. src/components/layout/pane-detail.tsx 구현:\n   - flex-1, flex-col, overflow-hidden\n   - 내부 body 영역 overflow-y-auto + padding\n   - empty prop으로 EmptyPane 상태 지원\n\n4. src/components/ui/section-title.tsx 구현:\n   - 카드 내 섹션 헤딩 (텍스트 + 선택적 액션 슬롯)\n   - text-subtitle 사이즈, foreground-sub 색상\n\n5. design/dist/css/layout.css의 .pane-* 스타일을 Tailwind 유틸리티로 변환",
+            "status": "pending",
+            "testStrategy": "1. /playground 페이지에 PaneSplit 데모 섹션 추가하여 시각 확인\n2. 960px 이상/미만에서 레이아웃 전환 동작 DevTools 확인\n3. Vitest 스냅샷 테스트로 컴포넌트 렌더링 검증"
+          },
+          {
+            "id": 2,
+            "title": "Practice 마스터-디테일 레이아웃 적용",
+            "description": "/practices 라우트에 PaneSplit 패턴을 적용하여 데스크톱에서 좌측 목록 + 우측 상세 구조로 렌더링한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/app/(main)/practices/layout.tsx 신규 생성:\n   - 데스크톱(lg:): PaneSplit으로 children 감싸기\n   - 모바일: children만 렌더링 (기존 동작 유지)\n\n2. src/app/(main)/practices/page.tsx 수정:\n   - PaneList(width='default', 340px) 내부에 밴드 필터 드롭다운 + 합주 목록 배치\n   - 선택된 합주 없을 때 우측 EmptyPane 표시 로직 추가\n\n3. src/app/(main)/practices/[practiceId]/page.tsx 수정:\n   - PaneDetail 래퍼 적용\n   - Topbar 연동 (제목에 합주명 표시)\n\n4. PracticeDetailContent.client.tsx 섹션 구조화:\n   - SectionTitle 컴포넌트로 '일정·장소', '합주곡', '세션', '참여자' 섹션 헤딩 추가\n   - 모바일에서 Accordion으로 섹션 감싸 밀도 확보 (선택적)\n\n5. URL 호환성 유지:\n   - /practices 단독 접근: 좌측 목록 + 우측 EmptyPane\n   - /practices/[id] 직접 접근: 좌측 목록 + 우측 해당 상세",
+            "status": "pending",
+            "testStrategy": "1. /practices URL 접근 시 데스크톱에서 좌측 목록 + 우측 EmptyPane 확인\n2. 합주 클릭 시 우측 상세 영역 갱신 확인\n3. /practices/[id] 직접 URL 접근 시 정상 렌더링 확인\n4. 모바일(960px 미만)에서 기존 풀스크린 동작 유지 확인"
+          },
+          {
+            "id": 3,
+            "title": "Performance 마스터-디테일 레이아웃 적용",
+            "description": "/performances 라우트에 PaneSplit 패턴을 적용하여 데스크톱에서 좌측 목록 + 우측 상세 구조로 렌더링한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/app/(main)/performances/layout.tsx 신규 생성:\n   - 데스크톱(lg:): PaneSplit으로 children 감싸기\n   - 모바일: children만 렌더링\n\n2. src/app/(main)/performances/page.tsx 수정:\n   - PaneList(width='default', 340px) 내부에 공연 목록 배치\n   - 밴드 필터 드롭다운 유지 (기존 ?bandId= 쿼리 파라미터 활용)\n   - 선택된 공연 없을 때 우측 EmptyPane 표시\n\n3. src/app/(main)/performances/[performanceId]/page.tsx 수정:\n   - PaneDetail 래퍼 적용\n   - Topbar 연동 (제목에 공연명 표시)\n\n4. PerformanceDetailContent.client.tsx 구조화:\n   - Cover 영역 (공연 대표 이미지 또는 플레이스홀더)\n   - Info 섹션 (일정, 장소, 설명)\n   - Practice 연결 목록 섹션 (기존 '연결된 합주' 카드)\n   - 기존 Tabs 구조 유지하면서 SectionTitle 활용\n\n5. URL 호환성 유지:\n   - /performances 단독 접근: 좌측 목록 + 우측 EmptyPane\n   - /performances/[id] 직접 접근: 좌측 목록 + 우측 해당 상세",
+            "status": "pending",
+            "testStrategy": "1. /performances URL 접근 시 데스크톱에서 좌측 목록 + 우측 EmptyPane 확인\n2. 공연 클릭 시 우측 상세 영역 갱신 확인\n3. /performances/[id] 직접 URL 접근 시 정상 렌더링 확인\n4. 모바일에서 기존 풀스크린 동작 유지 확인\n5. 기존 Tabs(개요/참여밴드/연결합주) 정상 동작 확인"
+          },
+          {
+            "id": 4,
+            "title": "Me 페이지 데스크톱 Pane-split 재구성",
+            "description": "/me 페이지를 데스크톱에서 좌측 메뉴 + 우측 폼 구조로 재구성하고, 모바일에서는 기존 단일 스크롤을 유지한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/app/(main)/me/layout.tsx 신규 생성:\n   - 데스크톱(lg:): PaneSplit 적용\n   - 모바일: children만 렌더링\n\n2. src/app/(main)/me/page.tsx 수정:\n   - 데스크톱 좌측 PaneList에 메뉴 항목 렌더링:\n     - 내 정보 (profile)\n     - 비밀번호 변경 (password)\n     - 로그아웃 (logout)\n     - 회원 탈퇴 (withdraw)\n   - 선택된 메뉴에 따라 우측 PaneDetail 내용 변경\n   - URL 쿼리 파라미터 또는 클라이언트 상태로 선택 메뉴 관리\n\n3. MeContent.client.tsx 분리:\n   - ProfileSection: 내 정보 조회/수정 폼\n   - PasswordSection: 비밀번호 변경 폼 (기존 Link 대신 인라인)\n   - LogoutSection: 로그아웃 확인 버튼\n   - WithdrawSection: 회원 탈퇴 확인 다이얼로그\n\n4. 모바일 동작 유지:\n   - 기존 단일 스크롤 레이아웃 그대로\n   - 메뉴 없이 모든 섹션 순차 표시\n\n5. Topbar 연동: 'My Account' 또는 '내 정보' 제목 표시",
+            "status": "pending",
+            "testStrategy": "1. 데스크톱에서 좌측 메뉴 클릭 시 우측 폼 전환 확인\n2. 각 섹션(내 정보/비밀번호/로그아웃/탈퇴) 정상 동작 확인\n3. 모바일에서 기존 단일 스크롤 레이아웃 유지 확인\n4. 프로필 수정, 로그아웃, 탈퇴 기능 회귀 테스트"
+          },
+          {
+            "id": 5,
+            "title": "Topbar 연동 및 반응형 통합 테스트",
+            "description": "Practice/Performance/Me 상세 페이지에 Topbar를 연동하고, 전체 마스터-디테일 패턴의 반응형 동작을 통합 테스트한다.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "1. Topbar 컴포넌트 연동:\n   - Practice 상세: Topbar에 합주 제목 + breadcrumb('합주 > {제목}')\n   - Performance 상세: Topbar에 공연 제목 + breadcrumb('공연 > {제목}')\n   - Me 상세: Topbar에 선택된 섹션명 표시\n\n2. PaneDetail 내 Topbar 배치:\n   - PaneDetail 상단에 sticky Topbar 렌더링\n   - actions 슬롯에 편집/삭제 버튼 배치 (기존 카드 헤더에서 이동)\n\n3. 반응형 동작 검증:\n   - 960px 이상: 마스터-디테일 side-by-side 레이아웃\n   - 960px 미만: 기존 풀스크린 스택 레이아웃\n   - 브레이크포인트 전환 시 레이아웃 즉시 반영\n\n4. URL 직접 접근 시나리오 검증:\n   - /practices/[id], /performances/[id] 직접 접근 시 좌측 목록도 함께 로드\n   - 뒤로가기 시 목록 상태 유지\n\n5. Playwright E2E 테스트 시나리오 작성:\n   - Practice 도메인 해피패스 (데스크톱+모바일)\n   - Performance 도메인 해피패스 (데스크톱+모바일)\n   - Me 도메인 해피패스 (데스크톱+모바일)",
+            "status": "pending",
+            "testStrategy": "1. 각 도메인 상세 페이지에서 Topbar 제목/breadcrumb 표시 확인\n2. DevTools에서 960px 기준 반응형 전환 테스트\n3. Playwright E2E: 6개 시나리오(3 도메인 x 2 뷰포트) 실행\n4. /practices/[id] 직접 URL 접근 시 목록+상세 동시 렌더링 확인\n5. 브라우저 뒤로가기/앞으로가기 시 상태 유지 확인"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "모바일 반응형 감사 및 회귀 방지 테스트 확장",
+        "description": "최소 너비 360px 기준으로 전체 화면의 패딩/간격/타이포/터치 타겟을 감사하고, Playwright E2E 스위트를 데스크톱(1440x900)+모바일(375x812) 양쪽으로 확장한다.",
+        "details": "1. 모바일 반응형 감사:\n   - Container horizontal padding: 모바일 16px / 태블릿 20px / 데스크톱 28px\n   - Typography: 본문 14px 이하, PageTitle 모바일 20px / 데스크톱 26~28px\n   - Safe area: pb-[env(safe-area-inset-bottom)] 적용 지점 확인 (BottomNav, Toaster)\n   - Touch target: 모든 인터랙티브 요소 최소 40x40 보장\n\n2. Playwright E2E 확장:\n   - 기존 테스트에 뷰포트 파라미터 추가\n   - 데스크톱(1440x900) + 모바일(375x812) 두 뷰포트에서 실행\n   - 각 도메인(Auth, Home, Band, Practice, Performance, Me) 해피패스 1개씩\n   - 총 12개 시나리오(6 도메인 x 2 뷰포트)\n\n3. /playground 페이지 완성:\n   - 토큰 매트릭스(색상, 간격, 타이포, 반경)\n   - 컴포넌트 매트릭스(Button, Badge, Card, Chip, Dialog 등 모든 variant)\n\n4. 최종 감사 리포트 작성:\n   - .taskmaster/report/mvp-1-fix-audit-YYYY-MM-DD.md\n   - 시각 회귀, 남은 이슈, 성능 참고 점수 정리",
+        "testStrategy": "1. pnpm test:e2e 실행하여 모든 시나리오 통과 확인\n2. 360px/414px 뷰포트에서 각 주요 화면 스크린샷 비교\n3. Lighthouse mobile/desktop 점수 기록(합격선 없이 참고용)\n4. /playground 페이지에서 모든 토큰/컴포넌트 시각 확인",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "컴포넌트 반응형 패딩/타이포그래피 감사 및 수정",
+            "description": "Container, PageTitle, Header 컴포넌트의 반응형 패딩과 타이포그래피를 PRD 기준에 맞게 감사하고 수정한다.",
+            "dependencies": [],
+            "details": "1. src/components/layout/container.tsx 수정:\n   - 현재 고정 px-4(16px)를 반응형으로 변경\n   - 모바일: px-4(16px) / 태블릿 sm: px-5(20px) / 데스크톱 lg: px-7(28px)\n\n2. src/components/layout/page-title.tsx 수정:\n   - 현재 고정 text-xl(20px)을 반응형으로 변경\n   - 모바일: text-xl(20px) / 데스크톱 lg: text-[26px] 또는 text-2xl\n\n3. src/components/layout/header.tsx 수정:\n   - safe-area-inset-top 지원 추가: supports-[padding:env(safe-area-inset-top)]:pt-[env(safe-area-inset-top)]\n   - 반응형 패딩 적용: px-4 sm:px-5 lg:px-7\n\n4. src/components/feedback/toaster.tsx 확인:\n   - safe-area-inset-bottom 적용 여부 검토\n   - 필요시 supports-[padding:env(safe-area-inset-bottom)]:pb-[env(safe-area-inset-bottom)] 추가\n\n5. 도메인 카드 컴포넌트(BandCard, PracticeCard, PerformanceCard) 감사:\n   - gap, 타이포그래피 반응형 여부 검토\n   - 필요시 gap-3 sm:gap-4 등 조정",
+            "status": "pending",
+            "testStrategy": "1. pnpm dev 실행 후 브라우저 DevTools에서 360px/768px/960px 뷰포트별 패딩/폰트 크기 확인\n2. Container의 padding이 16px→20px→28px로 변경되는지 검증\n3. PageTitle의 font-size가 20px→26px로 변경되는지 검증\n4. iOS Safari 시뮬레이터에서 safe-area 동작 확인"
+          },
+          {
+            "id": 2,
+            "title": "터치 타겟 감사 및 접근성 수정",
+            "description": "모든 인터랙티브 요소가 최소 40x40px 터치 타겟을 충족하는지 감사하고 미달 요소를 수정한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Button 컴포넌트 감사 (src/components/ui/button.tsx):\n   - sm 사이즈 h-8(32px)이 40px 미달 → min-h-10으로 패딩 조정 또는 sm 사이즈 사용처 제한 문서화\n   - 아이콘 전용 버튼에 min-w-10 min-h-10 보장\n\n2. 네비게이션 아이템 감사:\n   - BottomNav 아이템: flex-1 구조로 충분한 터치 영역 확보 확인\n   - Tabs 컴포넌트: 각 탭 버튼 최소 40px 높이 확인\n\n3. 폼 요소 감사:\n   - Input: h-10(40px) 충족 확인\n   - Checkbox/Radio: 터치 영역 확장 필요시 래퍼에 min-h-10 적용\n   - Select/Dropdown 트리거: 40px 이상 확인\n\n4. 리스트 아이템 감사:\n   - BandCard, PracticeCard 내 클릭 가능한 영역\n   - Dialog/BottomSheet 내 액션 버튼들\n\n5. Chip 컴포넌트 감사:\n   - 삭제 가능한 Chip의 X 버튼 터치 영역 (min-w-6 → min-w-10 고려)",
+            "status": "pending",
+            "testStrategy": "1. 모든 인터랙티브 요소에 outline: 1px solid red 임시 적용하여 시각적 검증\n2. Chrome DevTools 'Rendering' > 'Show tap highlight' 활성화 후 확인\n3. 실제 모바일 기기(또는 시뮬레이터)에서 손가락으로 탭 테스트\n4. Lighthouse Accessibility 감사 실행하여 터치 타겟 경고 확인"
+          },
+          {
+            "id": 3,
+            "title": "Playwright E2E 뷰포트 확장 및 도메인별 해피패스 테스트 추가",
+            "description": "Playwright 설정에 데스크톱(1440x900)+모바일(375x812) 뷰포트를 추가하고, 6개 도메인별 해피패스 시나리오를 구현한다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. playwright.config.ts 수정:\n   - projects 배열에 모바일 뷰포트 추가: { name: 'Mobile Chrome', use: { ...devices['Pixel 5'] } }\n   - 데스크톱 뷰포트 조정: { name: 'Desktop Chrome', use: { viewport: { width: 1440, height: 900 } } }\n   - 선택적으로 iPhone 12 추가: { name: 'Mobile Safari', use: { ...devices['iPhone 12'] } }\n\n2. 기존 테스트 파일 구조 유지하며 뷰포트별 실행:\n   - tests/e2e/auth.spec.ts: 로그인 → 홈 리다이렉트 해피패스\n   - tests/e2e/home.spec.ts: 홈 대시보드 렌더링 및 통계 카드 표시 해피패스\n   - tests/e2e/band.spec.ts: 밴드 목록 → 상세 진입 해피패스\n   - tests/e2e/practice.spec.ts: 합주 목록 → 상세 진입 해피패스\n   - tests/e2e/performance.spec.ts: 공연 목록 → 상세 진입 해피패스\n   - tests/e2e/me.spec.ts (신규): 마이페이지 접근 및 프로필 표시 해피패스\n\n3. 각 해피패스 시나리오에 반응형 검증 추가:\n   - 모바일: BottomNav 표시, Sidebar 숨김 확인\n   - 데스크톱: Sidebar 표시 확인 (Task 2 완료 후)",
+            "status": "pending",
+            "testStrategy": "1. pnpm test:e2e 실행하여 모든 프로젝트(Desktop/Mobile) 통과 확인\n2. pnpm test:e2e --project='Mobile Chrome' 으로 모바일 전용 실행\n3. CI 환경에서 매트릭스 빌드로 뷰포트별 병렬 실행 검증\n4. 총 12개 시나리오(6 도메인 x 2 뷰포트) 전부 PASS 확인"
+          },
+          {
+            "id": 4,
+            "title": "/playground 페이지 토큰/컴포넌트 매트릭스 완성",
+            "description": "/playground 페이지에 디자인 토큰 매트릭스(색상, 간격, 타이포, 반경)와 컴포넌트 variant 매트릭스(Button, Badge, Card, Chip, Dialog 등)를 완성한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/app/playground/page.tsx 토큰 매트릭스 확장:\n   - 색상 섹션: Surface, Foreground, Accent, Status(Success/Warning/Error), Role 색상 전체 표시\n   - 간격 섹션: spacing-s-1(4px) ~ spacing-s-12(48px) 시각적 박스로 표현\n   - 타이포그래피 섹션: display(40px), title-lg(26px), title(20px), subtitle(18px), body(14px), caption(13px), micro(11px) 샘플 텍스트\n   - 반경 섹션: radius-sm(6px), radius-md(10px), radius-lg(14px), radius-full 박스로 표현\n\n2. src/app/playground/components/page.tsx 컴포넌트 매트릭스 확장:\n   - Button: 모든 variant(default/accent/ghost/outline/destructive) x size(sm/md/lg) 매트릭스\n   - Badge: 모든 variant(default/secondary/success/warning/error) 매트릭스\n   - Chip: 선택/삭제 가능 상태 매트릭스\n   - Card: variant별 렌더링\n   - Dialog/BottomSheet: 트리거 버튼으로 각각 열기\n   - Input/Textarea: 상태별(default/error/disabled) 매트릭스\n   - Avatar: 크기별 매트릭스\n\n3. 반응형 프리뷰 섹션 추가:\n   - 360px/414px/768px/960px iframe 또는 설명 텍스트로 뷰포트별 차이점 문서화",
+            "status": "pending",
+            "testStrategy": "1. /playground 페이지 접속하여 모든 토큰이 올바르게 렌더링되는지 시각 확인\n2. 모든 컴포넌트 variant가 디자인 원본과 일치하는지 비교\n3. 브라우저 DevTools에서 뷰포트 변경 시 반응형 동작 확인\n4. 접근성: 색상 대비 비율 4.5:1 이상 충족 여부 확인"
+          },
+          {
+            "id": 5,
+            "title": "MVP-1 반응형 감사 리포트 작성",
+            "description": ".taskmaster/report/mvp-1-fix-audit-YYYY-MM-DD.md 파일로 시각 회귀, 남은 이슈, 성능 참고 점수를 정리한 최종 감사 리포트를 작성한다.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "1. 리포트 파일 생성: .taskmaster/report/mvp-1-fix-audit-YYYY-MM-DD.md\n\n2. 메타 섹션:\n   - 작성일, 검증 주체, 대상 뷰포트(360px/414px/768px/960px/1440px)\n   - 검증 도구(Chrome DevTools, Lighthouse, Playwright)\n\n3. 반응형 감사 결과:\n   - Container 패딩 검증 결과 (16px/20px/28px 적용 여부)\n   - PageTitle 타이포그래피 검증 결과 (20px/26px 적용 여부)\n   - Safe-area 적용 지점 목록 (BottomNav, Header, Toaster)\n   - 터치 타겟 위반 요소 목록 및 해결 상태\n\n4. E2E 테스트 결과:\n   - 총 시나리오 수: 12개 (6 도메인 x 2 뷰포트)\n   - 통과/실패 현황 표\n   - 실패 시나리오 상세 (있는 경우)\n\n5. Lighthouse 점수 기록 (참고용, 합격선 없음):\n   - Mobile: Performance, Accessibility, Best Practices, SEO\n   - Desktop: Performance, Accessibility, Best Practices, SEO\n\n6. 남은 이슈 및 권장 조치:\n   - P0(차단), P1(기능 저하), P2(품질), P3(참고) 우선순위로 분류\n   - 각 이슈에 재현 절차, 추정 원인, 수정 제안 포함\n\n7. 시각 회귀 스크린샷 참조:\n   - 주요 화면별 360px/1440px 스크린샷 경로 또는 설명",
+            "status": "pending",
+            "testStrategy": "1. 리포트 내용이 실제 테스트 결과와 일치하는지 검증\n2. 모든 섹션이 빠짐없이 작성되었는지 확인\n3. Markdown 문법 오류 없이 렌더링되는지 확인\n4. 이슈 우선순위 분류가 적절한지 팀 리뷰"
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2026-04-24T10:51:59.092Z",
+      "updated": "2026-04-24T10:55:33.529Z",
+      "description": "Tasks for mvp-1-fix context"
     }
   }
 }
