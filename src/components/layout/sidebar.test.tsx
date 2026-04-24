@@ -1,0 +1,44 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { Sidebar } from './sidebar';
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/bands',
+}));
+
+vi.mock('@/domain/member/hooks/useMe', () => ({
+  useMe: () => ({ data: { name: '수연', email: 'sooyeon@example.com' } }),
+}));
+
+function withQueryClient(ui: ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return <QueryClientProvider client={client}>{ui}</QueryClientProvider>;
+}
+
+describe('Sidebar', () => {
+  it('활성 경로(/bands) 및 로그인 사용자 정보 렌더 스냅샷', () => {
+    const { asFragment } = render(withQueryClient(<Sidebar />));
+    expect(asFragment()).toMatchSnapshot();
+  });
+
+  it('active 상태의 Link 는 bg-accent-dim / text-accent / font-bold 를 가진다', () => {
+    const { getByRole } = render(withQueryClient(<Sidebar />));
+    const bandsLink = getByRole('link', { name: /밴드/ });
+    expect(bandsLink.className).toContain('bg-accent-dim');
+    expect(bandsLink.className).toContain('text-accent');
+    expect(bandsLink.className).toContain('font-bold');
+    expect(bandsLink.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('비활성 경로(/practices) 는 hover 컬러 클래스를 사용', () => {
+    const { getByRole } = render(withQueryClient(<Sidebar />));
+    const practicesLink = getByRole('link', { name: /합주/ });
+    expect(practicesLink.className).toContain('text-foreground-sub');
+    expect(practicesLink.getAttribute('aria-current')).toBeNull();
+  });
+});
