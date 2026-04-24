@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { ROUTES } from '@/global/config/routes';
 
+import { OnboardingFeatures } from './OnboardingFeatures';
 import { OnboardingHero } from './OnboardingHero';
 
 const REFRESH_COOKIE = 'refreshToken';
@@ -18,10 +19,10 @@ export default async function OnboardingPage() {
     redirect(ROUTES.HOME);
   }
 
-  // Features 섹션은 subtask 10.3 에서 추가.
   return (
     <main className="bg-bg text-foreground min-h-screen" data-slot="onboarding">
       <OnboardingHero />
+      <OnboardingFeatures />
     </main>
   );
 }
