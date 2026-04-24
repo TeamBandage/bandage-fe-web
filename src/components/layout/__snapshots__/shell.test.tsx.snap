@@ -1,0 +1,124 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Shell layout primitives > PaneList width="band-list" 1`] = `
+<DocumentFragment>
+  <aside
+    class="border-border bg-surface flex shrink-0 flex-col border-r max-lg:w-full"
+    data-slot="pane-list"
+    data-width="band-list"
+    style="width: var(--band-list-pane-w);"
+  >
+    <div
+      class="px-s-3 py-s-3 flex-1 overflow-y-auto"
+      data-slot="pane-list-body"
+    >
+      band
+    </div>
+  </aside>
+</DocumentFragment>
+`;
+
+exports[`Shell layout primitives > PaneSplit + PaneList(list) + PaneDetail 조합 1`] = `
+<DocumentFragment>
+  <div
+    class="flex flex-1 overflow-hidden"
+    data-slot="pane-split"
+  >
+    <aside
+      class="border-border bg-surface flex shrink-0 flex-col border-r max-lg:w-full"
+      data-slot="pane-list"
+      data-width="list"
+      style="width: var(--list-pane-w);"
+    >
+      <div
+        class="border-border p-s-5 shrink-0 border-b"
+        data-slot="pane-list-header"
+      >
+        목록
+      </div>
+      <div
+        class="px-s-3 py-s-3 flex-1 overflow-y-auto"
+        data-slot="pane-list-body"
+      >
+        item
+      </div>
+    </aside>
+    <section
+      class="flex flex-1 flex-col overflow-hidden"
+      data-slot="pane-detail"
+    >
+      <div
+        class="px-s-5 py-s-6 flex-1 overflow-y-auto lg:px-7"
+        data-slot="pane-detail-body"
+      >
+        상세
+      </div>
+    </section>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Shell layout primitives > Shell 기본 렌더 1`] = `
+<DocumentFragment>
+  <div
+    class="flex h-screen w-screen overflow-hidden"
+    data-slot="shell"
+  >
+    child
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Shell layout primitives > Topbar — title + breadcrumb + actions 1`] = `
+<DocumentFragment>
+  <header
+    class="bg-surface border-border px-s-5 py-s-4 sticky top-0 z-10 flex min-h-[68px] shrink-0 items-center justify-between border-b lg:px-7"
+    data-slot="topbar"
+  >
+    <div
+      class="flex min-w-0 flex-col"
+    >
+      <div
+        class="text-foreground-muted text-micro"
+        data-slot="topbar-breadcrumb"
+      >
+        합주 / 2024-04-01
+      </div>
+      <h1
+        class="text-foreground text-subtitle truncate font-bold"
+        data-slot="topbar-title"
+      >
+        합주 상세
+      </h1>
+    </div>
+    <div
+      class="ml-s-4 gap-s-2 flex shrink-0 items-center"
+      data-slot="topbar-actions"
+    >
+      <button>
+        편집
+      </button>
+    </div>
+  </header>
+</DocumentFragment>
+`;
+
+exports[`Shell layout primitives > Topbar — title only 1`] = `
+<DocumentFragment>
+  <header
+    class="bg-surface border-border px-s-5 py-s-4 sticky top-0 z-10 flex min-h-[68px] shrink-0 items-center justify-between border-b lg:px-7"
+    data-slot="topbar"
+  >
+    <div
+      class="flex min-w-0 flex-col"
+    >
+      <h1
+        class="text-foreground text-subtitle truncate font-bold"
+        data-slot="topbar-title"
+      >
+        홈
+      </h1>
+    </div>
+  </header>
+</DocumentFragment>
+`;
