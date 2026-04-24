@@ -2,9 +2,9 @@
 
 **Title:** Auth 분할 레이아웃 및 관련 컴포넌트 구현
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 1
+**Dependencies:** 1 ✓
 
 **Priority:** high
 
@@ -44,7 +44,7 @@
 
 ### 4.1. AuthBrand 및 AuthFormPanel 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 데스크톱 Auth 분할 레이아웃을 위한 AuthBrand(좌측 브랜딩 패널)와 AuthFormPanel(우측 폼 패널) 컴포넌트를 src/components/layout/auth-split.tsx에 구현한다.
@@ -68,7 +68,7 @@
 
 ### 4.2. StepIndicator 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 다단계 폼 진행 상태를 표시하는 StepIndicator 컴포넌트를 src/components/ui/step-indicator.tsx에 구현한다.
@@ -93,7 +93,7 @@
 
 ### 4.3. PasswordStrength 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 비밀번호 강도를 시각적으로 표시하는 PasswordStrength 컴포넌트를 src/components/ui/password-strength.tsx에 구현한다.
@@ -121,7 +121,7 @@
 
 ### 4.4. (auth) layout.tsx 반응형 분할 레이아웃 적용
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 4.1  
 
 src/app/(auth)/layout.tsx를 데스크톱에서 AuthBrand + AuthFormPanel 분할 구조로, 모바일에서는 기존 중앙 정렬을 유지하도록 수정한다.
@@ -143,7 +143,7 @@ src/app/(auth)/layout.tsx를 데스크톱에서 AuthBrand + AuthFormPanel 분할
 
 ### 4.5. /join 및 /password-change 페이지에 StepIndicator, PasswordStrength 적용
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 4.2, 4.3, 4.4  
 
 /join 페이지에 StepIndicator를 적용하고(기본 정보 -> 계정 설정), /join과 /password-change 페이지에 PasswordStrength를 적용한다.

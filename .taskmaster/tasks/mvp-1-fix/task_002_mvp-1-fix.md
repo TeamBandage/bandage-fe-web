@@ -2,9 +2,9 @@
 
 **Title:** Shell 레이아웃 시스템 컴포넌트 구현
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 1
+**Dependencies:** 1 ✓
 
 **Priority:** high
 
@@ -53,7 +53,7 @@
 
 ### 2.1. Shell 기본 컴포넌트 구현 (shell.tsx, pane-split.tsx)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 데스크톱 마스터-디테일 레이아웃의 최상위 컨테이너인 Shell 컴포넌트와 좌측 목록/우측 상세 영역을 분리하는 PaneSplit 컴포넌트를 구현한다.
@@ -73,7 +73,7 @@
 
 ### 2.2. PaneList 및 PaneDetail 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 2.1  
 
 마스터-디테일 패턴의 좌측 목록 패널(PaneList)과 우측 상세 패널(PaneDetail) 컴포넌트를 구현한다.
@@ -96,7 +96,7 @@
 
 ### 2.3. Sidebar 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 2.1  
 
 데스크톱 좌측 네비게이션 Sidebar 컴포넌트를 구현한다. 브랜드 영역, 네비게이션 아이템, 사용자 정보 푸터를 포함한다.
@@ -126,7 +126,7 @@
 
 ### 2.4. Topbar 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 2.1  
 
 페이지 상단 헤더 역할의 Topbar 컴포넌트를 구현한다. 제목, breadcrumb, 액션 버튼 슬롯을 제공한다.
@@ -148,7 +148,7 @@
 
 ### 2.5. 레이아웃 컴포넌트 통합 및 barrel export 구성
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 2.1, 2.2, 2.3, 2.4  
 
 구현된 Shell 레이아웃 컴포넌트들을 통합하고, src/components/layout/index.ts에 barrel export를 구성하여 import 편의성을 높인다.

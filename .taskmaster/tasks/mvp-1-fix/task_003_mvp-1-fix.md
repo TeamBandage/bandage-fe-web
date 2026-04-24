@@ -2,9 +2,9 @@
 
 **Title:** (main) 레이아웃 개편 - Shell 기반 반응형 구조
 
-**Status:** pending
+**Status:** done
 
-**Dependencies:** 2
+**Dependencies:** 2 ✓
 
 **Priority:** high
 
@@ -58,7 +58,7 @@
 
 ### 3.1. MainLayout 반응형 분기 구조 작성
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 src/app/(main)/layout.tsx를 수정하여 960px(lg) 기준으로 데스크톱/모바일 레이아웃이 분기되도록 구조를 작성한다.
@@ -69,7 +69,7 @@ layout.tsx 파일을 수정하여 lg:hidden / hidden lg:flex CSS 클래스 기�
 
 ### 3.2. Sidebar 네비게이션 연동 (usePathname + ROUTES)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 3.1  
 
 Sidebar 컴포넌트에서 usePathname 훅을 활용해 현재 경로를 판별하고, ROUTES 상수 기반으로 네비게이션 아이템을 렌더링한다.
@@ -80,7 +80,7 @@ Task 2에서 생성된 sidebar.tsx를 수정하여 다음을 구현한다: (1) u
 
 ### 3.3. Sidebar footer 사용자 정보 연동 (useMe 훅)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 3.2  
 
 Sidebar footer 영역에 useMe 훅을 통해 현재 로그인한 사용자의 이름, 이메일을 표시하고 마이페이지 링크를 추가한다.
@@ -91,7 +91,7 @@ sidebar.tsx의 footer 영역을 수정하여 다음을 구현한다: (1) useMe()
 
 ### 3.4. Container 컴포넌트 패딩 토큰화
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 기존 Container 컴포넌트의 padding을 디자인 토큰 기반으로 변경하여 모바일 16px, 태블릿(md) 20px 간격을 적용한다.
@@ -102,7 +102,7 @@ src/components/layout/container.tsx를 수정한다: (1) 기존 px-4를 px-4 md:
 
 ### 3.5. 데스크톱/모바일 레이아웃 통합 테스트 및 Playwright E2E 추가
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 3.1, 3.2, 3.3, 3.4  
 
 완성된 반응형 레이아웃이 960px 기준으로 올바르게 전환되는지 수동 테스트 후 Playwright E2E 테스트 케이스를 추가한다.
