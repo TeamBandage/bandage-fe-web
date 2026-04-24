@@ -1248,7 +1248,7 @@
         "dependencies": [
           "7"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1256,9 +1256,10 @@
             "description": "데스크톱 마스터-디테일 레이아웃을 위한 핵심 Pane 컴포넌트들을 src/components/layout/에 구현한다.",
             "dependencies": [],
             "details": "1. src/components/layout/pane-split.tsx 구현:\n   - flex 컨테이너로 좌/우 pane을 가로 배치\n   - lg: 미만에서는 children만 렌더링 (모바일 유지)\n   - lg: 이상에서 flex + overflow-hidden 적용\n\n2. src/components/layout/pane-list.tsx 구현:\n   - width prop으로 'default'(340px) 또는 'band'(360px) 지원\n   - flex-shrink-0, border-right, overflow-y-auto\n   - 모바일에서는 full-width로 동작\n\n3. src/components/layout/pane-detail.tsx 구현:\n   - flex-1, flex-col, overflow-hidden\n   - 내부 body 영역 overflow-y-auto + padding\n   - empty prop으로 EmptyPane 상태 지원\n\n4. src/components/ui/section-title.tsx 구현:\n   - 카드 내 섹션 헤딩 (텍스트 + 선택적 액션 슬롯)\n   - text-subtitle 사이즈, foreground-sub 색상\n\n5. design/dist/css/layout.css의 .pane-* 스타일을 Tailwind 유틸리티로 변환",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. /playground 페이지에 PaneSplit 데모 섹션 추가하여 시각 확인\n2. 960px 이상/미만에서 레이아웃 전환 동작 DevTools 확인\n3. Vitest 스냅샷 테스트로 컴포넌트 렌더링 검증",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:26:25.687Z"
           },
           {
             "id": 2,
@@ -1268,9 +1269,10 @@
               1
             ],
             "details": "1. src/app/(main)/practices/layout.tsx 신규 생성:\n   - 데스크톱(lg:): PaneSplit으로 children 감싸기\n   - 모바일: children만 렌더링 (기존 동작 유지)\n\n2. src/app/(main)/practices/page.tsx 수정:\n   - PaneList(width='default', 340px) 내부에 밴드 필터 드롭다운 + 합주 목록 배치\n   - 선택된 합주 없을 때 우측 EmptyPane 표시 로직 추가\n\n3. src/app/(main)/practices/[practiceId]/page.tsx 수정:\n   - PaneDetail 래퍼 적용\n   - Topbar 연동 (제목에 합주명 표시)\n\n4. PracticeDetailContent.client.tsx 섹션 구조화:\n   - SectionTitle 컴포넌트로 '일정·장소', '합주곡', '세션', '참여자' 섹션 헤딩 추가\n   - 모바일에서 Accordion으로 섹션 감싸 밀도 확보 (선택적)\n\n5. URL 호환성 유지:\n   - /practices 단독 접근: 좌측 목록 + 우측 EmptyPane\n   - /practices/[id] 직접 접근: 좌측 목록 + 우측 해당 상세",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. /practices URL 접근 시 데스크톱에서 좌측 목록 + 우측 EmptyPane 확인\n2. 합주 클릭 시 우측 상세 영역 갱신 확인\n3. /practices/[id] 직접 URL 접근 시 정상 렌더링 확인\n4. 모바일(960px 미만)에서 기존 풀스크린 동작 유지 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:26:30.506Z"
           },
           {
             "id": 3,
@@ -1280,9 +1282,10 @@
               1
             ],
             "details": "1. src/app/(main)/performances/layout.tsx 신규 생성:\n   - 데스크톱(lg:): PaneSplit으로 children 감싸기\n   - 모바일: children만 렌더링\n\n2. src/app/(main)/performances/page.tsx 수정:\n   - PaneList(width='default', 340px) 내부에 공연 목록 배치\n   - 밴드 필터 드롭다운 유지 (기존 ?bandId= 쿼리 파라미터 활용)\n   - 선택된 공연 없을 때 우측 EmptyPane 표시\n\n3. src/app/(main)/performances/[performanceId]/page.tsx 수정:\n   - PaneDetail 래퍼 적용\n   - Topbar 연동 (제목에 공연명 표시)\n\n4. PerformanceDetailContent.client.tsx 구조화:\n   - Cover 영역 (공연 대표 이미지 또는 플레이스홀더)\n   - Info 섹션 (일정, 장소, 설명)\n   - Practice 연결 목록 섹션 (기존 '연결된 합주' 카드)\n   - 기존 Tabs 구조 유지하면서 SectionTitle 활용\n\n5. URL 호환성 유지:\n   - /performances 단독 접근: 좌측 목록 + 우측 EmptyPane\n   - /performances/[id] 직접 접근: 좌측 목록 + 우측 해당 상세",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. /performances URL 접근 시 데스크톱에서 좌측 목록 + 우측 EmptyPane 확인\n2. 공연 클릭 시 우측 상세 영역 갱신 확인\n3. /performances/[id] 직접 URL 접근 시 정상 렌더링 확인\n4. 모바일에서 기존 풀스크린 동작 유지 확인\n5. 기존 Tabs(개요/참여밴드/연결합주) 정상 동작 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:26:34.516Z"
           },
           {
             "id": 4,
@@ -1292,9 +1295,10 @@
               1
             ],
             "details": "1. src/app/(main)/me/layout.tsx 신규 생성:\n   - 데스크톱(lg:): PaneSplit 적용\n   - 모바일: children만 렌더링\n\n2. src/app/(main)/me/page.tsx 수정:\n   - 데스크톱 좌측 PaneList에 메뉴 항목 렌더링:\n     - 내 정보 (profile)\n     - 비밀번호 변경 (password)\n     - 로그아웃 (logout)\n     - 회원 탈퇴 (withdraw)\n   - 선택된 메뉴에 따라 우측 PaneDetail 내용 변경\n   - URL 쿼리 파라미터 또는 클라이언트 상태로 선택 메뉴 관리\n\n3. MeContent.client.tsx 분리:\n   - ProfileSection: 내 정보 조회/수정 폼\n   - PasswordSection: 비밀번호 변경 폼 (기존 Link 대신 인라인)\n   - LogoutSection: 로그아웃 확인 버튼\n   - WithdrawSection: 회원 탈퇴 확인 다이얼로그\n\n4. 모바일 동작 유지:\n   - 기존 단일 스크롤 레이아웃 그대로\n   - 메뉴 없이 모든 섹션 순차 표시\n\n5. Topbar 연동: 'My Account' 또는 '내 정보' 제목 표시",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 데스크톱에서 좌측 메뉴 클릭 시 우측 폼 전환 확인\n2. 각 섹션(내 정보/비밀번호/로그아웃/탈퇴) 정상 동작 확인\n3. 모바일에서 기존 단일 스크롤 레이아웃 유지 확인\n4. 프로필 수정, 로그아웃, 탈퇴 기능 회귀 테스트",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:26:38.773Z"
           },
           {
             "id": 5,
@@ -1306,11 +1310,13 @@
               4
             ],
             "details": "1. Topbar 컴포넌트 연동:\n   - Practice 상세: Topbar에 합주 제목 + breadcrumb('합주 > {제목}')\n   - Performance 상세: Topbar에 공연 제목 + breadcrumb('공연 > {제목}')\n   - Me 상세: Topbar에 선택된 섹션명 표시\n\n2. PaneDetail 내 Topbar 배치:\n   - PaneDetail 상단에 sticky Topbar 렌더링\n   - actions 슬롯에 편집/삭제 버튼 배치 (기존 카드 헤더에서 이동)\n\n3. 반응형 동작 검증:\n   - 960px 이상: 마스터-디테일 side-by-side 레이아웃\n   - 960px 미만: 기존 풀스크린 스택 레이아웃\n   - 브레이크포인트 전환 시 레이아웃 즉시 반영\n\n4. URL 직접 접근 시나리오 검증:\n   - /practices/[id], /performances/[id] 직접 접근 시 좌측 목록도 함께 로드\n   - 뒤로가기 시 목록 상태 유지\n\n5. Playwright E2E 테스트 시나리오 작성:\n   - Practice 도메인 해피패스 (데스크톱+모바일)\n   - Performance 도메인 해피패스 (데스크톱+모바일)\n   - Me 도메인 해피패스 (데스크톱+모바일)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 각 도메인 상세 페이지에서 Topbar 제목/breadcrumb 표시 확인\n2. DevTools에서 960px 기준 반응형 전환 테스트\n3. Playwright E2E: 6개 시나리오(3 도메인 x 2 뷰포트) 실행\n4. /practices/[id] 직접 URL 접근 시 목록+상세 동시 렌더링 확인\n5. 브라우저 뒤로가기/앞으로가기 시 상태 유지 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:26:42.744Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T17:26:42.744Z"
       },
       {
         "id": "9",
@@ -1469,9 +1475,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T17:21:06.203Z",
+      "lastModified": "2026-04-24T17:26:42.745Z",
       "taskCount": 10,
-      "completedCount": 8,
+      "completedCount": 9,
       "tags": [
         "mvp-1-fix"
       ]
