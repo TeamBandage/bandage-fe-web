@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 
 import { Spinner } from './spinner';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'accent-outline';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -25,6 +25,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: 'bg-surface text-foreground border border-border hover:bg-card-hover',
   ghost: 'bg-transparent text-foreground hover:bg-card-hover',
   danger: 'bg-danger text-foreground hover:opacity-90',
+  'accent-outline': 'bg-transparent text-accent border border-accent hover:bg-accent-dim',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

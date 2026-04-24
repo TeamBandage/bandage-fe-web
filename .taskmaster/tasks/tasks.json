@@ -1013,7 +1013,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1021,9 +1021,10 @@
             "description": "RoleBadge, SectionTitle, Divider 3개의 기본 UI 컴포넌트를 src/components/ui/에 신규 구현한다.",
             "dependencies": [],
             "details": "1. **role-badge.tsx** 구현:\n   - Props: `role: 'LEADER' | 'ADMIN' | 'MEMBER'`, `className?`\n   - 기존 `--color-role-leader`, `--color-role-admin`, `--color-role-member` 토큰 활용\n   - 역할별 배경색(dim)/텍스트색 조합: LEADER(orange), ADMIN(blue), MEMBER(gray)\n   - 라벨: 리더/관리자/멤버\n   - 기존 BandRoleBadge(도메인 컴포넌트)는 이 공용 RoleBadge를 래핑하도록 리팩토링\n\n2. **section-title.tsx** 구현:\n   - Props: `title: string`, `action?: ReactNode`, `className?`\n   - 스타일: uppercase, text-xs(12px), tracking-wider, text-foreground-muted\n   - action 슬롯: 우측 정렬, 주로 '전체 보기 →' 링크용\n   - flex justify-between items-center 레이아웃\n\n3. **divider.tsx** 구현:\n   - Props: `inset?: boolean`, `className?`\n   - 기본: h-px bg-border w-full\n   - inset=true: mx-4 (양쪽 여백)\n   - 시맨틱: role='separator', aria-orientation='horizontal'",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 각 컴포넌트에 Vitest 스냅샷 테스트 작성\n2. RoleBadge: LEADER/ADMIN/MEMBER 3가지 role에 대한 렌더링 검증\n3. SectionTitle: title만 렌더링 / title+action 렌더링 케이스 검증\n4. Divider: 기본 / inset=true 케이스 검증",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:11:16.546Z"
           },
           {
             "id": 2,
@@ -1033,9 +1034,10 @@
               1
             ],
             "details": "1. **stat-card.tsx** (src/components/ui/) 구현:\n   - Props: `icon: LucideIcon`, `label: string`, `value: string | number`, `className?`\n   - 레이아웃: Card 기반, flex items-center gap-3\n   - 아이콘: 40x40 bg-accent-dim rounded-md 컨테이너 내 24x24 text-accent\n   - label: text-foreground-sub text-xs\n   - value: text-foreground text-xl font-semibold\n   - padding='md' 기본값\n\n2. **empty-pane.tsx** (src/components/feedback/) 구현:\n   - Props: `icon?: LucideIcon`, `title: string`, `description?: string`, `className?`\n   - 기존 EmptyState와 유사하나 PaneDetail(마스터-디테일 우측 패널) 플레이스홀더 전용\n   - 레이아웃: flex flex-col items-center justify-center h-full\n   - 아이콘: h-16 w-16 text-foreground-muted\n   - title: text-foreground-sub text-lg\n   - description: text-foreground-muted text-sm\n   - 액션 버튼 슬롯 없음 (EmptyState와의 차이점)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. StatCard: icon/label/value 조합 렌더링 스냅샷 테스트\n2. StatCard: value가 숫자일 때 올바르게 렌더링되는지 확인\n3. EmptyPane: icon 유무에 따른 렌더링 검증\n4. EmptyPane: description 유무에 따른 조건부 렌더링 검증",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:11:21.305Z"
           },
           {
             "id": 3,
@@ -1045,9 +1047,10 @@
               1
             ],
             "details": "1. **responsive-sheet.tsx** (src/components/ui/) 구현:\n   - 기존 Dialog, BottomSheet 컴포넌트를 조합\n   - useMediaQuery 또는 Tailwind lg: breakpoint(960px) 기준 분기\n   - Props: Dialog/BottomSheet 공통 props 통합 (open, onOpenChange, children)\n   - 내보내기: ResponsiveSheet, ResponsiveSheetTrigger, ResponsiveSheetContent, ResponsiveSheetHeader, ResponsiveSheetBody, ResponsiveSheetFooter, ResponsiveSheetTitle, ResponsiveSheetDescription, ResponsiveSheetClose\n\n2. **useMediaQuery 훅** (src/hooks/use-media-query.ts) 구현 (없을 경우):\n   - matchMedia API 활용\n   - SSR 안전 처리 (초기값 false)\n   - resize 이벤트 리스너 등록/해제\n\n3. ResponsiveSheetContent 구현 로직:\n   - const isDesktop = useMediaQuery('(min-width: 960px)')\n   - isDesktop ? DialogContent : BottomSheetContent 렌더링\n   - Header/Body/Footer도 동일하게 조건부 렌더링",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. useMediaQuery 훅 유닛 테스트: matchMedia mock으로 true/false 케이스 검증\n2. ResponsiveSheet: 뷰포트 960px 이상에서 Dialog 렌더링 확인\n3. ResponsiveSheet: 뷰포트 960px 미만에서 BottomSheet 렌더링 확인\n4. /playground에서 수동 리사이즈 테스트",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:11:25.565Z"
           },
           {
             "id": 4,
@@ -1055,9 +1058,10 @@
             "description": "Button에 accent-outline variant 추가, Badge에 amber/muted variant 추가하고 padding/font를 디자인 토큰화한다.",
             "dependencies": [],
             "details": "1. **Button variant 보정** (src/components/ui/button.tsx):\n   - 새 variant 추가: `accent-outline` (border-accent text-accent bg-transparent hover:bg-accent-dim)\n   - ButtonVariant 타입에 'accent-outline' 추가\n   - variantClasses Record에 accent-outline 스타일 추가\n   - sizeClasses의 px/text 값을 토큰 기반으로 정리 (현재 하드코딩된 값 유지 가능, 일관성 확인)\n\n2. **Badge variant 보정** (src/components/ui/badge.tsx):\n   - 새 variant 추가: `amber` (bg-[oklch(0.76_0.17_85_/_0.15)] text-[oklch(0.76_0.17_85)] - warn 색상 계열)\n   - 새 variant 추가: `muted` (bg-surface text-foreground-muted border-transparent)\n   - BadgeVariant 타입 확장: 'default' | 'accent' | 'success' | 'warn' | 'danger' | 'amber' | 'muted'\n   - 기존 사용처 확인 후 호환성 유지\n\n3. 기존 코드베이스에서 Badge 사용처 검색하여 마이그레이션 필요 여부 확인",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Button: accent-outline variant 스냅샷 테스트 추가\n2. Badge: amber, muted variant 스냅샷 테스트 추가\n3. 기존 variant 테스트가 있다면 -u로 갱신\n4. 사용처에서 스타일 깨짐 없는지 수동 회귀 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:11:31.138Z"
           },
           {
             "id": 5,
@@ -1067,11 +1071,13 @@
               3
             ],
             "details": "1. **sessionTypeToken 유틸 추출** (src/lib/session-type.ts):\n   - Chip의 sessionClasses Record를 별도 유틸로 분리\n   - 함수: `getSessionTypeClasses(session: SessionType): { bg: string; text: string }`\n   - 또는 Record export: `SESSION_TYPE_CLASSES: Record<SessionType, string>`\n   - Chip 컴포넌트에서 이 유틸 import하여 사용하도록 리팩토링\n   - 다른 컴포넌트(예: 세션 관련 Badge, 리스트 아이템)에서 재사용 가능\n\n2. **Chip 리팩토링** (src/components/ui/chip.tsx):\n   - 하드코딩된 sessionClasses를 session-type.ts 유틸로 대체\n   - 기존 동작 유지 확인\n\n3. **Dialog sheetOnMobile 옵션 검토**:\n   - ResponsiveSheet가 이미 이 역할을 수행하므로 Dialog 자체에 옵션 추가는 불필요할 수 있음\n   - 대안: Dialog 사용처에서 ResponsiveSheet로 대체하도록 가이드 문서화\n   - 또는 DialogContent에 `asSheet?: boolean` prop 추가하여 모바일에서 BottomSheet 스타일 적용 (optional)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. session-type.ts 유닛 테스트: 모든 SessionType에 대해 올바른 클래스 반환 검증\n2. Chip 리팩토링 후 기존 스냅샷 테스트 통과 확인\n3. SessionType이 사용되는 다른 컴포넌트에서 유틸 적용 시 스타일 일관성 확인\n4. Dialog sheetOnMobile 구현 시 ResponsiveSheet와 동일 동작 검증",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:11:40.111Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T17:11:40.111Z"
       },
       {
         "id": "6",
@@ -1451,9 +1457,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T16:56:33.389Z",
+      "lastModified": "2026-04-24T17:11:40.117Z",
       "taskCount": 10,
-      "completedCount": 5,
+      "completedCount": 6,
       "tags": [
         "mvp-1-fix"
       ]
