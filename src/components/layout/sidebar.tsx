@@ -9,6 +9,7 @@ import { ROUTES } from '@/global/config/routes';
 import { cn } from '@/lib/cn';
 
 import { Avatar } from '../ui/avatar';
+import { Skeleton } from '../ui/skeleton';
 
 type NavItem = {
   href: string;
@@ -40,7 +41,7 @@ export interface SidebarProps {
  */
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname() ?? '';
-  const { data: me } = useMe();
+  const { data: me, isLoading: meLoading } = useMe();
 
   return (
     <aside
@@ -90,21 +91,34 @@ export function Sidebar({ className }: SidebarProps) {
       </nav>
 
       <div className="border-border mt-s-3 gap-s-2 pt-s-3 flex items-center border-t">
-        <Link
-          href={ROUTES.ME}
-          className="hover:bg-card gap-s-2 px-s-2 py-s-2 flex min-w-0 flex-1 items-center rounded-md transition-colors"
-          aria-label="마이페이지로 이동"
-        >
-          <Avatar size="md" fallback={me?.name ?? me?.email ?? '게스트'} />
-          <div className="min-w-0 flex-1">
-            <div className="text-foreground text-caption truncate font-semibold">
-              {me?.name ?? '게스트'}
-            </div>
-            <div className="text-foreground-muted text-micro truncate">
-              {me?.email ?? '로그인이 필요합니다'}
+        {meLoading ? (
+          <div
+            className="gap-s-2 px-s-2 py-s-2 flex min-w-0 flex-1 items-center"
+            aria-label="사용자 정보 로딩 중"
+          >
+            <Skeleton rounded="pill" className="h-8 w-8 shrink-0" />
+            <div className="min-w-0 flex-1 space-y-1">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-2.5 w-28" />
             </div>
           </div>
-        </Link>
+        ) : (
+          <Link
+            href={ROUTES.ME}
+            className="hover:bg-card gap-s-2 px-s-2 py-s-2 flex min-w-0 flex-1 items-center rounded-md transition-colors"
+            aria-label="마이페이지로 이동"
+          >
+            <Avatar size="md" fallback={me?.name ?? me?.email ?? '게스트'} />
+            <div className="min-w-0 flex-1">
+              <div className="text-foreground text-caption truncate font-semibold">
+                {me?.name ?? '게스트'}
+              </div>
+              <div className="text-foreground-muted text-micro truncate">
+                {me?.email ?? '로그인이 필요합니다'}
+              </div>
+            </div>
+          </Link>
+        )}
       </div>
     </aside>
   );

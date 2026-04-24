@@ -858,7 +858,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -866,9 +866,10 @@
             "description": "src/app/(main)/layout.tsx를 수정하여 960px(lg) 기준으로 데스크톱/모바일 레이아웃이 분기되도록 구조를 작성한다.",
             "dependencies": [],
             "details": "layout.tsx 파일을 수정하여 lg:hidden / hidden lg:flex CSS 클래스 기반 분기 구조를 작성한다. 데스크톱 영역에는 Shell + Sidebar placeholder, 모바일 영역에는 기존 Container + BottomNav를 유지한다. Task 2에서 Shell/Sidebar 컴포넌트가 완성되면 import로 연결할 수 있도록 구조를 준비한다. 모바일 영역은 min-h-screen pb-16으로 기존 패딩 유지, 데스크톱은 h-screen w-screen overflow-hidden flex 구조로 작성한다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pnpm dev 실행 후 브라우저 DevTools에서 960px 기준으로 레이아웃 요소가 올바르게 표시/숨김되는지 확인한다.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:49:55.232Z"
           },
           {
             "id": 2,
@@ -878,9 +879,10 @@
               1
             ],
             "details": "Task 2에서 생성된 sidebar.tsx를 수정하여 다음을 구현한다: (1) usePathname()으로 현재 경로 가져오기 (2) ROUTES.HOME, ROUTES.BANDS, ROUTES.PRACTICES, ROUTES.PERFORMANCES, ROUTES.ME에 대응하는 네비게이션 아이템 배열 정의 (3) bottom-nav.tsx의 isActive 로직을 재사용하여 active 상태 판별 (4) active 아이템에 bg-accent-dim text-accent 스타일 적용 (5) Next.js Link 컴포넌트로 클릭 시 라우트 이동 연결",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "각 네비게이션 아이템 클릭 시 해당 라우트로 이동하는지 확인하고, 현재 경로에 맞게 active 스타일이 적용되는지 DevTools로 검증한다.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:49:59.325Z"
           },
           {
             "id": 3,
@@ -890,9 +892,10 @@
               2
             ],
             "details": "sidebar.tsx의 footer 영역을 수정하여 다음을 구현한다: (1) useMe() 훅으로 MemberInfoResponse(id, email, name) 가져오기 (2) Avatar 컴포넌트에 name 전달 (3) 사용자 이름과 이메일 표시 (text overflow ellipsis 처리) (4) footer 전체를 Link로 감싸서 ROUTES.ME로 이동 가능하게 연결 (5) 로딩 상태에서는 Skeleton UI 표시 (6) lg 미만에서는 user 정보 숨김 처리 유지",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "로그인 상태에서 Sidebar footer에 사용자 이름/이메일이 올바르게 표시되는지 확인하고, 클릭 시 /me 페이지로 이동하는지 검증한다.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:50:02.998Z"
           },
           {
             "id": 4,
@@ -900,9 +903,10 @@
             "description": "기존 Container 컴포넌트의 padding을 디자인 토큰 기반으로 변경하여 모바일 16px, 태블릿(md) 20px 간격을 적용한다.",
             "dependencies": [],
             "details": "src/components/layout/container.tsx를 수정한다: (1) 기존 px-4를 px-4 md:px-5로 변경하여 반응형 패딩 적용 (모바일 16px = 1rem = px-4, 태블릿 20px = 1.25rem = px-5) (2) Tailwind v4에서 spacing scale이 올바르게 동작하는지 확인 (3) Task 1에서 추가되는 spacing 토큰(--s-4, --s-5)과 일관성 유지",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "브라우저 DevTools에서 768px 기준으로 Container padding이 16px에서 20px로 변경되는지 확인한다.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:50:06.757Z"
           },
           {
             "id": 5,
@@ -915,12 +919,13 @@
               4
             ],
             "details": "다음 항목을 검증한다: (1) 960px 이상에서 Sidebar가 보이고 BottomNav가 숨겨지는지 확인 (2) 960px 미만에서 BottomNav가 보이고 Sidebar가 숨겨지는지 확인 (3) Sidebar 네비게이션 클릭 시 라우트 이동 및 active 상태 갱신 확인 (4) 기존 모바일 레이아웃 기능이 정상 동작하는지 회귀 테스트 (5) e2e/layout.spec.ts 파일을 생성하여 viewport 1440x900과 375x812에서 레이아웃 요소 가시성 테스트 작성",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pnpm test:e2e 실행하여 레이아웃 테스트 통과 확인, pnpm dev로 수동 테스트하여 960px 기준 레이아웃 전환이 매끄럽게 작동하는지 검증한다.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T15:50:10.254Z"
           }
         ],
-        "updatedAt": "2026-04-24T15:36:04.680Z"
+        "updatedAt": "2026-04-24T15:50:10.254Z"
       },
       {
         "id": "4",
@@ -1362,9 +1367,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T15:36:04.684Z",
+      "lastModified": "2026-04-24T15:50:10.255Z",
       "taskCount": 9,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "mvp-1-fix"
       ]
