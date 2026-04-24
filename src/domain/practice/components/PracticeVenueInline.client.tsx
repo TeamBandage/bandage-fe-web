@@ -56,14 +56,20 @@ export function PracticeVenueInline({ practiceId, venue }: Props) {
       />
       <Button
         size="sm"
+        aria-label="장소 저장"
         onClick={() => mutation.mutate({ venue: value.trim() })}
         loading={mutation.isPending}
         disabled={value.trim().length === 0}
       >
-        <Check className="h-3 w-3" />
+        <Check className="h-3 w-3" aria-hidden="true" />
       </Button>
-      <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-        <X className="h-3 w-3" />
+      <Button
+        size="sm"
+        variant="ghost"
+        aria-label="장소 수정 취소"
+        onClick={() => setEditing(false)}
+      >
+        <X className="h-3 w-3" aria-hidden="true" />
       </Button>
     </div>
   );

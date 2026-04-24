@@ -83,10 +83,11 @@ export function SessionRow({ practiceId, session }: Props) {
         <Button
           size="sm"
           variant="ghost"
+          aria-label="세션 삭제"
           className="text-danger hover:opacity-80"
           onClick={() => setConfirmDelete(true)}
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
 

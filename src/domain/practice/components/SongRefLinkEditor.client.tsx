@@ -46,14 +46,20 @@ export function SongRefLinkEditor({ practiceId, songId, refLink }: Props) {
         />
         <Button
           size="sm"
+          aria-label="참조 링크 저장"
           onClick={() => upsertMutation.mutate(value.trim())}
           loading={upsertMutation.isPending}
           disabled={value.trim().length === 0}
         >
-          <Check className="h-3 w-3" />
+          <Check className="h-3 w-3" aria-hidden="true" />
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-          <X className="h-3 w-3" />
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="참조 링크 수정 취소"
+          onClick={() => setEditing(false)}
+        >
+          <X className="h-3 w-3" aria-hidden="true" />
         </Button>
       </div>
     );
@@ -74,21 +80,23 @@ export function SongRefLinkEditor({ practiceId, songId, refLink }: Props) {
         <Button
           size="sm"
           variant="ghost"
+          aria-label="참조 링크 편집"
           onClick={() => {
             setValue(refLink);
             setEditing(true);
           }}
         >
-          <Pencil className="h-3 w-3" />
+          <Pencil className="h-3 w-3" aria-hidden="true" />
         </Button>
         <Button
           size="sm"
           variant="ghost"
+          aria-label="참조 링크 삭제"
           className="text-danger hover:opacity-80"
           onClick={() => deleteMutation.mutate()}
           loading={deleteMutation.isPending}
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="h-3 w-3" aria-hidden="true" />
         </Button>
       </div>
     );
