@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordStrength } from '@/components/ui/password-strength';
 import { useChangePassword } from '@/domain/auth/hooks/useChangePassword';
 import { passwordChangeSchema, type PasswordChangeSchema } from '@/domain/auth/types';
 import { ROUTES } from '@/global/config/routes';
@@ -59,6 +60,7 @@ export function PasswordChangeForm() {
         error={form.formState.errors.newPassword?.message}
         {...form.register('newPassword')}
       />
+      <PasswordStrength password={form.watch('newPassword')} />
       <Input
         label="새 비밀번호 확인"
         type="password"
