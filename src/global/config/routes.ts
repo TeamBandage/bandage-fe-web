@@ -1,4 +1,6 @@
 export const ROUTES = {
+  ONBOARDING: '/onboarding',
+
   LOGIN: '/login',
   JOIN: '/join',
   PASSWORD_CHANGE: '/password-change',
