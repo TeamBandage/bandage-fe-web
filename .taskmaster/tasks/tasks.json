@@ -1090,7 +1090,7 @@
           "3",
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1098,9 +1098,10 @@
             "description": "디자인 시스템의 Stat 컴포넌트를 React/Tailwind로 구현한다. IconTile + 수치/라벨 조합의 통계 카드 컴포넌트를 생성한다.",
             "dependencies": [],
             "details": "1. src/components/ui/stat-card.tsx 파일 생성\n2. Props 정의: { label: string; value: number | string; icon: LucideIcon; tone: 'accent' | 'success' | 'amber' | 'warn' }\n3. 디자인 참조: design/dist/css/components.css의 .stat 스타일 (.stat { padding: 20px; gap: 14px; border-radius: var(--r-lg) })\n4. IconTile 영역: 44x44 정사각형, tone별 배경색(accent-dim, success-dim 등) + 아이콘\n5. 수치 영역: .stat__value (text-2xl font-extrabold), .stat__label (text-xs text-foreground-muted)\n6. Tailwind 클래스로 스타일 적용: bg-card, border border-border, rounded-lg, p-5, flex items-center gap-3.5\n7. 반응형: 모바일에서는 padding 축소(p-4), 아이콘 크기 축소(36x36) 고려",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Vitest 스냅샷 테스트로 각 tone별 렌더링 확인. /playground 페이지에 4가지 tone의 StatCard 데모 추가.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:15:50.784Z"
           },
           {
             "id": 2,
@@ -1108,9 +1109,10 @@
             "description": "각 섹션 헤더에 사용할 SectionTitle 컴포넌트를 구현한다. 제목 텍스트와 우측 action 슬롯을 지원한다.",
             "dependencies": [],
             "details": "1. src/components/layout/section-title.tsx 파일 생성\n2. Props 정의: { title: string; action?: ReactNode; className?: string }\n3. 디자인 참조: design/dist/js/components.js의 SectionTitle 함수 (class: 'section-title')\n4. 레이아웃: flex justify-between items-center\n5. 제목: text-sm font-semibold text-foreground\n6. action 슬롯: '전체 보기 →' 링크 등을 받아 우측에 렌더링\n7. action 슬롯 스타일: text-xs text-accent hover:underline\n8. next/link의 Link 컴포넌트로 href 전달 가능하도록 action을 ReactNode로 유지",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "action 슬롯 유무에 따른 렌더링 확인. 클릭 이벤트 동작 테스트.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:15:54.169Z"
           },
           {
             "id": 3,
@@ -1118,9 +1120,10 @@
             "description": "홈 화면의 StatCard에 표시할 통계 데이터(소속 밴드 수, 예정 합주 수, 예정 공연 수, 참여 세션 수)를 집계하는 커스텀 훅을 구현한다.",
             "dependencies": [],
             "details": "1. src/domain/member/hooks/useHomeStats.ts 파일 생성 (또는 src/app/(main)/home/ 하위에 로컬 훅으로)\n2. 기존 훅 활용: useMyBands, useUpcomingPractices, useUpcomingPerformances\n3. 각 훅에서 data?.length를 통해 count 파생\n4. 참여 세션 수: useUpcomingPractices 결과에서 participant로 참여한 세션 수를 TanStack Query select로 계산 (또는 별도 API가 없으면 일단 practices.flatMap(p => p.sessions).filter(s => s.assignee === me).length)\n5. 반환 타입: { bandCount: number; practiceCount: number; performanceCount: number; sessionCount: number; isLoading: boolean }\n6. 로딩/에러 상태 병합: isLoading = 모든 쿼리가 로딩 중, isError = 하나라도 에러\n7. staleTime 설정으로 불필요한 재요청 방지",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mock 데이터로 훅 반환값 테스트. 각 도메인 훅의 count가 정확히 파생되는지 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:15:59.653Z"
           },
           {
             "id": 4,
@@ -1132,9 +1135,10 @@
               3
             ],
             "details": "1. PageTitle을 인사말 형식으로 변경: title='안녕하세요, {name}님', description='오늘도 좋은 합주 되세요.'\n2. useMe 훅으로 현재 사용자 이름 가져오기\n3. StatCard 그리드 섹션 추가:\n   - grid grid-cols-2 md:grid-cols-4 gap-4\n   - StatCard x4: 소속 밴드(band/accent), 예정 합주(practice/success), 예정 공연(performance/amber), 참여 세션(music/warn)\n4. 내 밴드 + 다가오는 합주 2열 그리드:\n   - grid grid-cols-1 lg:grid-cols-2 gap-6\n   - 각 섹션에 SectionTitle(action='전체 보기 →' Link) + 기존 MyBands/UpcomingPractices 컴포넌트\n5. 다가오는 공연 3열 그리드:\n   - SectionTitle + grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4\n   - UpcomingPerformances limit 조정\n6. 반응형 스택: 모바일에서 모든 그리드 단일 컬럼",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "데스크톱(1440px)에서 4열/2열/3열 그리드 확인. 모바일(375px)에서 단일 컬럼 스택 확인. 인사말에 실제 사용자 이름 표시 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:16:04.129Z"
           },
           {
             "id": 5,
@@ -1144,11 +1148,13 @@
               4
             ],
             "details": "1. Shell 레이아웃 시스템(Task 2)이 완료되면 Topbar 연동\n   - Topbar가 아직 없으면 이 서브태스크는 Topbar props로 title 전달하는 구조만 준비\n   - 현재는 PageTitle이 타이틀 역할을 대신하므로 큰 변경 불필요\n2. Playwright E2E 테스트 작성 (e2e/home.spec.ts):\n   - 데스크톱(1440x900) 뷰포트에서 StatCard 4열 표시 확인\n   - 모바일(375x812) 뷰포트에서 StatCard 2열 표시 확인\n   - 인사말 텍스트 존재 확인 ('안녕하세요' 포함)\n   - 각 섹션 헤더(내 밴드, 다가오는 합주, 다가오는 공연) 존재 확인\n3. 기존 home E2E 테스트가 있다면 뷰포트 파라미터 추가하여 확장",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Playwright E2E: 데스크톱+모바일 양쪽 뷰포트에서 홈 화면 렌더링 테스트. StatCard 개수, 그리드 레이아웃, 섹션 헤더 존재 여부 검증.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:16:07.914Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T17:16:07.914Z"
       },
       {
         "id": "7",
@@ -1457,9 +1463,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T17:11:40.117Z",
+      "lastModified": "2026-04-24T17:16:07.916Z",
       "taskCount": 10,
-      "completedCount": 6,
+      "completedCount": 7,
       "tags": [
         "mvp-1-fix"
       ]
