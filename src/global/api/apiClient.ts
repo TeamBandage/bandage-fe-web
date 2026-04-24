@@ -145,6 +145,14 @@ export async function request<T>(
   }
 
   if (response.status === 401 && !config._skipAuthRefresh) {
+    // Spring 의 에러 디스패치 경로에서 405 Method Not Allowed 가 401 로 오염되는 경우가 있다.
+    // 표준 405 응답에만 붙는 `Allow` 헤더가 있으면 토큰 만료가 아닌 메서드 불일치로 간주하고
+    // refresh 루프를 건너뛰어 사용자 세션을 보존한다.
+    if (response.headers.get('Allow')) {
+      const parsed = await parseBody(response);
+      throw toApiError(parsed, 405, 'Method not allowed');
+    }
+
     try {
       await refreshAccessToken();
     } catch {
