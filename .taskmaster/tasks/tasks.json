@@ -537,7 +537,7 @@
         "dependencies": [
           "8"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -599,7 +599,8 @@
             "testStrategy": "공연 상세 접근 → 정보 확인 → 수정 버튼 클릭(매니저만 표시) → 수정 완료 → 기존 합주 3개 연결 → 합주 목록 확인 → 합주 연결 해제 → 공연 삭제 확인 다이얼로그 → 삭제 후 목록 이동 플로우 수동 테스트",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T05:34:54.222Z"
       },
       {
         "id": "10",
@@ -676,9 +677,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T04:52:41.903Z",
+      "lastModified": "2026-04-24T05:34:54.229Z",
       "taskCount": 10,
-      "completedCount": 8,
+      "completedCount": 9,
       "tags": [
         "master"
       ]
