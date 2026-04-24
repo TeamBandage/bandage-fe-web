@@ -1508,10 +1508,11 @@
         "description": "긴 한국어 문장이 컴포넌트 폭에 맞춰 단어 중간에서 어색하게 끊기지 않도록 word-break/keep-all 정책을 적용한다.",
         "details": "1) globals.css 에 한국어 기본 정책 추가: body { word-break: keep-all; overflow-wrap: break-word; } (CJK 친화). 2) 개별 긴 문구가 있는 곳(AuthBrand tagline, OnboardingHero tagline, OnboardingFeatures description, EmptyPane description, ErrorState description) 등 점검 후 필요 시 keep-all / break-keep Tailwind 유틸 추가. 3) 확인 대상 뷰포트: 360/375/960 — Playwright 스크린샷 1장씩 찍어 회귀 방지. 4) PRD/리포트에 영향받는 문장 목록 및 적용 여부 정리.",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2026-04-24T17:48:59.848Z"
       },
       {
         "id": "14",
@@ -1598,9 +1599,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T17:46:20.395Z",
+      "lastModified": "2026-04-24T17:48:59.852Z",
       "taskCount": 15,
-      "completedCount": 12,
+      "completedCount": 13,
       "tags": [
         "mvp-1-fix"
       ]

@@ -152,6 +152,9 @@
   body {
     @apply bg-bg text-foreground font-sans;
     line-height: 1.5;
+    /* 한국어 친화: 단어 중간에서 끊지 않고, 공백 없는 긴 토큰은 줄바꿈 허용 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
 
   a {
