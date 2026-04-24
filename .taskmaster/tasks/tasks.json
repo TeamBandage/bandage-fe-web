@@ -1167,7 +1167,7 @@
           "3",
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1175,9 +1175,10 @@
             "description": "데스크톱 마스터-디테일 구조를 위한 핵심 레이아웃 컴포넌트들을 src/components/layout/에 구현한다. lg: 브레이크포인트(960px)에서 좌우 분할, 그 미만에서는 children만 렌더링하는 반응형 처리를 포함한다.",
             "dependencies": [],
             "details": "1. src/components/layout/pane-split.tsx 생성:\n   - props: { children: ReactNode }\n   - 데스크톱(lg:): flex w-full h-[calc(100vh-env(safe-area-inset-top))] overflow-hidden\n   - 모바일: 단순히 children만 렌더 (분할 없음)\n   - CSS: lg:flex lg:h-screen lg:overflow-hidden\n\n2. src/components/layout/pane-list.tsx 생성:\n   - props: { children: ReactNode; width?: 'default' | 'band-list' }\n   - 데스크톱(lg:): w-[var(--list-pane-w)] 또는 w-[var(--band-list-pane-w)], border-r, overflow-y-auto, flex-shrink-0\n   - 모바일: hidden (lg:block)\n   - CSS: lg:w-[340px] lg:border-r lg:border-border lg:overflow-y-auto lg:flex-shrink-0\n   - band-list variant: lg:w-[360px]\n\n3. src/components/layout/pane-detail.tsx 생성:\n   - props: { children: ReactNode }\n   - 데스크톱(lg:): flex-1 overflow-y-auto bg-bg\n   - 모바일: 기존 전체 화면 유지\n   - CSS: lg:flex-1 lg:overflow-y-auto\n\n4. src/components/layout/index.ts에서 모든 컴포넌트 re-export",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Vitest 스냅샷 테스트로 각 컴포넌트 렌더링 확인\n2. 브라우저 DevTools에서 960px 이상/미만 전환 시 레이아웃 변경 확인\n3. PaneSplit 내부에 PaneList + PaneDetail 조합 시 정상 분할 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:20:50.409Z"
           },
           {
             "id": 2,
@@ -1187,9 +1188,10 @@
               1
             ],
             "details": "1. src/app/(main)/bands/layout.tsx 신규 생성:\n   - import { PaneSplit } from '@/components/layout/pane-split'\n   - children과 함께 slot 패턴 사용 (parallel routes 또는 조건부 렌더링)\n   \n2. 레이아웃 구조:\n   - 데스크톱(lg:): PaneSplit으로 감싸고 좌측에 BandListPane, 우측에 children(상세) 렌더\n   - 모바일: children만 렌더 (목록/상세 각각 독립 페이지)\n   \n3. 반응형 처리 방식:\n   - 'use client' 디렉티브로 클라이언트 컴포넌트화\n   - useMediaQuery 훅 또는 CSS 기반 lg:hidden/lg:block 처리\n   - CSS-only 접근 권장: lg:flex로 패널 표시, lg 미만에서 hidden\n\n4. URL 호환성:\n   - /bands 접근 시: 좌측 목록 + 우측 빈 상태(EmptyPane)\n   - /bands/[bandId] 접근 시: 좌측 목록 + 우측 해당 밴드 상세\n   - usePathname()으로 현재 상세 페이지 여부 판별",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. /bands URL 접근 시 데스크톱에서 좌측 목록 + 우측 빈 상태 렌더 확인\n2. /bands/[bandId] URL 접근 시 좌측 목록 + 우측 상세 동시 렌더 확인\n3. 모바일(960px 미만)에서 기존 단일 페이지 동작 유지 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:20:54.106Z"
           },
           {
             "id": 3,
@@ -1199,9 +1201,10 @@
               1
             ],
             "details": "1. src/app/(main)/bands/BandListPane.client.tsx 생성:\n   - 기존 BandsList.client.tsx 로직 기반 (useBandList 훅 재사용)\n   - 상단: 제목('밴드 탐색') + 밴드 만들기 버튼\n   - 검색창: Input 컴포넌트 + search 아이콘, 밴드명/설명 필터링\n   - 필터 칩: 전체/내 밴드 토글 (선택적)\n\n2. BandCard 수정:\n   - selectedBandId prop 추가하여 선택 상태 스타일링\n   - 선택 시: bg-accent-dim border-accent/40 적용\n   - BandRoleBadge 표시 (myRole이 있는 경우)\n\n3. 선택 상태 관리:\n   - useParams()로 현재 선택된 bandId 추출\n   - 카드 클릭 시 router.push(ROUTES.BAND_DETAIL(bandId)) 호출\n   - 데스크톱에서는 목록 유지 + 상세 갱신 (layout이 처리)\n\n4. 스크롤 영역:\n   - PaneList 내부에서 overflow-y-auto 적용\n   - 무한 스크롤 loadMoreRef 유지\n\n5. 디자인 토큰 적용:\n   - 패딩: 20px 상단, 12px 하단\n   - 카드 간격: space-y-1 (4px)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 검색어 입력 시 밴드명/설명 필터링 동작 확인\n2. 밴드 카드 클릭 시 URL 변경 및 선택 스타일 적용 확인\n3. 무한 스크롤 동작 확인 (스크롤 하단 도달 시 추가 로딩)\n4. BandRoleBadge가 내 밴드에 정상 표시되는지 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:20:57.405Z"
           },
           {
             "id": 4,
@@ -1212,9 +1215,10 @@
               2
             ],
             "details": "1. src/app/(main)/bands/[bandId]/page.tsx 수정:\n   - 데스크톱: PaneDetail 내부에 BandDetailPane 렌더\n   - 모바일: 기존 BandDetailContent 유지 (풀스크린)\n\n2. BandDetailPane 또는 BandDetailContent 수정:\n   - 상단 Topbar 영역: breadcrumb('밴드 탐색') + 밴드명 + 액션 버튼들\n     - LEADER/ADMIN: 밴드 설정 버튼\n     - 비멤버: 가입 신청 버튼\n     - 멤버(LEADER 제외): 밴드 탈퇴 버튼\n   \n3. 탭 구조 (Tabs 컴포넌트 사용):\n   - 정보(info): 커버 이미지 영역 + 밴드명 + 설명\n   - 멤버(members): 2열 그리드 멤버 목록 + BandRoleBadge\n   - 신청 현황(applications): RoleGuard(ADMIN 이상) + 상태 필터 칩(대기/승인/거절) + 신청 목록\n\n4. 탭 스타일링:\n   - 디자인 와이어프레임 참고: 하단 보더 방식 active 표시\n   - padding: 0 28px (px-7)\n   - 콘텐츠 영역: padding 24px 28px (p-6 px-7)\n\n5. 역할 기반 렌더링:\n   - hasRole(myRole, 'ADMIN') 체크로 신청 현황 탭 조건부 표시\n   - RoleGuard로 신청 목록 감싸기",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 각 탭 클릭 시 콘텐츠 전환 확인\n2. 권한별 탭/버튼 표시 여부 확인 (LEADER/ADMIN/MEMBER/비멤버)\n3. 신청 현황 탭에서 상태 필터 동작 확인\n4. 모바일에서 기존 상세 페이지 레이아웃 유지 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:21:01.960Z"
           },
           {
             "id": 5,
@@ -1226,11 +1230,13 @@
               4
             ],
             "details": "1. src/components/layout/empty-pane.tsx 생성:\n   - props: { icon?: LucideIcon; title: string; description?: string }\n   - 중앙 정렬 레이아웃 (flex flex-col items-center justify-center h-full)\n   - 아이콘 + 제목 + 설명 표시\n   - 기본 메시지: '밴드를 선택하세요', '왼쪽 목록에서 밴드를 선택하면 상세 정보를 볼 수 있습니다.'\n\n2. bands/layout.tsx 수정:\n   - usePathname()으로 /bands 정확히 매칭 시 EmptyPane 표시\n   - /bands/[bandId] 경로면 children(상세 페이지) 표시\n   \n3. URL 직접 접근 시나리오 처리:\n   - /bands/b1 직접 접근: 좌측 BandListPane에서 b1 자동 선택 + 우측 상세\n   - useParams()의 bandId로 선택 상태 동기화\n   - SSR 시점에도 정상 렌더링 보장\n\n4. 모바일 URL 접근:\n   - /bands: 목록 페이지만 표시 (기존 동작)\n   - /bands/[bandId]: 상세 페이지만 표시 (기존 동작)\n   - 뒤로가기로 목록 복귀\n\n5. 에러 경계 처리:\n   - 존재하지 않는 bandId 접근 시 ErrorState 표시\n   - useBandDetail의 isError 상태 활용",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. /bands URL 직접 접근 시 좌측 목록 + 우측 EmptyPane 확인\n2. /bands/[bandId] URL 직접 접근 시 좌측 목록(해당 밴드 선택) + 우측 상세 확인\n3. 존재하지 않는 bandId URL 접근 시 에러 상태 표시 확인\n4. 모바일에서 각 URL 접근 시 기존 풀스크린 동작 유지 확인\n5. Playwright E2E: Band 도메인 해피패스 데스크톱(1440px) + 모바일(375px) 테스트",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:21:06.202Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T17:21:06.202Z"
       },
       {
         "id": "8",
@@ -1463,9 +1469,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T17:16:07.916Z",
+      "lastModified": "2026-04-24T17:21:06.203Z",
       "taskCount": 10,
-      "completedCount": 7,
+      "completedCount": 8,
       "tags": [
         "mvp-1-fix"
       ]
