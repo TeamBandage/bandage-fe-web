@@ -2,7 +2,7 @@
 
 **Title:** 디자인 토큰 재이식 및 글로벌 CSS 확장
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 
@@ -41,7 +41,7 @@
 
 ### 1.1. Spacing scale 및 Layout 변수 토큰 추가
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 globals.css의 @theme 섹션에 Spacing scale(--spacing-s-1 ~ --spacing-s-12)과 Layout 변수(--sidebar-w, --list-pane-w, --band-list-pane-w)를 design/dist/css/tokens.css 기반으로 추가한다.
@@ -70,7 +70,7 @@ Tailwind v4에서 --spacing-s-* 는 spacing() 함수나 s-1, s-2 같은 클래�
 
 ### 1.2. Typography scale 토큰 추가
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 1.1  
 
 globals.css의 @theme 섹션에 Typography scale 토큰(--text-display, --text-title-lg, --text-title, --text-subtitle, --text-body, --text-caption, --text-micro)을 추가한다.
@@ -92,7 +92,7 @@ Tailwind v4에서 text-display, text-title-lg 같은 클래스로 사용 가능�
 
 ### 1.3. Breakpoint override 및 Auth gradient 토큰 추가
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 1.1  
 
 Tailwind v4의 breakpoint를 960px 기준 lg로 오버라이드하고, Auth gradient 및 Amber 색상 토큰을 globals.css @theme에 추가한다.
@@ -119,7 +119,7 @@ Breakpoint 오버라이드로 lg: 클래스가 960px 기준으로 동작하게 �
 
 ### 1.4. 기존 페이지 스타일 회귀 테스트 및 토큰 충돌 검증
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 1.1, 1.2, 1.3  
 
 새로 추가된 토큰들이 기존 페이지들과 충돌하지 않는지 검증하고, 필요 시 기존 토큰 네이밍과 조정한다.
@@ -149,7 +149,7 @@ Breakpoint 오버라이드로 lg: 클래스가 960px 기준으로 동작하게 �
 
 ### 1.5. Playground 페이지에 토큰 매트릭스 섹션 확장
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 1.4  
 
 src/app/playground/page.tsx에 새로 추가된 토큰들(Spacing, Typography, Breakpoint, Amber, Gradient)을 시각적으로 렌더링하는 섹션을 추가한다.
