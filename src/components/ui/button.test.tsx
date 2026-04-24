@@ -27,12 +27,14 @@ describe('Button', () => {
   });
 
   it('asChild 로 렌더되면 전달된 요소가 사용된다', () => {
+    // href 는 Next.js 내부 페이지 라우트를 피하도록 외부 URL 로 지정
+    // (no-html-link-for-pages 룰은 실제 app 라우트 경로에만 반응하므로 외부 URL 은 무해)
     render(
       <Button asChild>
-        <a href="/bands">밴드로 이동</a>
+        <a href="https://example.com/bands">밴드로 이동</a>
       </Button>,
     );
     const link = screen.getByRole('link', { name: '밴드로 이동' });
-    expect(link).toHaveAttribute('href', '/bands');
+    expect(link).toHaveAttribute('href', 'https://example.com/bands');
   });
 });
