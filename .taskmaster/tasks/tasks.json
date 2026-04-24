@@ -1328,7 +1328,7 @@
         "dependencies": [
           "8"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1336,9 +1336,10 @@
             "description": "Container, PageTitle, Header 컴포넌트의 반응형 패딩과 타이포그래피를 PRD 기준에 맞게 감사하고 수정한다.",
             "dependencies": [],
             "details": "1. src/components/layout/container.tsx 수정:\n   - 현재 고정 px-4(16px)를 반응형으로 변경\n   - 모바일: px-4(16px) / 태블릿 sm: px-5(20px) / 데스크톱 lg: px-7(28px)\n\n2. src/components/layout/page-title.tsx 수정:\n   - 현재 고정 text-xl(20px)을 반응형으로 변경\n   - 모바일: text-xl(20px) / 데스크톱 lg: text-[26px] 또는 text-2xl\n\n3. src/components/layout/header.tsx 수정:\n   - safe-area-inset-top 지원 추가: supports-[padding:env(safe-area-inset-top)]:pt-[env(safe-area-inset-top)]\n   - 반응형 패딩 적용: px-4 sm:px-5 lg:px-7\n\n4. src/components/feedback/toaster.tsx 확인:\n   - safe-area-inset-bottom 적용 여부 검토\n   - 필요시 supports-[padding:env(safe-area-inset-bottom)]:pb-[env(safe-area-inset-bottom)] 추가\n\n5. 도메인 카드 컴포넌트(BandCard, PracticeCard, PerformanceCard) 감사:\n   - gap, 타이포그래피 반응형 여부 검토\n   - 필요시 gap-3 sm:gap-4 등 조정",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. pnpm dev 실행 후 브라우저 DevTools에서 360px/768px/960px 뷰포트별 패딩/폰트 크기 확인\n2. Container의 padding이 16px→20px→28px로 변경되는지 검증\n3. PageTitle의 font-size가 20px→26px로 변경되는지 검증\n4. iOS Safari 시뮬레이터에서 safe-area 동작 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:29:49.491Z"
           },
           {
             "id": 2,
@@ -1348,9 +1349,10 @@
               1
             ],
             "details": "1. Button 컴포넌트 감사 (src/components/ui/button.tsx):\n   - sm 사이즈 h-8(32px)이 40px 미달 → min-h-10으로 패딩 조정 또는 sm 사이즈 사용처 제한 문서화\n   - 아이콘 전용 버튼에 min-w-10 min-h-10 보장\n\n2. 네비게이션 아이템 감사:\n   - BottomNav 아이템: flex-1 구조로 충분한 터치 영역 확보 확인\n   - Tabs 컴포넌트: 각 탭 버튼 최소 40px 높이 확인\n\n3. 폼 요소 감사:\n   - Input: h-10(40px) 충족 확인\n   - Checkbox/Radio: 터치 영역 확장 필요시 래퍼에 min-h-10 적용\n   - Select/Dropdown 트리거: 40px 이상 확인\n\n4. 리스트 아이템 감사:\n   - BandCard, PracticeCard 내 클릭 가능한 영역\n   - Dialog/BottomSheet 내 액션 버튼들\n\n5. Chip 컴포넌트 감사:\n   - 삭제 가능한 Chip의 X 버튼 터치 영역 (min-w-6 → min-w-10 고려)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 모든 인터랙티브 요소에 outline: 1px solid red 임시 적용하여 시각적 검증\n2. Chrome DevTools 'Rendering' > 'Show tap highlight' 활성화 후 확인\n3. 실제 모바일 기기(또는 시뮬레이터)에서 손가락으로 탭 테스트\n4. Lighthouse Accessibility 감사 실행하여 터치 타겟 경고 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:29:53.865Z"
           },
           {
             "id": 3,
@@ -1361,9 +1363,10 @@
               2
             ],
             "details": "1. playwright.config.ts 수정:\n   - projects 배열에 모바일 뷰포트 추가: { name: 'Mobile Chrome', use: { ...devices['Pixel 5'] } }\n   - 데스크톱 뷰포트 조정: { name: 'Desktop Chrome', use: { viewport: { width: 1440, height: 900 } } }\n   - 선택적으로 iPhone 12 추가: { name: 'Mobile Safari', use: { ...devices['iPhone 12'] } }\n\n2. 기존 테스트 파일 구조 유지하며 뷰포트별 실행:\n   - tests/e2e/auth.spec.ts: 로그인 → 홈 리다이렉트 해피패스\n   - tests/e2e/home.spec.ts: 홈 대시보드 렌더링 및 통계 카드 표시 해피패스\n   - tests/e2e/band.spec.ts: 밴드 목록 → 상세 진입 해피패스\n   - tests/e2e/practice.spec.ts: 합주 목록 → 상세 진입 해피패스\n   - tests/e2e/performance.spec.ts: 공연 목록 → 상세 진입 해피패스\n   - tests/e2e/me.spec.ts (신규): 마이페이지 접근 및 프로필 표시 해피패스\n\n3. 각 해피패스 시나리오에 반응형 검증 추가:\n   - 모바일: BottomNav 표시, Sidebar 숨김 확인\n   - 데스크톱: Sidebar 표시 확인 (Task 2 완료 후)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. pnpm test:e2e 실행하여 모든 프로젝트(Desktop/Mobile) 통과 확인\n2. pnpm test:e2e --project='Mobile Chrome' 으로 모바일 전용 실행\n3. CI 환경에서 매트릭스 빌드로 뷰포트별 병렬 실행 검증\n4. 총 12개 시나리오(6 도메인 x 2 뷰포트) 전부 PASS 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:29:57.771Z"
           },
           {
             "id": 4,
@@ -1373,9 +1376,10 @@
               1
             ],
             "details": "1. src/app/playground/page.tsx 토큰 매트릭스 확장:\n   - 색상 섹션: Surface, Foreground, Accent, Status(Success/Warning/Error), Role 색상 전체 표시\n   - 간격 섹션: spacing-s-1(4px) ~ spacing-s-12(48px) 시각적 박스로 표현\n   - 타이포그래피 섹션: display(40px), title-lg(26px), title(20px), subtitle(18px), body(14px), caption(13px), micro(11px) 샘플 텍스트\n   - 반경 섹션: radius-sm(6px), radius-md(10px), radius-lg(14px), radius-full 박스로 표현\n\n2. src/app/playground/components/page.tsx 컴포넌트 매트릭스 확장:\n   - Button: 모든 variant(default/accent/ghost/outline/destructive) x size(sm/md/lg) 매트릭스\n   - Badge: 모든 variant(default/secondary/success/warning/error) 매트릭스\n   - Chip: 선택/삭제 가능 상태 매트릭스\n   - Card: variant별 렌더링\n   - Dialog/BottomSheet: 트리거 버튼으로 각각 열기\n   - Input/Textarea: 상태별(default/error/disabled) 매트릭스\n   - Avatar: 크기별 매트릭스\n\n3. 반응형 프리뷰 섹션 추가:\n   - 360px/414px/768px/960px iframe 또는 설명 텍스트로 뷰포트별 차이점 문서화",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. /playground 페이지 접속하여 모든 토큰이 올바르게 렌더링되는지 시각 확인\n2. 모든 컴포넌트 variant가 디자인 원본과 일치하는지 비교\n3. 브라우저 DevTools에서 뷰포트 변경 시 반응형 동작 확인\n4. 접근성: 색상 대비 비율 4.5:1 이상 충족 여부 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:30:01.424Z"
           },
           {
             "id": 5,
@@ -1388,11 +1392,13 @@
               4
             ],
             "details": "1. 리포트 파일 생성: .taskmaster/report/mvp-1-fix-audit-YYYY-MM-DD.md\n\n2. 메타 섹션:\n   - 작성일, 검증 주체, 대상 뷰포트(360px/414px/768px/960px/1440px)\n   - 검증 도구(Chrome DevTools, Lighthouse, Playwright)\n\n3. 반응형 감사 결과:\n   - Container 패딩 검증 결과 (16px/20px/28px 적용 여부)\n   - PageTitle 타이포그래피 검증 결과 (20px/26px 적용 여부)\n   - Safe-area 적용 지점 목록 (BottomNav, Header, Toaster)\n   - 터치 타겟 위반 요소 목록 및 해결 상태\n\n4. E2E 테스트 결과:\n   - 총 시나리오 수: 12개 (6 도메인 x 2 뷰포트)\n   - 통과/실패 현황 표\n   - 실패 시나리오 상세 (있는 경우)\n\n5. Lighthouse 점수 기록 (참고용, 합격선 없음):\n   - Mobile: Performance, Accessibility, Best Practices, SEO\n   - Desktop: Performance, Accessibility, Best Practices, SEO\n\n6. 남은 이슈 및 권장 조치:\n   - P0(차단), P1(기능 저하), P2(품질), P3(참고) 우선순위로 분류\n   - 각 이슈에 재현 절차, 추정 원인, 수정 제안 포함\n\n7. 시각 회귀 스크린샷 참조:\n   - 주요 화면별 360px/1440px 스크린샷 경로 또는 설명",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 리포트 내용이 실제 테스트 결과와 일치하는지 검증\n2. 모든 섹션이 빠짐없이 작성되었는지 확인\n3. Markdown 문법 오류 없이 렌더링되는지 확인\n4. 이슈 우선순위 분류가 적절한지 팀 리뷰",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-24T17:30:05.214Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T17:30:05.214Z"
       },
       {
         "id": "10",
@@ -1475,9 +1481,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T17:26:42.745Z",
+      "lastModified": "2026-04-24T17:30:05.215Z",
       "taskCount": 10,
-      "completedCount": 9,
+      "completedCount": 10,
       "tags": [
         "mvp-1-fix"
       ]
