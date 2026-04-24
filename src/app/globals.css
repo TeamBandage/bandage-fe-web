@@ -42,6 +42,22 @@
   --radius-xl: 20px;
   --radius-pill: 999px;
 
+  /* Spacing scale (design/dist/css/tokens.css --s-* 매핑) */
+  --spacing-s-1: 4px;
+  --spacing-s-2: 8px;
+  --spacing-s-3: 12px;
+  --spacing-s-4: 16px;
+  --spacing-s-5: 20px;
+  --spacing-s-6: 24px;
+  --spacing-s-8: 32px;
+  --spacing-s-10: 40px;
+  --spacing-s-12: 48px;
+
+  /* Layout widths (Shell / Pane-Split. CSS 변수로 소비: w-[var(--sidebar-w)] 또는 style) */
+  --sidebar-w: 240px;
+  --list-pane-w: 340px;
+  --band-list-pane-w: 360px;
+
   /* Shadow */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
