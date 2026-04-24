@@ -2,23 +2,15 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { useCreatePractice } from '@/domain/practice/hooks/useCreatePractice';
 import { createPracticeSchema, type CreatePracticeSchema } from '@/domain/practice/types';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
-
-/**
- * datetime-local 값("YYYY-MM-DDTHH:mm") 을 API 요구 형식("yyyy-MM-dd HH:mm") 으로 변환.
- * 빈 문자열은 그대로 반환해 zod 검증에서 걸러지도록 함.
- */
-function toKstDatetime(datetimeLocal: string) {
-  if (!datetimeLocal) return datetimeLocal;
-  return datetimeLocal.replace('T', ' ').slice(0, 16);
-}
 
 export function PracticeCreateForm() {
   const router = useRouter();
@@ -71,16 +63,29 @@ export function PracticeCreateForm() {
         error={form.formState.errors.venue?.message}
         {...form.register('venue')}
       />
-      <Input
-        label="시작 시각"
-        type="datetime-local"
-        required
-        hint="Asia/Seoul 기준 yyyy-MM-dd HH:mm 형식으로 저장됩니다."
-        error={form.formState.errors.startAt?.message}
-        {...form.register('startAt', {
-          setValueAs: (v) => toKstDatetime(String(v ?? '')),
-        })}
-      />
+      <div className="space-y-s-2">
+        <label className="text-foreground text-caption font-semibold">
+          시작 시각 <span className="text-danger">*</span>
+        </label>
+        <Controller
+          name="startAt"
+          control={form.control}
+          render={({ field }) => (
+            <DateTimePicker
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              aria-label="시작 시각"
+              required
+            />
+          )}
+        />
+        <p className="text-foreground-muted text-micro">
+          Asia/Seoul 기준 yyyy-MM-dd HH:mm 형식으로 저장됩니다.
+        </p>
+        {form.formState.errors.startAt?.message && (
+          <p className="text-danger text-micro">{form.formState.errors.startAt.message}</p>
+        )}
+      </div>
       <Input
         label="소요 시간 (분)"
         type="number"

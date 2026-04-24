@@ -2,20 +2,16 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreatePerformance } from '@/domain/performance/hooks/useCreatePerformance';
 import { createPerformanceSchema, type CreatePerformanceSchema } from '@/domain/performance/types';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
-
-function toKstDatetime(v: string) {
-  if (!v) return v;
-  return v.replace('T', ' ').slice(0, 16);
-}
 
 type FormValues = CreatePerformanceSchema & { bandIdsRaw?: string };
 
@@ -70,16 +66,29 @@ export function PerformanceCreateForm() {
         error={form.formState.errors.title?.message}
         {...form.register('title')}
       />
-      <Input
-        label="시작 시각"
-        type="datetime-local"
-        required
-        hint="Asia/Seoul 기준 yyyy-MM-dd HH:mm 으로 저장됩니다."
-        error={form.formState.errors.startAt?.message}
-        {...form.register('startAt', {
-          setValueAs: (v) => toKstDatetime(String(v ?? '')),
-        })}
-      />
+      <div className="space-y-s-2">
+        <label className="text-foreground text-caption font-semibold">
+          시작 시각 <span className="text-danger">*</span>
+        </label>
+        <Controller
+          name="startAt"
+          control={form.control}
+          render={({ field }) => (
+            <DateTimePicker
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              aria-label="공연 시작 시각"
+              required
+            />
+          )}
+        />
+        <p className="text-foreground-muted text-micro">
+          Asia/Seoul 기준 yyyy-MM-dd HH:mm 으로 저장됩니다.
+        </p>
+        {form.formState.errors.startAt?.message && (
+          <p className="text-danger text-micro">{form.formState.errors.startAt.message}</p>
+        )}
+      </div>
       <Input
         label="소요 시간 (분)"
         type="number"
