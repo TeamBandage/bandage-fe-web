@@ -26,7 +26,14 @@ export function Container({
 }: ContainerProps) {
   return (
     <div
-      className={cn('mx-auto w-full', maxWidthClasses[maxWidth], padding && 'px-4', className)}
+      className={cn(
+        'mx-auto w-full',
+        maxWidthClasses[maxWidth],
+        // 모바일 16px / 태블릿(md >=768) 20px / 데스크톱(lg >=960) 28px
+        // design/dist 의 pane-detail 패딩(24/28)과 정렬.
+        padding && 'px-s-4 md:px-s-5 lg:px-7',
+        className,
+      )}
       {...props}
     >
       {children}
