@@ -28,7 +28,7 @@ function ViewAllLink({ href, label }: { href: string; label: string }) {
 
 export default function HomePage() {
   return (
-    <div className="space-y-s-8">
+    <div className="space-y-s-8 lg:p-s-10 lg:mx-auto lg:h-[calc(100vh-0px)] lg:w-full lg:max-w-5xl lg:overflow-y-auto">
       <PageTitle title="홈" description="오늘의 합주와 공연을 한눈에 확인하세요." />
 
       <HomeStatCards />

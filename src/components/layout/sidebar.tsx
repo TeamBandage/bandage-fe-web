@@ -46,16 +46,16 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'bg-surface border-border py-s-5 px-s-3 hidden shrink-0 flex-col border-r lg:flex',
+        'bg-surface border-border py-s-5 px-s-4 gap-s-1 hidden shrink-0 flex-col border-r lg:flex',
         className,
       )}
       style={{ width: 'var(--sidebar-w)' }}
       data-slot="sidebar"
       aria-label="주 탐색"
     >
-      <div className="border-border mb-s-2 gap-s-2 pb-s-5 pl-s-3 pr-s-3 pt-s-1 flex items-center border-b">
+      <div className="border-border mb-s-3 gap-s-3 pb-s-5 px-s-2 pt-s-1 flex items-center border-b">
         <span
-          className="bg-accent-dim flex h-9 w-9 items-center justify-center rounded-md border"
+          className="bg-accent-dim flex h-10 w-10 items-center justify-center rounded-md border"
           style={{ borderColor: 'oklch(0.62 0.22 250 / 0.2)' }}
           aria-hidden="true"
         >
@@ -64,7 +64,7 @@ export function Sidebar({ className }: SidebarProps) {
         <span className="text-accent text-title font-black tracking-tight">Bandage</span>
       </div>
 
-      <div className="text-foreground-muted px-s-3 pb-s-3 pt-s-4 text-micro font-bold tracking-wider uppercase">
+      <div className="text-foreground-muted px-s-3 pb-s-3 pt-s-2 text-micro font-bold tracking-wider uppercase">
         Navigation
       </div>
       <nav className="gap-s-1 flex flex-1 flex-col">
@@ -76,7 +76,7 @@ export function Sidebar({ className }: SidebarProps) {
               href={href}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'gap-s-3 px-s-3 py-s-2 text-body flex items-center rounded-md font-medium transition-colors',
+                'gap-s-4 px-s-4 py-s-3 text-body flex items-center rounded-md font-medium transition-colors',
                 'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                 active
                   ? 'bg-accent-dim text-accent font-bold'

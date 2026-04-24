@@ -4,16 +4,16 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
 <DocumentFragment>
   <aside
     aria-label="주 탐색"
-    class="bg-surface border-border py-s-5 px-s-3 hidden shrink-0 flex-col border-r lg:flex"
+    class="bg-surface border-border py-s-5 px-s-4 gap-s-1 hidden shrink-0 flex-col border-r lg:flex"
     data-slot="sidebar"
     style="width: var(--sidebar-w);"
   >
     <div
-      class="border-border mb-s-2 gap-s-2 pb-s-5 pl-s-3 pr-s-3 pt-s-1 flex items-center border-b"
+      class="border-border mb-s-3 gap-s-3 pb-s-5 px-s-2 pt-s-1 flex items-center border-b"
     >
       <span
         aria-hidden="true"
-        class="bg-accent-dim flex h-9 w-9 items-center justify-center rounded-md border"
+        class="bg-accent-dim flex h-10 w-10 items-center justify-center rounded-md border"
         style="border-color: oklch(0.62 0.22 250 / 0.2);"
       >
         <svg
@@ -50,7 +50,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       </span>
     </div>
     <div
-      class="text-foreground-muted px-s-3 pb-s-3 pt-s-4 text-micro font-bold tracking-wider uppercase"
+      class="text-foreground-muted px-s-3 pb-s-3 pt-s-2 text-micro font-bold tracking-wider uppercase"
     >
       Navigation
     </div>
@@ -58,7 +58,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       class="gap-s-1 flex flex-1 flex-col"
     >
       <a
-        class="gap-s-3 px-s-3 py-s-2 flex items-center rounded-md font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+        class="gap-s-4 px-s-4 py-s-3 flex items-center rounded-md font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
         href="/home"
       >
         <svg
@@ -89,7 +89,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       </a>
       <a
         aria-current="page"
-        class="gap-s-3 px-s-3 py-s-2 flex items-center rounded-md transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none bg-accent-dim text-accent font-bold"
+        class="gap-s-4 px-s-4 py-s-3 flex items-center rounded-md transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none bg-accent-dim text-accent font-bold"
         href="/bands"
       >
         <svg
@@ -127,7 +127,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
         </span>
       </a>
       <a
-        class="gap-s-3 px-s-3 py-s-2 flex items-center rounded-md font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+        class="gap-s-4 px-s-4 py-s-3 flex items-center rounded-md font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
         href="/practices"
       >
         <svg
@@ -164,7 +164,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
         </span>
       </a>
       <a
-        class="gap-s-3 px-s-3 py-s-2 flex items-center rounded-md font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+        class="gap-s-4 px-s-4 py-s-3 flex items-center rounded-md font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
         href="/performances"
       >
         <svg
@@ -222,7 +222,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
         </span>
       </a>
       <a
-        class="gap-s-3 px-s-3 py-s-2 flex items-center rounded-md font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+        class="gap-s-4 px-s-4 py-s-3 flex items-center rounded-md font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
         href="/me"
       >
         <svg
