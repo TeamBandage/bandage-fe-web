@@ -222,6 +222,24 @@ feat: 밴드 생성 페이지 구현
 
 Task-master 태스크를 실행하라는 지시를 받으면 반드시 이 워크플로우를 따릅니다.
 
+### CLI 사용 (모든 세션 공통)
+
+`task-master` 바이너리는 nvm 관리 Node(`/Users/sunwoo/.nvm/versions/node/v20.20.2/bin/task-master`)에 설치되어 있으나 기본 쉘 `PATH` 에 없습니다. AI 에이전트 / 새 쉘 세션 어디서든 아래 규칙을 따릅니다.
+
+- **모든 task-master 호출 앞에 `source ~/.nvm/nvm.sh && ` 를 붙여 실행**. 예:
+  ```bash
+  source ~/.nvm/nvm.sh && task-master list
+  source ~/.nvm/nvm.sh && task-master show <id>
+  source ~/.nvm/nvm.sh && task-master next
+  source ~/.nvm/nvm.sh && task-master set-status --id=<id> --status=in-progress
+  source ~/.nvm/nvm.sh && task-master expand --id=<id> --num=5
+  source ~/.nvm/nvm.sh && task-master generate
+  source ~/.nvm/nvm.sh && task-master tags use <name>
+  ```
+- `which task-master` 가 비어 있더라도 위 패턴으로 **항상** 호출 가능 (nvm 활성화로 PATH 확보).
+- `npx task-master-ai` 는 쓰지 않습니다 (항상 네트워크 의존 · 느림 · 캐시된 전역 설치를 놔두고 새로 받음).
+- 전역 설치를 건드려야 할 때 외에는 `npm install -g` 로 재설치하지 않습니다 (기존 0.43.1 버전 유지).
+
 ### 0. 원격 동기화 (Pre-flight)
 - 태스크를 시작하기 **직전**, 아래 순서로 로컬을 원격과 일치시킵니다. 누락된 협업자 변경분이 있는 상태에서 새 브랜치를 분기하면 이후 충돌·재작업이 발생하므로 이 단계는 생략 금지.
   1. `git fetch --all --prune` — 원격 브랜치 상태 및 삭제된 브랜치 정리

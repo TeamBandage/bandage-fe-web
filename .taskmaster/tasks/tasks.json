@@ -858,7 +858,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -919,7 +919,8 @@
             "testStrategy": "pnpm test:e2e 실행하여 레이아웃 테스트 통과 확인, pnpm dev로 수동 테스트하여 960px 기준 레이아웃 전환이 매끄럽게 작동하는지 검증한다.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T15:36:04.680Z"
       },
       {
         "id": "4",
@@ -1361,7 +1362,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T15:22:28.674Z",
+      "lastModified": "2026-04-24T15:36:04.684Z",
       "taskCount": 9,
       "completedCount": 2,
       "tags": [
