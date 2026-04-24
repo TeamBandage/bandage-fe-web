@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function MyPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-s-6 p-s-4 lg:py-s-8 mx-auto w-full max-w-3xl">
       <PageTitle title="MY" description="프로필과 계정 설정" />
       <MeContent />
     </div>
