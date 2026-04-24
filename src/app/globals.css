@@ -27,6 +27,8 @@
   --color-success-dim: oklch(0.7 0.18 155 / 0.15);
   --color-warn: oklch(0.76 0.17 85);
   --color-warn-dim: oklch(0.76 0.17 85 / 0.15);
+  --color-amber: oklch(0.72 0.18 48);
+  --color-amber-dim: oklch(0.72 0.18 48 / 0.15);
   --color-danger: oklch(0.65 0.23 25);
   --color-danger-dim: oklch(0.65 0.23 25 / 0.15);
 
@@ -66,6 +68,15 @@
   --text-body: 14px;
   --text-caption: 13px;
   --text-micro: 11px;
+
+  /* Breakpoints (design/dist 기준 960px 를 lg 로 오버라이드) */
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 960px;
+  --breakpoint-xl: 1280px;
+
+  /* Auth brand gradient (design/dist/css/layout.css .auth-brand 와 동일) */
+  --gradient-auth-brand: linear-gradient(145deg, #0d0d1e 0%, #111128 100%);
 
   /* Shadow */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
