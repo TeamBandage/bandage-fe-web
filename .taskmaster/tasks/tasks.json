@@ -462,7 +462,7 @@
         "dependencies": [
           "7"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -524,7 +524,8 @@
             "testStrategy": "합주 생성 → 세션 3개 추가 → 2명이 각각 세션 배정 → 장소 변경 → 곡 링크 추가/수정 → 삭제 플로우 수동 테스트. 세션 배정 낙관적 업데이트 즉시 반영 확인. 삭제 확인 다이얼로그 동작 확인.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-24T04:52:41.897Z"
       },
       {
         "id": "9",
@@ -675,9 +676,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T01:54:21.138Z",
+      "lastModified": "2026-04-24T04:52:41.903Z",
       "taskCount": 10,
-      "completedCount": 7,
+      "completedCount": 8,
       "tags": [
         "master"
       ]
