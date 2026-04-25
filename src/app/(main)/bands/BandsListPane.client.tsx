@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { IconTile } from '@/components/ui/icon-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BandCreateModal } from '@/domain/band/components/BandCreateModal.client';
 import { useBandList } from '@/domain/band/hooks/useBandList';
@@ -13,7 +14,10 @@ import { useMyBands } from '@/domain/band/hooks/useMyBands';
 import type { BandInfoResponse } from '@/domain/band/types';
 import { ROUTES } from '@/global/config/routes';
 import { useDiscoverySearch } from '@/hooks/useDiscoverySearch';
-import { cn } from '@/lib/cn';
+import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
+import { listItemClasses } from '@/lib/list-item-styles';
+
+const BandIcon = DOMAIN_ICONS.band;
 
 const accessor = (b: BandInfoResponse) => `${b.bandName} ${b.description ?? ''}`;
 
@@ -27,19 +31,22 @@ function BandRow({ band, pathname }: { band: BandInfoResponse; pathname: string 
       <Link
         href={href}
         aria-current={active ? 'page' : undefined}
-        className={cn(
-          'px-s-3 py-s-3 block rounded-md transition-colors',
-          active
-            ? 'bg-accent-dim text-accent'
-            : 'hover:bg-card text-foreground-sub hover:text-foreground',
+        data-slot="band-row"
+        className={listItemClasses(
+          active,
+          DOMAIN_LIST_SELECTED_TONES.band,
+          'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         )}
       >
-        <div className="text-body truncate font-semibold">{band.bandName}</div>
-        {band.description && (
-          <div className="text-foreground-muted text-caption mt-0.5 truncate">
-            {band.description}
-          </div>
-        )}
+        <IconTile icon={<BandIcon />} size="sm" tone={DOMAIN_TONES.band} />
+        <div className="min-w-0 flex-1">
+          <div className="text-body truncate font-semibold">{band.bandName}</div>
+          {band.description && (
+            <div className="text-foreground-muted text-caption mt-0.5 truncate">
+              {band.description}
+            </div>
+          )}
+        </div>
       </Link>
     </li>
   );

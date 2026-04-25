@@ -7,13 +7,17 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { IconTile } from '@/components/ui/icon-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PracticeCreateModal } from '@/domain/practice/components/PracticeCreateModal.client';
 import { usePractices } from '@/domain/practice/hooks/usePractices';
 import type { PracticeListItemResponse } from '@/domain/practice/types';
 import { ROUTES } from '@/global/config/routes';
 import { useDiscoverySearch } from '@/hooks/useDiscoverySearch';
-import { cn } from '@/lib/cn';
+import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
+import { listItemClasses } from '@/lib/list-item-styles';
+
+const PracticeIcon = DOMAIN_ICONS.practice;
 
 const accessor = (p: PracticeListItemResponse) =>
   `${p.title} ${p.venue ?? ''} ${p.song?.title ?? ''}`;
@@ -29,17 +33,20 @@ function PracticeRow({ p, pathname }: { p: PracticeListItemResponse; pathname: s
       <Link
         href={href}
         aria-current={active ? 'page' : undefined}
-        className={cn(
-          'px-s-3 py-s-3 block rounded-md transition-colors',
-          active
-            ? 'bg-accent-dim text-accent'
-            : 'hover:bg-card text-foreground-sub hover:text-foreground',
+        data-slot="practice-row"
+        className={listItemClasses(
+          active,
+          DOMAIN_LIST_SELECTED_TONES.practice,
+          'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         )}
       >
-        <div className="text-body truncate font-semibold">{p.title}</div>
-        <div className="text-foreground-muted text-caption gap-s-2 mt-0.5 flex items-center">
-          <span>{when}</span>
-          {p.venue && <span className="truncate">· {p.venue}</span>}
+        <IconTile icon={<PracticeIcon />} size="sm" tone={DOMAIN_TONES.practice} />
+        <div className="min-w-0 flex-1">
+          <div className="text-body truncate font-semibold">{p.title}</div>
+          <div className="text-foreground-muted text-caption gap-s-2 mt-0.5 flex items-center">
+            <span>{when}</span>
+            {p.venue && <span className="truncate">· {p.venue}</span>}
+          </div>
         </div>
       </Link>
     </li>
