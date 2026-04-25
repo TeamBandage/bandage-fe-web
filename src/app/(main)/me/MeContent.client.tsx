@@ -69,7 +69,7 @@ export function MeContent() {
   }
 
   if (isError || !me) {
-    return <ErrorState description="회원 정보를 불러오지 못했습니다." onRetry={() => refetch()} />;
+    return <ErrorState onRetry={() => refetch()} />;
   }
 
   return (

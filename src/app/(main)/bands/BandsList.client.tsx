@@ -37,7 +37,7 @@ export function BandsList() {
   }
 
   if (isError) {
-    return <ErrorState description="밴드 목록을 불러오지 못했습니다." onRetry={() => refetch()} />;
+    return <ErrorState onRetry={() => refetch()} />;
   }
 
   const bands = data?.pages.flatMap((p) => p.content) ?? [];

@@ -40,7 +40,7 @@ export function PerformancesList() {
   }
 
   if (isError) {
-    return <ErrorState description="공연 목록을 불러오지 못했습니다." onRetry={() => refetch()} />;
+    return <ErrorState onRetry={() => refetch()} />;
   }
 
   const performances = data?.pages.flatMap((p) => p.content) ?? [];
