@@ -31,6 +31,7 @@ import { useDeletePractice } from '@/domain/practice/hooks/useDeletePractice';
 import { usePractice } from '@/domain/practice/hooks/usePractice';
 import { useUpdateSchedule } from '@/domain/practice/hooks/useUpdateSchedule';
 import { addParticipantSchema, type AddParticipantSchema } from '@/domain/practice/types';
+import { getMemberDisplayName } from '@/domain/member/utils';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 
@@ -204,8 +205,7 @@ export function PracticeDetailContent({ practiceId }: { practiceId: string }) {
                 <ul className="space-y-2">
                   {practice.participants.map((p) => (
                     <li key={p.participantId} className="text-foreground-sub text-sm">
-                      Member #{p.memberId}
-                      <span className="text-foreground-muted ml-2 text-xs">{p.participantId}</span>
+                      {getMemberDisplayName({ memberId: p.memberId, name: p.name })}
                     </li>
                   ))}
                 </ul>

@@ -16,10 +16,19 @@ export interface BandMemberInfoResponse {
   bandMemberId: string;
   memberId: number;
   role: BandRole;
+  /** 백엔드 미지원 시 undefined. API_REQUIRED.md FE-API-012 참조. */
+  name?: string;
+  /** 동일 사유 — API 추가 시 자동 반영. */
+  profileImg?: string;
 }
 
 export interface BandApplicationInfoResponse {
   bandApplicationId: string;
   memberId: number;
   status: ApplicationStatus;
+  /** 백엔드 미지원 시 undefined. API_REQUIRED.md FE-API-013 참조. */
+  applicantName?: string;
+  applicantProfileImg?: string;
+  /** 신청 일시. 동일 사유. */
+  appliedAt?: string;
 }

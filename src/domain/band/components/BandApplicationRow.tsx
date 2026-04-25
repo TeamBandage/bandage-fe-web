@@ -4,6 +4,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useDecideApplication } from '@/domain/band/hooks/useDecideApplication';
+import { getMemberDisplayName } from '@/domain/member/utils';
 import { useToast } from '@/hooks/useToast';
 
 import type { BandApplicationInfoResponse } from '../types';
@@ -30,8 +31,10 @@ export function BandApplicationRow({ bandId, application }: Props) {
   });
 
   const isPending = application.status === 'PENDING';
-  // 신청자 표시명: 백엔드가 name 을 아직 안 주므로 임시로 "Member #{memberId}" 사용 (Phase G 에서 정상화)
-  const displayName = `Member #${application.memberId}`;
+  const displayName = getMemberDisplayName({
+    memberId: application.memberId,
+    name: application.applicantName,
+  });
 
   return (
     <div
