@@ -2,7 +2,20 @@
 
 본 문서는 mvp-1-fix Task 15 실서버 검증과 Task 18~20 구현 과정에서 발견된, 현재 백엔드(`http://localhost:8080`)에 **존재하지 않거나 계약이 어긋나** 프론트가 mock 또는 우회 구현으로 대체한 API 항목을 정리한 것입니다. 백엔드 구현이 완료되면 프론트의 `domain/{name}/api/`만 교체하면 즉시 활성화됩니다.
 
-작성일: 2026-04-25 / 영향 범위: Bandage MVP 1차 보정
+작성일: 2026-04-26 (mvp-1-fix-v3 Task 8 검증 결과 반영) / 영향 범위: Bandage MVP 1차 보정 v3
+
+## 0. mvp-1-fix-v3 Task 8 검증 (2026-04-26) 요약
+
+상세 리포트: [`.taskmaster/reports/create-api-verification-2026-04-26.md`](./.taskmaster/reports/create-api-verification-2026-04-26.md)
+
+| 항목                                                                              | 우선순위 | 상태                                                    |
+| --------------------------------------------------------------------------------- | -------- | ------------------------------------------------------- |
+| `/bands/me` myRole 포함                                                           | —        | 해소 (정상 동작 확인)                                   |
+| `/practices/me`, `/performances/me`, `/bands/search` 등 me/search 엔드포인트 일괄 | —        | 해소                                                    |
+| `POST /performances` `bandIds` non-null 강제 (§6-1 명세 vs 실제 불일치)           | P0       | FE 즉시 수정 (항상 배열 전송) + BE 의 default 처리 권고 |
+| Practice ↔ PracticeSong 닭-달걀 (FE-API-020)                                      | P0       | 미해소 — 본 라운드 마법사 end-to-end 차단               |
+| 입력 검증 메시지 raw 노출                                                         | P1       | 검토 필요                                               |
+| 공연/합주 startAt 과거 허용                                                       | P2       | 백엔드 검증 권고                                        |
 
 ---
 

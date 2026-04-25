@@ -88,7 +88,8 @@ export function PerformanceCreateModal({ trigger }: { trigger: ReactNode }) {
             onSubmit={form.handleSubmit((values) =>
               mutation.mutate({
                 title: values.title,
-                bandIds: selectedBands.length > 0 ? selectedBands.map((b) => b.bandId) : undefined,
+                // 백엔드는 bandIds 가 null/missing 일 경우 400 (API_SPEC §6-1 명세 vs 실제 불일치 — Task 8 검증).
+                bandIds: selectedBands.map((b) => b.bandId),
                 startAt: values.startAt,
                 durationMinutes: values.durationMinutes,
                 venue: values.venue,
