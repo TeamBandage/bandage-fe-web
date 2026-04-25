@@ -97,6 +97,28 @@ GET /api/v1/bands?q=<keyword>&genre=<genre>&memberOnly=<bool>&pageSize=20&lastId
 
 - `PerformanceDetailResponse` 에 `posterImg`, `ticketUrl`, `mapPlaceId` 등.
 
+### 12. 홈 사용자 통계 (FE-API-014)
+
+- **엔드포인트**: `GET /api/v1/members/me/stats`
+- **요청 헤더**: `Authorization: Bearer <accessToken>`
+- **기대 응답 (`ApiResponse<MemberStatsResponse>`)**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "bandCount": 3,
+    "upcomingPracticeCount": 2,
+    "upcomingPerformanceCount": 1,
+    "sessionCount": 5
+  }
+}
+```
+
+- **프론트 사용처**: `src/app/(main)/home/HomeStatCards.client.tsx` 4번째 카드 ("참여 세션")
+- **현재 우회**: `bandCount` / `upcomingPractice/Performance` 는 각 list API 의 `length` 로 대체, `sessionCount` 는 `'—'` mock 표시.
+- **백엔드 체크리스트**: `MemberStatsResponse` DTO, `MemberService.getStats(memberId)`, 컨트롤러 + 권한 체크(자신만), JPA 통계 쿼리 또는 도메인 별 카운트 합산.
+
 ---
 
 ## ℹ️ 참고 — 프론트 mock / 우회 현황 (2026-04-25 기준)

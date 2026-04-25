@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { PageTitle } from '@/components/layout/page-title';
 import { SectionTitle } from '@/components/ui/section-title';
 import { MyBands } from '@/domain/band/components/MyBands';
 import { UpcomingPerformances } from '@/domain/performance/components/UpcomingPerformances';
 import { UpcomingPractices } from '@/domain/practice/components/UpcomingPractices';
 import { ROUTES } from '@/global/config/routes';
 
+import { HomeGreeting } from './HomeGreeting.client';
 import { HomeStatCards } from './HomeStatCards.client';
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ function ViewAllLink({ href, label }: { href: string; label: string }) {
 export default function HomePage() {
   return (
     <div className="space-y-s-8 lg:p-s-10 lg:mx-auto lg:h-[calc(100vh-0px)] lg:w-full lg:max-w-5xl lg:overflow-y-auto">
-      <PageTitle title="홈" description="오늘의 합주와 공연을 한눈에 확인하세요." />
+      <HomeGreeting />
 
       <HomeStatCards />
 

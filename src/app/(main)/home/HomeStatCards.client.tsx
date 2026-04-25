@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, Music, Users } from 'lucide-react';
+import { CalendarDays, Music, Music2, Users } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatCard } from '@/components/ui/stat-card';
@@ -13,8 +13,8 @@ function Stub() {
 }
 
 /**
- * 홈 상단 3-stat 요약.
- * 참여 세션 수는 list API 에 포함되지 않아 현재 누락 (추후 별도 summary API 도입 예정).
+ * 홈 상단 4-stat 요약. 참여 세션은 백엔드 통계 API 도입 전까지 mock '—' 표시.
+ * (API_REQUIRED.md FE-API-014 GET /api/v1/members/me/stats 참고)
  */
 export function HomeStatCards() {
   const bands = useMyBands();
@@ -22,7 +22,7 @@ export function HomeStatCards() {
   const performances = useUpcomingPerformances();
 
   return (
-    <div className="gap-s-3 grid grid-cols-1 sm:grid-cols-3" data-slot="home-stat-cards">
+    <div className="gap-s-3 grid grid-cols-2 lg:grid-cols-4" data-slot="home-stat-cards">
       {bands.isLoading ? (
         <Stub />
       ) : (
@@ -48,6 +48,7 @@ export function HomeStatCards() {
           accent="amber"
         />
       )}
+      <StatCard icon={Music2} label="참여 세션" value="—" accent="warn" />
     </div>
   );
 }
