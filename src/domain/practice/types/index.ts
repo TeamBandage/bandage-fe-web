@@ -22,6 +22,9 @@ export {
   createSessionSchema,
   addParticipantSchema,
   upsertRefLinkSchema,
+  wizardBandStepSchema,
+  wizardSongStepSchema,
+  wizardMetaStepSchema,
 } from './schema';
 export type {
   CreatePracticeSchema,
@@ -30,4 +33,7 @@ export type {
   CreateSessionSchema,
   AddParticipantSchema,
   UpsertRefLinkSchema,
+  WizardBandStepSchema,
+  WizardSongStepSchema,
+  WizardMetaStepSchema,
 } from './schema';
