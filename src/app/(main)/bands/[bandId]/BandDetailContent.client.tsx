@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, UserPlus } from 'lucide-react';
+import { CalendarRange, LogOut, Settings2, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -67,7 +67,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
   }
 
   const isMember = myRole !== null && myRole !== undefined;
-  const canSeeApplications = hasRole(myRole, 'ADMIN');
+  const canManage = hasRole(myRole, 'LEADER');
 
   return (
     <div className="space-y-6">
@@ -89,52 +89,40 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
       </Card>
 
       <Tabs defaultValue="info">
-        <TabsList>
+        <TabsList aria-label="밴드 상세 탭">
           <TabsTrigger value="info">정보</TabsTrigger>
           <TabsTrigger value="members">멤버</TabsTrigger>
-          {canSeeApplications && <TabsTrigger value="applications">신청 현황</TabsTrigger>}
+          <TabsTrigger value="schedule">일정 및 합주</TabsTrigger>
+          {canManage && <TabsTrigger value="manage">밴드 관리</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="info">
-          <Card padding="lg">
-            <div className="space-y-3">
-              <p className="text-foreground-sub text-sm">
-                {band.description ?? '소개가 등록되지 않았습니다.'}
-              </p>
-              <div className="flex gap-2">
-                {!isMember && (
-                  <Button onClick={() => applyMutation.mutate()} loading={applyMutation.isPending}>
-                    <UserPlus className="h-4 w-4" />
-                    가입 신청
-                  </Button>
-                )}
-                {isMember && (
-                  <Button
-                    variant="ghost"
-                    className="text-danger hover:opacity-80"
-                    onClick={() => setLeaveOpen(true)}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    밴드 탈퇴
-                  </Button>
-                )}
-              </div>
-            </div>
-          </Card>
+          <InfoTab
+            bandId={bandId}
+            description={band.description}
+            isMember={isMember}
+            applyPending={applyMutation.isPending}
+            onApply={() => applyMutation.mutate()}
+            onLeave={() => setLeaveOpen(true)}
+          />
         </TabsContent>
 
         <TabsContent value="members">
           <MembersTab bandId={bandId} />
         </TabsContent>
 
-        {canSeeApplications && (
-          <TabsContent value="applications">
+        <TabsContent value="schedule">
+          <ScheduleTab />
+        </TabsContent>
+
+        {canManage && (
+          <TabsContent value="manage">
             <RoleGuard
               bandId={bandId}
-              role="ADMIN"
-              fallback={<EmptyState title="접근 권한이 없습니다" />}
+              role="LEADER"
+              fallback={<EmptyState title="리더만 접근할 수 있습니다" />}
             >
-              <ApplicationsTab bandId={bandId} />
+              <ManageTab bandId={bandId} />
             </RoleGuard>
           </TabsContent>
         )}
@@ -171,6 +159,101 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
   );
 }
 
+function InfoTab({
+  bandId,
+  description,
+  isMember,
+  applyPending,
+  onApply,
+  onLeave,
+}: {
+  bandId: string;
+  description: string | undefined;
+  isMember: boolean;
+  applyPending: boolean;
+  onApply: () => void;
+  onLeave: () => void;
+}) {
+  const members = useBandMembers(bandId, 20);
+  const memberCount = members.data?.pages.flatMap((p) => p.content).length ?? 0;
+
+  return (
+    <div className="space-y-s-4">
+      <Card padding="lg">
+        <div className="space-y-3">
+          <h2 className="text-foreground-sub text-caption font-semibold tracking-wide uppercase">
+            소개
+          </h2>
+          <p className="text-foreground-sub text-sm leading-relaxed">
+            {description ?? '소개가 등록되지 않았습니다.'}
+          </p>
+        </div>
+      </Card>
+
+      <div className="gap-s-3 grid grid-cols-3" data-slot="band-info-stats">
+        <StatTile label="멤버" value={members.isLoading ? '—' : memberCount} />
+        <StatTile label="예정 합주" value="—" />
+        <StatTile label="예정 공연" value="—" />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {!isMember && (
+          <Button onClick={onApply} loading={applyPending}>
+            <UserPlus className="h-4 w-4" />
+            가입 신청
+          </Button>
+        )}
+        {isMember && (
+          <Button variant="ghost" className="text-danger hover:opacity-80" onClick={onLeave}>
+            <LogOut className="h-4 w-4" />
+            밴드 탈퇴
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StatTile({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div
+      className="bg-card border-border p-s-4 rounded-lg border text-center"
+      data-slot="band-info-stat"
+    >
+      <div className="text-foreground text-title-lg leading-tight font-extrabold">{value}</div>
+      <div className="text-foreground-sub text-micro mt-1">{label}</div>
+    </div>
+  );
+}
+
+function ScheduleTab() {
+  return (
+    <Card padding="lg">
+      <EmptyState
+        icon={CalendarRange}
+        title="서비스를 준비하고 있어요"
+        description="밴드의 합주·공연 일정을 곧 한 화면에서 확인할 수 있습니다."
+      />
+    </Card>
+  );
+}
+
+function ManageTab({ bandId }: { bandId: string }) {
+  return (
+    <Card padding="lg">
+      <div className="space-y-s-4">
+        <div className="flex items-center gap-2">
+          <Settings2 className="text-foreground-sub h-4 w-4" aria-hidden="true" />
+          <h2 className="text-foreground-sub text-caption font-semibold tracking-wide uppercase">
+            가입 신청 관리
+          </h2>
+        </div>
+        <ApplicationsList bandId={bandId} />
+      </div>
+    </Card>
+  );
+}
+
 function MembersTab({ bandId }: { bandId: string }) {
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBandMembers(bandId, 20);
@@ -202,7 +285,7 @@ function MembersTab({ bandId }: { bandId: string }) {
   );
 }
 
-function ApplicationsTab({ bandId }: { bandId: string }) {
+function ApplicationsList({ bandId }: { bandId: string }) {
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBandApplications(bandId, 'PENDING', 20);
 
