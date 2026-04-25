@@ -39,7 +39,7 @@ export default function HomePage() {
             title="내 밴드"
             action={<ViewAllLink href={ROUTES.BANDS} label="전체 밴드 보기" />}
           />
-          <MyBands limit={6} />
+          <MyBands limit={3} />
         </section>
         <section aria-labelledby="home-upcoming-practices">
           <SectionTitle
