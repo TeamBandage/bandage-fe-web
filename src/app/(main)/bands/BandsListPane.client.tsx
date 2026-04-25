@@ -2,12 +2,14 @@
 
 import { Plus, Search } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useCallback } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BandCreateModal } from '@/domain/band/components/BandCreateModal.client';
 import { useBandList } from '@/domain/band/hooks/useBandList';
+import { useMyBands } from '@/domain/band/hooks/useMyBands';
 import type { BandInfoResponse } from '@/domain/band/types';
 import { ROUTES } from '@/global/config/routes';
 import { useDiscoverySearch } from '@/hooks/useDiscoverySearch';
@@ -15,18 +17,59 @@ import { cn } from '@/lib/cn';
 
 const accessor = (b: BandInfoResponse) => `${b.bandName} ${b.description ?? ''}`;
 
-/**
- * 데스크톱(lg 이상) 좌측 밴드 목록 패널.
- * PaneList width="band-list" 의 아이템 배치 전용 — 카드를 간략 리스트로 렌더.
- * 검색 input 으로 클라이언트 사이드 필터링 (Discovery — Task 18).
- */
+type Tab = 'mine' | 'discover';
+
+function BandRow({ band, pathname }: { band: BandInfoResponse; pathname: string }) {
+  const href = ROUTES.BAND_DETAIL(band.bandId);
+  const active = pathname === href || pathname.startsWith(`${href}/`);
+  return (
+    <li>
+      <Link
+        href={href}
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'px-s-3 py-s-3 block rounded-md transition-colors',
+          active
+            ? 'bg-accent-dim text-accent'
+            : 'hover:bg-card text-foreground-sub hover:text-foreground',
+        )}
+      >
+        <div className="text-body truncate font-semibold">{band.bandName}</div>
+        {band.description && (
+          <div className="text-foreground-muted text-caption mt-0.5 truncate">
+            {band.description}
+          </div>
+        )}
+      </Link>
+    </li>
+  );
+}
+
 export function BandsListPane() {
   const pathname = usePathname() ?? '';
-  const { data, isLoading } = useBandList();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams?.get('tab') === 'discover' ? 'discover' : 'mine') as Tab;
+  const [tab, setTab] = useState<Tab>(initialTab);
 
-  const bands = data?.pages.flatMap((p) => p.content) ?? [];
+  // Discover (전체 목록)
+  const { data: discoverData, isLoading: discoverLoading } = useBandList();
+  const discoverBands = discoverData?.pages.flatMap((p) => p.content) ?? [];
   const accessorRef = useCallback(accessor, []);
-  const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(bands, accessorRef);
+  const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(discoverBands, accessorRef);
+
+  // Mine (내 소속) — 백엔드 me-only 필터 도입 전까지 useMyBands(=getBands 첫 페이지) 그대로 사용
+  const { data: myBands, isLoading: myLoading } = useMyBands(20);
+
+  const onTabChange = (next: string) => {
+    const t = next === 'discover' ? 'discover' : 'mine';
+    setTab(t);
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    params.set('tab', t);
+    router.replace(`${pathname.startsWith('/bands') ? pathname : '/bands'}?${params.toString()}`, {
+      scroll: false,
+    });
+  };
 
   return (
     <aside
@@ -46,57 +89,67 @@ export function BandsListPane() {
         />
       </div>
 
-      <div className="border-border px-s-4 py-s-3 border-b">
-        <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border">
-          <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="밴드 이름으로 검색…"
-            aria-label="밴드 검색"
-            className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
-          />
+      <Tabs
+        value={tab}
+        onValueChange={onTabChange}
+        className="flex flex-1 flex-col overflow-hidden"
+      >
+        <div className="border-border px-s-4 py-s-3 border-b">
+          <TabsList className="w-full">
+            <TabsTrigger value="mine" className="flex-1">
+              내 밴드
+            </TabsTrigger>
+            <TabsTrigger value="discover" className="flex-1">
+              탐색
+            </TabsTrigger>
+          </TabsList>
         </div>
-      </div>
 
-      <div className="px-s-2 py-s-2 flex-1 overflow-y-auto">
-        {isLoading ? (
-          <p className="text-foreground-muted p-s-3 text-caption">불러오는 중…</p>
-        ) : filtered.length === 0 ? (
-          <p className="text-foreground-muted p-s-3 text-caption">
-            {isFiltering ? '검색 결과가 없습니다.' : '참여 중인 밴드가 없습니다.'}
-          </p>
-        ) : (
-          <ul className="gap-s-1 flex flex-col">
-            {filtered.map((b) => {
-              const href = ROUTES.BAND_DETAIL(b.bandId);
-              const active = pathname === href || pathname.startsWith(`${href}/`);
-              return (
-                <li key={b.bandId}>
-                  <Link
-                    href={href}
-                    aria-current={active ? 'page' : undefined}
-                    className={cn(
-                      'px-s-3 py-s-3 block rounded-md transition-colors',
-                      active
-                        ? 'bg-accent-dim text-accent'
-                        : 'hover:bg-card text-foreground-sub hover:text-foreground',
-                    )}
-                  >
-                    <div className="text-body truncate font-semibold">{b.bandName}</div>
-                    {b.description && (
-                      <div className="text-foreground-muted text-caption mt-0.5 truncate">
-                        {b.description}
-                      </div>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+        <TabsContent value="mine" className="px-s-2 py-s-2 flex-1 overflow-y-auto">
+          {myLoading ? (
+            <p className="text-foreground-muted p-s-3 text-caption">불러오는 중…</p>
+          ) : !myBands || myBands.length === 0 ? (
+            <p className="text-foreground-muted p-s-3 text-caption">참여 중인 밴드가 없습니다.</p>
+          ) : (
+            <ul className="gap-s-1 flex flex-col">
+              {myBands.map((b) => (
+                <BandRow key={b.bandId} band={b} pathname={pathname} />
+              ))}
+            </ul>
+          )}
+        </TabsContent>
+
+        <TabsContent value="discover" className="flex flex-1 flex-col overflow-hidden">
+          <div className="border-border px-s-4 py-s-3 border-b">
+            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border">
+              <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="밴드 이름·소개 검색…"
+                aria-label="밴드 검색"
+                className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+              />
+            </div>
+          </div>
+          <div className="px-s-2 py-s-2 flex-1 overflow-y-auto">
+            {discoverLoading ? (
+              <p className="text-foreground-muted p-s-3 text-caption">불러오는 중…</p>
+            ) : filtered.length === 0 ? (
+              <p className="text-foreground-muted p-s-3 text-caption">
+                {isFiltering ? '검색 결과가 없습니다.' : '등록된 밴드가 없습니다.'}
+              </p>
+            ) : (
+              <ul className="gap-s-1 flex flex-col">
+                {filtered.map((b) => (
+                  <BandRow key={b.bandId} band={b} pathname={pathname} />
+                ))}
+              </ul>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </aside>
   );
 }
