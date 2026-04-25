@@ -14,8 +14,8 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <ErrorState
-        title="화면을 불러올 수 없습니다"
-        description={error.message || '잠시 후 다시 시도해 주세요.'}
+        title="화면을 준비하지 못했어요"
+        description="잠시 후 다시 시도하거나 다른 메뉴를 이용해 주세요."
         onRetry={reset}
         className="w-full max-w-md"
       />

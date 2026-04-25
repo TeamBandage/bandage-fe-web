@@ -39,6 +39,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const { fallback } = this.props;
     if (typeof fallback === 'function') return fallback(error, this.reset);
     if (fallback !== undefined) return fallback;
-    return <ErrorState description={error.message} onRetry={this.reset} />;
+    // 기본 fallback 은 사용자에게 기술적 메시지(error.message) 를 노출하지 않고
+    // ErrorState 의 부드러운 기본 카피("서비스를 준비하고 있어요") 를 그대로 사용한다.
+    void error;
+    return <ErrorState onRetry={this.reset} />;
   }
 }
