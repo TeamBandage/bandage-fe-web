@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BandCreateModal } from '@/domain/band/components/BandCreateModal.client';
+import { BandRoleBadge } from '@/domain/band/components/BandRoleBadge';
 import { useBandList } from '@/domain/band/hooks/useBandList';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
-import type { BandInfoResponse } from '@/domain/band/types';
+import type { BandInfoResponse, MyBandInfoResponse } from '@/domain/band/types';
 import { ROUTES } from '@/global/config/routes';
 import { useDiscoverySearch } from '@/hooks/useDiscoverySearch';
 import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
@@ -23,7 +24,15 @@ const accessor = (b: BandInfoResponse) => `${b.bandName} ${b.description ?? ''}`
 
 type Tab = 'mine' | 'discover';
 
-function BandRow({ band, pathname }: { band: BandInfoResponse; pathname: string }) {
+function BandRow({
+  band,
+  pathname,
+  myRole,
+}: {
+  band: BandInfoResponse;
+  pathname: string;
+  myRole?: MyBandInfoResponse['myRole'];
+}) {
   const href = ROUTES.BAND_DETAIL(band.bandId);
   const active = pathname === href || pathname.startsWith(`${href}/`);
   return (
@@ -40,7 +49,10 @@ function BandRow({ band, pathname }: { band: BandInfoResponse; pathname: string 
       >
         <IconTile icon={<BandIcon />} size="sm" tone={DOMAIN_TONES.band} />
         <div className="min-w-0 flex-1">
-          <div className="text-body truncate font-semibold">{band.bandName}</div>
+          <div className="gap-s-2 flex items-center">
+            <span className="text-body truncate font-semibold">{band.bandName}</span>
+            {myRole && <BandRoleBadge role={myRole} />}
+          </div>
           {band.description && (
             <div className="text-foreground-muted text-caption mt-0.5 truncate">
               {band.description}
@@ -65,7 +77,7 @@ export function BandsListPane() {
   const accessorRef = useCallback(accessor, []);
   const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(discoverBands, accessorRef);
 
-  // Mine (내 소속) — 백엔드 me-only 필터 도입 전까지 useMyBands(=getBands 첫 페이지) 그대로 사용
+  // Mine (내 소속) — API_SPEC §3-3-1 /bands/me (myRole 포함)
   const { data: myBands, isLoading: myLoading } = useMyBands(20);
 
   const onTabChange = (next: string) => {
@@ -120,7 +132,7 @@ export function BandsListPane() {
           ) : (
             <ul className="gap-s-1 flex flex-col">
               {myBands.map((b) => (
-                <BandRow key={b.bandId} band={b} pathname={pathname} />
+                <BandRow key={b.bandId} band={b} pathname={pathname} myRole={b.myRole} />
               ))}
             </ul>
           )}
@@ -149,9 +161,12 @@ export function BandsListPane() {
               </p>
             ) : (
               <ul className="gap-s-1 flex flex-col">
-                {filtered.map((b) => (
-                  <BandRow key={b.bandId} band={b} pathname={pathname} />
-                ))}
+                {filtered.map((b) => {
+                  const myEntry = myBands?.find((mb) => mb.bandId === b.bandId);
+                  return (
+                    <BandRow key={b.bandId} band={b} pathname={pathname} myRole={myEntry?.myRole} />
+                  );
+                })}
               </ul>
             )}
           </div>
