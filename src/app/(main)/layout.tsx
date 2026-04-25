@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { Container } from '@/components/layout/container';
 import { Shell } from '@/components/layout/shell';
 import { Sidebar } from '@/components/layout/sidebar';
+import { AuthBootstrapper } from '@/global/auth/AuthBootstrapper.client';
 
 /**
  * (main) 레이아웃.
@@ -21,22 +22,24 @@ import { Sidebar } from '@/components/layout/sidebar';
  */
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (
-    <>
-      {/* Desktop */}
-      <div className="hidden lg:block">
-        <Shell>
-          <Sidebar />
-          <main className="flex flex-1 flex-col overflow-hidden">{children}</main>
-        </Shell>
-      </div>
+    <Suspense fallback={null}>
+      <AuthBootstrapper>
+        {/* Desktop */}
+        <div className="hidden lg:block">
+          <Shell>
+            <Sidebar />
+            <main className="flex flex-1 flex-col overflow-hidden">{children}</main>
+          </Shell>
+        </div>
 
-      {/* Mobile */}
-      <div className="min-h-screen pb-16 lg:hidden">
-        <Container maxWidth="xl" padding className="py-s-6">
-          {children}
-        </Container>
-        <BottomNav />
-      </div>
-    </>
+        {/* Mobile */}
+        <div className="min-h-screen pb-16 lg:hidden">
+          <Container maxWidth="xl" padding className="py-s-6">
+            {children}
+          </Container>
+          <BottomNav />
+        </div>
+      </AuthBootstrapper>
+    </Suspense>
   );
 }
