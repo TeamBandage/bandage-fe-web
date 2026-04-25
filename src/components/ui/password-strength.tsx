@@ -22,10 +22,10 @@ export function evaluatePassword(pw: string): { score: number; level: PasswordSt
 }
 
 const LABEL_MAP: Record<PasswordStrengthLevel, string> = {
-  empty: '8자 이상, 대·소문자·숫자·특수문자 조합 권장',
-  weak: '약함 — 8자 이상 및 대소문자/숫자/특수문자 중 2개 이상 포함 권장',
-  medium: '보통 — 대소문자/숫자/특수문자 모두 포함하면 강함으로 승격',
-  strong: '강함 — 안전한 비밀번호입니다',
+  empty: '비밀번호를 입력하세요',
+  weak: '약함',
+  medium: '보통',
+  strong: '강함',
 };
 
 const SEG_COLOR: Record<PasswordStrengthLevel, string> = {

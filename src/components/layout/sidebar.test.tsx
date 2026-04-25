@@ -35,10 +35,11 @@ describe('Sidebar', () => {
     expect(bandsLink.getAttribute('aria-current')).toBe('page');
   });
 
-  it('비활성 경로(/practices) 는 hover 컬러 클래스를 사용', () => {
+  it('합주 항목은 expandable 버튼으로 노출되며 비활성 시 hover 컬러를 사용', () => {
     const { getByRole } = render(withQueryClient(<Sidebar />));
-    const practicesLink = getByRole('link', { name: /합주/ });
-    expect(practicesLink.className).toContain('text-foreground-sub');
-    expect(practicesLink.getAttribute('aria-current')).toBeNull();
+    // 합주는 서브 메뉴 펼침 토글 버튼.
+    const practicesToggle = getByRole('button', { name: /합주/ });
+    expect(practicesToggle.tagName).toBe('BUTTON');
+    expect(practicesToggle.className).toContain('text-foreground-sub');
   });
 });
