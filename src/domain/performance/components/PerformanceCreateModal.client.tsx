@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
+import { Plus, X } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
@@ -20,6 +22,8 @@ import {
 } from '@/components/ui/responsive-sheet';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { Textarea } from '@/components/ui/textarea';
+import { BandPickerModal } from '@/domain/band/components/BandPickerModal.client';
+import type { BandInfoResponse } from '@/domain/band/types';
 import { useCreatePerformance } from '@/domain/performance/hooks/useCreatePerformance';
 import { createPerformanceSchema, type CreatePerformanceSchema } from '@/domain/performance/types';
 import { ROUTES } from '@/global/config/routes';
@@ -27,15 +31,15 @@ import { useToast } from '@/hooks/useToast';
 
 const STEPS = ['기본 정보', '일정', '장소'] as const;
 
-type FormValues = CreatePerformanceSchema & { bandIdsRaw?: string };
-
 export function PerformanceCreateModal({ trigger }: { trigger: ReactNode }) {
   const router = useRouter();
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedBands, setSelectedBands] = useState<BandInfoResponse[]>([]);
 
-  const form = useForm<FormValues>({
+  const form = useForm<CreatePerformanceSchema>({
     resolver: zodResolver(createPerformanceSchema),
     defaultValues: { title: '', bandIds: [], startAt: '', durationMinutes: 120, venue: '' },
     mode: 'onTouched',
@@ -46,6 +50,7 @@ export function PerformanceCreateModal({ trigger }: { trigger: ReactNode }) {
       toast.success('공연이 생성되었습니다.');
       setOpen(false);
       setStep(0);
+      setSelectedBands([]);
       form.reset();
       router.replace(ROUTES.PERFORMANCE_DETAIL(data.performanceId));
     },
@@ -80,22 +85,15 @@ export function PerformanceCreateModal({ trigger }: { trigger: ReactNode }) {
         <ResponsiveSheetBody>
           <form
             id="performance-create-form"
-            onSubmit={form.handleSubmit((values) => {
-              const raw = (values.bandIdsRaw ?? '').trim();
-              const bandIds = raw
-                ? raw
-                    .split(/[\s,]+/)
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                : undefined;
+            onSubmit={form.handleSubmit((values) =>
               mutation.mutate({
                 title: values.title,
-                bandIds,
+                bandIds: selectedBands.length > 0 ? selectedBands.map((b) => b.bandId) : undefined,
                 startAt: values.startAt,
                 durationMinutes: values.durationMinutes,
                 venue: values.venue,
-              });
-            })}
+              }),
+            )}
             noValidate
             className="space-y-s-4"
           >
@@ -109,11 +107,47 @@ export function PerformanceCreateModal({ trigger }: { trigger: ReactNode }) {
                   error={form.formState.errors.title?.message}
                   {...form.register('title')}
                 />
-                <Input
-                  label="참여 밴드 ID (쉼표/공백 구분, 선택)"
-                  placeholder="예: <uuid1>, <uuid2>"
-                  {...form.register('bandIdsRaw')}
-                />
+                <div className="space-y-s-2">
+                  <label className="text-foreground text-caption font-semibold">
+                    참여 밴드 (선택)
+                  </label>
+                  {selectedBands.length === 0 ? (
+                    <p className="text-foreground-muted text-micro">
+                      추가하지 않으면 빈 배열로 전송됩니다.
+                    </p>
+                  ) : (
+                    <ul className="gap-s-2 flex flex-wrap">
+                      {selectedBands.map((b) => (
+                        <li
+                          key={b.bandId}
+                          className="bg-card border-border gap-s-2 px-s-3 py-s-1 inline-flex items-center rounded-full border"
+                        >
+                          <span className="text-caption">{b.bandName}</span>
+                          <button
+                            type="button"
+                            aria-label={`${b.bandName} 제거`}
+                            className="text-foreground-muted hover:text-foreground"
+                            onClick={() =>
+                              setSelectedBands((prev) => prev.filter((x) => x.bandId !== b.bandId))
+                            }
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPickerOpen(true)}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4" />
+                    밴드 검색해서 추가
+                  </Button>
+                </div>
               </>
             )}
             {step === 1 && (
@@ -180,6 +214,14 @@ export function PerformanceCreateModal({ trigger }: { trigger: ReactNode }) {
           )}
         </ResponsiveSheetFooter>
       </ResponsiveSheetContent>
+      <BandPickerModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        multiple
+        initialSelection={selectedBands}
+        onConfirm={(bands) => setSelectedBands(bands)}
+        title="참여 밴드 추가"
+      />
     </ResponsiveSheet>
   );
 }

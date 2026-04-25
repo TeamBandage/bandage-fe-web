@@ -9,7 +9,6 @@ import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PracticeCreateModal } from '@/domain/practice/components/PracticeCreateModal.client';
 import { useMyPractices } from '@/domain/practice/hooks/useMyPractices';
 import type { PracticeListItemResponse } from '@/domain/practice/types';
 import { ROUTES } from '@/global/config/routes';
@@ -83,13 +82,11 @@ export function PracticesListPane() {
     >
       <div className="border-border px-s-5 py-s-4 flex items-center justify-between border-b">
         <h2 className="text-subtitle font-bold">합주 탐색</h2>
-        <PracticeCreateModal
-          trigger={
-            <Button size="sm" variant="accent-outline" aria-label="새 합주 만들기">
-              <Plus className="h-4 w-4" /> 새 합주
-            </Button>
-          }
-        />
+        <Button asChild size="sm" variant="accent-outline" aria-label="합주 시작하기">
+          <Link href={ROUTES.PRACTICE_NEW}>
+            <Plus className="h-4 w-4" /> 합주 시작하기
+          </Link>
+        </Button>
       </div>
       <Tabs
         value={tab}

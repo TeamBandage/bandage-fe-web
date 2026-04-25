@@ -90,6 +90,38 @@ GET /api/v1/bands?q=<keyword>&genre=<genre>&memberOnly=<bool>&pageSize=20&lastId
 - `PATCH /api/v1/bands/{bandId}/members/{bandMemberId}/role` — 리더의 멤버 역할 변경 (LEADER 위임은 기존 API 유지, ADMIN ↔ MEMBER 강등/승급 신규)
 - 프론트 사용처: 향후 "밴드 설정" 화면. 현재는 toast info 안내만 (P2).
 
+### 8-4. 공연 참여 밴드 일괄 추가/제거 (FE-API-017)
+
+mvp-1-fix-v3 Task 5 의 BandPickerModal 결과를 적용할 백엔드 엔드포인트가 존재하지 않음. 현재는 mock toast 안내만 표시.
+
+- **POST `/api/v1/performances/{performanceId}/bands/batch`** — 다중 밴드 추가 (append 시맨틱)
+  - Request Body: `{ "bandIds": [uuid, uuid, ...] }`
+  - Response: `List<{ performanceBandId, bandId }>` (기존 `practices/batch` §6-6 패턴과 동일)
+  - 권한: PerformanceManager
+- **DELETE `/api/v1/performances/{performanceId}/bands/{bandId}`** — 단건 제거
+  - 권한: PerformanceManager
+- **프론트 사용처**: `PerformanceDetailContent` `참여 밴드 추가` 버튼 → `BandPickerModal` 다중 선택 결과 batch 호출, 칩 X 클릭 → DELETE 단건
+- **현재 우회**: 모달 확인 시 `toast.info('FE-API-017 후 자동 반영')` 안내. 실제 부착은 백엔드 엔드포인트 도입 후 fetcher 만 교체.
+
+### 8-5. 멤버 검색 (FE-API-021)
+
+`MemberPickerModal` 이 클라이언트 측 `getBandMembers` 100건 + name 부분 매칭으로 우회 중. 향후 멤버 풀이 커지면 비효율.
+
+- **GET `/api/v1/bands/{bandId}/members/search?keyword=`** 또는 글로벌 `GET /api/v1/members/search?keyword=`
+- **응답**: `BandMemberInfoResponse[]` (또는 `MemberInfoResponse[]`)
+- **프론트 사용처**: `MemberPickerModal` (현재는 신규 사용처 없음 — 합주 멤버 추가 picker 도입 시 활성화)
+
+### 8-6. 합주곡 검색 + Practice 생성 닭-달걀 해결 (FE-API-020)
+
+§4-1 `POST /practices` 의 `song` 필드는 songId(UUID) 를 요구하지만, §5-2/§5-3 합주곡 생성은 `practiceId` 가 선행되어야 한다. 마법사 UX 상 곡을 먼저 선택/입력한 후 합주를 만드는 흐름이 자연스러운데, 백엔드 계약이 이를 막고 있음.
+
+해결안 (택일):
+
+1. **§4-1 `song` 필드 확장** — UUID 외에 `SongSearchItem` 객체 또는 `{ title, artist, album, duration, refLink }` 풀 메타도 허용. 백엔드는 songId 가 없으면 새 PracticeSong 을 함께 생성.
+2. **§5-2/§5-3 `practiceId` 선택화** — practiceId 없이 PracticeSong 만 먼저 만들고 응답의 songId 를 §4-1 에 전달.
+
+- **프론트 사용처**: `PracticeCreateWizard.submit` (현재 임시로 `<title> — <artist>` 텍스트 식별자 전송)
+
 ### 8-3. 멤버 표시명 정상화 (FE-API-012 / 013 / 014)
 
 화면에 UUID·숫자 ID 가 노출되지 않도록 `getMemberDisplayName` 유틸이 `name` 우선 → 마지막 4자리 폴백을 적용 중. 백엔드가 아래 응답에 `name` 을 포함하면 자동으로 정상화된다.
