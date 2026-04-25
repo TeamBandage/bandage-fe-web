@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PerformanceCreateModal } from '@/domain/performance/components/PerformanceCreateModal.client';
-import { usePerformanceList } from '@/domain/performance/hooks/usePerformanceList';
+import { useMyPerformances } from '@/domain/performance/hooks/useMyPerformances';
 import type { PerformanceListItemResponse } from '@/domain/performance/types';
 import { ROUTES } from '@/global/config/routes';
 import { useDiscoverySearch } from '@/hooks/useDiscoverySearch';
@@ -54,7 +54,8 @@ export function PerformancesListPane() {
   const initialTab = (searchParams?.get('tab') === 'discover' ? 'discover' : 'mine') as Tab;
   const [tab, setTab] = useState<Tab>(initialTab);
 
-  const { data, isLoading } = usePerformanceList();
+  // /performances/me: 본인 소속 밴드 참여 공연만 (탐색은 디자인 컨펌 후 useSearchPerformances 로 이관 예정)
+  const { data, isLoading } = useMyPerformances();
   const all = data?.pages.flatMap((p) => p.content) ?? [];
   const accessorRef = useCallback(accessor, []);
   const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(all, accessorRef);

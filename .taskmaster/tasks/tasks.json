@@ -2466,7 +2466,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2474,9 +2474,10 @@
             "description": "기존 getBands 우회 호출 방식을 Task 1에서 구현한 getMyBands API 직접 호출로 교체하고, 반환 타입을 MyBandInfoResponse[]로 변경한다.",
             "dependencies": [],
             "details": "src/domain/band/hooks/useMyBands.ts 수정:\n- import 경로를 getBands에서 getMyBands로 변경\n- 반환 타입을 BandInfoResponse[]에서 MyBandInfoResponse[]로 변경 (myRole 포함)\n- queryFn 내부에서 getMyBands({ pageSize: limit }) 호출\n- queryKey는 기존 queryKeys.band.my() 유지하여 캐시 키 호환성 보장\n- 기존 limit 인터페이스 그대로 유지하여 호출측(HomeStatCards, BandsListPane 등) 하위 호환성 확보\n- 파일 상단 NOTE 주석 제거 (더 이상 우회 호출이 아니므로)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. useMyBands 훅 호출 후 반환 데이터에 myRole 필드 존재 확인\n2. 기존 호출부(HomeStatCards.client.tsx, BandsListPane.client.tsx, MyBands.tsx)에서 동작 회귀 없는지 확인\n3. React Query DevTools에서 queryKeys.band.my() 캐시 키 정상 동작 확인\n4. pnpm typecheck 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:32:42.367Z"
           },
           {
             "id": 2,
@@ -2486,9 +2487,10 @@
               1
             ],
             "details": "src/domain/band/hooks/useBandSearch.ts 신규 생성:\n- 'use client' 지시어 추가\n- useInfiniteCursor<BandInfoResponse, string> 활용\n- 함수 시그니처: useBandSearch(keyword: string, pageSize: number = 20)\n- queryKey: queryKeys.band.search(keyword)와 pageSize 조합\n- keyword가 빈 문자열일 때 enabled: false로 불필요한 요청 방지\n- keyword 디바운스는 호출측(탐색 화면)에서 useDebounce 훅으로 처리하므로 훅 내부에서는 처리하지 않음\n- types/index.ts에서 export 추가 불필요 (훅이므로)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. keyword 빈 문자열일 때 API 호출되지 않음 확인\n2. keyword 변경 시 캐시 키 분리되어 각각 독립 쿼리 동작 확인\n3. 페이지네이션(fetchNextPage, hasNextPage) 정상 동작 확인\n4. pnpm typecheck && pnpm lint 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:32:47.142Z"
           },
           {
             "id": 3,
@@ -2498,9 +2500,10 @@
               1
             ],
             "details": "1. src/domain/practice/hooks/useMyPractices.ts 신규 생성:\n- useInfiniteCursor<PracticeListItemResponse, string> 활용\n- queryKey: queryKeys.practice.my()와 pageSize 조합\n- getMyPractices API 호출\n\n2. src/domain/practice/hooks/useBandPractices.ts 신규 생성:\n- 기존 usePractices.ts와 유사하나 bandId 필수 파라미터로 변경\n- queryKey: queryKeys.practice.list(bandId)와 pageSize 조합\n- getPractices({ bandId, lastId, pageSize }) API 호출\n- 밴드 상세 화면의 합주 탭에서 사용할 목적\n\n기존 usePractices.ts는 bandId가 optional이어서 전체/밴드별 겸용이었으나, 역할 분리를 위해 useBandPractices 추가",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. useMyPractices 호출 후 로그인한 사용자의 합주 목록만 반환 확인\n2. useBandPractices(bandId) 호출 시 해당 밴드 합주만 필터링 확인\n3. 각 훅의 무한 스크롤 정상 동작 확인\n4. pnpm typecheck && pnpm lint 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:32:54.475Z"
           },
           {
             "id": 4,
@@ -2510,9 +2513,10 @@
               1
             ],
             "details": "src/domain/performance/hooks/useMyPerformances.ts 신규 생성:\n- 'use client' 지시어 추가\n- useInfiniteCursor<PerformanceListItemResponse, string> 활용\n- 함수 시그니처: useMyPerformances(pageSize: number = 20)\n- queryKey: queryKeys.performance.my()와 pageSize 조합\n- Task 1에서 구현한 getMyPerformances API 호출\n- 기존 usePerformanceList(bandId?)와 역할 분리: useMyPerformances는 내 공연 전용, usePerformanceList는 밴드별/전체 탐색용\n- queryKeys.ts에 performance.my() 추가는 Task 1에서 완료되어 있어야 함",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. useMyPerformances 호출 후 로그인한 사용자 관련 공연 목록만 반환 확인\n2. 무한 스크롤(fetchNextPage, hasNextPage) 정상 동작 확인\n3. React Query DevTools에서 캐시 키 분리 확인\n4. pnpm typecheck && pnpm lint 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:32:58.977Z"
           },
           {
             "id": 5,
@@ -2522,12 +2526,13 @@
               1
             ],
             "details": "src/global/auth/useBandRole.ts 리팩토링:\n- 기존 구현: useMe로 memberId 확보 후 getBandMembers 최대 100건씩 10페이지 순회하며 매칭 (최악 1000건 조회)\n- 신규 구현: useMyBands(100) 결과에서 bandId 매칭하여 myRole 반환\n- 핵심 변경:\n  1. getBandMembers import 제거\n  2. useMe 의존성 제거 (useMyBands가 인증 사용자 기준으로 동작)\n  3. const { data: myBands } = useMyBands(100);\n  4. const match = myBands?.find(b => b.bandId === bandId);\n  5. return { data: match?.myRole ?? null, isLoading, ... };\n- queryKey 변경: 기존 [...queryKeys.band.members(bandId), 'my-role', memberId] → 불필요 (useMyBands 내부 키 사용)\n- 비멤버인 경우 myBands에 해당 bandId가 없으므로 null 반환 (기존 동작과 동일)\n- RoleGuard, BandDetailContent 등 기존 호출부에서 인터페이스 변경 없이 동작",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 기존 useBandRole 반환값(BandRole | null)이 동일하게 유지되는지 통합 테스트\n2. RoleGuard 컴포넌트에서 권한 체크 정상 동작 확인\n3. BandDetailContent에서 isMember, isLeader 판정 정상 동작 확인\n4. API 호출 횟수 감소 확인 (Network 탭에서 getBandMembers 호출 제거)\n5. pnpm typecheck && pnpm lint 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:33:03.116Z"
           }
         ],
-        "updatedAt": "2026-04-25T15:28:00.319Z"
+        "updatedAt": "2026-04-25T15:33:03.116Z"
       },
       {
         "id": "3",
@@ -3044,9 +3049,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-25T15:28:00.323Z",
+      "lastModified": "2026-04-25T15:33:03.118Z",
       "taskCount": 9,
-      "completedCount": 1,
+      "completedCount": 2,
       "tags": [
         "mvp-1-fix-v3"
       ]
