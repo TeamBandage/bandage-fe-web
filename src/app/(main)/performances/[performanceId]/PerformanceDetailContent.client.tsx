@@ -128,34 +128,49 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
         </div>
       </Card>
 
-      <Card header="참여 밴드" padding="md">
-        <PerformanceBandChips bandIds={perf.bandIds} />
-      </Card>
+      <Tabs defaultValue="bands">
+        <TabsList>
+          <TabsTrigger value="bands">참여 밴드</TabsTrigger>
+          <TabsTrigger value="practices">연결 합주 ({perf.practiceIds.length})</TabsTrigger>
+        </TabsList>
 
-      <Card
-        header={
-          <div className="flex items-center justify-between">
-            <span>연결된 합주 ({perf.practiceIds.length})</span>
-            {isManager && (
-              <Button size="sm" onClick={() => setAttachOpen(true)}>
-                <Plus className="h-4 w-4" />
-                합주 연결
-              </Button>
+        <TabsContent value="bands">
+          <Card header="참여 밴드" padding="md">
+            <PerformanceBandChips bandIds={perf.bandIds} />
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="practices">
+          <Card
+            header={
+              <div className="flex items-center justify-between">
+                <span>연결된 합주 ({perf.practiceIds.length})</span>
+                {isManager && (
+                  <Button size="sm" onClick={() => setAttachOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                    합주 연결
+                  </Button>
+                )}
+              </div>
+            }
+            padding="md"
+          >
+            {perf.practiceIds.length === 0 ? (
+              <EmptyState title="연결된 합주가 없습니다" />
+            ) : (
+              <div>
+                {perf.practiceIds.map((pid) => (
+                  <PerformancePracticeRow
+                    key={pid}
+                    performanceId={performanceId}
+                    practiceId={pid}
+                  />
+                ))}
+              </div>
             )}
-          </div>
-        }
-        padding="md"
-      >
-        {perf.practiceIds.length === 0 ? (
-          <EmptyState title="연결된 합주가 없습니다" />
-        ) : (
-          <div>
-            {perf.practiceIds.map((pid) => (
-              <PerformancePracticeRow key={pid} performanceId={performanceId} practiceId={pid} />
-            ))}
-          </div>
-        )}
-      </Card>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <EditDialog
         open={editOpen}

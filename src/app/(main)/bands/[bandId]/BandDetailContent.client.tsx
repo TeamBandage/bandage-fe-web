@@ -88,14 +88,14 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
         </div>
       </Card>
 
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="info">
         <TabsList>
-          <TabsTrigger value="overview">개요</TabsTrigger>
+          <TabsTrigger value="info">정보</TabsTrigger>
           <TabsTrigger value="members">멤버</TabsTrigger>
-          {canSeeApplications && <TabsTrigger value="applications">가입 신청</TabsTrigger>}
+          {canSeeApplications && <TabsTrigger value="applications">신청 현황</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="overview">
+        <TabsContent value="info">
           <Card padding="lg">
             <div className="space-y-3">
               <p className="text-foreground-sub text-sm">
