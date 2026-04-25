@@ -36,6 +36,7 @@ import {
   type AddPerformancePracticeSchema,
   type UpdatePerformanceSchema,
 } from '@/domain/performance/types';
+import { BandPickerModal } from '@/domain/band/components/BandPickerModal.client';
 import { useIsPerformanceManager } from '@/global/auth/useIsPerformanceManager';
 import { ROUTES } from '@/global/config/routes';
 import { formatKst, parseKst } from '@/lib/date';
@@ -58,6 +59,7 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [bandPickerOpen, setBandPickerOpen] = useState(false);
 
   const deleteMutation = useDeletePerformance(performanceId, {
     onSuccess: () => {
@@ -135,7 +137,20 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
         </TabsList>
 
         <TabsContent value="bands">
-          <Card header="참여 밴드" padding="md">
+          <Card
+            header={
+              <div className="flex items-center justify-between">
+                <span>참여 밴드 ({perf.bandIds.length})</span>
+                {isManager && (
+                  <Button size="sm" onClick={() => setBandPickerOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                    참여 밴드 추가
+                  </Button>
+                )}
+              </div>
+            }
+            padding="md"
+          >
             <PerformanceBandChips bandIds={perf.bandIds} />
           </Card>
         </TabsContent>
@@ -185,6 +200,20 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
       />
 
       <AttachDialog open={attachOpen} onOpenChange={setAttachOpen} performanceId={performanceId} />
+
+      <BandPickerModal
+        open={bandPickerOpen}
+        onOpenChange={setBandPickerOpen}
+        multiple
+        title="참여 밴드 추가"
+        onConfirm={(bands) => {
+          // FE-API-017 — 백엔드에 POST /performances/{id}/bands/batch 엔드포인트가
+          // 추가될 때까지 mock toast 로 안내. 본 라운드 UI 검증용.
+          toast.info(
+            `${bands.length}개 밴드를 선택했습니다 — 백엔드 연동(FE-API-017) 후 자동 반영됩니다.`,
+          );
+        }}
+      />
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
