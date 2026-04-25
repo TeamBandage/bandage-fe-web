@@ -220,7 +220,9 @@ function WPerformanceListScreen({ navigate }) {
       <WModal visible={createModal} onClose={() => setCreateModal(false)} title="공연 만들기" width={500}>
         <WInput label="공연 제목 *" value={cfTitle} onChange={setCfTitle} placeholder="공연 제목 입력" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <WInput label="시작 일시 *" value={cfDate} onChange={setCfDate} placeholder="2026-05-01 18:00" />
+          <div style={{ marginBottom: 16 }}>
+            <DateTimePicker label="시작 일시 *" value={cfDate} onChange={setCfDate} />
+          </div>
           <WInput label="소요 시간 (분)" type="number" value={cfDuration} onChange={setCfDuration} />
         </div>
         <WInput label="장소 (선택)" value={cfVenue} onChange={setCfVenue} placeholder="공연 장소 입력" />
@@ -249,7 +251,9 @@ function WPerformanceListScreen({ navigate }) {
       <WModal visible={editModal} onClose={() => setEditModal(false)} title="공연 수정" width={480}>
         <WInput label="공연 제목" value={eTitle} onChange={setETitle} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <WInput label="시작 일시" value={eDate} onChange={setEDate} />
+          <div style={{ marginBottom: 16 }}>
+            <DateTimePicker label="시작 일시" value={eDate} onChange={setEDate} />
+          </div>
           <WInput label="소요 시간 (분)" type="number" value={eDuration} onChange={setEDuration} />
         </div>
         <WInput label="장소" value={eVenue} onChange={setEVenue} />

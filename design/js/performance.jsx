@@ -294,12 +294,7 @@ function PerformanceCreateScreen({ navigate }) {
       <ScrollView style={{ padding: '24px 20px' }}>
         <Input label="공연 제목" value={title} onChange={setTitle} placeholder="공연 제목 입력" error={errors.title} />
         <Input label="시작 일시" value={startAt} onChange={setStartAt} placeholder="2026-05-01 18:00" error={errors.startAt} />
-        <div style={{ marginBottom: 16 }}>
-          <Input label="소요 시간 (분)" type="number" value={duration} onChange={setDuration} placeholder="120" />
-          <input type="range" min={30} max={480} step={30} value={parseInt(duration) || 120}
-            onChange={e => setDuration(String(e.target.value))}
-            style={{ width: '100%', accentColor: C.accent, marginTop: -4 }} />
-        </div>
+        <Input label="소요 시간 (분)" type="number" value={duration} onChange={setDuration} placeholder="120" />
         <Input label="장소 (선택)" value={venue} onChange={setVenue} placeholder="공연 장소 입력" />
 
         {/* Band selection */}

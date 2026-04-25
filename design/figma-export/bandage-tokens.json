@@ -1,0 +1,89 @@
+{
+  "global": {
+    "color": {
+      "bg":         { "value": "#0D0D12", "type": "color" },
+      "surface":    { "value": "#161620", "type": "color" },
+      "card":       { "value": "#1E1E2A", "type": "color" },
+      "card-hover": { "value": "#252535", "type": "color" },
+      "border":     { "value": "#2A2A3A", "type": "color" },
+      "border-hi":  { "value": "#35354A", "type": "color" },
+      "text":       { "value": "#F4F4F8", "type": "color" },
+      "text-sub":   { "value": "#B4B4C4", "type": "color" },
+      "text-muted": { "value": "#6B6B80", "type": "color" },
+      "accent":      { "value": "#3B82F6", "type": "color", "description": "Primary blue (oklch 0.62 0.22 250)" },
+      "accent-hi":   { "value": "#60A5FA", "type": "color" },
+      "accent-dim":  { "value": "#3B82F624", "type": "color", "description": "14% opacity accent" },
+      "accent-soft": { "value": "#3B82F614", "type": "color" },
+      "success":     { "value": "#22C55E", "type": "color" },
+      "success-dim": { "value": "#22C55E26", "type": "color" },
+      "warn":        { "value": "#EAB308", "type": "color" },
+      "warn-dim":    { "value": "#EAB30826", "type": "color" },
+      "amber":       { "value": "#F59E0B", "type": "color" },
+      "amber-dim":   { "value": "#F59E0B26", "type": "color" },
+      "danger":      { "value": "#EF4444", "type": "color" },
+      "danger-dim":  { "value": "#EF444426", "type": "color" },
+      "role-leader": { "value": "#F59E0B", "type": "color" },
+      "role-admin":  { "value": "#3B82F6", "type": "color" },
+      "role-member": { "value": "#6B6B80", "type": "color" }
+    },
+    "radius": {
+      "sm":   { "value": "6px",   "type": "borderRadius" },
+      "md":   { "value": "10px",  "type": "borderRadius" },
+      "lg":   { "value": "14px",  "type": "borderRadius" },
+      "xl":   { "value": "20px",  "type": "borderRadius" },
+      "pill": { "value": "999px", "type": "borderRadius" }
+    },
+    "spacing": {
+      "1":  { "value": "4px",  "type": "spacing" },
+      "2":  { "value": "8px",  "type": "spacing" },
+      "3":  { "value": "12px", "type": "spacing" },
+      "4":  { "value": "16px", "type": "spacing" },
+      "5":  { "value": "20px", "type": "spacing" },
+      "6":  { "value": "24px", "type": "spacing" },
+      "8":  { "value": "32px", "type": "spacing" },
+      "10": { "value": "40px", "type": "spacing" },
+      "12": { "value": "48px", "type": "spacing" }
+    },
+    "typography": {
+      "font-family": { "value": "Noto Sans KR", "type": "fontFamilies" },
+      "weight": {
+        "regular":  { "value": "400", "type": "fontWeights" },
+        "medium":   { "value": "500", "type": "fontWeights" },
+        "semibold": { "value": "600", "type": "fontWeights" },
+        "bold":     { "value": "700", "type": "fontWeights" },
+        "extra":    { "value": "800", "type": "fontWeights" },
+        "black":    { "value": "900", "type": "fontWeights" }
+      },
+      "size": {
+        "micro":    { "value": "11px", "type": "fontSizes" },
+        "caption":  { "value": "12px", "type": "fontSizes" },
+        "body":     { "value": "14px", "type": "fontSizes" },
+        "subtitle": { "value": "17px", "type": "fontSizes" },
+        "title":    { "value": "20px", "type": "fontSizes" },
+        "h2":       { "value": "24px", "type": "fontSizes" },
+        "h1":       { "value": "26px", "type": "fontSizes" },
+        "display":  { "value": "40px", "type": "fontSizes" }
+      },
+      "lineHeight": {
+        "tight":  { "value": "1.2", "type": "lineHeights" },
+        "normal": { "value": "1.5", "type": "lineHeights" },
+        "relaxed":{ "value": "1.7", "type": "lineHeights" }
+      },
+      "letterSpacing": {
+        "tight":  { "value": "-1px",    "type": "letterSpacing" },
+        "normal": { "value": "0",       "type": "letterSpacing" },
+        "wide":   { "value": "0.06em",  "type": "letterSpacing" }
+      }
+    },
+    "shadow": {
+      "sm": { "value": "0 1px 2px rgba(0,0,0,0.3)",   "type": "boxShadow" },
+      "md": { "value": "0 4px 12px rgba(0,0,0,0.25)", "type": "boxShadow" },
+      "lg": { "value": "0 12px 32px rgba(0,0,0,0.45)","type": "boxShadow" }
+    },
+    "layout": {
+      "sidebar-w":      { "value": "240px", "type": "sizing" },
+      "list-pane-w":    { "value": "340px", "type": "sizing" },
+      "band-list-pane-w":{ "value": "360px", "type": "sizing" }
+    }
+  }
+}

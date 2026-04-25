@@ -263,7 +263,9 @@ function WPracticeListScreen({ navigate }) {
         )}
         {cStep === 1 && (
           <>
-            <WInput label="시작 일시" value={cDate} onChange={setCDate} placeholder="2026-04-25 19:00" />
+            <div style={{ marginBottom: 16 }}>
+              <DateTimePicker label="시작 일시" value={cDate} onChange={setCDate} />
+            </div>
             <WInput label="소요 시간 (분)" type="number" value={cDuration} onChange={setCDuration} />
             {cSong && cDate && (
               <div style={{ background: WC.accentDim, border: `1px solid ${WC.accent}44`, borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
@@ -281,7 +283,9 @@ function WPracticeListScreen({ navigate }) {
       </WModal>
 
       <WModal visible={scheduleModal} onClose={() => setScheduleModal(false)} title="일정 변경" width={400}>
-        <WInput label="시작 일시" value={newDate} onChange={setNewDate} placeholder="yyyy-MM-dd HH:mm" />
+        <div style={{ marginBottom: 16 }}>
+          <DateTimePicker label="시작 일시" value={newDate} onChange={setNewDate} />
+        </div>
         <WInput label="소요 시간 (분)" type="number" value={newDuration} onChange={setNewDuration} />
         <div style={{ display: 'flex', gap: 10 }}>
           <WBtn label="취소" variant="secondary" onClick={() => setScheduleModal(false)} fullWidth />

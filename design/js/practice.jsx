@@ -408,15 +408,7 @@ function PracticeCreateScreen({ navigate, params = {} }) {
         {step === 1 && (
           <>
             <Input label="시작 일시" value={startAt} onChange={setStartAt} placeholder="2026-04-25 19:00" />
-            <div style={{ marginBottom: 16 }}>
-              <Input label="소요 시간 (분)" type="number" value={duration} onChange={setDuration} placeholder="60" />
-              <input type="range" min={30} max={300} step={30} value={parseInt(duration) || 60}
-                onChange={e => setDuration(String(e.target.value))}
-                style={{ width: '100%', accentColor: C.accent, marginTop: -4 }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: C.textMuted, marginTop: 2 }}>
-                <span>30분</span><span>5시간</span>
-              </div>
-            </div>
+            <Input label="소요 시간 (분)" type="number" value={duration} onChange={setDuration} placeholder="60" />
             {/* Summary */}
             {song && startAt && (
               <Card style={{ background: C.accentDim, border: `1px solid ${C.accent}44`, marginBottom: 16 }}>
