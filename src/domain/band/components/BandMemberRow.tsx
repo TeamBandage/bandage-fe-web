@@ -1,6 +1,5 @@
 'use client';
 
-import { Crown } from 'lucide-react';
 import { useState } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
@@ -37,26 +36,28 @@ export function BandMemberRow({ bandId, member }: Props) {
     onError: (err) => toast.error(err.message || '리더 위임에 실패했습니다.'),
   });
 
+  // 멤버 표시명: 백엔드가 name 을 아직 안 주므로 임시로 "Member #{memberId}" 사용 (Phase G 에서 정상화)
+  const displayName = `Member #${member.memberId}`;
+
   return (
-    <div className="border-border flex items-center justify-between gap-3 border-b py-3 last:border-b-0">
-      <div className="flex min-w-0 items-center gap-3">
-        <Avatar size="md" fallback={`M${member.memberId}`} />
-        <div className="min-w-0">
-          <p className="text-foreground truncate text-sm font-medium">Member #{member.memberId}</p>
-          <p className="text-foreground-muted truncate text-xs">id: {member.bandMemberId}</p>
+    <div
+      className="bg-card border-border gap-s-3 p-s-3 flex items-center rounded-md border"
+      data-slot="band-member-row"
+    >
+      <Avatar size="lg" fallback={displayName} />
+      <div className="min-w-0 flex-1">
+        <p className="text-foreground truncate text-sm font-semibold">{displayName}</p>
+        <div className="mt-1">
+          <BandRoleBadge role={member.role} />
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <BandRoleBadge role={member.role} />
-        {member.role !== 'LEADER' && (
-          <RoleGuard bandId={bandId} role="LEADER">
-            <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-              <Crown className="h-4 w-4" />
-              리더 위임
-            </Button>
-          </RoleGuard>
-        )}
-      </div>
+      {member.role !== 'LEADER' && (
+        <RoleGuard bandId={bandId} role="LEADER">
+          <Button size="sm" variant="secondary" onClick={() => setOpen(true)}>
+            위임
+          </Button>
+        </RoleGuard>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -68,7 +69,7 @@ export function BandMemberRow({ bandId, member }: Props) {
           </DialogHeader>
           <DialogBody>
             <p className="text-foreground-sub text-sm">
-              Member #{member.memberId} 에게 리더를 위임하시겠어요? 이 동작은 되돌릴 수 없습니다.
+              {displayName} 에게 리더를 위임하시겠어요? 이 동작은 되돌릴 수 없습니다.
             </p>
           </DialogBody>
           <DialogFooter>
