@@ -2701,7 +2701,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2709,9 +2709,10 @@
             "description": "PerformanceCreateForm.client.tsx에서 UUID 직접 입력 textarea 필드를 제거하고, 공연 생성 시 bandIds를 빈 배열 또는 미포함으로 변경한다.",
             "dependencies": [],
             "details": "**수정 파일:** `src/app/(main)/performances/new/PerformanceCreateForm.client.tsx`\n\n**변경 사항:**\n1. `FormValues` 타입에서 `bandIdsRaw?: string` 필드 제거\n2. 108-113 라인의 `<Textarea label=\"참여 밴드 ID (선택)\" ... />` 컴포넌트 제거\n3. `form.handleSubmit` 콜백에서 bandIdsRaw 파싱 로직(45-51 라인) 제거\n4. mutation.mutate 호출 시 `bandIds` 필드를 생략하거나 `undefined`로 전달 (API_SPEC §6-1에 따라 빈 배열이 기본값)\n5. 생성 성공 후 상세 화면(`ROUTES.PERFORMANCE_DETAIL`)으로 라우팅은 기존 유지\n\n**API_SPEC 확인:** §6-1에서 `bandIds: optional (기본값 빈 배열)`로 명시됨.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 공연 생성 폼에서 '참여 밴드 ID' textarea가 더 이상 렌더링되지 않는지 확인\n2. 공연 생성 시 bandIds 없이 요청이 전송되는지 네트워크 탭 확인\n3. 생성 성공 후 공연 상세 화면으로 정상 라우팅되는지 확인\n4. `pnpm typecheck && pnpm lint` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:04:56.686Z"
           },
           {
             "id": 2,
@@ -2721,9 +2722,10 @@
               1
             ],
             "details": "**수정 파일:** `src/app/(main)/performances/[performanceId]/PerformanceDetailContent.client.tsx`\n\n**변경 사항:**\n1. 상단에 `bandPickerOpen` 상태 추가: `const [bandPickerOpen, setBandPickerOpen] = useState(false);`\n2. 'bands' TabsContent (137-141 라인) 내 Card 컴포넌트의 header를 조건부 렌더링으로 변경:\n   ```tsx\n   <Card\n     header={\n       <div className=\"flex items-center justify-between\">\n         <span>참여 밴드</span>\n         {isManager && (\n           <Button size=\"sm\" onClick={() => setBandPickerOpen(true)}>\n             <Plus className=\"h-4 w-4\" />\n             밴드 추가\n           </Button>\n         )}\n       </div>\n     }\n     padding=\"md\"\n   >\n   ```\n3. 컴포넌트 하단에 `PerformanceBandPickerModal` 렌더링 준비 (다음 서브태스크에서 구현)\n4. 기존 useIsPerformanceManager 훅의 isManager 반환값 활용",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Manager 권한 사용자로 로그인 시 '밴드 추가' 버튼이 참여 밴드 탭에 표시되는지 확인\n2. 비-Manager 사용자로 로그인 시 버튼이 숨겨지는지 확인\n3. 버튼 클릭 시 bandPickerOpen 상태가 true로 변경되는지 확인\n4. `pnpm typecheck && pnpm lint` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:05:00.825Z"
           },
           {
             "id": 3,
@@ -2733,9 +2735,10 @@
               2
             ],
             "details": "**신규 파일:** `src/domain/performance/components/PerformanceBandPickerModal.client.tsx`\n\n**구현 명세:**\n1. Props 인터페이스:\n   ```tsx\n   interface PerformanceBandPickerModalProps {\n     open: boolean;\n     onOpenChange: (open: boolean) => void;\n     performanceId: string;\n     excludeBandIds?: string[]; // 이미 참여 중인 밴드 제외\n     onConfirm: (bandIds: string[]) => void;\n   }\n   ```\n\n2. 상태 관리:\n   - `keyword: string` — 검색어 입력\n   - `debouncedKeyword` — useDebounce(keyword, 300) 적용\n   - `selectedBandIds: string[]` — 선택된 밴드 ID 배열\n\n3. UI 구조 (ResponsiveSheet 기반):\n   - Header: \"참여 밴드 선택\" 제목\n   - Body:\n     - Input (검색어 입력, placeholder: \"밴드명으로 검색\")\n     - 검색어 미입력 시: EmptyState (title: \"밴드명을 입력하세요\")\n     - 검색 결과 0건 시: EmptyState (title: \"검색 결과가 없습니다\")\n     - 검색 결과 있을 시: 밴드 카드 목록 (체크박스 + 밴드명 + 설명)\n   - Footer: 취소 버튼 + 확인 버튼 (선택 개수 표시)\n\n4. 검색 API 연동:\n   - Task 1에서 구현될 `searchBands` API / `useBandSearch` 훅 사용 예정\n   - 현재는 mock fetcher 또는 placeholder 훅으로 대체\n\n5. 체크박스 다중 선택:\n   - excludeBandIds에 포함된 밴드는 disabled + \"이미 참여 중\" 표시\n   - 선택 토글 시 selectedBandIds 배열 업데이트\n\n**활용 UI 컴포넌트:** ResponsiveSheet, Input, Button, Checkbox, EmptyState",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 모달 열림/닫힘 동작 확인\n2. 검색어 입력 시 디바운스 후 검색 결과 표시 확인\n3. 검색어 미입력 시 '밴드명을 입력하세요' EmptyState 표시\n4. 검색 결과 0건 시 '검색 결과가 없습니다' EmptyState 표시\n5. 체크박스 다중 선택 후 확인 버튼 클릭 시 onConfirm 콜백 호출 확인\n6. `pnpm typecheck && pnpm lint` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:05:05.007Z"
           },
           {
             "id": 4,
@@ -2745,9 +2748,10 @@
               3
             ],
             "details": "**수정 파일:** `src/app/(main)/performances/[performanceId]/PerformanceDetailContent.client.tsx`\n\n**변경 사항:**\n1. PerformanceBandPickerModal import 추가\n2. 모달 연동:\n   ```tsx\n   <PerformanceBandPickerModal\n     open={bandPickerOpen}\n     onOpenChange={setBandPickerOpen}\n     performanceId={performanceId}\n     excludeBandIds={perf?.bandIds ?? []}\n     onConfirm={handleAddBands}\n   />\n   ```\n\n3. handleAddBands 콜백 구현 (mock 처리):\n   - 백엔드 `PATCH /performances/{id}` bandIds 필드 미지원 (API_SPEC §6-4 확인)\n   - toast.info로 \"밴드 추가 기능은 준비 중입니다\" 메시지 표시\n   - 또는 console.log로 선택된 bandIds 출력 (디버깅용)\n   - 모달 닫기\n\n4. 기존 PerformanceBandChips 컴포넌트는 그대로 유지 (bandIds가 있으면 표시)\n\n**Mock 전략:** API_SPEC §6-4에서 UpdatePerformanceRequest에 bandIds 필드가 없음. UI/UX는 완성하되 실제 저장은 백엔드 API 추가 후 활성화.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. '밴드 추가' 버튼 클릭 → 모달 열림 확인\n2. 밴드 검색 → 선택 → 확인 클릭 시 toast 또는 console 출력 확인\n3. excludeBandIds로 전달된 밴드가 모달에서 disabled 표시되는지 확인\n4. 모달 닫힘 후 화면 정상 상태 유지\n5. `pnpm typecheck && pnpm lint` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:05:10.112Z"
           },
           {
             "id": 5,
@@ -2757,12 +2761,13 @@
               4
             ],
             "details": "**수정 파일:** `API_REQUIRED.md`\n\n**추가 항목 (신규 기능 섹션에 추가):**\n```markdown\n### FE-API-017. 공연 참여 밴드 수정 (Task 5 / UUID 직접 입력 제거)\n\n**현재 상태:** `PATCH /api/v1/performances/{performanceId}` 의 Request Body에 `bandIds` 필드 미지원\n\n**프론트 사용처:** \n- `src/domain/performance/components/PerformanceBandPickerModal.client.tsx`\n- 공연 상세 화면 \"참여 밴드 추가\" 기능\n\n**요청 옵션 (택 1):**\n\n**옵션 A:** 기존 PATCH 엔드포인트 확장\n```http\nPATCH /api/v1/performances/{performanceId}\nContent-Type: application/json\nAuthorization: Bearer <accessToken>\n\n{\n  \"bandIds\": [\"uuid-1\", \"uuid-2\"]  // 전체 교체 (덮어쓰기)\n}\n```\n\n**옵션 B:** 밴드 추가/제거 전용 엔드포인트 신규\n```http\nPOST /api/v1/performances/{performanceId}/bands\n{ \"bandIds\": [\"uuid-1\", \"uuid-2\"] }  // 추가\n\nDELETE /api/v1/performances/{performanceId}/bands/{bandId}  // 개별 제거\n```\n\n**기대 응답:** 기존 `PerformanceDetailResponse` 또는 성공 여부만 반환\n\n**프론트 mock 현황:** UI/UX 완성, toast로 \"준비 중\" 안내. 백엔드 구현 후 fetcher 교체로 즉시 활성화.\n```\n\n**위치:** '신규 기능' 섹션 (§ FE-API-017)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. API_REQUIRED.md 파일에 FE-API-017 항목이 올바른 마크다운 형식으로 추가되었는지 확인\n2. 항목 내용이 프론트 사용처, 요청 옵션, mock 현황을 명확히 기술하는지 확인\n3. 기존 문서 구조와 일관성 유지 확인\n4. `pnpm lint` 통과 (마크다운 린트 적용 시)",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:05:14.453Z"
           }
         ],
-        "updatedAt": "2026-04-25T15:56:21.273Z"
+        "updatedAt": "2026-04-25T16:05:14.453Z"
       },
       {
         "id": "6",
@@ -2772,7 +2777,7 @@
         "testStrategy": "1. 시나리오 A/B/C/D 각각 수동 테스트 (dev 환경)\n2. 쿠키 삭제 후 보호 페이지 직접 진입 → /login 리다이렉트 확인\n3. accessToken 만료 후 페이지 새로고침 → refresh 성공 시 정상 진입 확인\n4. refresh 실패 시 토스트 \"세션이 만료되었습니다\" + /login 이동 확인\n5. 화면 깜빡임 없이 Skeleton 표시 후 전환 확인\n6. Playwright e2e 시나리오 추가 (선택)",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2780,9 +2785,10 @@
             "description": "현행 미들웨어(`src/middleware.ts`)의 쿠키 기반 리다이렉트 동작을 검증하고, refreshToken 쿠키가 없을 때 `/login?from=...` 으로 정상 리다이렉트되는지 확인한다.",
             "dependencies": [],
             "details": "1. `src/middleware.ts` 의 `PROTECTED_PREFIXES` 배열과 쿠키 검사 로직이 시나리오 A를 충족하는지 코드 리뷰\n2. 미들웨어가 `from` 쿼리 파라미터를 포함하여 `/login` 으로 리다이렉트하는지 확인 (현재 26-28 라인에서 구현됨)\n3. 테스트 환경(dev)에서 쿠키 삭제 후 보호 페이지(`/home`, `/bands`, `/practices` 등) 직접 진입 시 리다이렉트 동작 수동 검증\n4. 필요 시 미들웨어 로직 보완 (현재 구현은 정상으로 보임)\n5. 검증 결과를 문서화하여 이후 subtask 에서 참조할 수 있도록 준비",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "dev 환경에서 브라우저 DevTools > Application > Cookies 에서 refreshToken 삭제 후 `/home` 직접 입력 -> `/login?from=/home` 리다이렉트 확인. 추가로 `/bands/abc`, `/practices/xyz` 등 하위 경로도 동일 동작 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:09:17.216Z"
           },
           {
             "id": 2,
@@ -2792,9 +2798,10 @@
               1
             ],
             "details": "1. `src/global/auth/AuthLoadingSkeleton.tsx` 파일 신규 생성\n2. 기존 `src/components/ui/skeleton.tsx` 의 `Skeleton` 컴포넌트 활용\n3. 전체 화면 영역을 커버하는 레이아웃 (min-h-screen, flex 중앙 정렬)\n4. 로고 또는 앱명 텍스트 + 펄스 애니메이션 스켈레톤 바 조합\n5. 접근성: role=\"status\", aria-label=\"인증 확인 중\" 적용\n6. 다크 테마 기반 스타일링 (bg-surface, text-foreground 등 시맨틱 토큰 사용)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Storybook 또는 개발 서버에서 AuthLoadingSkeleton 단독 렌더링 확인. 스켈레톤 펄스 애니메이션과 접근성 속성 검증.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:09:23.339Z"
           },
           {
             "id": 3,
@@ -2804,9 +2811,10 @@
               2
             ],
             "details": "1. `src/global/auth/AuthBootstrapper.tsx` 파일 신규 생성 (`'use client'` 선언)\n2. `useMe` 훅을 호출하여 `{ data, isLoading, isError }` 구조 분해\n3. `isLoading` 상태일 때 `AuthLoadingSkeleton` 반환\n4. `isError` 상태일 때 `useEffect` 내에서:\n   - `useAuthStore.getState().clear()` 호출로 accessToken 정리\n   - `useToastStore.getState().add({ type: 'error', message: '세션이 만료되었습니다' })` 호출 (훅 바깥에서 store 직접 접근)\n   - `router.replace('/login')` 호출\n5. 에러 상태에서는 `null` 반환 (리다이렉트 진행 중)\n6. 정상 인증 시 `<>{children}</>` 반환\n7. 시나리오 B/C/D 처리 대응 (apiClient 의 401 인터셉터와 연계)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "useMe 쿼리가 에러를 반환하도록 모킹 후 토스트 메시지 표시 및 /login 리다이렉트 확인. 로딩 상태에서 AuthLoadingSkeleton 노출 확인. 정상 인증 시 children 렌더링 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:09:33.695Z"
           },
           {
             "id": 4,
@@ -2816,9 +2824,10 @@
               3
             ],
             "details": "1. `src/app/(main)/layout.tsx` 파일 수정\n2. 상단에 `import { AuthBootstrapper } from '@/global/auth/AuthBootstrapper'` 추가\n3. 데스크톱 영역 `<main>` 내부의 `{children}` 을 `<AuthBootstrapper>{children}</AuthBootstrapper>` 로 래핑\n4. 모바일 영역 `<Container>` 내부의 `{children}` 도 동일하게 래핑\n5. 또는 두 영역을 감싸는 공통 래퍼로 AuthBootstrapper 배치 (코드 중복 최소화)\n6. 기존 레이아웃 스타일링 유지 (Shell, Sidebar, BottomNav 등)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "(main) 라우트 그룹 하위 페이지(/home, /bands 등) 진입 시 AuthBootstrapper 가 동작하여 로딩 스켈레톤 표시 후 정상 렌더링 확인. useMe 실패 시 /login 리다이렉트 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:09:38.661Z"
           },
           {
             "id": 5,
@@ -2828,11 +2837,13 @@
               4
             ],
             "details": "1. `src/global/api/apiClient.ts` 의 `handleAuthFailure` 함수 검토 (현재 토스트 호출 없음 - 99-103 라인)\n2. 토스트 중복 방지: AuthBootstrapper 에서만 '세션이 만료되었습니다' 토스트 표시\n3. 시나리오 B 테스트: refreshToken 쿠키 유 + accessToken 메모리 무 상태에서 보호 API 호출 -> 401 -> refresh 성공 시 정상 진행 확인\n4. 시나리오 C 테스트: 유효 토큰이나 BE 측 만료 -> 401 -> refresh 401 -> /login 리다이렉트 + 토스트 확인\n5. 시나리오 D 테스트: 미들웨어 통과 후 useMe 401 -> AuthBootstrapper 가 /login 리다이렉트 처리 확인\n6. 화면 깜빡임 없이 Skeleton 표시 후 전환되는지 시각적 확인\n7. Playwright e2e 시나리오 스크립트 추가 (선택사항)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 시나리오 A: 쿠키 삭제 후 보호 페이지 직접 진입 -> /login 리다이렉트\n2. 시나리오 B: sessionStorage 의 accessToken 삭제 후 페이지 새로고침 -> refresh 성공 시 정상 진입\n3. 시나리오 C: 백엔드 토큰 강제 만료 후 페이지 새로고침 -> refresh 실패 -> 토스트 + /login\n4. 시나리오 D: useMe 401 응답 모킹 -> AuthBootstrapper /login 리다이렉트\n5. 화면 깜빡임 없이 Skeleton 표시 후 콘텐츠 전환 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:09:42.849Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-25T16:09:42.849Z"
       },
       {
         "id": "7",
@@ -2842,7 +2853,7 @@
         "testStrategy": "1. 회원가입 페이지 (`/join`) 에서 비밀번호 입력 시 라벨 확인\n2. 비밀번호 변경 페이지 (`/password-change`) 에서 라벨 확인\n3. 각 강도 (empty, weak, medium, strong) 에 따른 라벨 및 색상 확인\n4. progress bar 동작 정상 확인\n5. `pnpm typecheck && pnpm lint` 통과",
         "priority": "low",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -2903,7 +2914,8 @@
             "testStrategy": "pnpm typecheck && pnpm lint && pnpm test 모두 통과 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-25T16:10:37.157Z"
       },
       {
         "id": "8",
@@ -3062,9 +3074,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-25T15:56:21.277Z",
+      "lastModified": "2026-04-25T16:10:37.163Z",
       "taskCount": 9,
-      "completedCount": 4,
+      "completedCount": 6,
       "tags": [
         "mvp-1-fix-v3"
       ]
