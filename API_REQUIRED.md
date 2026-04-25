@@ -122,6 +122,15 @@ mvp-1-fix-v3 Task 5 의 BandPickerModal 결과를 적용할 백엔드 엔드포�
 
 - **프론트 사용처**: `PracticeCreateWizard.submit` (현재 임시로 `<title> — <artist>` 텍스트 식별자 전송)
 
+### 8-7. 홈 피드 우선순위 정렬 (FE-API-019)
+
+홈 화면 '내 밴드 / 다가오는 합주 / 다가오는 공연' 섹션은 현재 클라이언트 측 `lib/home-feed.ts` 의 `pickUpcoming` 으로 startAt 오름차순 + 미래 필터링 + 상위 3건. 향후 백엔드가 활동성/우선순위 알고리즘을 적용한 별도 엔드포인트를 제공하면 클라이언트 정렬 제거 가능.
+
+- **GET `/api/v1/members/me/home-feed?limit=3`** (제안)
+- **응답**: `{ bands: [...], upcomingPractices: [...], upcomingPerformances: [...] }` 또는 도메인별 분리 엔드포인트
+- **프론트 사용처**: `UpcomingPractices`, `UpcomingPerformances`, `MyBands` (홈 한정 limit=3)
+- **현재 우회**: `pickUpcoming` 클라이언트 정렬
+
 ### 8-3. 멤버 표시명 정상화 (FE-API-012 / 013 / 014)
 
 화면에 UUID·숫자 ID 가 노출되지 않도록 `getMemberDisplayName` 유틸이 `name` 우선 → 마지막 4자리 폴백을 적용 중. 백엔드가 아래 응답에 `name` 을 포함하면 자동으로 정상화된다.

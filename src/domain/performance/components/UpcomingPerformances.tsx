@@ -6,12 +6,14 @@ import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { pickUpcoming } from '@/lib/home-feed';
+
 import { useUpcomingPerformances } from '../hooks/useUpcomingPerformances';
 
 import { PerformanceCard } from './PerformanceCard';
 
-export function UpcomingPerformances({ limit = 2 }: { limit?: number }) {
-  const { data, isLoading, isError, refetch } = useUpcomingPerformances(limit);
+export function UpcomingPerformances({ limit = 3 }: { limit?: number }) {
+  const { data, isLoading, isError, refetch } = useUpcomingPerformances(limit + 1);
 
   if (isLoading) {
     return (
@@ -27,8 +29,8 @@ export function UpcomingPerformances({ limit = 2 }: { limit?: number }) {
     return <ErrorState description="예정 공연을 불러오지 못했습니다." onRetry={() => refetch()} />;
   }
 
-  const performances = data ?? [];
-  if (performances.length === 0) {
+  const { items } = pickUpcoming(data ?? [], limit);
+  if (items.length === 0) {
     return (
       <EmptyState
         icon={CalendarDays}
@@ -40,7 +42,7 @@ export function UpcomingPerformances({ limit = 2 }: { limit?: number }) {
 
   return (
     <div className="space-y-3">
-      {performances.map((p) => (
+      {items.map((p) => (
         <PerformanceCard key={p.performanceId} performance={p} />
       ))}
     </div>

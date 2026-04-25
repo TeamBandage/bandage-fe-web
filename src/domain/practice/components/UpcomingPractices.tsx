@@ -6,12 +6,15 @@ import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
+import { pickUpcoming } from '@/lib/home-feed';
+
 import { useUpcomingPractices } from '../hooks/useUpcomingPractices';
 
 import { PracticeCard } from './PracticeCard';
 
 export function UpcomingPractices({ limit = 3 }: { limit?: number }) {
-  const { data, isLoading, isError, refetch } = useUpcomingPractices(limit);
+  // limit+1 fetch 로 hasMore 판정. 백엔드 정렬은 ID 기준이라 본인 파일에서 startAt asc 재정렬 + 과거 제외.
+  const { data, isLoading, isError, refetch } = useUpcomingPractices(limit + 1);
 
   if (isLoading) {
     return (
@@ -29,8 +32,8 @@ export function UpcomingPractices({ limit = 3 }: { limit?: number }) {
     );
   }
 
-  const practices = data ?? [];
-  if (practices.length === 0) {
+  const { items } = pickUpcoming(data ?? [], limit);
+  if (items.length === 0) {
     return (
       <EmptyState
         icon={Music}
@@ -42,7 +45,7 @@ export function UpcomingPractices({ limit = 3 }: { limit?: number }) {
 
   return (
     <div className="space-y-3">
-      {practices.map((p) => (
+      {items.map((p) => (
         <PracticeCard key={p.practiceId} practice={p} />
       ))}
     </div>
