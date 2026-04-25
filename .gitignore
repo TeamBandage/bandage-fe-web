@@ -41,3 +41,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# design assets (로컬 전용 — 원격 저장소에는 제외)
+/design/
