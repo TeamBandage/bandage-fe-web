@@ -1,8 +1,18 @@
 'use client';
 
-import { CalendarDays, Guitar, Home, Music, User, Users, type LucideIcon } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronDown,
+  Guitar,
+  Home,
+  Music,
+  User,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { useMe } from '@/domain/member/hooks/useMe';
 import { ROUTES } from '@/global/config/routes';
@@ -11,22 +21,40 @@ import { cn } from '@/lib/cn';
 import { Avatar } from '../ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 
+type SubItem = { href: string; label: string };
+
 type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** 서브 메뉴 — 부모 항목 클릭 시 첫 서브로 이동, 활성 시 자동 펼침. */
+  subs?: SubItem[];
 };
 
 const mainNav: NavItem[] = [
   { href: ROUTES.HOME, label: '홈', icon: Home },
   { href: ROUTES.BANDS, label: '밴드', icon: Users },
-  { href: ROUTES.PRACTICES, label: '합주', icon: Music },
+  {
+    href: ROUTES.PRACTICES,
+    label: '합주',
+    icon: Music,
+    subs: [
+      { href: ROUTES.PRACTICES, label: '나의 합주' },
+      { href: ROUTES.PRACTICE_NEW, label: '합주 시작하기' },
+    ],
+  },
   { href: ROUTES.PERFORMANCES, label: '공연', icon: CalendarDays },
   { href: ROUTES.ME, label: '마이페이지', icon: User },
 ];
 
 function isActive(pathname: string, href: string) {
   if (href === ROUTES.HOME) return pathname === ROUTES.HOME;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function isSubActive(pathname: string, href: string) {
+  // 정확 매칭 — `/practices` vs `/practices/new` 가 둘 다 매칭되지 않도록.
+  if (href === ROUTES.PRACTICES) return pathname === ROUTES.PRACTICES;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -68,26 +96,9 @@ export function Sidebar({ className }: SidebarProps) {
         Navigation
       </div>
       <nav className="gap-s-1 flex flex-1 flex-col">
-        {mainNav.map(({ href, label, icon: Icon }) => {
-          const active = isActive(pathname, href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'gap-s-4 px-s-4 py-s-3 text-body flex items-center rounded-md font-medium transition-colors',
-                'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-                active
-                  ? 'bg-accent-dim text-accent font-bold'
-                  : 'text-foreground-sub hover:bg-card hover:text-foreground',
-              )}
-            >
-              <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
-              <span className="truncate">{label}</span>
-            </Link>
-          );
-        })}
+        {mainNav.map((item) => (
+          <NavRow key={item.href} item={item} pathname={pathname} />
+        ))}
       </nav>
 
       <div className="border-border mt-s-3 gap-s-2 pt-s-3 flex items-center border-t">
@@ -121,5 +132,84 @@ export function Sidebar({ className }: SidebarProps) {
         )}
       </div>
     </aside>
+  );
+}
+
+function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
+  const { href, label, icon: Icon, subs } = item;
+  const active = isActive(pathname, href);
+  const hasSubs = subs && subs.length > 0;
+  const [open, setOpen] = useState(active);
+
+  // 경로 변경 시 활성 상태에 따라 자동 펼침.
+  useEffect(() => {
+    if (active) setOpen(true);
+  }, [active]);
+
+  if (!hasSubs) {
+    return (
+      <Link
+        href={href}
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'gap-s-4 px-s-4 py-s-3 text-body flex items-center rounded-md font-medium transition-colors',
+          'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+          active
+            ? 'bg-accent-dim text-accent font-bold'
+            : 'text-foreground-sub hover:bg-card hover:text-foreground',
+        )}
+      >
+        <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+        <span className="truncate">{label}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          'gap-s-4 px-s-4 py-s-3 text-body flex w-full items-center rounded-md font-medium transition-colors',
+          'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+          active
+            ? 'bg-accent-dim text-accent font-bold'
+            : 'text-foreground-sub hover:bg-card hover:text-foreground',
+        )}
+      >
+        <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+        <span className="flex-1 truncate text-left">{label}</span>
+        <ChevronDown
+          className={cn('h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
+          aria-hidden="true"
+        />
+      </button>
+      {open && (
+        <ul className="mt-s-1 ml-s-6 gap-s-1 flex flex-col">
+          {subs!.map((s) => {
+            const subActive = isSubActive(pathname, s.href);
+            return (
+              <li key={s.href}>
+                <Link
+                  href={s.href}
+                  aria-current={subActive ? 'page' : undefined}
+                  className={cn(
+                    'px-s-3 py-s-2 text-caption block rounded-md transition-colors',
+                    'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                    subActive
+                      ? 'text-accent font-semibold'
+                      : 'text-foreground-muted hover:bg-card hover:text-foreground',
+                  )}
+                >
+                  {s.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
