@@ -12,6 +12,11 @@ export interface BandInfoResponse {
   profileImg?: string;
 }
 
+/** API_SPEC §3-3-1 — `/bands/me` 응답 항목. 본인의 밴드 내 역할(myRole) 포함. */
+export interface MyBandInfoResponse extends BandInfoResponse {
+  myRole: BandRole;
+}
+
 export interface BandMemberInfoResponse {
   bandMemberId: string;
   memberId: number;

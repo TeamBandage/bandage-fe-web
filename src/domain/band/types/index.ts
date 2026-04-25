@@ -2,6 +2,7 @@ export type { CreateBandRequest, BandApplicationDecision } from './req';
 export type {
   CreateBandResponse,
   BandInfoResponse,
+  MyBandInfoResponse,
   BandMemberInfoResponse,
   BandApplicationInfoResponse,
 } from './res';
