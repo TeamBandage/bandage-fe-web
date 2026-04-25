@@ -690,7 +690,7 @@
   "mvp-1-fix": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "디자인 토큰 재이식 및 글로벌 CSS 확장",
         "description": "src/app/globals.css의 @theme에 누락된 디자인 토큰(Spacing scale, Layout 변수, Typography scale, Breakpoint override, Auth gradient)을 design/dist/css/tokens.css 기반으로 전부 반영한다.",
         "details": "1. globals.css의 @theme 섹션에 다음 토큰들을 추가:\n   - Spacing scale: --spacing-s-1(4px) ~ --spacing-s-12(48px)\n   - Layout: --sidebar-w(240px), --list-pane-w(340px), --band-list-pane-w(360px)\n   - Typography: --text-display(40px), --text-title-lg(26px), --text-title(20px), --text-subtitle(18px), --text-body(14px), --text-caption(13px), --text-micro(11px)\n   - Breakpoint override: --breakpoint-sm(480px), --breakpoint-md(768px), --breakpoint-lg(960px), --breakpoint-xl(1280px)\n   - Auth gradient: --gradient-auth-brand: linear-gradient(145deg, #0D0D1E 0%, #111128 100%)\n   - Amber 색상 추가: --color-amber, --color-amber-dim\n\n2. Tailwind v4에서 커스텀 브레이크포인트 960px를 lg로 오버라이드:\n   ```css\n   @theme {\n     --breakpoint-lg: 960px;\n   }\n   ```\n\n3. /playground 페이지에 토큰 매트릭스 섹션 추가:\n   - src/app/playground/page.tsx 생성\n   - 모든 색상, 간격, 타이포그래피 토큰을 시각적으로 렌더링",
@@ -768,7 +768,7 @@
         "updatedAt": "2026-04-24T15:04:42.675Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Shell 레이아웃 시스템 컴포넌트 구현",
         "description": "데스크톱 마스터-디테일 레이아웃을 위한 핵심 Shell 컴포넌트들(Shell, Sidebar, Topbar, PaneSplit, PaneList, PaneDetail)을 src/components/layout/에 구현한다.",
         "details": "1. src/components/layout/shell.tsx 구현:\n   - props: children\n   - flex w-screen h-screen overflow-hidden 구조\n\n2. src/components/layout/sidebar.tsx 구현:\n   - 240px 고정 너비(--sidebar-w)\n   - brand 영역(로고 36x36 + 'Bandage' 타이틀)\n   - nav 영역(home/bands/practices/performances 아이템, 각각 아이콘 + 라벨)\n   - active 상태 스타일링(bg-accent-dim, text-accent)\n   - footer 영역(user avatar + 이름 + 마이페이지 링크)\n   - lg: 미만에서 hidden 처리\n\n3. src/components/layout/topbar.tsx 구현:\n   - props: title, breadcrumb?, actions?\n   - min-height 68px, sticky top-0\n   - breadcrumb + title 좌측, actions 슬롯 우측\n\n4. src/components/layout/pane-split.tsx 구현:\n   - flex-1 flex overflow-hidden\n   - children으로 PaneList와 PaneDetail 수용\n\n5. src/components/layout/pane-list.tsx 구현:\n   - props: width?: 'list'|'band-list', header?, children\n   - width='list'면 340px, 'band-list'면 360px\n   - border-r, header 영역 + scrollable body\n\n6. src/components/layout/pane-detail.tsx 구현:\n   - props: children\n   - flex-1, padding 24px 28px\n   - overflow-y auto",
@@ -849,7 +849,7 @@
         "updatedAt": "2026-04-24T15:22:28.673Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "(main) 레이아웃 개편 - Shell 기반 반응형 구조",
         "description": "src/app/(main)/layout.tsx를 Shell 기반으로 재작성하여 960px 이상에서는 Sidebar + 메인 영역, 미만에서는 기존 BottomNav + Container 구조가 동작하도록 한다.",
         "details": "1. src/app/(main)/layout.tsx 수정:\n   ```tsx\n   export default function MainLayout({ children }) {\n     return (\n       <>\n         {/* Desktop: Shell + Sidebar */}\n         <div className=\"hidden lg:flex h-screen w-screen overflow-hidden\">\n           <Shell>\n             <Sidebar />\n             <div className=\"flex-1 flex flex-col overflow-hidden\">\n               {children}\n             </div>\n           </Shell>\n         </div>\n         \n         {/* Mobile: 기존 구조 */}\n         <div className=\"lg:hidden min-h-screen pb-16\">\n           <Container>{children}</Container>\n           <BottomNav />\n         </div>\n       </>\n     );\n   }\n   ```\n\n2. Sidebar 네비게이션 아이템 클릭 시 해당 라우트로 이동 연결\n   - usePathname() 활용하여 active 상태 판별\n   - ROUTES 상수 활용\n\n3. Sidebar footer의 user 정보는 useAuthStore에서 가져오기\n\n4. 기존 Container 컴포넌트의 padding을 토큰화:\n   - 모바일: 16px\n   - 태블릿(md): 20px",
@@ -928,7 +928,7 @@
         "updatedAt": "2026-04-24T15:50:10.254Z"
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Auth 분할 레이아웃 및 관련 컴포넌트 구현",
         "description": "(auth) 레이아웃을 데스크톱에서 좌측 AuthBrand 패널 + 우측 480px AuthFormPanel 구조로 개편하고, StepIndicator와 PasswordStrength 컴포넌트를 구현한다.",
         "details": "1. src/components/layout/auth-split.tsx 구현:\n   - AuthBrand: gradient 배경(--gradient-auth-brand) + 장식 링 3개 + 로고(72x72) + 타이틀(40px) + tagline + feature chips\n   - AuthFormPanel: width 480px, max-w 360px inner, 중앙 정렬\n\n2. src/components/ui/step-indicator.tsx 구현:\n   - props: steps: string[], current: number\n   - 현재 단계는 accent 색상, 완료 단계는 체크 아이콘\n   - 단계 사이 연결 라인\n\n3. src/components/ui/password-strength.tsx 구현:\n   - props: password: string\n   - 규칙 기반 4단계 점수: 8자 이상, 대문자, 숫자, 특수문자\n   - 4단 막대 UI + 레벨 라벨(약함/보통/강함/매우 강함)\n\n4. src/app/(auth)/layout.tsx 수정:\n   - 960px 이상: AuthBrand(hidden lg:flex) + AuthFormPanel\n   - 960px 미만: 기존 중앙 정렬 유지\n\n5. /join 페이지에 StepIndicator 적용 (기본 정보 → 계정 설정)\n6. /join, /password-change 페이지에 PasswordStrength 적용",
@@ -1004,7 +1004,7 @@
         "updatedAt": "2026-04-24T16:34:23.875Z"
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "공용 컴포넌트 신규 구현 및 기존 컴포넌트 variant 보정",
         "description": "RoleBadge, SectionTitle, Divider, StatCard, EmptyPane, ResponsiveSheet 등 신규 컴포넌트를 구현하고, Button/Badge/Card/Chip/Dialog 등 기존 컴포넌트의 variant를 디자인 원본과 일치시킨다.",
         "details": "1. 신규 컴포넌트 구현 (src/components/ui/):\n   - role-badge.tsx: role('LEADER'|'ADMIN'|'MEMBER') → 역할별 색상(--color-role-*) 적용\n   - section-title.tsx: title + optional action 슬롯, uppercase, 12px, letterSpacing\n   - divider.tsx: h-px bg-border, optional inset prop\n   - stat-card.tsx: icon + label + value, Home 통계 그리드용\n\n2. src/components/feedback/empty-pane.tsx 구현:\n   - 아이콘 + 타이틀 + 설명, PaneDetail 플레이스홀더용\n\n3. src/components/ui/responsive-sheet.tsx 구현:\n   - 데스크톱(lg:)에서는 Dialog, 모바일에서는 BottomSheet로 자동 전환\n\n4. Button variant 보정:\n   - accent-outline variant 추가\n   - padding/font를 토큰화\n\n5. Badge variant 보정:\n   - amber, muted variant 추가\n   - 기존 코드베이스에서 사용 중인 variant 마이그레이션\n\n6. Card 보정:\n   - interactive prop이 --color-card-hover 토큰 사용하도록 확인\n\n7. Chip 보정:\n   - sessionTypeToken 유틸 추출 (src/lib/session-type.ts)\n   - 하드코딩된 oklch 값을 유틸 함수로 대체\n\n8. Dialog 보정:\n   - sheetOnMobile prop 추가 옵션",
@@ -1080,7 +1080,7 @@
         "updatedAt": "2026-04-24T17:11:40.111Z"
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Home 화면 재구성 (StatCard 그리드 + 섹션 레이아웃)",
         "description": "/home 화면을 디자인 원본 기준으로 재구성한다. 데스크톱에서는 4-StatCard 그리드 + grid-2(내 밴드/다가오는 합주) + grid-3(다가오는 공연), 모바일에서는 단일 컬럼 스택 구조로 구현한다.",
         "details": "1. src/app/(main)/home/page.tsx 재구성:\n   - PageTitle(greeting + sub): \"안녕하세요, {name}님\" + \"오늘도 좋은 합주 되세요.\"\n   - StatCard x4 그리드: 소속 밴드 / 예정 합주 / 예정 공연 / 참여 세션\n     - 데스크톱: grid-cols-4\n     - 모바일: grid-cols-2\n   - 내 밴드 + 다가오는 합주 2열 그리드\n     - 데스크톱: grid-cols-2\n     - 모바일: 단일 컬럼\n   - 다가오는 공연 3열 그리드\n     - 데스크톱: grid-cols-3\n     - 모바일: 단일 컬럼\n\n2. SectionTitle 컴포넌트 활용하여 각 섹션 헤더 구성\n   - action 슬롯에 \"전체 보기 →\" 링크\n\n3. 통계 데이터 훅 구현/활용:\n   - useMyBands, useUpcomingPractices, useUpcomingPerformances 기존 훅에서 count 파생\n   - 세션 참여 수는 TanStack Query select로 계산\n\n4. Topbar 연동: 데스크톱에서는 Topbar에 \"홈\" 타이틀 표시",
@@ -1157,7 +1157,7 @@
         "updatedAt": "2026-04-24T17:16:07.914Z"
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Band 마스터-디테일 레이아웃 구현",
         "description": "/bands와 /bands/[bandId] 라우트를 데스크톱에서 마스터-디테일 구조로 렌더링한다. 좌측 PaneList(360px)에 검색+필터+밴드 목록, 우측 PaneDetail에 선택된 밴드 상세(탭: 정보/멤버/신청 현황)를 표시한다.",
         "details": "1. src/app/(main)/bands/layout.tsx 생성:\n   - 데스크톱(lg:): PaneSplit 컴포넌트로 감싸기\n   - 모바일: 기존처럼 children만 렌더\n\n2. src/app/(main)/bands/page.tsx 수정:\n   - 데스크톱: PaneList(width='band-list') 안에 검색 + 필터 chips + BandCard 목록\n   - 선택된 밴드가 없으면 우측에 EmptyPane 표시\n   - 모바일: 기존 목록 페이지 유지\n\n3. src/app/(main)/bands/[bandId]/page.tsx 수정:\n   - 데스크톱: PaneDetail 안에 Topbar(밴드명) + 탭(정보/멤버/신청 현황)\n   - 모바일: 기존 상세 페이지 유지\n\n4. URL 호환성 유지:\n   - /bands 단독 접근: 좌측 목록 + 우측 EmptyPane\n   - /bands/[bandId] 직접 접근: 좌측 목록 + 우측 해당 밴드 상세\n\n5. RoleBadge 컴포넌트를 밴드 카드/멤버 목록에 적용\n\n6. 역할 가드(RoleGuard) 유지: 가입 신청 탭, 승인/거절 버튼",
@@ -1239,7 +1239,7 @@
         "updatedAt": "2026-04-24T17:21:06.202Z"
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Practice/Performance 마스터-디테일 및 Me 재구성",
         "description": "/practices, /performances 라우트에 Band와 동일한 마스터-디테일 패턴을 적용하고, /me 페이지를 데스크톱에서 pane-split(좌측 메뉴/우측 폼)으로 재구성한다.",
         "details": "1. Practice 마스터-디테일 (src/app/(main)/practices/):\n   - layout.tsx: PaneSplit 적용\n   - page.tsx: PaneList(340px) + 밴드 필터 드롭다운 + 합주 목록\n   - [practiceId]/page.tsx: PaneDetail + 섹션(일정·장소, 곡 정보, 세션 grid, 참여자)\n   - 모바일: Accordion으로 섹션 감싸 밀도 확보\n\n2. Performance 마스터-디테일 (src/app/(main)/performances/):\n   - layout.tsx: PaneSplit 적용\n   - page.tsx: PaneList(340px) + 공연 목록\n   - [performanceId]/page.tsx: PaneDetail + Cover + Info + Practice 연결 목록\n\n3. Me 재구성 (src/app/(main)/me/):\n   - 데스크톱: PaneList(좌측 메뉴: 내 정보/비밀번호 변경/로그아웃/탈퇴) + PaneDetail(선택된 섹션 폼)\n   - 모바일: 기존 단일 스크롤 유지\n\n4. SectionTitle, Divider 컴포넌트 활용하여 상세 페이지 섹션 구조화\n\n5. Topbar 연동: 각 상세 페이지에서 제목/breadcrumb 표시",
@@ -1319,7 +1319,7 @@
         "updatedAt": "2026-04-24T17:26:42.744Z"
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "모바일 반응형 감사 및 회귀 방지 테스트 확장",
         "description": "최소 너비 360px 기준으로 전체 화면의 패딩/간격/타이포/터치 타겟을 감사하고, Playwright E2E 스위트를 데스크톱(1440x900)+모바일(375x812) 양쪽으로 확장한다.",
         "details": "1. 모바일 반응형 감사:\n   - Container horizontal padding: 모바일 16px / 태블릿 20px / 데스크톱 28px\n   - Typography: 본문 14px 이하, PageTitle 모바일 20px / 데스크톱 26~28px\n   - Safe area: pb-[env(safe-area-inset-bottom)] 적용 지점 확인 (BottomNav, Toaster)\n   - Touch target: 모든 인터랙티브 요소 최소 40x40 보장\n\n2. Playwright E2E 확장:\n   - 기존 테스트에 뷰포트 파라미터 추가\n   - 데스크톱(1440x900) + 모바일(375x812) 두 뷰포트에서 실행\n   - 각 도메인(Auth, Home, Band, Practice, Performance, Me) 해피패스 1개씩\n   - 총 12개 시나리오(6 도메인 x 2 뷰포트)\n\n3. /playground 페이지 완성:\n   - 토큰 매트릭스(색상, 간격, 타이포, 반경)\n   - 컴포넌트 매트릭스(Button, Badge, Card, Chip, Dialog 등 모든 variant)\n\n4. 최종 감사 리포트 작성:\n   - .taskmaster/report/mvp-1-fix-audit-YYYY-MM-DD.md\n   - 시각 회귀, 남은 이슈, 성능 참고 점수 정리",
@@ -1401,7 +1401,7 @@
         "updatedAt": "2026-04-24T17:30:05.214Z"
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "온보딩(랜딩) 페이지 구현",
         "description": "비인증 사용자가 서비스를 처음 만났을 때 보는 /onboarding 랜딩 페이지를 /design 의 AuthBrand(gradient/rings/feature chips)와 홈의 인사말 구조를 조합해 구현하고, 미들웨어의 비인증 리다이렉트 타깃을 /login 에서 /onboarding 으로 전환한다.",
         "details": "1) src/app/onboarding/page.tsx 신규 작성 (Server Component, 로그인 이미 돼있으면 /home 리다이렉트).\\n2) Hero 섹션: --gradient-auth-brand 배경 + 3 decorative rings + 72px 로고 + Bandage 타이틀(text-display) + tagline.\\n3) Features 섹션: Home 기준 3대 축(합주 일정 관리 / 세션 편성 / 공연 연결) 각각 아이콘 + title + 1-2줄 설명.\\n4) CTA: [시작하기] → /join, [이미 계정이 있어요] → /login (primary / ghost 변형).\\n5) 모바일: 단일 column 스택 / 데스크톱: Hero + Features 2열 가운데 정렬. max-w 중앙 정렬.\\n6) middleware.ts: 기존 /login 으로 보내던 비인증 루트(/) 접근을 /onboarding 으로 변경. /login, /join 등은 그대로 유지.\\n7) /onboarding 은 인증 가드 없음 (public). 인증된 사용자가 접근 시 /home 으로 리다이렉트.\\n8) 접근성: 랜드마크, heading 레벨, CTA 포커스 링.\\n9) Playwright E2E: 비인증 / 접근시 /onboarding 으로 이동 확인, CTA 클릭 시 /login · /join 이동 확인.",
@@ -1479,7 +1479,7 @@
         "updatedAt": "2026-04-24T16:56:33.388Z"
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "날짜·시간 입력 UI 현대화 (달력/스크롤 피커)",
         "description": "공연·합주 생성/수정 폼의 시작시각·duration 같은 날짜·시간 입력을 원시 number/text 대신 달력 팝오버 + 시간 피커 조합으로 교체한다.",
         "details": "1) 공용 컴포넌트 DateTimePicker 구현 (src/components/ui/date-time-picker.tsx): Calendar 팝오버 + 시간 스크롤(Hour/Minute 24h). radix-popover 기반. 2) date-fns-tz 로 Asia/Seoul 유지, lib/date.ts 의 formatKst/parseKst 를 그대로 활용. 3) Dialog (모바일) / Popover (데스크톱) 자동 전환은 ResponsiveSheet 패턴과 유사하게. 4) Practice 생성 폼(PracticeCreateForm)과 Performance 생성 폼 모두에 교체 적용, 기존 Input[type=datetime-local] 제거. 5) Vitest 렌더 + 특정 datetime 선택 시 hidden input 값이 yyyy-MM-dd HH:mm 형식 문자열이 되는지 검증.",
@@ -1491,7 +1491,7 @@
         "updatedAt": "2026-04-24T17:41:14.469Z"
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "디자인 요소 간 간격(spacing) 감사 및 보정",
         "description": "Sidebar/페이지 제목/섹션 간 여백과 레이아웃 여백을 체계적으로 점검해 지나치게 붙거나 떨어진 부분을 토큰 기반으로 재조정한다.",
         "details": "1) Sidebar nav item 의 좌측 아이콘과 라벨, 우측 가장자리 여백 점검 — 현재 px-s-3(12)/gap-s-3(12) 을 px-s-4(16)/gap-s-4(16) 로 확대 검토. 2) 페이지 제목(PageTitle) 과 최상단 경계 여백: 모바일 py-s-6, 데스크톱 py-s-8 이상. 3) SectionTitle mb-s-3 을 각 섹션 헤더 높이와 조화시키고, 섹션 간 space-y-s-8 유지. 4) PaneDetail 내부 좌우 패딩이 lg:px-7 상태에서 컨텐츠가 breathing 하는지, Topbar 높이 68px 와의 조화 확인. 5) Shell 마운트 시 Sidebar right border 와 children 본문의 패딩 겹침/간섭 확인. 6) playground/layout 의 composition 을 보며 수정된 여백 전수 확인.",
@@ -1503,7 +1503,7 @@
         "updatedAt": "2026-04-24T17:46:20.390Z"
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "한글 줄바꿈(word-break) 점검 및 보정",
         "description": "긴 한국어 문장이 컴포넌트 폭에 맞춰 단어 중간에서 어색하게 끊기지 않도록 word-break/keep-all 정책을 적용한다.",
         "details": "1) globals.css 에 한국어 기본 정책 추가: body { word-break: keep-all; overflow-wrap: break-word; } (CJK 친화). 2) 개별 긴 문구가 있는 곳(AuthBrand tagline, OnboardingHero tagline, OnboardingFeatures description, EmptyPane description, ErrorState description) 등 점검 후 필요 시 keep-all / break-keep Tailwind 유틸 추가. 3) 확인 대상 뷰포트: 360/375/960 — Playwright 스크린샷 1장씩 찍어 회귀 방지. 4) PRD/리포트에 영향받는 문장 목록 및 적용 여부 정리.",
@@ -1515,7 +1515,7 @@
         "updatedAt": "2026-04-24T17:48:59.848Z"
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "OAuth 로그인 화면 (빈 버튼: 카카오/구글/애플) 추가",
         "description": "/login 페이지의 이메일/비밀번호 폼 상단에, 아직 구현되지 않은 OAuth 로그인 섹션을 추가한다 (카카오/구글/애플 브랜드 버튼, onClick 은 disabled or toast '준비 중').",
         "details": "1) src/components/ui/oauth-button.tsx: provider('kakao'|'google'|'apple') 별 브랜드 색상/아이콘/라벨을 한 컴포넌트에 응축. 2) /login 페이지의 LoginForm.client 상단에 3개 버튼 세로 스택 + 'OR' 구분선(Divider + 가운데 '또는' 라벨) 렌더. 3) 현재 버튼은 onClick={() => toast.info('준비 중입니다')} 처리 + aria-disabled=false 로 클릭 가능하되 기능 없음 명시. 4) 모바일/데스크톱 모두 동일 컴포지션, 데스크톱에선 AuthFormPanel 480px 폭 내부 배치. 5) Playwright E2E: /login 에서 3개 provider 버튼 role=button 으로 존재 확인.",
@@ -1527,7 +1527,7 @@
         "updatedAt": "2026-04-24T17:52:54.200Z"
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "실서버 연동 검증 리포트 작성 (실데이터 시나리오)",
         "description": "현재 develop 까지 반영된 프론트 구현을 로컬 백엔드(http://localhost:8080)와 실제로 연결해 주요 기능(가입/로그인/밴드/합주/공연/온보딩)을 실데이터로 돌리고, 성공/실패·관찰값을 .taskmaster/report/mvp-1-fix-integration-YYYY-MM-DD.md 에 정리한다.",
         "details": "1) 백엔드 서버 기동 후 curl 대신 프론트 Playwright + 실사용 스크립트로 각 엔드포인트를 직접 호출. 2) 검증 시나리오: (a) /join → /login → /me (b) 밴드 생성 → 목록 → 상세 이동 (c) 가입 신청 → 리더 승인 → 멤버 반영 (d) 합주 생성 → 세션 편성 → 장소 변경 → 삭제 (e) 공연 생성 → 합주 일괄 연결 → 상세 진행도 확인 (f) 비인증 / → /onboarding 리다이렉트 (g) 비밀번호 변경 플로우. 3) 실패 케이스는 HTTP status + ApiResponse body + 백엔드 로그 발췌 기록. 4) 최종 보고서 구조: 메타 / 시나리오별 요약 표 / 성공·실패 상세 / 🔴 차단 / 🟠 품질 이슈 / 후속 조치. 5) 이 태스크는 UI 코드 변경을 수반하지 않으며 리포트 파일만 커밋.",
@@ -1604,7 +1604,7 @@
         "updatedAt": "2026-04-24T17:56:24.917Z"
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "밴드/합주/공연 생성을 단계별 모달로 전환",
         "description": "현재 '/bands/new', '/practices/new', '/performances/new' 라우트로 분리된 생성 폼을 목록 페이지에서 호출되는 단계별(Step) 모달 플로우로 전환한다. StepIndicator 를 재사용하고 모바일에서는 ResponsiveSheet(BottomSheet) 로 자동 전환.",
         "details": "1) Band 생성 모달: Step 1 이름+설명, Step 2 프로필 이미지(선택) — /bands 페이지 상단 [새 밴드] 버튼이 모달을 연다. 2) Practice 생성 모달: Step 1 제목+곡, Step 2 장소, Step 3 시작시각(DateTimePicker)+소요시간. 3) Performance 생성 모달: Step 1 제목+밴드 선택, Step 2 시작시각+소요시간, Step 3 장소+설명. 4) ResponsiveSheet + StepIndicator 조합으로 구현, [다음]/[이전]/[생성] 버튼. 5) Controller + react-hook-form 으로 단계별 trigger validation. 6) 기존 /{domain}/new 라우트는 유지(직접 deep-link 가능) 하되 목록 페이지의 [새 X] 버튼은 모달을 띄우도록 변경. 7) 모바일: BottomSheet 85vh, 헤더/본문/푸터 스크롤. 8) 기존 Playwright 가드 테스트에 영향 없도록 라우트는 그대로 둠.",
@@ -1682,7 +1682,7 @@
         "updatedAt": "2026-04-24T18:06:53.171Z"
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "모바일 뷰에서 생성 모달 (Task 16) 자연스러운 렌더 확인",
         "description": "Task 16 에서 도입한 Band/Practice/Performance 생성 모달이 lg 미만(BottomSheet) 에서 컨트롤/입력 높이·스크롤이 자연스러운지 확인하고, Playwright 스모크를 추가한다.",
         "details": "ResponsiveSheet 가 lg 미만에서 BottomSheet 로 전환되므로 대부분 자동. 남은 점검: (a) 모바일 375 에서 Step 3 까지 필드가 모두 보이는지 (body overflow-y-auto) (b) DateTimePicker 의 select 가 모바일 터치 친화적인지 (c) [다음]/[이전]/[만들기] 버튼 48px 충족. Playwright 스모크 1~2 개 추가 검토.",
@@ -1694,18 +1694,19 @@
         "updatedAt": "2026-04-24T18:07:04.055Z"
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "밴드/합주/공연 디스커버리 검색 기능 (비소속 포함)",
         "description": "프로토타입 '밴드 탐색' 처럼 내가 소속되지 않은 밴드/합주/공연도 이름·설명·곡으로 검색할 수 있게 한다. 백엔드 검색 query 파라미터가 없으므로 1차로 클라이언트 사이드 필터링을 적용하고, 향후 서버 사이드로 전환 가능한 추상(useDiscoverySearch 훅) 을 둔다.",
         "details": "1) BandsListPane / PracticesListPane / PerformancesListPane 상단 검색 input 추가 (lucide Search 아이콘 + Input). 2) src/hooks/useDiscoverySearch.ts: 입력 텍스트 normalize(소문자/공백) + 다중 필드 OR 매칭. 3) Band 검색: bandName + description, Practice 검색: title + venue + song.title (가능 시), Performance 검색: title + venue. 4) 입력값이 있으면 useBandList/usePractices/usePerformanceList 의 페이지를 모두 펼쳐 클라이언트 필터링; 비어있으면 정상 무한 스크롤. 5) 검색 결과 0건일 때 EmptyPane('검색 결과가 없습니다'). 6) 백엔드에 'q' 쿼리 파라미터가 추가되면 hook 내부만 교체할 수 있도록 단일 진입점 유지. 7) Playwright: /bands 에서 검색어 입력 시 결과 카운트가 변하는지 스모크.",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2026-04-25T03:59:23.775Z"
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "리스트 페이지에 '내 소속' / '검색(전체)' 탭 분리",
         "description": "각 도메인 리스트 패널을 '내 소속' (현재 useMyBands 류) 과 '검색/전체' (Task 18 의 useDiscoverySearch + 전체 목록) 탭으로 분리해, 자기 밴드만 보던 화면에서 다른 밴드도 탐색 가능하게 한다.",
         "details": "1) BandsListPane / PracticesListPane / PerformancesListPane 헤더 아래 Tabs 컴포넌트 추가, 2개 탭: '내 밴드/합주/공연' | '탐색'. 2) '내' 탭: 기존 hook (useMyBands / 본인 참여 합주 / 본인 참여 공연 — 현 단계에선 useBandList 등의 결과를 그대로 사용해도 OK; 백엔드가 my-only 필터를 도입하면 그때 hook 갈아끼움). 3) '탐색' 탭: 검색 input + 전체 목록 + Task 18 의 필터링. 4) 탭 상태는 컴포넌트 로컬 state, URL 쿼리에 ?tab=mine|discover 동기화 (replaceState 로 가벼운 sync). 5) 모바일은 동일 Tabs 가 PaneList 위치에서 동작. 6) 기본 탭은 '내'. 7) Playwright: /bands 진입 시 기본 '내' 탭, [탐색] 클릭 시 검색 input 노출 확인.",
@@ -1716,7 +1717,7 @@
         "subtasks": []
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Band/Practice/Performance 상세 화면 탭 분리",
         "description": "현재 수직 카드 나열 형태의 상세 화면을 프로토타입처럼 '정보/멤버/신청 현황' (Band), '개요/세션/참가자/곡' (Practice), '개요/연결 합주/참여 밴드' (Performance) 의 Tabs 구조로 재구성한다.",
         "details": "1) Band 상세: Tabs(정보 / 멤버 / 가입 신청). LEADER/ADMIN 만 가입 신청 탭 노출 (RoleGuard). 2) Practice 상세: Tabs(개요·일정·장소·곡 / 세션 편성 / 참가자). 3) Performance 상세: Tabs(개요·일정·장소 / 연결 합주 / 참여 밴드 chips). 4) 기존 BandDetailContent / PracticeDetailContent / PerformanceDetailContent 의 섹션을 잘라 탭 컴포넌트 하위 컨텐츠로 이동. 5) 탭 활성 상태는 URL hash (#info, #members, #applications, #sessions, #participants 등) 동기화. 6) 모바일에서도 동일 탭 동작. 7) 스냅샷 테스트 1~2 개 + Playwright 가드는 기존 유지.",
@@ -1732,7 +1733,8 @@
             "dependencies": [],
             "details": "src/hooks/useHashTab.ts 파일 생성. Next.js useRouter/usePathname과 window.location.hash를 조합하여 탭 상태 관리. 기능: (1) 초기 로드 시 hash에서 탭 값 읽기, (2) 탭 변경 시 hash 업데이트 (history.replaceState 사용으로 뒤로가기 오염 방지), (3) hash 없을 때 defaultTab 반환, (4) 유효하지 않은 hash일 때 fallback 처리. 반환값: [activeTab, setActiveTab] 형태의 tuple. Radix Tabs의 value/onValueChange와 호환되도록 설계.",
             "status": "pending",
-            "testStrategy": "Vitest 유닛 테스트: 초기 hash 파싱, setActiveTab 호출 시 hash 변경 확인, 유효하지 않은 hash fallback 테스트"
+            "testStrategy": "Vitest 유닛 테스트: 초기 hash 파싱, setActiveTab 호출 시 hash 변경 확인, 유효하지 않은 hash fallback 테스트",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1743,7 +1745,8 @@
             ],
             "details": "src/app/(main)/practices/[practiceId]/PracticeDetailContent.client.tsx 수정. (1) Tabs 컴포넌트 import 및 useHashTab 훅 적용, (2) 탭 구성: 'overview' (제목/일정/장소), 'song' (합주곡 정보/refLink), 'sessions' (세션 목록/생성 폼), 'participants' (참여자 목록/추가 폼), (3) 기존 Card 섹션을 TabsContent 하위로 이동, (4) 각 탭별 컴포넌트 분리: PracticeOverviewTab, PracticeSongTab, PracticeSessionsTab, PracticeParticipantsTab (같은 파일 또는 별도 파일), (5) hash 기본값: 'overview', (6) 모바일에서도 동일한 탭 UI 동작 유지",
             "status": "pending",
-            "testStrategy": "수동 테스트: 각 탭 클릭 시 URL hash 변경 및 콘텐츠 전환 확인. Playwright E2E: /practices/[id]#sessions 직접 접근 시 세션 탭 활성화 확인"
+            "testStrategy": "수동 테스트: 각 탭 클릭 시 URL hash 변경 및 콘텐츠 전환 확인. Playwright E2E: /practices/[id]#sessions 직접 접근 시 세션 탭 활성화 확인",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1754,7 +1757,8 @@
             ],
             "details": "src/app/(main)/performances/[performanceId]/PerformanceDetailContent.client.tsx 수정. (1) 메인 콘텐츠에 Tabs 컴포넌트 적용 및 useHashTab 훅 연동, (2) 탭 구성: 'overview' (제목/D-day/일정/장소), 'practices' (연결된 합주 목록 + '합주 연결' 버튼), 'bands' (참여 밴드 chips), (3) 기존 Card 섹션을 TabsContent로 재배치, (4) isManager 조건부 UI(수정/삭제/합주연결 버튼)는 해당 탭 내 유지, (5) AttachDialog 내부의 Tabs는 기존 유지 (batch/new 선택용), (6) hash 기본값: 'overview'",
             "status": "pending",
-            "testStrategy": "수동 테스트: 탭 전환 및 hash 동기화 확인. Playwright E2E: /performances/[id]#bands 직접 접근 시 참여 밴드 탭 활성화 확인"
+            "testStrategy": "수동 테스트: 탭 전환 및 hash 동기화 확인. Playwright E2E: /performances/[id]#bands 직접 접근 시 참여 밴드 탭 활성화 확인",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1765,7 +1769,8 @@
             ],
             "details": "src/app/(main)/bands/[bandId]/BandDetailContent.client.tsx 수정. (1) 기존 defaultValue='overview'를 useHashTab 훅으로 교체, (2) hash 값: 'overview', 'members', 'applications', (3) canSeeApplications 조건에 따라 applications hash 접근 시 권한 없으면 overview로 fallback, (4) RoleGuard 로직 유지, (5) 탭 라벨 확인: '개요' → 'info' hash로 매핑 가능 (프로토타입 명세 '정보/멤버/가입 신청'과 일치), (6) LEADER/ADMIN 권한 체크는 기존 hasRole 함수 사용",
             "status": "pending",
-            "testStrategy": "수동 테스트: /bands/[id]#members 직접 접근 시 멤버 탭 활성화, 권한 없이 #applications 접근 시 fallback 확인"
+            "testStrategy": "수동 테스트: /bands/[id]#members 직접 접근 시 멤버 탭 활성화, 권한 없이 #applications 접근 시 fallback 확인",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1778,22 +1783,20 @@
             ],
             "details": "(1) Vitest 스냅샷 테스트 추가: PracticeDetailContent (각 탭 상태별 1-2개), PerformanceDetailContent (각 탭 상태별 1-2개), BandDetailContent (hash 적용 후 스냅샷 갱신), (2) 테스트 위치: src/app/(main)/practices/__tests__/, src/app/(main)/performances/__tests__/, src/app/(main)/bands/__tests__/, (3) 기존 Playwright E2E 테스트 실행 (pnpm test:e2e)하여 회귀 확인, (4) 필요시 E2E 테스트에 hash 기반 탭 네비게이션 시나리오 추가, (5) pnpm typecheck && pnpm lint && pnpm test 전체 통과 확인",
             "status": "pending",
-            "testStrategy": "pnpm test 실행으로 스냅샷 테스트 통과 확인, pnpm test:e2e 실행으로 E2E 테스트 회귀 없음 확인"
+            "testStrategy": "pnpm test 실행으로 스냅샷 테스트 통과 확인, pnpm test:e2e 실행으로 E2E 테스트 회귀 없음 확인",
+            "parentId": "undefined"
           }
         ]
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-24T18:07:04.056Z",
-      "taskCount": 17,
-      "completedCount": 17,
+      "lastModified": "2026-04-25T03:59:23.782Z",
+      "taskCount": 20,
+      "completedCount": 18,
       "tags": [
         "mvp-1-fix"
-      ],
-      "created": "2026-04-25T03:50:33.632Z",
-      "description": "Tasks for mvp-1-fix context",
-      "updated": "2026-04-25T03:50:42.838Z"
+      ]
     }
   }
 }
