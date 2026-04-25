@@ -2623,7 +2623,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2631,9 +2631,10 @@
             "description": "사이드바(`src/components/layout/sidebar.tsx`)의 '합주' 항목을 클릭 시 확장/축소되는 서브 메뉴로 전환하고, '나의 합주'와 '합주 시작하기' 두 개의 하위 링크를 추가한다.",
             "dependencies": [],
             "details": "1. `sidebar.tsx`의 `mainNav` 배열 구조를 수정하여 서브 메뉴를 지원하는 타입으로 확장\n2. `NavItem` 타입에 `children?: NavItem[]` 옵션 필드 추가\n3. 합주 항목의 children으로 `{ href: ROUTES.PRACTICES, label: '나의 합주' }`와 `{ href: ROUTES.PRACTICE_NEW, label: '합주 시작하기' }` 추가\n4. `useState`로 expand 상태 관리 (또는 pathname 기반 자동 expand)\n5. ChevronDown/ChevronRight 아이콘 import 및 expand 상태에 따른 회전 애니메이션 적용\n6. 서브 메뉴 항목 렌더링 시 `pl-s-10` 등 좌측 padding 추가로 시각적 계층 표현\n7. 서브 메뉴 아이템에도 `isActive` 함수 적용하여 활성 상태 스타일링 유지\n8. 접근성: 서브 메뉴에 `aria-expanded`, `aria-controls` 속성 추가",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 사이드바에서 '합주' 항목 클릭 시 서브 메뉴 expand/collapse 토글 확인\n2. Chevron 아이콘 회전 애니메이션 동작 확인\n3. '나의 합주' 클릭 시 `/practices` 라우팅 확인\n4. '합주 시작하기' 클릭 시 `/practices/new` 라우팅 확인\n5. 서브 메뉴 아이템 active 상태 스타일 확인\n6. 키보드 네비게이션(Tab, Enter) 동작 확인\n7. `pnpm typecheck && pnpm lint` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:54:13.848Z"
           },
           {
             "id": 2,
@@ -2641,9 +2642,10 @@
             "description": "`GET /api/v1/practice-songs/search` 엔드포인트를 호출하는 API 함수와 관련 타입을 `src/domain/practice-song/` 도메인 폴더에 추가한다.",
             "dependencies": [],
             "details": "1. `src/domain/practice-song/types/res.ts` 신규 생성:\n   - `Song` 타입 정의: `{ title: string; artist: string; album: string; duration: number; refLink: string | null }`\n   - `PracticeSongResponse` 타입 정의: `{ songId: string; title: string; artist: string; album: string; duration: number; refLink: string | null }`\n2. `src/domain/practice-song/types/req.ts` 신규 생성:\n   - `SearchSongsRequest`: `{ keyword: string }`\n   - `CreatePracticeSongRequest`: `{ practiceId: string; title: string; artist: string; album: string; duration: number; refLink?: string }`\n   - `CreatePracticeSongFromSongRequest`: `{ practiceId: string; song: Song }`\n3. `src/domain/practice-song/types/index.ts` 신규 생성하여 타입 re-export\n4. `src/domain/practice-song/api/searchSongs.ts` 신규 생성:\n   - `searchSongs(keyword: string): Promise<Song[]>` 함수\n   - `GET /api/v1/practice-songs/search?keyword=` 호출\n5. `src/domain/practice-song/api/createPracticeSong.ts` 신규 생성:\n   - 자작곡 생성용 `POST /api/v1/practice-songs` 호출\n6. `src/domain/practice-song/api/createPracticeSongFromSong.ts` 신규 생성:\n   - 외부 검색 결과 사용 `POST /api/v1/practice-songs/from-song` 호출",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. TypeScript 타입 검증 (`pnpm typecheck`)\n2. 각 API 함수에 대한 vitest 단위 테스트 작성 (mock fetch 사용)\n3. API 함수 반환 타입이 명세와 일치하는지 확인\n4. `pnpm lint` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:54:17.227Z"
           },
           {
             "id": 3,
@@ -2653,9 +2655,10 @@
               2
             ],
             "details": "1. `src/domain/practice/types/schema.ts`에 위저드용 스키마 추가:\n   - `step1Schema`: `bandId: z.string().uuid('밴드를 선택해 주세요.')`\n   - `step2Schema`: `song: z.object({ title, artist, album, duration, refLink })` 또는 자작곡용 필드\n   - `step3Schema`: 기존 `startAt`, `durationMinutes` + optional `title`, `venue`\n2. 전체 위저드 데이터 타입 정의:\n   ```ts\n   export const practiceWizardSchema = z.object({\n     bandId: z.string().uuid(),\n     songType: z.enum(['search', 'custom']),\n     song: Song (search 선택 시) | null,\n     customSong: { title, artist, album, duration, refLink } (custom 선택 시),\n     title: z.string().max(100).optional(),\n     venue: z.string().max(200).optional(),\n     startAt: z.string().regex(KST_DATETIME),\n     durationMinutes: z.number().int().min(15).max(480)\n   });\n   ```\n3. `PracticeWizardSchema` 타입 export\n4. 각 스텝별 partial 스키마로 `trigger` 시 부분 검증 가능하도록 구성",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 각 스키마에 대한 vitest 단위 테스트 작성\n2. 유효/무효 데이터에 대한 검증 결과 확인\n3. `pnpm typecheck` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:54:20.464Z"
           },
           {
             "id": 4,
@@ -2667,9 +2670,10 @@
               3
             ],
             "details": "1. 기존 `PracticeCreateForm.client.tsx` 파일을 `PracticeCreateWizard.client.tsx`로 리네임 또는 교체\n2. 컴포넌트 구조:\n   - `useState<0|1|2>`로 현재 스텝 관리\n   - `react-hook-form` + `zodResolver`로 전체 폼 상태 관리\n   - 상단에 `StepIndicator` 컴포넌트 배치 (`steps=['밴드 선택', '곡 선택', '일정 설정']`)\n3. Step 1 - 밴드 선택:\n   - `useMyBands` 훅으로 내 밴드 목록 조회\n   - 밴드 카드 그리드 렌더링 (클릭 시 선택 상태 토글)\n   - 선택된 밴드 시각적 하이라이트 (`ring-accent` border)\n4. Step 2 - 곡 검색/선택:\n   - 검색 Input + 디바운스(300ms) 적용\n   - `searchSongs` API 호출 결과 리스트 렌더링\n   - '자작곡 직접 입력' 토글 스위치 → 토글 시 수동 입력 폼 노출\n   - 곡 선택 시 폼 값 설정\n5. Step 3 - 메타데이터 입력:\n   - 제목(선택), 장소(선택), 시작 시각(`DateTimePicker`), 진행 시간 Input\n6. 하단 네비게이션: 이전/다음/만들기 버튼\n7. `page.tsx` 수정하여 `PracticeCreateWizard` import",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Step 1: 밴드 그리드 렌더링 및 선택 동작 확인\n2. Step 2: 곡 검색 디바운스 동작, 검색 결과 렌더링, 자작곡 토글 확인\n3. Step 3: DateTimePicker, duration 입력 동작 확인\n4. 이전/다음 버튼으로 스텝 이동 시 폼 값 유지 확인\n5. 각 스텝에서 유효성 검증 실패 시 인라인 에러 표시 확인\n6. `pnpm typecheck && pnpm lint` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:54:23.556Z"
           },
           {
             "id": 5,
@@ -2679,12 +2683,13 @@
               4
             ],
             "details": "1. 제출 핸들러 구현 순서:\n   a) 외부 곡 선택 시: `createPracticeSongFromSong({ practiceId: 임시값, song })` 호출 → `songId` 획득\n   b) 자작곡 입력 시: `createPracticeSong({ practiceId: 임시값, ...fields })` 호출 → `songId` 획득\n   c) `createPractice({ song: songId, bandId, title?, venue?, startAt, durationMinutes })` 호출\n   - 주의: API_SPEC 확인 결과 합주 생성 시 `song` 필드에 songId(UUID) 전달\n2. 백엔드 흐름 확인: practiceId 없이 합주곡 먼저 생성 불가 시 순서 조정 필요 (합주 생성 → 합주곡 연결)\n3. Mutation 로딩 상태 동안 '만들기' 버튼 `loading` prop 적용\n4. 성공 시:\n   - `toast.success('합주가 생성되었습니다.')`\n   - `router.replace(ROUTES.PRACTICE_DETAIL(data.practiceId))`\n5. 에러 시:\n   - `toast.error(err.message || '합주 생성에 실패했습니다.')`\n   - 폼 상태 유지\n6. TanStack Query 캐시 무효화: `queryClient.invalidateQueries({ queryKey: queryKeys.practice.list() })`",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 전체 플로우 e2e 테스트: 밴드 선택 → 곡 검색/선택 → 메타 입력 → 제출 → 상세 페이지 라우팅\n2. 외부 곡 검색 결과 사용 케이스 확인\n3. 자작곡 직접 입력 케이스 확인\n4. 에러 발생 시 토스트 및 폼 상태 유지 확인\n5. 제출 중 중복 클릭 방지(버튼 disabled) 확인\n6. 실서버 검증: curl로 API 호출 후 성공/실패 케이스 확인\n7. `pnpm typecheck && pnpm lint` 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T15:54:26.634Z"
           }
         ],
-        "updatedAt": "2026-04-25T15:42:21.981Z"
+        "updatedAt": "2026-04-25T15:54:26.634Z"
       },
       {
         "id": "5",
@@ -2696,7 +2701,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -2756,7 +2761,8 @@
             "testStrategy": "1. API_REQUIRED.md 파일에 FE-API-017 항목이 올바른 마크다운 형식으로 추가되었는지 확인\n2. 항목 내용이 프론트 사용처, 요청 옵션, mock 현황을 명확히 기술하는지 확인\n3. 기존 문서 구조와 일관성 유지 확인\n4. `pnpm lint` 통과 (마크다운 린트 적용 시)",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-25T15:56:21.273Z"
       },
       {
         "id": "6",
@@ -3056,9 +3062,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-25T15:42:21.985Z",
+      "lastModified": "2026-04-25T15:56:21.277Z",
       "taskCount": 9,
-      "completedCount": 3,
+      "completedCount": 4,
       "tags": [
         "mvp-1-fix-v3"
       ]

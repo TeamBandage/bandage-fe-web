@@ -1,25 +1,28 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { BandPickerModal } from '@/domain/band/components/BandPickerModal.client';
+import type { BandInfoResponse } from '@/domain/band/types';
 import { useCreatePerformance } from '@/domain/performance/hooks/useCreatePerformance';
 import { createPerformanceSchema, type CreatePerformanceSchema } from '@/domain/performance/types';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 
-type FormValues = CreatePerformanceSchema & { bandIdsRaw?: string };
-
 export function PerformanceCreateForm() {
   const router = useRouter();
   const toast = useToast();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedBands, setSelectedBands] = useState<BandInfoResponse[]>([]);
 
-  const form = useForm<FormValues>({
+  const form = useForm<CreatePerformanceSchema>({
     resolver: zodResolver(createPerformanceSchema),
     defaultValues: {
       title: '',
@@ -41,22 +44,15 @@ export function PerformanceCreateForm() {
   return (
     <form
       className="space-y-4"
-      onSubmit={form.handleSubmit((values) => {
-        const raw = (values.bandIdsRaw ?? '').trim();
-        const bandIds = raw
-          ? raw
-              .split(/[\s,]+/)
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : undefined;
+      onSubmit={form.handleSubmit((values) =>
         mutation.mutate({
           title: values.title,
-          bandIds,
+          bandIds: selectedBands.length > 0 ? selectedBands.map((b) => b.bandId) : undefined,
           startAt: values.startAt,
           durationMinutes: values.durationMinutes,
           venue: values.venue,
-        });
-      })}
+        }),
+      )}
       noValidate
     >
       <Input
@@ -105,15 +101,59 @@ export function PerformanceCreateForm() {
         error={form.formState.errors.venue?.message}
         {...form.register('venue')}
       />
-      <Textarea
-        label="참여 밴드 ID (선택)"
-        placeholder="bandId 를 쉼표 또는 줄바꿈으로 구분해 입력"
-        hint="백엔드 밴드 선택 UX 도입 전까지 bandId(UUID) 를 직접 입력합니다. 비워 두면 빈 배열로 전송됩니다."
-        {...form.register('bandIdsRaw')}
-      />
+
+      <div className="space-y-s-2">
+        <label className="text-foreground text-caption font-semibold">참여 밴드 (선택)</label>
+        {selectedBands.length === 0 ? (
+          <p className="text-foreground-muted text-micro">
+            참여 밴드를 추가하지 않으면 빈 배열로 전송됩니다.
+          </p>
+        ) : (
+          <ul className="gap-s-2 flex flex-wrap">
+            {selectedBands.map((b) => (
+              <li
+                key={b.bandId}
+                className="bg-card border-border gap-s-2 px-s-3 py-s-1 inline-flex items-center rounded-full border"
+              >
+                <span className="text-caption">{b.bandName}</span>
+                <button
+                  type="button"
+                  aria-label={`${b.bandName} 제거`}
+                  className="text-foreground-muted hover:text-foreground"
+                  onClick={() =>
+                    setSelectedBands((prev) => prev.filter((x) => x.bandId !== b.bandId))
+                  }
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => setPickerOpen(true)}
+          className="w-full"
+        >
+          <Plus className="h-4 w-4" />
+          밴드 검색해서 추가
+        </Button>
+      </div>
+
       <Button type="submit" className="w-full" loading={mutation.isPending}>
         공연 만들기
       </Button>
+
+      <BandPickerModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        multiple
+        initialSelection={selectedBands}
+        onConfirm={(bands) => setSelectedBands(bands)}
+        title="참여 밴드 추가"
+      />
     </form>
   );
 }
