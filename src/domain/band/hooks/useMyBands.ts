@@ -4,16 +4,15 @@ import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/global/config/queryKeys';
 
-import { getBands } from '../api/getBands';
-import type { BandInfoResponse } from '../types';
+import { getMyBands } from '../api/getMyBands';
+import type { MyBandInfoResponse } from '../types';
 
-// NOTE: API_SPEC v1 에 "내 밴드" 전용 엔드포인트가 없어, 일단 GET /api/v1/bands 첫 페이지를 사용한다.
-// 백엔드에 /api/v1/members/me/bands 가 추가되면 이 훅의 fetcher 만 교체한다.
+/** API_SPEC §3-3-1 — 현재 로그인 회원 소속 밴드 (myRole 포함). */
 export function useMyBands(limit: number = 10) {
-  return useQuery<BandInfoResponse[], Error>({
+  return useQuery<MyBandInfoResponse[], Error>({
     queryKey: [...queryKeys.band.my(), limit],
     queryFn: async () => {
-      const page = await getBands({ pageSize: limit });
+      const page = await getMyBands({ pageSize: limit });
       return page.content;
     },
   });
