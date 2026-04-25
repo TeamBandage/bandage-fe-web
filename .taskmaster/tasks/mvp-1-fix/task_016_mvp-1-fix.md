@@ -2,7 +2,7 @@
 
 **Title:** 밴드/합주/공연 생성을 단계별 모달로 전환
 
-**Status:** pending
+**Status:** done
 
 **Dependencies:** None
 
@@ -22,7 +22,7 @@ No test strategy provided.
 
 ### 16.1. 단계별 폼 공용 훅 및 타입 정의 (useSteppedForm)
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** None  
 
 단계별 폼 로직을 재사용할 수 있는 useSteppedForm 훅과 관련 타입을 구현한다. step 상태 관리, 단계별 필드 검증(trigger), 이전/다음 핸들러를 캡슐화한다.
@@ -43,7 +43,7 @@ No test strategy provided.
 
 ### 16.2. BandCreateModal 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 16.1  
 
 ResponsiveSheet + StepIndicator 조합으로 밴드 생성 2단계 모달을 구현한다. Step 1: 이름+설명, Step 2: 프로필 이미지(선택).
@@ -68,7 +68,7 @@ ResponsiveSheet + StepIndicator 조합으로 밴드 생성 2단계 모달을 구
 
 ### 16.3. PracticeCreateModal 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 16.1  
 
 합주 생성 3단계 모달을 구현한다. Step 1: 제목+곡, Step 2: 장소, Step 3: 시작시각(DateTimePicker)+소요시간.
@@ -92,7 +92,7 @@ ResponsiveSheet + StepIndicator 조합으로 밴드 생성 2단계 모달을 구
 
 ### 16.4. PerformanceCreateModal 컴포넌트 구현
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 16.1  
 
 공연 생성 3단계 모달을 구현한다. Step 1: 제목+밴드 선택, Step 2: 시작시각+소요시간, Step 3: 장소+설명.
@@ -117,7 +117,7 @@ ResponsiveSheet + StepIndicator 조합으로 밴드 생성 2단계 모달을 구
 
 ### 16.5. 목록 페이지 FAB 버튼을 모달 트리거로 전환
 
-**Status:** pending  
+**Status:** done  
 **Dependencies:** 16.2, 16.3, 16.4  
 
 /bands, /practices, /performances 페이지의 FAB 버튼을 Link에서 모달 open 트리거로 변경하고, 각 모달 컴포넌트를 페이지에 마운트한다.
