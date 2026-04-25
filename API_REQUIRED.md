@@ -82,6 +82,13 @@ GET /api/v1/bands?q=<keyword>&genre=<genre>&memberOnly=<bool>&pageSize=20&lastId
 
 - 신청자 정보(`applicantName`, `applicantProfileImg`) 와 신청 메시지(`message`) 필드 추가.
 - 거절 시 사유(`rejectReason`) 필드 추가.
+- **신청 일시(`appliedAt`)** 필드 추가 — 현재 신청 카드에 신청 시각 노출 불가, "신청 대기 중" 텍스트로 폴백 중. `handoff/specs/03-band.md` "신청 카드: 신청자 이름 + 신청일 + 상태 배지" 참조.
+
+### 8-2. 멤버 강퇴 / 역할 변경 (밴드 설정)
+
+- `DELETE /api/v1/bands/{bandId}/members/{bandMemberId}` — 리더의 멤버 강퇴
+- `PATCH /api/v1/bands/{bandId}/members/{bandMemberId}/role` — 리더의 멤버 역할 변경 (LEADER 위임은 기존 API 유지, ADMIN ↔ MEMBER 강등/승급 신규)
+- 프론트 사용처: 향후 "밴드 설정" 화면. 현재는 toast info 안내만 (P2).
 
 ### 9. 프로필 이미지 업로드 엔드포인트
 
