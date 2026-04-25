@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PracticeScheduleBadge } from '@/domain/practice/components/PracticeScheduleBadge';
 import { PracticeVenueInline } from '@/domain/practice/components/PracticeVenueInline.client';
 import { SessionCreateForm } from '@/domain/practice/components/SessionCreateForm.client';
@@ -132,73 +133,87 @@ export function PracticeDetailContent({ practiceId }: { practiceId: string }) {
         </div>
       </Card>
 
-      <Card header="합주곡" padding="md">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Music className="text-foreground-muted h-4 w-4" aria-hidden="true" />
-            <span className="text-foreground text-sm font-medium">
-              {practice.song.title} — {practice.song.artist}
-            </span>
-          </div>
-          <SongRefLinkEditor
-            practiceId={practiceId}
-            songId={practice.song.songId}
-            refLink={practice.song.refLink ?? null}
-          />
-        </div>
-      </Card>
+      <Tabs defaultValue="song">
+        <TabsList>
+          <TabsTrigger value="song">곡</TabsTrigger>
+          <TabsTrigger value="sessions">세션</TabsTrigger>
+          <TabsTrigger value="participants">참여자</TabsTrigger>
+        </TabsList>
 
-      <Card header="세션" padding="md">
-        <div className="space-y-4">
-          <SessionCreateForm practiceId={practiceId} />
-          {practice.sessions.length === 0 ? (
-            <EmptyState title="등록된 세션이 없습니다" />
-          ) : (
-            <div>
-              {practice.sessions.map((s) => (
-                <SessionRow key={s.sessionId} practiceId={practiceId} session={s} />
-              ))}
+        <TabsContent value="song">
+          <Card header="합주곡" padding="md">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Music className="text-foreground-muted h-4 w-4" aria-hidden="true" />
+                <span className="text-foreground text-sm font-medium">
+                  {practice.song.title} — {practice.song.artist}
+                </span>
+              </div>
+              <SongRefLinkEditor
+                practiceId={practiceId}
+                songId={practice.song.songId}
+                refLink={practice.song.refLink ?? null}
+              />
             </div>
-          )}
-        </div>
-      </Card>
+          </Card>
+        </TabsContent>
 
-      <Card header="참여자" padding="md">
-        <div className="space-y-4">
-          <form
-            className="flex items-end gap-2"
-            onSubmit={addParticipantForm.handleSubmit((values) =>
-              addParticipantMutation.mutate(values),
-            )}
-            noValidate
-          >
-            <Input
-              label="멤버 ID"
-              type="number"
-              placeholder="예: 3"
-              className="max-w-xs"
-              error={addParticipantForm.formState.errors.memberId?.message}
-              {...addParticipantForm.register('memberId', { valueAsNumber: true })}
-            />
-            <Button type="submit" loading={addParticipantMutation.isPending}>
-              <UserPlus className="h-4 w-4" />
-              추가
-            </Button>
-          </form>
-          {practice.participants.length === 0 ? (
-            <EmptyState title="참여자가 없습니다" />
-          ) : (
-            <ul className="space-y-2">
-              {practice.participants.map((p) => (
-                <li key={p.participantId} className="text-foreground-sub text-sm">
-                  Member #{p.memberId}
-                  <span className="text-foreground-muted ml-2 text-xs">{p.participantId}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </Card>
+        <TabsContent value="sessions">
+          <Card header="세션 편성" padding="md">
+            <div className="space-y-4">
+              <SessionCreateForm practiceId={practiceId} />
+              {practice.sessions.length === 0 ? (
+                <EmptyState title="등록된 세션이 없습니다" />
+              ) : (
+                <div>
+                  {practice.sessions.map((s) => (
+                    <SessionRow key={s.sessionId} practiceId={practiceId} session={s} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="participants">
+          <Card header="참여자" padding="md">
+            <div className="space-y-4">
+              <form
+                className="flex items-end gap-2"
+                onSubmit={addParticipantForm.handleSubmit((values) =>
+                  addParticipantMutation.mutate(values),
+                )}
+                noValidate
+              >
+                <Input
+                  label="멤버 ID"
+                  type="number"
+                  placeholder="예: 3"
+                  className="max-w-xs"
+                  error={addParticipantForm.formState.errors.memberId?.message}
+                  {...addParticipantForm.register('memberId', { valueAsNumber: true })}
+                />
+                <Button type="submit" loading={addParticipantMutation.isPending}>
+                  <UserPlus className="h-4 w-4" />
+                  추가
+                </Button>
+              </form>
+              {practice.participants.length === 0 ? (
+                <EmptyState title="참여자가 없습니다" />
+              ) : (
+                <ul className="space-y-2">
+                  {practice.participants.map((p) => (
+                    <li key={p.participantId} className="text-foreground-sub text-sm">
+                      Member #{p.memberId}
+                      <span className="text-foreground-muted ml-2 text-xs">{p.participantId}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
         <DialogContent>
