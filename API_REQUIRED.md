@@ -90,6 +90,16 @@ GET /api/v1/bands?q=<keyword>&genre=<genre>&memberOnly=<bool>&pageSize=20&lastId
 - `PATCH /api/v1/bands/{bandId}/members/{bandMemberId}/role` — 리더의 멤버 역할 변경 (LEADER 위임은 기존 API 유지, ADMIN ↔ MEMBER 강등/승급 신규)
 - 프론트 사용처: 향후 "밴드 설정" 화면. 현재는 toast info 안내만 (P2).
 
+### 8-3. 멤버 표시명 정상화 (FE-API-012 / 013 / 014)
+
+화면에 UUID·숫자 ID 가 노출되지 않도록 `getMemberDisplayName` 유틸이 `name` 우선 → 마지막 4자리 폴백을 적용 중. 백엔드가 아래 응답에 `name` 을 포함하면 자동으로 정상화된다.
+
+- **FE-API-012** `BandMemberInfoResponse` — `name: string`, `profileImg?: string` 추가
+- **FE-API-013** `BandApplicationInfoResponse` — `applicantName: string`, `applicantProfileImg?: string` 추가 (8 항목과 일관)
+- **FE-API-014** `PracticeParticipantResponse` 및 `PracticeSessionResponse.participant` — `name: string` 추가
+- 프론트 사용처: `BandMemberRow`, `BandApplicationRow`, `SessionRow`, `PracticeDetailContent` 참여자 목록
+- 현재 우회: `name` 미존재 시 `"멤버 #{memberId 마지막 4자리}"` 표시
+
 ### 9. 프로필 이미지 업로드 엔드포인트
 
 - `POST /api/v1/members/me/profile-image` (멀티파트) 또는 사전 서명 URL 발급 후 S3 직접 업로드.

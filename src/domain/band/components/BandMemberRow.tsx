@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useDelegateLeader } from '@/domain/band/hooks/useDelegateLeader';
+import { getMemberDisplayName } from '@/domain/member/utils';
 import { RoleGuard } from '@/global/auth/RoleGuard';
 import { useToast } from '@/hooks/useToast';
 
@@ -36,8 +37,7 @@ export function BandMemberRow({ bandId, member }: Props) {
     onError: (err) => toast.error(err.message || '리더 위임에 실패했습니다.'),
   });
 
-  // 멤버 표시명: 백엔드가 name 을 아직 안 주므로 임시로 "Member #{memberId}" 사용 (Phase G 에서 정상화)
-  const displayName = `Member #${member.memberId}`;
+  const displayName = getMemberDisplayName({ memberId: member.memberId, name: member.name });
 
   return (
     <div

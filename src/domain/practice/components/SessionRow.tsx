@@ -16,6 +16,7 @@ import {
 import { useAssignSession } from '@/domain/practice/hooks/useAssignSession';
 import { useDeleteSession } from '@/domain/practice/hooks/useDeleteSession';
 import { useUnassignSession } from '@/domain/practice/hooks/useUnassignSession';
+import { getMemberDisplayName } from '@/domain/member/utils';
 import { useToast } from '@/hooks/useToast';
 
 import type { PracticeSessionResponse } from '../types';
@@ -52,7 +53,11 @@ export function SessionRow({ practiceId, session }: Props) {
         <span className="text-foreground truncate text-sm font-medium">{session.label}</span>
         {isAssigned ? (
           <span className="text-foreground-sub truncate text-xs">
-            담당: Member #{session.participant!.memberId}
+            담당:{' '}
+            {getMemberDisplayName({
+              memberId: session.participant!.memberId,
+              name: session.participant!.name,
+            })}
           </span>
         ) : (
           <span className="text-foreground-muted truncate text-xs">담당 없음</span>

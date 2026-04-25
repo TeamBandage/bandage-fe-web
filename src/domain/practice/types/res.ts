@@ -15,6 +15,8 @@ export interface PracticeSongResponse {
 export interface PracticeParticipantResponse {
   participantId: string;
   memberId: number;
+  /** 백엔드 미지원 시 undefined. API_REQUIRED.md FE-API-014 참조. */
+  name?: string;
 }
 
 export interface PracticeSessionResponse {
