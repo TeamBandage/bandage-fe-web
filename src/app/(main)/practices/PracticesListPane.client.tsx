@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PracticeCreateModal } from '@/domain/practice/components/PracticeCreateModal.client';
-import { usePractices } from '@/domain/practice/hooks/usePractices';
+import { useMyPractices } from '@/domain/practice/hooks/useMyPractices';
 import type { PracticeListItemResponse } from '@/domain/practice/types';
 import { ROUTES } from '@/global/config/routes';
 import { useDiscoverySearch } from '@/hooks/useDiscoverySearch';
@@ -60,7 +60,8 @@ export function PracticesListPane() {
   const initialTab = (searchParams?.get('tab') === 'discover' ? 'discover' : 'mine') as Tab;
   const [tab, setTab] = useState<Tab>(initialTab);
 
-  const { data, isLoading } = usePractices(undefined, 20);
+  // 내가 속하지 않은 합주는 노출하지 않음 (사용자 정책 — 디자인 컨펌 대기 후 검색 탭은 useSearchMyPractices 로 이관 예정)
+  const { data, isLoading } = useMyPractices(20);
   const all = data?.pages.flatMap((p) => p.content) ?? [];
   const accessorRef = useCallback(accessor, []);
   const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(all, accessorRef);
