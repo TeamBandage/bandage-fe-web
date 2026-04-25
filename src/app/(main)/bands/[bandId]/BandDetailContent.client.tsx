@@ -1,14 +1,13 @@
 'use client';
 
-import { CalendarRange, LogOut, Settings2, UserPlus } from 'lucide-react';
+import { Camera, LogOut, Settings, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Chip } from '@/components/ui/chip';
 import {
   Dialog,
   DialogBody,
@@ -27,9 +26,10 @@ import { useBandApplications } from '@/domain/band/hooks/useBandApplications';
 import { useBandDetail } from '@/domain/band/hooks/useBandDetail';
 import { useBandMembers } from '@/domain/band/hooks/useBandMembers';
 import { useLeaveBand } from '@/domain/band/hooks/useLeaveBand';
-import { RoleGuard, hasRole } from '@/global/auth/RoleGuard';
+import { hasRole } from '@/global/auth/RoleGuard';
 import { useBandRole } from '@/global/auth/useBandRole';
 import { ROUTES } from '@/global/config/routes';
+import type { ApplicationStatus } from '@/global/types';
 import { useToast } from '@/hooks/useToast';
 
 export function BandDetailContent({ bandId }: { bandId: string }) {
@@ -63,47 +63,66 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
   }
 
   if (isError || !band) {
-    return <ErrorState title="밴드를 찾을 수 없습니다" onRetry={() => refetch()} />;
+    return <ErrorState onRetry={() => refetch()} />;
   }
 
   const isMember = myRole !== null && myRole !== undefined;
-  const canManage = hasRole(myRole, 'LEADER');
+  const isLeader = hasRole(myRole, 'LEADER');
 
   return (
-    <div className="space-y-6">
-      <Card padding="lg">
-        <div className="flex items-start gap-4">
-          <Avatar
-            size="xl"
-            src={band.profileImg}
-            fallback={band.bandName}
-            alt={`${band.bandName} 프로필`}
-          />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-foreground text-xl font-bold">{band.bandName}</h1>
-            {band.description && (
-              <p className="text-foreground-sub mt-1 text-sm">{band.description}</p>
-            )}
-          </div>
+    <div className="space-y-s-6">
+      <header className="flex items-start justify-between gap-3" data-slot="band-detail-header">
+        <div className="min-w-0">
+          <p className="text-foreground-muted text-caption">밴드 탐색</p>
+          <h1 className="text-foreground text-title-lg font-bold">{band.bandName}</h1>
         </div>
-      </Card>
+        <div className="flex shrink-0 items-center gap-2">
+          {!isMember && (
+            <Button
+              size="sm"
+              onClick={() => applyMutation.mutate()}
+              loading={applyMutation.isPending}
+            >
+              <UserPlus className="h-4 w-4" />
+              가입 신청
+            </Button>
+          )}
+          {isMember && !isLeader && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="text-danger"
+              onClick={() => setLeaveOpen(true)}
+            >
+              <LogOut className="h-4 w-4" />
+              탈퇴
+            </Button>
+          )}
+          {isLeader && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => toast.info('밴드 설정 화면은 곧 제공될 예정입니다.')}
+            >
+              <Settings className="h-4 w-4" />
+              밴드 설정
+            </Button>
+          )}
+        </div>
+      </header>
 
       <Tabs defaultValue="info">
         <TabsList aria-label="밴드 상세 탭">
           <TabsTrigger value="info">정보</TabsTrigger>
           <TabsTrigger value="members">멤버</TabsTrigger>
-          <TabsTrigger value="schedule">일정 및 합주</TabsTrigger>
-          {canManage && <TabsTrigger value="manage">밴드 관리</TabsTrigger>}
+          {isLeader && <TabsTrigger value="applications">신청 현황</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="info">
           <InfoTab
-            bandId={bandId}
             description={band.description}
-            isMember={isMember}
-            applyPending={applyMutation.isPending}
-            onApply={() => applyMutation.mutate()}
-            onLeave={() => setLeaveOpen(true)}
+            profileImg={band.profileImg}
+            bandName={band.bandName}
           />
         </TabsContent>
 
@@ -111,19 +130,9 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
           <MembersTab bandId={bandId} />
         </TabsContent>
 
-        <TabsContent value="schedule">
-          <ScheduleTab />
-        </TabsContent>
-
-        {canManage && (
-          <TabsContent value="manage">
-            <RoleGuard
-              bandId={bandId}
-              role="LEADER"
-              fallback={<EmptyState title="리더만 접근할 수 있습니다" />}
-            >
-              <ManageTab bandId={bandId} />
-            </RoleGuard>
+        {isLeader && (
+          <TabsContent value="applications">
+            <ApplicationsTab bandId={bandId} />
           </TabsContent>
         )}
       </Tabs>
@@ -160,97 +169,38 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
 }
 
 function InfoTab({
-  bandId,
+  bandName,
   description,
-  isMember,
-  applyPending,
-  onApply,
-  onLeave,
+  profileImg,
 }: {
-  bandId: string;
-  description: string | undefined;
-  isMember: boolean;
-  applyPending: boolean;
-  onApply: () => void;
-  onLeave: () => void;
+  bandName: string;
+  description?: string;
+  profileImg?: string;
 }) {
-  const members = useBandMembers(bandId, 20);
-  const memberCount = members.data?.pages.flatMap((p) => p.content).length ?? 0;
-
   return (
-    <div className="space-y-s-4">
-      <Card padding="lg">
-        <div className="space-y-3">
-          <h2 className="text-foreground-sub text-caption font-semibold tracking-wide uppercase">
-            소개
-          </h2>
-          <p className="text-foreground-sub text-sm leading-relaxed">
-            {description ?? '소개가 등록되지 않았습니다.'}
-          </p>
-        </div>
-      </Card>
-
-      <div className="gap-s-3 grid grid-cols-3" data-slot="band-info-stats">
-        <StatTile label="멤버" value={members.isLoading ? '—' : memberCount} />
-        <StatTile label="예정 합주" value="—" />
-        <StatTile label="예정 공연" value="—" />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {!isMember && (
-          <Button onClick={onApply} loading={applyPending}>
-            <UserPlus className="h-4 w-4" />
-            가입 신청
-          </Button>
-        )}
-        {isMember && (
-          <Button variant="ghost" className="text-danger hover:opacity-80" onClick={onLeave}>
-            <LogOut className="h-4 w-4" />
-            밴드 탈퇴
-          </Button>
+    <div className="space-y-s-5">
+      <div
+        className="bg-card border-border flex aspect-[3/1] w-full items-center justify-center overflow-hidden rounded-lg border"
+        data-slot="band-cover"
+        aria-label={`${bandName} 커버 이미지`}
+      >
+        {profileImg ? (
+          // eslint-disable-next-line @next/next/no-img-element -- 외부 origin 허용 위해 native img
+          <img src={profileImg} alt={`${bandName} 커버`} className="h-full w-full object-cover" />
+        ) : (
+          <div className="text-foreground-muted gap-s-2 flex flex-col items-center text-xs">
+            <Camera className="h-6 w-6" aria-hidden="true" />
+            band cover image
+          </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function StatTile({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div
-      className="bg-card border-border p-s-4 rounded-lg border text-center"
-      data-slot="band-info-stat"
-    >
-      <div className="text-foreground text-title-lg leading-tight font-extrabold">{value}</div>
-      <div className="text-foreground-sub text-micro mt-1">{label}</div>
-    </div>
-  );
-}
-
-function ScheduleTab() {
-  return (
-    <Card padding="lg">
-      <EmptyState
-        icon={CalendarRange}
-        title="서비스를 준비하고 있어요"
-        description="밴드의 합주·공연 일정을 곧 한 화면에서 확인할 수 있습니다."
-      />
-    </Card>
-  );
-}
-
-function ManageTab({ bandId }: { bandId: string }) {
-  return (
-    <Card padding="lg">
-      <div className="space-y-s-4">
-        <div className="flex items-center gap-2">
-          <Settings2 className="text-foreground-sub h-4 w-4" aria-hidden="true" />
-          <h2 className="text-foreground-sub text-caption font-semibold tracking-wide uppercase">
-            가입 신청 관리
-          </h2>
-        </div>
-        <ApplicationsList bandId={bandId} />
+      <div className="space-y-s-2">
+        <h2 className="text-foreground text-title font-extrabold">{bandName}</h2>
+        <p className="text-foreground-sub text-body leading-relaxed">
+          {description ?? '소개가 등록되지 않았습니다.'}
+        </p>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -265,12 +215,14 @@ function MembersTab({ bandId }: { bandId: string }) {
   if (members.length === 0) return <EmptyState title="멤버가 없습니다" />;
 
   return (
-    <div>
-      {members.map((m) => (
-        <BandMemberRow key={m.bandMemberId} bandId={bandId} member={m} />
-      ))}
+    <div className="space-y-s-3">
+      <div className="gap-s-3 grid grid-cols-1 sm:grid-cols-2">
+        {members.map((m) => (
+          <BandMemberRow key={m.bandMemberId} bandId={bandId} member={m} />
+        ))}
+      </div>
       {hasNextPage && (
-        <div className="mt-3 flex justify-center">
+        <div className="flex justify-center">
           <Button
             variant="ghost"
             size="sm"
@@ -285,31 +237,58 @@ function MembersTab({ bandId }: { bandId: string }) {
   );
 }
 
-function ApplicationsList({ bandId }: { bandId: string }) {
-  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useBandApplications(bandId, 'PENDING', 20);
+const STATUS_FILTERS: { value: ApplicationStatus; label: string }[] = [
+  { value: 'PENDING', label: '대기' },
+  { value: 'APPROVED', label: '승인' },
+  { value: 'REJECTED', label: '거절' },
+];
 
-  if (isLoading) return <Skeleton className="h-16 w-full" />;
-  if (isError) return <ErrorState onRetry={() => refetch()} />;
+function ApplicationsTab({ bandId }: { bandId: string }) {
+  const [status, setStatus] = useState<ApplicationStatus>('PENDING');
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useBandApplications(bandId, status, 20);
 
   const apps = data?.pages.flatMap((p) => p.content) ?? [];
-  if (apps.length === 0) return <EmptyState title="대기 중인 가입 신청이 없습니다" />;
 
   return (
-    <div>
-      {apps.map((a) => (
-        <BandApplicationRow key={a.bandApplicationId} bandId={bandId} application={a} />
-      ))}
-      {hasNextPage && (
-        <div className="mt-3 flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => fetchNextPage()}
-            loading={isFetchingNextPage}
+    <div className="space-y-s-4">
+      <div className="gap-s-2 flex flex-wrap">
+        {STATUS_FILTERS.map((f) => (
+          <Chip
+            key={f.value}
+            interactive
+            selected={status === f.value}
+            onClick={() => setStatus(f.value)}
           >
-            더 불러오기
-          </Button>
+            {f.label}
+          </Chip>
+        ))}
+      </div>
+      {isLoading ? (
+        <Skeleton className="h-16 w-full" />
+      ) : isError ? (
+        <ErrorState onRetry={() => refetch()} />
+      ) : apps.length === 0 ? (
+        <EmptyState
+          title={`${STATUS_FILTERS.find((f) => f.value === status)?.label} 상태 신청이 없습니다`}
+        />
+      ) : (
+        <div className="space-y-s-2">
+          {apps.map((a) => (
+            <BandApplicationRow key={a.bandApplicationId} bandId={bandId} application={a} />
+          ))}
+          {hasNextPage && (
+            <div className="flex justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fetchNextPage()}
+                loading={isFetchingNextPage}
+              >
+                더 불러오기
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

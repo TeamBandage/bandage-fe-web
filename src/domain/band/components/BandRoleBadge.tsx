@@ -7,9 +7,10 @@ const roleLabel: Record<BandRole, string> = {
   MEMBER: '멤버',
 };
 
+// design/dist/css/components.css role-badge 와 동일: 리더=amber(주황), 관리자=accent(파랑), 멤버=default(회색)
 const roleVariant: Record<BandRole, BadgeVariant> = {
-  LEADER: 'accent',
-  ADMIN: 'success',
+  LEADER: 'amber',
+  ADMIN: 'accent',
   MEMBER: 'default',
 };
 

@@ -97,29 +97,7 @@ GET /api/v1/bands?q=<keyword>&genre=<genre>&memberOnly=<bool>&pageSize=20&lastId
 
 - `PerformanceDetailResponse` 에 `posterImg`, `ticketUrl`, `mapPlaceId` 등.
 
-### 12. 밴드별 합주 목록 (FE-API-009)
-
-- **엔드포인트**: `GET /api/v1/bands/{bandId}/practices`
-- **요청 헤더**: `Authorization: Bearer <accessToken>`
-- **Path**: `bandId: UUID`
-- **Query**: `?lastId=<uuid>&pageSize=20&filter=upcoming|past|all` (기본 `upcoming`)
-- **기대 응답**: `ApiResponse<CursorResponse<PracticeListItemResponse, string>>`
-- **프론트 사용처**: 밴드 상세 → "일정 및 합주" 탭 (`BandDetailContent.client.tsx` `ScheduleTab`)
-- **현재 우회**: 탭에서 "서비스를 준비하고 있어요" EmptyState 표시. 호출 자체 미구현.
-- **백엔드 체크리스트**: `BandPracticeController`, `PracticeService.findByBandId`, 권한 체크(밴드 멤버 + 비멤버는 공개 일정만), 인덱스 (band_id, start_at).
-
-### 13. 밴드별 공연 목록 (FE-API-010)
-
-- **엔드포인트**: `GET /api/v1/bands/{bandId}/performances`
-- **요청 헤더**: `Authorization: Bearer <accessToken>`
-- **Path**: `bandId: UUID`
-- **Query**: `?lastId=<uuid>&pageSize=20&filter=upcoming|past|all`
-- **기대 응답**: `ApiResponse<CursorResponse<PerformanceListItemResponse, string>>`
-- **프론트 사용처**: 밴드 상세 → "일정 및 합주" 탭
-- **현재 우회**: 동일 EmptyState.
-- **백엔드 체크리스트**: `BandPerformanceController`, `PerformanceService.findByBandId`, 권한 체크.
-
-### 14. 홈 사용자 통계 (FE-API-014)
+### 12. 홈 사용자 통계 (FE-API-014)
 
 - **엔드포인트**: `GET /api/v1/members/me/stats`
 - **요청 헤더**: `Authorization: Bearer <accessToken>`
