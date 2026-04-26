@@ -197,16 +197,99 @@ BE 가 §5-2/§5-3 의 `practiceId` 를 옵셔널화 (해결안 2 채택). 마�
 
 ---
 
+## 선곡 회의 (mvp-1-fix-v5, 2026-04-26)
+
+선곡 회의 기능은 **백엔드 미구현** 상태로 FE 단독(Zustand persist=sessionStorage) mock-first 로 출시. 아래 엔드포인트가 도입되면 `domain/setlist-meeting/store/setlistStore` 의 액션을 fetcher 로 교체.
+
+### FE-API-024 회의 CRUD
+
+```
+POST   /api/v1/setlist-meetings
+GET    /api/v1/setlist-meetings/me
+GET    /api/v1/setlist-meetings/{meetingId}
+DELETE /api/v1/setlist-meetings/{meetingId}
+```
+
+- **요청(POST)**: `{ title, bandId }`. `managerId` 는 서버가 토큰에서 추출.
+- **응답**: `SetlistMeetingResponse { meetingId, bandId, bandName, title, managerId, createdAt, updatedAt }`
+- **권한**: 생성=인증 + 해당 밴드 멤버, 삭제=매니저만.
+- **프론트 사용처**: `MeetingCreateModal.client.tsx`, `SetlistMeetingsListPane.client.tsx`.
+
+### FE-API-025 곡 CRUD
+
+```
+POST   /api/v1/setlist-meetings/{meetingId}/songs
+DELETE /api/v1/setlist-meetings/{meetingId}/songs/{songId}
+```
+
+- **요청(POST)**: `{ title, artist, album?, note?, sessions: SessionDef[] }`.
+- **응답**: `SongResponse` (전체 필드 + 빈 applicants/confirmed 버킷).
+- **프론트 사용처**: `AddSongModal.client.tsx` → `store.addSong`.
+
+### FE-API-026 세션 정의 변경 (커스텀 세션)
+
+```
+PATCH /api/v1/setlist-meetings/{meetingId}/songs/{songId}/sessions
+```
+
+- **요청**: `{ add?: SessionDef[], remove?: string[] }`.
+- **권한**: 매니저만.
+
+### FE-API-027 세션 지원 / 철회
+
+```
+POST   /api/v1/setlist-meetings/{meetingId}/songs/{songId}/sessions/{sessionId}/applicants
+DELETE /api/v1/setlist-meetings/{meetingId}/songs/{songId}/sessions/{sessionId}/applicants/{userId}
+```
+
+- 본인만 가능 (path userId 와 토큰 userId 일치 검증).
+- 철회 시 confirmed 도 함께 정리.
+- **프론트 사용처**: `SessionPanel.client.tsx` → `applySession` / `withdrawSession`.
+
+### FE-API-028 세션 확정 / 해제 (매니저)
+
+```
+PATCH /api/v1/setlist-meetings/{meetingId}/songs/{songId}/sessions/{sessionId}/confirmations
+```
+
+- **요청**: `{ confirm?: string[], unconfirm?: string[] }`.
+- **권한**: 매니저만. 정원(`need`) 초과 확정 시 400.
+- **프론트 사용처**: `SessionPanel.client.tsx` → `confirmSession` / `unconfirmSession`.
+
+### FE-API-029 곡별 채팅
+
+```
+GET  /api/v1/setlist-meetings/{meetingId}/songs/{songId}/chat?cursor=...
+POST /api/v1/setlist-meetings/{meetingId}/songs/{songId}/chat
+```
+
+- **응답**: `CursorResponse<ChatMessage, string>` — `{ userId, at: ISO, msg }`.
+- 권한: 회의 참여 멤버.
+- **프론트 사용처**: `MeetingChatBox.client.tsx` → `sendChat`.
+
+### FE-API-030 회의 → 합주 변환
+
+```
+POST /api/v1/setlist-meetings/{meetingId}/convert-to-practices
+```
+
+- **요청**: `{ scheduleAt: ISO, venue?: string, songIds: string[] }`.
+- **응답**: 생성된 `practiceId` 목록.
+- 합주 가능(`isReady`) 곡만 선택 가능. 매니저 권한.
+
+---
+
 ## ℹ️ 참고 — 프론트 mock / 우회 현황 (2026-04-25 기준)
 
-| 영역              | 우회 방법                                                              |
-| ----------------- | ---------------------------------------------------------------------- |
-| 밴드 검색         | `useBandList` 의 모든 페이지를 펼쳐 클라이언트 `includes` 필터         |
-| 내 소속 / 탐색 탭 | 동일 `useBandList` 결과를 두 탭이 공유, 향후 `memberOnly=true` 로 분리 |
-| 합주 목록         | 405 차단 — 홈/리스트 패널이 빈 상태 (백엔드 GET /practices 시급)       |
-| 합주곡 검색       | songId UUID 입력 폼 유지                                               |
-| 프로필 사진       | URL 입력 텍스트 폼 유지 (업로드 미지원)                                |
-| 알림              | 미구현                                                                 |
+| 영역              | 우회 방법                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| 밴드 검색         | `useBandList` 의 모든 페이지를 펼쳐 클라이언트 `includes` 필터                                  |
+| 내 소속 / 탐색 탭 | 동일 `useBandList` 결과를 두 탭이 공유, 향후 `memberOnly=true` 로 분리                          |
+| 합주 목록         | 405 차단 — 홈/리스트 패널이 빈 상태 (백엔드 GET /practices 시급)                                |
+| 합주곡 검색       | songId UUID 입력 폼 유지                                                                        |
+| 프로필 사진       | URL 입력 텍스트 폼 유지 (업로드 미지원)                                                         |
+| 알림              | 미구현                                                                                          |
+| 선곡 회의         | 전체 도메인이 Zustand persist(sessionStorage) + 시드 mock — FE-API-024~030 도입 시 fetcher 교체 |
 
 ---
 
