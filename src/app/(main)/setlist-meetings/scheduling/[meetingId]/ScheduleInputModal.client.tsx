@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -58,17 +58,31 @@ export function ScheduleInputModal({
   const [blocks, setBlocks] = useState<Record<string, SlotMask>>(existing?.blocks ?? {});
   const [note, setNote] = useState(existing?.note ?? '');
 
-  // 모달 열릴 때 기존 입력으로 hydrate (localStorage 영속화 + 이미 store 에 있음).
+  // 모달이 닫힌→열린 전환 시점에만 store 값으로 hydrate. 그 후 store 갱신은 effect 내부에서
+  // 일어나므로 existing 변화로는 재 hydrate 하지 않음(무한 루프 방지).
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (!open) return;
-    setStep(0);
-    setInputMode('manual');
-    setAvailableDates(existing?.availableDates ?? []);
-    setBlocks(existing?.blocks ?? {});
-    setNote(existing?.note ?? '');
-  }, [open, existing]);
+    if (open && !wasOpenRef.current) {
+      wasOpenRef.current = true;
+      setStep(0);
+      setInputMode('manual');
+      setAvailableDates(existing?.availableDates ?? []);
+      setBlocks(existing?.blocks ?? {});
+      setNote(existing?.note ?? '');
+    } else if (!open && wasOpenRef.current) {
+      wasOpenRef.current = false;
+    }
+    // existing 은 의도적으로 deps 에서 제외 — 첫 오픈 시에만 사용.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // 입력 변동 시 즉시 store 에 저장 → localStorage 영속화 (실수 종료해도 유지).
+  // 기존 completed 는 store 에서 직접 읽지 않고 첫 hydrate 이후엔 별도 setCompleted 로만 변경.
+  const completedRef = useRef(existing?.completed ?? false);
+  useEffect(() => {
+    completedRef.current = existing?.completed ?? false;
+  }, [existing?.completed]);
+
   useEffect(() => {
     if (!open) return;
     upsert({
@@ -78,10 +92,10 @@ export function ScheduleInputModal({
       unavailableDates: [],
       blocks,
       note,
-      completed: existing?.completed ?? false,
+      completed: completedRef.current,
       updatedAt: new Date().toISOString(),
     });
-  }, [open, meetingId, userId, availableDates, blocks, note, existing?.completed, upsert]);
+  }, [open, meetingId, userId, availableDates, blocks, note, upsert]);
 
   const next = () => setStep((s) => (s < 4 ? ((s + 1) as Step) : s));
   const back = () => setStep((s) => (s > 0 ? ((s - 1) as Step) : s));
