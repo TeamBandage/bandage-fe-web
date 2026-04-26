@@ -41,7 +41,7 @@ function PracticeRow({ p, pathname }: { p: PracticeListItemResponse; pathname: s
       >
         <IconTile icon={<PracticeIcon />} size="sm" tone={DOMAIN_TONES.practice} />
         <div className="min-w-0 flex-1">
-          <div className="text-body truncate font-semibold">{p.title}</div>
+          <div className="text-caption truncate font-semibold">{p.title}</div>
           <div className="text-foreground-muted text-caption gap-s-2 mt-0.5 flex items-center">
             <span>{when}</span>
             {p.venue && <span className="truncate">· {p.venue}</span>}
@@ -80,8 +80,8 @@ export function PracticesListPane() {
       data-slot="practices-list-pane"
       aria-label="합주 탐색"
     >
-      <div className="border-border px-s-5 py-s-4 flex items-center justify-between border-b">
-        <h2 className="text-subtitle font-bold">합주 탐색</h2>
+      <div className="border-border px-s-3 py-s-3 flex items-center justify-between border-b">
+        <h2 className="text-body font-bold">합주 탐색</h2>
         <Button asChild size="sm" variant="accent-outline" aria-label="합주 시작하기">
           <Link href={ROUTES.PRACTICE_NEW}>
             <Plus className="h-4 w-4" /> 합주 시작하기

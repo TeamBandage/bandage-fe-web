@@ -83,25 +83,25 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'bg-surface border-border py-s-5 px-s-4 gap-s-1 hidden shrink-0 flex-col border-r lg:flex',
+        'bg-surface border-border py-s-4 px-s-3 gap-s-1 hidden shrink-0 flex-col border-r lg:flex',
         className,
       )}
       style={{ width: 'var(--sidebar-w)' }}
       data-slot="sidebar"
       aria-label="주 탐색"
     >
-      <div className="border-border mb-s-3 gap-s-3 pb-s-5 px-s-2 pt-s-1 flex items-center border-b">
+      <div className="border-border mb-s-2 gap-s-2 pb-s-4 px-s-2 pt-s-1 flex items-center border-b">
         <span
-          className="bg-accent-dim flex h-10 w-10 items-center justify-center rounded-md border"
+          className="bg-accent-dim flex h-8 w-8 items-center justify-center rounded-md border"
           style={{ borderColor: 'oklch(0.62 0.22 250 / 0.2)' }}
           aria-hidden="true"
         >
-          <Guitar className="text-accent h-[22px] w-[22px]" />
+          <Guitar className="text-accent h-[18px] w-[18px]" />
         </span>
-        <span className="text-accent text-title font-black tracking-tight">Bandage</span>
+        <span className="text-accent text-body font-black tracking-tight">Bandage</span>
       </div>
 
-      <div className="text-foreground-muted px-s-3 pb-s-3 pt-s-2 text-micro font-bold tracking-wider uppercase">
+      <div className="text-foreground-muted px-s-3 pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase">
         Navigation
       </div>
       <nav className="gap-s-1 flex flex-1 flex-col">
@@ -125,10 +125,10 @@ export function Sidebar({ className }: SidebarProps) {
         ) : (
           <Link
             href={ROUTES.ME}
-            className="hover:bg-card gap-s-2 px-s-2 py-s-2 flex min-w-0 flex-1 items-center rounded-md transition-colors"
+            className="hover:bg-card gap-s-2 px-s-2 py-s-1 flex min-w-0 flex-1 items-center rounded-md transition-colors"
             aria-label="마이페이지로 이동"
           >
-            <Avatar size="md" fallback={me?.name ?? me?.email ?? '게스트'} />
+            <Avatar size="sm" fallback={me?.name ?? me?.email ?? '게스트'} />
             <div className="min-w-0 flex-1">
               <div className="text-foreground text-caption truncate font-semibold">
                 {me?.name ?? '게스트'}
@@ -161,14 +161,14 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
         href={href}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'gap-s-4 px-s-4 py-s-3 text-body flex items-center rounded-md font-medium transition-colors',
+          'gap-s-3 px-s-3 py-s-2 text-caption flex items-center rounded-md font-medium transition-colors',
           'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           active
             ? 'bg-accent-dim text-accent font-bold'
             : 'text-foreground-sub hover:bg-card hover:text-foreground',
         )}
       >
-        <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span className="truncate">{label}</span>
       </Link>
     );
@@ -181,14 +181,14 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className={cn(
-          'gap-s-4 px-s-4 py-s-3 text-body flex w-full items-center rounded-md font-medium transition-colors',
+          'gap-s-3 px-s-3 py-s-2 text-caption flex w-full items-center rounded-md font-medium transition-colors',
           'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           active
             ? 'bg-accent-dim text-accent font-bold'
             : 'text-foreground-sub hover:bg-card hover:text-foreground',
         )}
       >
-        <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
         <span className="flex-1 truncate text-left">{label}</span>
         <ChevronDown
           className={cn('h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
@@ -196,7 +196,7 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
         />
       </button>
       {open && (
-        <ul className="mt-s-1 ml-s-6 gap-s-1 flex flex-col">
+        <ul className="mt-s-1 ml-s-5 flex flex-col gap-0.5">
           {subs!.map((s) => {
             const subActive = isSubActive(pathname, s.href);
             return (
@@ -205,7 +205,7 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
                   href={s.href}
                   aria-current={subActive ? 'page' : undefined}
                   className={cn(
-                    'px-s-3 py-s-2 text-caption block rounded-md transition-colors',
+                    'px-s-3 text-micro block rounded-md py-1 transition-colors',
                     'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     subActive
                       ? 'text-accent font-semibold'

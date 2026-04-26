@@ -55,10 +55,11 @@
   --spacing-s-10: 40px;
   --spacing-s-12: 48px;
 
-  /* Layout widths (Shell / Pane-Split. CSS 변수로 소비: w-[var(--sidebar-w)] 또는 style) */
-  --sidebar-w: 240px;
-  --list-pane-w: 340px;
-  --band-list-pane-w: 360px;
+  /* Layout widths (Shell / Pane-Split. CSS 변수로 소비: w-[var(--sidebar-w)] 또는 style)
+     mvp-1-fix-v5 Task 1: MBA 13(1280px) 기준 사이드바+마스터 합 ≤ 38% 가 되도록 축소 (이전 240+360=600px → 200+280=480px). */
+  --sidebar-w: 200px;
+  --list-pane-w: 280px;
+  --band-list-pane-w: 280px;
 
   /* Typography scale (semantic, design/dist 기반) */
   --text-display: 40px;

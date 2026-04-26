@@ -55,7 +55,7 @@ function BandRow({
         <IconTile icon={<BandIcon />} size="sm" tone={DOMAIN_TONES.band} />
         <div className="min-w-0 flex-1">
           <div className="gap-s-2 flex items-center">
-            <span className="text-body truncate font-semibold">{band.bandName}</span>
+            <span className="text-caption truncate font-semibold">{band.bandName}</span>
             {myRole && <BandRoleBadge role={myRole} />}
           </div>
           {band.description && (
@@ -103,8 +103,8 @@ export function BandsListPane() {
       data-slot="bands-list-pane"
       aria-label="밴드 탐색"
     >
-      <div className="border-border px-s-5 py-s-4 flex items-center justify-between border-b">
-        <h2 className="text-subtitle font-bold">밴드 탐색</h2>
+      <div className="border-border px-s-3 py-s-3 flex items-center justify-between border-b">
+        <h2 className="text-body font-bold">밴드 탐색</h2>
         <BandCreateModal
           trigger={
             <Button size="sm" variant="accent-outline" aria-label="새 밴드 만들기">
