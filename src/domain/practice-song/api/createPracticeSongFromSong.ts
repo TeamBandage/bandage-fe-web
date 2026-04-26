@@ -3,11 +3,15 @@ import { apiClient } from '@/global/api/apiClient';
 import type { PracticeSongResponse, SongSearchItem } from '../types';
 
 type CreateFromSongRequest = {
-  practiceId: string;
+  /** Optional — 미제공 시 PracticeSong 만 생성, 응답 songId 를 POST /practices 의 song 으로 후바인딩. */
+  practiceId?: string;
   song: SongSearchItem;
 };
 
-/** API_SPEC §5-3 — 외부 검색 결과(SongSearchItem) 을 그대로 전달해 합주곡 생성. */
+/**
+ * API_SPEC §5-3 — 외부 검색 결과(SongSearchItem) 를 그대로 전달해 합주곡 생성.
+ * 마법사 시나리오에서는 practiceId 생략 → 응답 songId 를 §4-1 호출에 사용.
+ */
 export async function createPracticeSongFromSong(
   req: CreateFromSongRequest,
 ): Promise<PracticeSongResponse> {

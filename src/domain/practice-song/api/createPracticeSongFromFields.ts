@@ -3,7 +3,8 @@ import { apiClient } from '@/global/api/apiClient';
 import type { PracticeSongResponse } from '../types';
 
 type CreateFromFieldsRequest = {
-  practiceId: string;
+  /** Optional — 미제공 시 PracticeSong 만 생성, 응답 songId 를 POST /practices 의 song 으로 후바인딩. */
+  practiceId?: string;
   title: string;
   artist: string;
   album: string;
@@ -11,7 +12,10 @@ type CreateFromFieldsRequest = {
   refLink?: string | null;
 };
 
-/** API_SPEC §5-2 — 자작곡 등 외부 API 미사용 시 필드 직접 입력. */
+/**
+ * API_SPEC §5-2 — 자작곡 등 외부 API 미사용 시 필드 직접 입력.
+ * 마법사 시나리오에서는 practiceId 생략.
+ */
 export async function createPracticeSongFromFields(
   req: CreateFromFieldsRequest,
 ): Promise<PracticeSongResponse> {
