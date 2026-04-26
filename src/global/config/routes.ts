@@ -20,6 +20,9 @@ export const ROUTES = {
   PERFORMANCE_DETAIL: (id: string) => `/performances/${id}`,
 
   ME: '/me',
+
+  SETLIST_MEETINGS: '/setlist-meetings',
+  SETLIST_MEETING_DETAIL: (id: string) => `/setlist-meetings/${id}`,
 } as const;
 
 export type AppRoutes = typeof ROUTES;

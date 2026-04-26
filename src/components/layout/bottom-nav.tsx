@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, Home, Music, User, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Home, ListMusic, Music, User, Users, type LucideIcon } from 'lucide-react';
 import { GuardedLink as Link } from '@/global/navigation/guarded-link';
 import { usePathname } from 'next/navigation';
 
@@ -18,6 +18,7 @@ const tabs: Tab[] = [
   { href: ROUTES.BANDS, icon: Users, label: '밴드' },
   { href: ROUTES.PRACTICES, icon: Music, label: '합주' },
   { href: ROUTES.PERFORMANCES, icon: CalendarDays, label: '공연' },
+  { href: ROUTES.SETLIST_MEETINGS, icon: ListMusic, label: '선곡' },
   { href: ROUTES.ME, icon: User, label: 'MY' },
 ];
 
@@ -43,11 +44,11 @@ export function BottomNav() {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'focus-visible:ring-accent focus-visible:ring-offset-bg flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                  'focus-visible:ring-accent focus-visible:ring-offset-bg flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                   active ? 'text-accent-hi' : 'text-foreground-muted hover:text-foreground',
                 )}
               >
-                <Icon className="h-5 w-5" aria-hidden="true" />
+                <Icon className="h-4 w-4" aria-hidden="true" />
                 <span>{label}</span>
               </Link>
             </li>
