@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { SEED_SCHEDULES } from '../mock/scheduleSeed';
 import type { MemberSchedule, SlotMask } from '../types';
 
 const noopStorage = {
@@ -49,10 +50,15 @@ const ensureSchedule = (state: State, meetingId: string, userId: string): Member
   );
 };
 
+/** 개발자 검토용 mock 시드 — fresh localStorage 일 때만 적용. */
+const SEEDED_SCHEDULES: Record<Key, MemberSchedule> = Object.fromEntries(
+  SEED_SCHEDULES.map((s) => [keyOf(s.meetingId, s.userId), s]),
+);
+
 export const useScheduleStore = create<State & Actions>()(
   persist(
     (set, get) => ({
-      schedules: {},
+      schedules: SEEDED_SCHEDULES,
 
       getSchedule: (meetingId, userId) => get().schedules[keyOf(meetingId, userId)],
 
@@ -125,7 +131,8 @@ export const useScheduleStore = create<State & Actions>()(
       reset: () => set({ schedules: {} }),
     }),
     {
-      name: 'bandage-schedule',
+      // -v2: 시드 도입으로 기존 캐시 무효화.
+      name: 'bandage-schedule-v2',
       // 사용자가 실수로 나갔다 들어와도 입력이 유지되도록 localStorage 영속화.
       storage: createJSONStorage(() =>
         typeof window === 'undefined' ? noopStorage : window.localStorage,
