@@ -20,9 +20,13 @@ export interface SessionPanelProps {
 }
 
 export function SessionPanel({ songId, onClose }: SessionPanelProps) {
-  const song = useSetlistStore((s) => s.songs.find((x) => x.id === songId));
-  const meeting = useSetlistStore((s) =>
-    song ? s.meetings.find((m) => m.id === song.meetingId) : null,
+  // 배열 자체(stable ref) 만 select 하고 find 는 useMemo 로 — selector 내부 find/filter 는 매 렌더마다 새 참조라 무한 루프.
+  const songs = useSetlistStore((s) => s.songs);
+  const meetings = useSetlistStore((s) => s.meetings);
+  const song = useMemo(() => songs.find((x) => x.id === songId), [songs, songId]);
+  const meeting = useMemo(
+    () => (song ? (meetings.find((m) => m.id === song.meetingId) ?? null) : null),
+    [meetings, song],
   );
   const members = useSetlistStore((s) => s.members);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
