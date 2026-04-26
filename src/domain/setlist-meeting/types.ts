@@ -9,7 +9,7 @@ export type SessionDef = {
   label: string;
   short: string;
   need: number;
-  /** true 면 곡별 추가 세션(키보드/퍼커션/D2 등). 표/우측 패널에서 `*` 표기. */
+  /** true 면 곡별 추가 세션(키보드/퍼커션/D2 등). */
   custom?: boolean;
 };
 
@@ -40,6 +40,8 @@ export type Song = {
   title: string;
   artist: string;
   album?: string;
+  /** 재생 시간 'mm:ss' 포맷. 미지정 가능. */
+  duration?: string;
   proposerId: string;
   note?: string;
   sessions: SessionDef[];

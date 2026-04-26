@@ -38,7 +38,7 @@ type Actions = {
   sendChat: (songId: string, userId: string, msg: string, at?: string) => void;
   addSong: (
     meetingId: string,
-    song: Pick<Song, 'title' | 'artist' | 'album' | 'note' | 'proposerId'> & {
+    song: Pick<Song, 'title' | 'artist' | 'album' | 'duration' | 'note' | 'proposerId'> & {
       sessions?: SessionDef[];
     },
   ) => string;
@@ -153,6 +153,7 @@ export const useSetlistStore = create<SetlistStore>()(
           title: draft.title,
           artist: draft.artist,
           album: draft.album,
+          duration: draft.duration,
           proposerId: draft.proposerId,
           note: draft.note,
           sessions,

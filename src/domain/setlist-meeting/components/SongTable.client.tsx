@@ -57,6 +57,9 @@ export function SongTable({
             <th className="px-s-2 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
               앨범
             </th>
+            <th className="px-s-2 py-s-2 hidden w-16 text-right font-semibold tracking-wider md:table-cell">
+              재생 시간
+            </th>
             <th className="px-s-2 py-s-2 font-semibold tracking-wider">세션</th>
             <th className="px-s-2 py-s-2 w-28 text-right font-semibold tracking-wider">진행도</th>
             <th className="px-s-2 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
@@ -85,17 +88,19 @@ export function SongTable({
                 <td className="px-s-2 py-s-2 text-foreground-muted text-micro text-center font-mono tabular-nums">
                   {String(idx + 1).padStart(2, '0')}
                 </td>
-                <td className="px-s-2 py-s-2">
+                <td className="px-s-2 py-s-2 max-w-[180px]">
                   <div className="gap-s-2 flex items-center">
                     {ready && (
                       <span
-                        className="bg-success/20 text-success inline-flex h-4 w-4 items-center justify-center rounded-full"
+                        className="bg-success/20 text-success inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full"
                         aria-label="합주 가능"
                       >
                         <Check className="h-3 w-3" />
                       </span>
                     )}
-                    <span className="text-caption font-bold">{song.title}</span>
+                    <span className="text-caption truncate font-bold" title={song.title}>
+                      {song.title}
+                    </span>
                   </div>
                 </td>
                 <td className="px-s-2 py-s-2 text-foreground-sub text-caption hidden md:table-cell">
@@ -103,6 +108,9 @@ export function SongTable({
                 </td>
                 <td className="px-s-2 py-s-2 text-foreground-muted text-caption hidden lg:table-cell">
                   {song.album ?? '-'}
+                </td>
+                <td className="px-s-2 py-s-2 text-foreground-muted text-micro hidden text-right font-mono tabular-nums md:table-cell">
+                  {song.duration ?? '-'}
                 </td>
                 <td className="px-s-2 py-s-2">
                   <div className="gap-s-3 flex flex-wrap items-end">

@@ -64,7 +64,6 @@ export function SessionTrack({
         )}
       >
         {session.short}
-        {session.custom && <span className="text-amber ml-0.5">*</span>}
       </span>
       <span className="bg-border relative block h-0.5 overflow-hidden rounded-[1px]">
         <span
