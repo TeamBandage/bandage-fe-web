@@ -421,6 +421,10 @@ export function AddSongModal({
                             // 두 자리 입력되면 자동으로 초 필드로 이동.
                             if (next.length === 2) ssInputRef.current?.focus();
                           }}
+                          onBlur={() => {
+                            // 한 자리만 입력했을 때 0 패딩(예: "7" → "07").
+                            if (durationMm.length === 1) setDurationMm(durationMm.padStart(2, '0'));
+                          }}
                           onKeyDown={onMmKeyDown}
                           placeholder="00"
                           aria-label="재생 시간 분"
@@ -434,6 +438,9 @@ export function AddSongModal({
                           maxLength={2}
                           value={durationSs}
                           onChange={(e) => setDurationSs(clampNumeric(e.target.value, 59))}
+                          onBlur={() => {
+                            if (durationSs.length === 1) setDurationSs(durationSs.padStart(2, '0'));
+                          }}
                           onKeyDown={onSsKeyDown}
                           placeholder="00"
                           aria-label="재생 시간 초"
@@ -461,40 +468,44 @@ export function AddSongModal({
                     합주곡 풀에서 검색합니다. 결과 클릭 시 폼이 채워지고 직접 추가 탭으로
                     전환됩니다.
                   </div>
-                  {searchQuery && (
-                    <div className="border-border mt-s-3 max-h-72 overflow-y-auto rounded-md border">
-                      {searchResults.length === 0 ? (
-                        <div className="text-foreground-muted px-s-4 py-s-6 text-caption text-center">
-                          일치하는 곡이 없습니다.
-                        </div>
-                      ) : (
-                        <ul>
-                          {searchResults.map((s) => (
-                            <li key={s.id}>
-                              <button
-                                type="button"
-                                onClick={() => pickSearchResult(s)}
-                                className="hover:bg-card border-border px-s-3 py-s-2 flex w-full items-center justify-between border-b text-left last:border-b-0"
-                              >
-                                <div className="min-w-0">
-                                  <div className="text-caption truncate font-bold">{s.title}</div>
-                                  <div className="text-foreground-muted text-micro mt-0.5 truncate">
-                                    {s.artist}
-                                    {s.album ? ` · ${s.album}` : ''}
-                                  </div>
+                  {/* 결과 영역 — 직접 추가 탭과 모달 높이를 맞추기 위해 항상 고정 높이(min-h). */}
+                  <div className="border-border mt-s-3 min-h-[280px] overflow-y-auto rounded-md border">
+                    {!searchQuery ? (
+                      <div className="text-foreground-muted gap-s-2 px-s-4 py-s-12 text-caption flex flex-col items-center justify-center text-center">
+                        <Search className="h-6 w-6 opacity-50" />
+                        <p>검색어를 입력하면 합주곡 풀에서 매칭되는 곡을 보여드립니다.</p>
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="text-foreground-muted px-s-4 py-s-12 text-caption text-center">
+                        &lsquo;{searchQuery}&rsquo; 와 일치하는 곡이 없습니다.
+                      </div>
+                    ) : (
+                      <ul>
+                        {searchResults.map((s) => (
+                          <li key={s.id}>
+                            <button
+                              type="button"
+                              onClick={() => pickSearchResult(s)}
+                              className="hover:bg-card border-border px-s-4 py-s-3 flex w-full items-center justify-between border-b text-left last:border-b-0"
+                            >
+                              <div className="min-w-0">
+                                <div className="text-body truncate font-bold">{s.title}</div>
+                                <div className="text-foreground-muted text-caption mt-0.5 truncate">
+                                  {s.artist}
+                                  {s.album ? ` · ${s.album}` : ''}
                                 </div>
-                                {s.duration && (
-                                  <span className="text-foreground-muted text-micro shrink-0 font-mono tabular-nums">
-                                    {s.duration}
-                                  </span>
-                                )}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
+                              </div>
+                              {s.duration && (
+                                <span className="text-foreground-muted text-caption shrink-0 font-mono tabular-nums">
+                                  {s.duration}
+                                </span>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               )}
 
