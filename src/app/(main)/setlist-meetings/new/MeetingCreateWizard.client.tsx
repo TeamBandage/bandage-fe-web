@@ -2,7 +2,7 @@
 
 import { ArrowRight, CalendarDays, Music, Search, Users, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,15 @@ export function MeetingCreateWizard() {
   const toast = useToast();
   const addMeeting = useSetlistStore((s) => s.addMeeting);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
+  const existingMeetings = useSetlistStore((s) => s.meetings);
+  // 이미 회의가 생성된 공연 id 집합 — Step 1 에서 블러 + 비활성화.
+  const usedPerformanceIds = useMemo(
+    () =>
+      new Set(
+        existingMeetings.filter((m) => m.performanceId).map((m) => m.performanceId as string),
+      ),
+    [existingMeetings],
+  );
 
   const [step, setStep] = useState<Step>(0);
 
@@ -59,17 +68,31 @@ export function MeetingCreateWizard() {
   // Step 3
   const [title, setTitle] = useState('');
   const [managerId, setManagerId] = useState<string | null>(null);
+  /** 합주 기간 'YYYY-MM-DD'. 공연 모드 진입 시 자동 채움(아래 effect). */
+  const [practiceFrom, setPracticeFrom] = useState('');
+  const [practiceTo, setPracticeTo] = useState('');
 
   // 공연 풀 멤버 vs 일반 모드 풀 멤버.
   const performancePool = useMemo<Member[]>(
     () => (performance ? flattenPerformanceMembers(performance) : []),
     [performance],
   );
-  // 공연 모드: 공연 선택 시 자동으로 풀 전체 활성화.
+  // 공연 모드: 공연 선택 시 자동으로 풀 전체 활성화 + 합주 기간 자동 채움(오늘~공연일).
   const onPickPerformance = (p: PerformanceMock) => {
     setPerformance(p);
     setParticipantIds(flattenPerformanceMembers(p).map((m) => m.id));
+    const today = new Date().toISOString().slice(0, 10);
+    const perfDate = p.startAt.slice(0, 10);
+    setPracticeFrom(today);
+    setPracticeTo(perfDate >= today ? perfDate : today);
   };
+
+  // purpose 가 'general' 로 전환되면 공연 기반 자동 채움을 비움.
+  useEffect(() => {
+    if (purpose === 'general') {
+      setPerformance(null);
+    }
+  }, [purpose]);
 
   // 멤버 검색 결과 — 검색창 아래 자체 패널에 노출. 클릭 시 참여 풀에 추가.
   const memberSearchResults = useMemo<Member[]>(() => {
@@ -112,10 +135,13 @@ export function MeetingCreateWizard() {
       .filter((m): m is Member => Boolean(m));
   }, [participantIds]);
 
+  const practiceWindowValid =
+    practiceFrom !== '' && practiceTo !== '' && practiceFrom <= practiceTo;
+
   const canNext = (() => {
     if (step === 0) return purpose === 'general' || !!performance;
     if (step === 1) return participantIds.length > 0;
-    if (step === 2) return title.trim().length > 0 && !!managerId;
+    if (step === 2) return title.trim().length > 0 && !!managerId && practiceWindowValid;
     return true;
   })();
 
@@ -123,7 +149,11 @@ export function MeetingCreateWizard() {
     if (!canNext) {
       if (step === 0) toast.error('공연을 선택하거나 일반 회의로 진행하세요.');
       else if (step === 1) toast.error('최소 1명 이상의 참여 멤버를 선택하세요.');
-      else if (step === 2) toast.error('회의 제목과 매니저를 지정하세요.');
+      else if (step === 2) {
+        if (!title.trim()) toast.error('회의 제목을 입력하세요.');
+        else if (!managerId) toast.error('매니저를 지정하세요.');
+        else toast.error('합주 가능 기간을 올바르게 입력하세요(시작 ≤ 종료).');
+      }
       return;
     }
     if (step < 3) setStep((step + 1) as Step);
@@ -149,6 +179,7 @@ export function MeetingCreateWizard() {
       purpose,
       performanceId: performance?.performanceId ?? null,
       participantUserIds: participantIds,
+      practiceWindow: { from: practiceFrom, to: practiceTo },
     });
     toast.success('선곡 회의가 만들어졌습니다.');
     router.replace(ROUTES.SETLIST_MEETING_DETAIL(id));
@@ -181,6 +212,7 @@ export function MeetingCreateWizard() {
           perfQuery={perfQuery}
           setPerfQuery={setPerfQuery}
           onCreatePerformance={() => router.push(ROUTES.PERFORMANCE_NEW)}
+          usedPerformanceIds={usedPerformanceIds}
         />
       )}
       {step === 1 && (
@@ -209,6 +241,11 @@ export function MeetingCreateWizard() {
           setManagerId={setManagerId}
           participantMembers={participantMembers}
           currentUserId={currentUserId}
+          practiceFrom={practiceFrom}
+          setPracticeFrom={setPracticeFrom}
+          practiceTo={practiceTo}
+          setPracticeTo={setPracticeTo}
+          isPerformanceMode={purpose === 'performance' && !!performance}
         />
       )}
       {step === 3 && (
@@ -219,6 +256,8 @@ export function MeetingCreateWizard() {
           participantMembers={participantMembers}
           title={title}
           managerId={managerId}
+          practiceFrom={practiceFrom}
+          practiceTo={practiceTo}
         />
       )}
 
@@ -249,6 +288,7 @@ function Step1Purpose({
   perfQuery,
   setPerfQuery,
   onCreatePerformance,
+  usedPerformanceIds,
 }: {
   purpose: MeetingPurpose;
   setPurpose: (p: MeetingPurpose) => void;
@@ -257,6 +297,7 @@ function Step1Purpose({
   perfQuery: string;
   setPerfQuery: (q: string) => void;
   onCreatePerformance: () => void;
+  usedPerformanceIds: ReadonlySet<string>;
 }) {
   const results = useMemo(() => searchMockPerformances(perfQuery), [perfQuery]);
   return (
@@ -296,19 +337,30 @@ function Step1Purpose({
             ) : (
               results.map((p) => {
                 const active = performance?.performanceId === p.performanceId;
+                const used = usedPerformanceIds.has(p.performanceId);
                 return (
                   <li key={p.performanceId}>
                     <button
                       type="button"
-                      onClick={() => onPickPerformance(p)}
+                      onClick={() => !used && onPickPerformance(p)}
+                      disabled={used}
+                      title={used ? '이미 회의가 생성된 공연입니다.' : undefined}
                       className={cn(
-                        'gap-s-3 px-s-3 py-s-2 hover:bg-card flex w-full items-center rounded-md text-left transition-colors',
-                        active && 'bg-accent-dim border-accent/30 border',
+                        'gap-s-3 px-s-3 py-s-2 flex w-full items-center rounded-md text-left transition-colors',
+                        used ? 'cursor-not-allowed opacity-40 blur-[0.5px]' : 'hover:bg-card',
+                        active && !used && 'bg-accent-dim border-accent/30 border',
                       )}
                     >
                       <CalendarDays className="text-foreground-muted h-4 w-4 shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-caption truncate font-bold">{p.title}</div>
+                        <div className="text-caption gap-s-2 flex items-center font-bold">
+                          <span className="truncate">{p.title}</span>
+                          {used && (
+                            <span className="bg-foreground-muted/15 text-foreground-muted text-micro shrink-0 rounded px-1.5 py-0.5 font-bold">
+                              회의 생성됨
+                            </span>
+                          )}
+                        </div>
                         <div className="text-foreground-muted text-micro mt-0.5 truncate">
                           {p.venue} · {p.startAt.slice(0, 16).replace('T', ' ')} ·{' '}
                           {p.bands.map((b) => b.bandName).join(', ')}
@@ -565,6 +617,11 @@ function Step3Info({
   setManagerId,
   participantMembers,
   currentUserId,
+  practiceFrom,
+  setPracticeFrom,
+  practiceTo,
+  setPracticeTo,
+  isPerformanceMode,
 }: {
   title: string;
   setTitle: (t: string) => void;
@@ -572,7 +629,13 @@ function Step3Info({
   setManagerId: (id: string) => void;
   participantMembers: Member[];
   currentUserId: string;
+  practiceFrom: string;
+  setPracticeFrom: (v: string) => void;
+  practiceTo: string;
+  setPracticeTo: (v: string) => void;
+  isPerformanceMode: boolean;
 }) {
+  const today = new Date().toISOString().slice(0, 10);
   return (
     <section className="gap-s-4 flex flex-col">
       <Input
@@ -582,6 +645,40 @@ function Step3Info({
         onChange={(e) => setTitle(e.target.value)}
         placeholder="예: 여름 페스티벌 셋리스트 회의"
       />
+
+      <div>
+        <div className="text-foreground mb-s-2 text-sm font-medium">
+          합주 가능 기간 <span className="text-danger">*</span>
+        </div>
+        <div className="text-foreground-muted text-micro mb-s-2">
+          {isPerformanceMode
+            ? '공연 모드는 오늘 ~ 공연 일자로 자동 입력됩니다. 필요 시 수정 가능.'
+            : '회의에서 다룰 합주가 가능한 기간을 입력하세요. 멤버 스케줄 조율의 기준이 됩니다.'}
+        </div>
+        <div className="gap-s-3 flex items-center">
+          <input
+            type="date"
+            value={practiceFrom}
+            min={today}
+            onChange={(e) => setPracticeFrom(e.target.value)}
+            aria-label="합주 시작일"
+            className="bg-surface border-border px-s-3 focus:ring-accent h-10 rounded-md border text-sm outline-none focus:ring-2"
+          />
+          <span className="text-foreground-muted">~</span>
+          <input
+            type="date"
+            value={practiceTo}
+            min={practiceFrom || today}
+            onChange={(e) => setPracticeTo(e.target.value)}
+            aria-label="합주 종료일"
+            className="bg-surface border-border px-s-3 focus:ring-accent h-10 rounded-md border text-sm outline-none focus:ring-2"
+          />
+        </div>
+        {practiceFrom && practiceTo && practiceFrom > practiceTo && (
+          <p className="text-danger text-micro mt-s-2">시작일은 종료일보다 빨라야 합니다.</p>
+        )}
+      </div>
+
       <div>
         <div className="text-foreground mb-s-2 text-sm font-medium">
           매니저 지정 <span className="text-danger">*</span>
@@ -637,6 +734,8 @@ function Step4Review({
   participantMembers,
   title,
   managerId,
+  practiceFrom,
+  practiceTo,
 }: {
   purpose: MeetingPurpose;
   performance: PerformanceMock | null;
@@ -644,6 +743,8 @@ function Step4Review({
   participantMembers: Member[];
   title: string;
   managerId: string | null;
+  practiceFrom: string;
+  practiceTo: string;
 }) {
   const manager = participantMembers.find((m) => m.id === managerId);
   return (
@@ -686,6 +787,11 @@ function Step4Review({
       </SummaryRow>
       <SummaryRow label="제목">
         <span className="text-caption font-bold">{title || '(미입력)'}</span>
+      </SummaryRow>
+      <SummaryRow icon={<CalendarDays className="h-4 w-4" />} label="합주 가능 기간">
+        <span className="text-caption font-mono">
+          {practiceFrom || '-'} ~ {practiceTo || '-'}
+        </span>
       </SummaryRow>
       <SummaryRow label="매니저">
         {manager ? (

@@ -16,7 +16,9 @@ export default function SetlistMeetingsLayout({ children }: { children: ReactNod
   const pathname = usePathname() ?? '';
   const fullPage =
     pathname === ROUTES.SETLIST_MEETING_NEW ||
-    pathname.startsWith(`${ROUTES.SETLIST_MEETING_NEW}/`);
+    pathname.startsWith(`${ROUTES.SETLIST_MEETING_NEW}/`) ||
+    pathname === ROUTES.SETLIST_SCHEDULING ||
+    pathname.startsWith(`${ROUTES.SETLIST_SCHEDULING}/`);
 
   if (fullPage) {
     return <div className="h-full overflow-y-auto">{children}</div>;
