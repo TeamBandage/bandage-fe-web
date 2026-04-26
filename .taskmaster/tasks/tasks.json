@@ -2383,7 +2383,7 @@
   "mvp-1-fix-v3": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "신규 me 엔드포인트 API/타입 통합",
         "description": "백엔드가 신규 제공한 `/bands/me`, `/practices/me`, `/performances/me`, `/bands/search`, `/practices/me/search`, `/performances/search` 엔드포인트를 도메인 API 함수 및 타입으로 통합한다.",
         "details": "**구현 대상 파일:**\n\n1. `src/domain/band/types/res.ts`:\n   - `MyBandInfoResponse` 타입 추가 (BandInfoResponse 확장 + `myRole: BandRole`)\n   ```ts\n   export interface MyBandInfoResponse extends BandInfoResponse {\n     myRole: BandRole;\n   }\n   ```\n\n2. `src/domain/band/api/getMyBands.ts` (신규):\n   - `GET /api/v1/bands/me` 호출\n   - 파라미터: `{ lastId?: string; pageSize: number }`\n   - 반환: `CursorResponse<MyBandInfoResponse, string>`\n\n3. `src/domain/band/api/searchBands.ts` (신규):\n   - `GET /api/v1/bands/search?keyword=...`\n   - 파라미터: `{ keyword: string; lastId?: string; pageSize: number }`\n\n4. `src/domain/practice/api/getMyPractices.ts` (신규):\n   - `GET /api/v1/practices/me`\n   - 커서 페이징 지원\n\n5. `src/domain/practice/api/searchMyPractices.ts` (신규):\n   - `GET /api/v1/practices/me/search?keyword=...`\n\n6. `src/domain/performance/api/getMyPerformances.ts` (신규):\n   - `GET /api/v1/performances/me`\n\n7. `src/domain/performance/api/searchPerformances.ts` (신규):\n   - `GET /api/v1/performances/search?keyword=...`\n\n8. `src/global/config/queryKeys.ts` 업데이트:\n   - `band.my()`, `practice.my()`, `performance.my()` 네임스페이스 분리\n   - `band.search(keyword)`, `practice.mySearch(keyword)`, `performance.search(keyword)` 추가",
@@ -2457,7 +2457,7 @@
         "updatedAt": "2026-04-25T15:26:19.619Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "me 엔드포인트 TanStack Query 훅 구현",
         "description": "Task 1에서 구현한 API 함수들을 래핑하는 TanStack Query 훅을 구현하고, 기존 `useMyBands`, `useBandRole` 훅을 신규 엔드포인트 활용으로 리팩토링한다.",
         "details": "**훅 구현:**\n\n1. `src/domain/band/hooks/useMyBands.ts` 수정:\n   - 기존 `getBands` 우회 호출 → `getMyBands` 직접 호출로 교체\n   - 반환 타입: `MyBandInfoResponse[]` (myRole 포함)\n   - 기존 limit 인터페이스 유지 (하위 호환)\n   ```ts\n   export function useMyBands(limit: number = 10) {\n     return useQuery<MyBandInfoResponse[], Error>({\n       queryKey: [...queryKeys.band.my(), limit],\n       queryFn: async () => {\n         const page = await getMyBands({ pageSize: limit });\n         return page.content;\n       },\n     });\n   }\n   ```\n\n2. `src/domain/band/hooks/useBandSearch.ts` (신규):\n   - `useInfiniteCursor` 래핑\n   - keyword 디바운스는 호출측에서 처리\n\n3. `src/domain/practice/hooks/useMyPractices.ts` (신규):\n   - `useInfiniteCursor<PracticeListItemResponse, string>` 활용\n\n4. `src/domain/practice/hooks/useBandPractices.ts` (신규):\n   - `GET /api/v1/practices?bandId=` 래핑 (탐색용)\n\n5. `src/domain/performance/hooks/useMyPerformances.ts` (신규)\n\n6. `src/global/auth/useBandRole.ts` 단순화:\n   - 기존: `getBandMembers` 페이지네이션으로 100건씩 순회하며 memberId 매칭\n   - 신규: `useMyBands` 결과에서 해당 bandId 의 myRole 반환\n   ```ts\n   export function useBandRole(bandId: string) {\n     const { data: myBands } = useMyBands(100);\n     const match = myBands?.find(b => b.bandId === bandId);\n     return { data: match?.myRole ?? null, ... };\n   }\n   ```",
@@ -2535,7 +2535,7 @@
         "updatedAt": "2026-04-25T15:33:03.116Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "내 리소스 vs 탐색 화면 정합성 정리",
         "description": "밴드/합주/공연 목록 화면과 홈 통계 카드에서 `useMyBands`/`useMyPractices`/`useMyPerformances` 훅을 사용하도록 교체하고, 밴드 상세의 가입 신청 버튼 노출 조건을 수정한다.",
         "details": "**수정 대상:**\n\n1. `src/app/(main)/bands/BandsListPane.client.tsx`:\n   - 내 밴드 탭: `useMyBands` 결과 사용\n   - 카드에 `myRole` 표시 (`RoleBadge` 활용)\n   - 탐색 탭: `useBandList` 유지, 내가 이미 소속된 밴드는 \"이미 가입됨\" 디스에이블 처리\n\n2. `src/app/(main)/practices/PracticesListPane.client.tsx`:\n   - `useMyPractices` 로 교체 (나의 합주)\n\n3. `src/app/(main)/performances/PerformancesListPane.client.tsx`:\n   - `useMyPerformances` 로 교체\n\n4. `src/app/(main)/home/HomeStatCards.client.tsx`:\n   - `useMyBands().data?.length` 그대로 유지 (이미 사용 중)\n   - `useUpcomingPractices`/`useUpcomingPerformances` 를 me 엔드포인트 기반으로 조정 필요시\n\n5. `src/app/(main)/bands/[bandId]/BandDetailContent.client.tsx`:\n   - 가입 신청 버튼 노출 조건 수정:\n     ```ts\n     const { data: myBands } = useMyBands(100);\n     const isMember = myBands?.some(b => b.bandId === bandId) ?? false;\n     // isMember === false 일 때만 가입 신청 버튼 노출\n     ```\n   - 기존 `useBandRole` 은 Task 2 에서 단순화되어 동일 결과\n\n6. 카드 컴포넌트에 `RoleBadge` 추가:\n   - `BandCard` 또는 리스트 아이템에 myRole 표시",
@@ -2614,7 +2614,7 @@
         "updatedAt": "2026-04-25T15:40:26.418Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "사이드바 합주 서브 메뉴 + 합주 시작하기 라우트",
         "description": "사이드바의 합주 항목을 expandable 서브 메뉴로 전환하고(나의 합주/합주 시작하기), `/practices/new` 라우트에 밴드 선택 → 곡 검색 → 메타데이터 입력 3단계 풀스크린 플로우를 구현한다.",
         "details": "**1. 사이드바 수정 (`src/components/layout/sidebar.tsx`):**\n- 합주 항목을 expandable 처리\n- 서브 메뉴: \"나의 합주\" (`/practices`), \"합주 시작하기\" (`/practices/new`)\n- Chevron 아이콘으로 expand 상태 표시\n\n**2. 라우트 상수 추가 (`src/global/config/routes.ts`):**\n```ts\nPRACTICES_ME: '/practices',      // 기존과 동일\nPRACTICES_NEW: '/practices/new', // 합주 시작하기\n```\n\n**3. 합주 생성 페이지 재구현 (`src/app/(main)/practices/new/`):**\n- 단일 패널 레이아웃 (PaneSplit 사용 안 함)\n- `PracticeCreateWizard.client.tsx` (신규):\n  - react-hook-form + 3단계 Zod 스키마\n  - StepIndicator 컴포넌트 좌측 또는 상단 배치\n  - Step 1: BandPicker 그리드 (`useMyBands`)\n  - Step 2: SongSearchPanel (디바운스 → `GET /practice-songs/search`, 자작곡 토글)\n  - Step 3: 제목(선택), 장소(선택), 시작 시각(DateTimePicker), 진행 시간\n\n**4. 제출 로직:**\n```ts\n// 외부 곡 검색 결과 사용 시\nawait createPracticeSongFromSong({ practiceId: '임시', song: selectedSong });\n// 자작곡 직접 입력 시\nawait createPracticeSong({ practiceId: '임시', ...fields });\n// 최종 합주 생성\nawait createPractice({ song: songId, ... });\n```\n- 백엔드 흐름: 합주 생성 시 song 필드에 songId (UUID) 전달\n\n**5. 곡 검색 API (`src/domain/practice-song/api/searchSongs.ts` 신규):**\n- `GET /api/v1/practice-songs/search?keyword=`\n- 응답: `Song[]` (title, artist, album, duration, refLink)",
@@ -2692,7 +2692,7 @@
         "updatedAt": "2026-04-25T15:54:26.634Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "UUID 직접 입력 제거 — 검색 모달 패턴 일반화 (밴드/곡/합주/멤버)",
         "description": "공연 생성 폼에서 bandIds UUID textarea 입력을 제거하고, 메타데이터만으로 1차 생성 후 별도 '참여 밴드 추가' 모달에서 밴드 검색 + 다중 선택을 구현한다.",
         "details": "**1. 공연 생성 폼 수정 (`src/app/(main)/performances/new/PerformanceCreateForm.client.tsx`):**\n- `bandIdsRaw` textarea 입력 필드 제거\n- 제출 시 `bandIds: []` 또는 미포함 (빈 배열 허용됨 - API_SPEC §6-1)\n- 생성 성공 후 상세 화면으로 이동\n\n**2. 공연 상세 화면 수정 (`src/app/(main)/performances/[performanceId]/PerformanceDetailContent.client.tsx`):**\n- PerformanceManager 권한일 때 \"참여 밴드 추가\" 버튼 노출\n- 버튼 클릭 시 `PerformanceBandPickerModal` 오픈\n\n**3. 밴드 선택 모달 (`src/domain/performance/components/PerformanceBandPickerModal.client.tsx` 신규):**\n- ResponsiveSheet 또는 Dialog 기반\n- keyword input → 디바운스 → `GET /api/v1/bands/search` 호출\n- 검색 결과 카드에 체크박스 다중 선택\n- 확인 버튼 클릭 시 선택된 bandIds 전달\n- EmptyState: \"탐색하려는 밴드명을 입력하세요\" (미입력 시)\n- 결과 0건: EmptyState \"검색 결과가 없습니다\"\n\n**4. 연동 API (mock/placeholder):**\n- 백엔드 `PATCH /performances/{id}` 에 `bandIds` 필드 미지원 (API_SPEC §6-4 확인)\n- 본 라운드: mock fetcher 로 UI/UX 완성\n- API_REQUIRED.md 에 FE-API-017 신규 항목 등록:\n  - `PATCH /api/v1/performances/{performanceId}` Request Body 에 `bandIds: string[]` 필드 추가 요청\n  - 또는 `POST /api/v1/performances/{performanceId}/bands/batch` 신규 엔드포인트\n\n**5. 밴드 검색 hook 활용:**\n- Task 1 에서 구현한 `searchBands` API + `useBandSearch` hook 재사용",
@@ -2770,7 +2770,7 @@
         "updatedAt": "2026-04-25T16:05:14.453Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "인증 가드 정합성 점검 및 AuthBootstrapper",
         "description": "비인증 사용자가 보호된 페이지에 직접 진입한 경우 즉시 `/login`으로 리다이렉트되는지 미들웨어/클라이언트 가드 양쪽에서 검증하고, 화면 깜빡임 없이 로딩 상태를 처리하는 AuthBootstrapper를 구현한다.",
         "details": "**시나리오 검증:**\n- A) refreshToken 쿠키 무 → 미들웨어에서 `/login?from=...` 리다이렉트 (현 동작 확인)\n- B) refreshToken 쿠키 유 + accessToken 메모리 무 → 보호 API 401 → refresh → 성공/실패 처리\n- C) 토큰 유효하나 BE 측 만료 → 401 → refresh 401 → /login + 토스트\n- D) 미들웨어 통과 후 useMe 401 → AuthBootstrapper 가 redirect\n\n**수정 대상:**\n\n1. `src/middleware.ts` (현행 유지 확인):\n   - `PROTECTED_PREFIXES` 에서 쿠키 검사 후 리다이렉트\n\n2. `src/global/auth/AuthBootstrapper.tsx` (신규):\n   ```tsx\n   'use client';\n   export function AuthBootstrapper({ children }: { children: ReactNode }) {\n     const { data: me, isLoading, isError } = useMe();\n     const router = useRouter();\n     const toast = useToast();\n     \n     useEffect(() => {\n       if (isError) {\n         useAuthStore.getState().clear();\n         toast.error('세션이 만료되었습니다');\n         router.replace('/login');\n       }\n     }, [isError]);\n     \n     if (isLoading) return <AuthLoadingSkeleton />;\n     if (isError) return null; // redirect 중\n     return <>{children}</>;\n   }\n   ```\n\n3. `src/app/(main)/layout.tsx` 수정:\n   - 데스크톱/모바일 children 을 AuthBootstrapper 로 래핑\n   - 토스트 중복 방지: apiClient 에서 401 토스트 제거, AuthBootstrapper 에서만 표시\n\n4. `src/global/api/apiClient.ts` 수정:\n   - `handleAuthFailure` 에서 토스트 호출 제거 (AuthBootstrapper 로 이관)\n   - triggerUnauthorized 만 호출",
@@ -2846,14 +2846,14 @@
         "updatedAt": "2026-04-25T16:09:42.849Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "비밀번호 강도 카피 단순화",
         "description": "PasswordStrength 컴포넌트의 라벨을 `약함 / 보통 / 강함` 3단계 단순 라벨로 축약하고, 부연 설명 문장을 제거한다.",
         "details": "**수정 대상: `src/components/ui/password-strength.tsx`**\n\n```ts\n// Before\nconst LABEL_MAP: Record<PasswordStrengthLevel, string> = {\n  empty: '8자 이상, 대·소문자·숫자·특수문자 조합 권장',\n  weak: '약함 — 8자 이상 및 대소문자/숫자/특수문자 중 2개 이상 포함 권장',\n  medium: '보통 — 대소문자/숫자/특수문자 모두 포함하면 강함으로 승격',\n  strong: '강함 — 안전한 비밀번호입니다',\n};\n\n// After\nconst LABEL_MAP: Record<PasswordStrengthLevel, string> = {\n  empty: '비밀번호를 입력하세요',\n  weak: '약함',\n  medium: '보통',\n  strong: '강함',\n};\n```\n\n**유지 사항:**\n- 색상 토큰 (weak=danger, medium=warn, strong=success) 유지\n- 4-segment progress bar 유지\n- aria 라벨 유지\n- score 평가 로직 (`evaluatePassword`) 변경 없음\n- `PasswordStrengthProps` 인터페이스 비파괴",
         "testStrategy": "1. 회원가입 페이지 (`/join`) 에서 비밀번호 입력 시 라벨 확인\n2. 비밀번호 변경 페이지 (`/password-change`) 에서 라벨 확인\n3. 각 강도 (empty, weak, medium, strong) 에 따른 라벨 및 색상 확인\n4. progress bar 동작 정상 확인\n5. `pnpm typecheck && pnpm lint` 통과",
         "priority": "low",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2861,9 +2861,10 @@
             "description": "password-strength.tsx 파일의 LABEL_MAP 상수에서 각 레벨별 부연 설명을 제거하고 단순 라벨로 변경한다.",
             "dependencies": [],
             "details": "src/components/ui/password-strength.tsx 파일에서 LABEL_MAP 상수를 다음과 같이 수정:\n- empty: '8자 이상, 대·소문자·숫자·특수문자 조합 권장' → '비밀번호를 입력하세요'\n- weak: '약함 — 8자 이상 및 대소문자/숫자/특수문자 중 2개 이상 포함 권장' → '약함'\n- medium: '보통 — 대소문자/숫자/특수문자 모두 포함하면 강함으로 승격' → '보통'\n- strong: '강함 — 안전한 비밀번호입니다' → '강함'\n\n기존 코드(24-29행)를 수정하되, 색상 토큰(SEG_COLOR, LABEL_COLOR), 4-segment progress bar, aria 라벨, evaluatePassword 함수, PasswordStrengthProps 인터페이스는 변경하지 않는다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "변경 후 TypeScript 컴파일 오류 없이 빌드되는지 확인 (pnpm typecheck)",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:13:19.674Z"
           },
           {
             "id": 2,
@@ -2873,9 +2874,10 @@
               1
             ],
             "details": "src/components/ui/__snapshots__/password-strength.test.tsx.snap 파일의 스냅샷이 변경된 라벨을 반영하도록 업데이트:\n- 기존: '강함 — 안전한 비밀번호입니다'\n- 변경: '강함'\n\n`pnpm test -- --update` 또는 Vitest의 `-u` 플래그를 사용하여 스냅샷을 갱신한다. 갱신 후 스냅샷 파일의 변경 내용이 예상과 일치하는지 확인한다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pnpm test src/components/ui/password-strength.test.tsx 실행 후 모든 테스트 통과 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:13:27.435Z"
           },
           {
             "id": 3,
@@ -2885,9 +2887,10 @@
               1
             ],
             "details": "개발 서버(pnpm dev)를 실행하고 /join 페이지에 접속하여 다음 시나리오를 수동 테스트:\n1. 비밀번호 필드 비어있을 때: '비밀번호를 입력하세요' 표시, text-foreground-muted 색상\n2. 약한 비밀번호 입력 시(예: 'ab'): '약함' 표시, text-danger 색상, 0~1개 세그먼트 활성화\n3. 보통 비밀번호 입력 시(예: 'Abcdefg1'): '보통' 표시, text-warn 색상, 3개 세그먼트 활성화\n4. 강한 비밀번호 입력 시(예: 'Abcdefg1!'): '강함' 표시, text-success 색상, 4개 세그먼트 활성화\n5. progress bar 애니메이션(transition-colors) 정상 동작 확인",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "브라우저에서 /join 페이지 접속 후 각 강도별 라벨 및 색상 표시 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:13:32.123Z"
           },
           {
             "id": 4,
@@ -2897,9 +2900,10 @@
               1
             ],
             "details": "개발 서버(pnpm dev)를 실행하고 /password-change 페이지에 접속하여 다음 시나리오를 수동 테스트:\n1. 새 비밀번호 필드 비어있을 때: '비밀번호를 입력하세요' 표시\n2. 약한/보통/강한 비밀번호 입력 시 각각 '약함'/'보통'/'강함' 라벨 표시\n3. 색상 토큰 및 progress bar 동작 회원가입 페이지와 동일하게 동작 확인\n\n(인증이 필요한 페이지이므로 로그인 후 테스트 또는 인증 우회 개발 모드 사용)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "브라우저에서 /password-change 페이지 접속 후 라벨 및 progress bar 동작 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:13:36.434Z"
           },
           {
             "id": 5,
@@ -2910,15 +2914,16 @@
               2
             ],
             "details": "다음 명령을 순차적으로 실행하여 코드 품질 검증:\n1. `pnpm typecheck` - TypeScript strict 모드 통과 확인\n2. `pnpm lint` - ESLint 규칙 통과 확인\n3. `pnpm format` - Prettier 포맷팅 적용\n4. `pnpm test src/components/ui/password-strength.test.tsx` - 유닛 테스트 통과 최종 확인\n\n모든 명령이 오류 없이 완료되어야 태스크 완료로 간주한다.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pnpm typecheck && pnpm lint && pnpm test 모두 통과 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:13:41.083Z"
           }
         ],
-        "updatedAt": "2026-04-25T16:10:37.157Z"
+        "updatedAt": "2026-04-25T16:13:41.083Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "생성 API 실서버 검증 및 리포트 + API_REQUIRED v3 갱신",
         "description": "밴드/합주/공연 생성 API의 실서버 호출 검증을 수행하고, 발견된 이슈를 `.taskmaster/reports/` 에 리포트로 정리한 뒤, API_REQUIRED.md 를 v3 로 갱신한다.",
         "details": "**검증 절차 (CLAUDE.md \"API 연동 태스크 완료 후 실제 서버 검증\" 준수):**\n\n1. **백엔드 서버 기동 요청**: 사용자에게 `http://localhost:8080` 기동 요청\n\n2. **검증 대상 엔드포인트:**\n   - `POST /api/v1/bands` (밴드 생성)\n   - `POST /api/v1/practices` (합주 생성)\n   - `POST /api/v1/performances` (공연 생성)\n   - `POST /api/v1/practice-songs/from-song` (합주곡 생성)\n   - `POST /api/v1/practice-songs` (자작곡 생성)\n\n3. **테스트 케이스:**\n   - 성공 케이스 (정상 요청 → 200/201)\n   - 인증 경계 (Bearer 누락, 무효 토큰)\n   - 입력 유효성 실패 (필수 필드 누락, 포맷 위반)\n   - 상태 기반 실패 (중복 생성, 합주 생성 시 song 미존재, 과거 시각)\n\n4. **리포트 작성:**\n   - `.taskmaster/reports/create-api-verification-2026-04-25.md`\n   - 섹션: 메타, 테스트한 API 목록, 케이스별 요청/응답, 권장 조치, 프론트 관련 파일\n\n5. **API_REQUIRED.md v3 갱신:**\n   - Phase A 로 해소된 항목 (FE-API-001, 006, 009, 010 일부) 의 상태를 `해소(2026-04-25)` 마킹\n   - Phase F 의 `bandIds` 일괄 추가 → FE-API-017 신규 항목 추가\n   - 검증 결과로 발견된 신규 이슈 등록\n\n**산출물:**\n- `.taskmaster/reports/create-api-verification-2026-04-25.md`\n- `API_REQUIRED.md` 업데이트",
@@ -2931,7 +2936,7 @@
           "4",
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2939,9 +2944,10 @@
             "description": "사용자에게 localhost:8080 백엔드 서버 기동을 요청하고, curl 검증을 위한 테스트 계정 셋업 및 토큰 확보를 수행한다.",
             "dependencies": [],
             "details": "1. 사용자에게 http://localhost:8080 백엔드 서버 기동 요청\n2. 테스트 계정 생성: POST /api/v1/members/join (create-test-<timestamp>@bandage.test)\n3. 로그인 및 accessToken 확보: POST /api/v1/auth/login\n4. refreshToken 쿠키 확보 (Set-Cookie 헤더 파싱)\n5. /tmp/bandage-create-api-test/ 디렉토리 생성 및 state.env 에 TOKEN, EMAIL, MEMBER_ID 저장\n6. 기존 검증 리포트 패턴(band-api-verification-2026-04-24.md 등) 참조하여 동일 형식 준비",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "POST /api/v1/auth/login 호출 후 200 응답 + accessToken 반환 확인. Bearer 토큰으로 GET /api/v1/members/me 호출하여 인증 정상 동작 검증.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:26:51.460Z"
           },
           {
             "id": 2,
@@ -2951,9 +2957,10 @@
               1
             ],
             "details": "검증 대상 엔드포인트:\n1. POST /api/v1/bands - 성공(name/description/profileImg?), 실패(name 누락 400, Bearer 누락 401)\n2. POST /api/v1/practices - 성공(title?/song/venue?/startAt/durationMinutes), 실패(song 미존재 404, 과거 startAt)\n3. POST /api/v1/performances - 성공(title/bandIds?/startAt/durationMinutes/venue?), 실패(필수 필드 누락)\n4. POST /api/v1/practice-songs/from-song - 성공(practiceId/song 객체), 실패(practiceId 미존재)\n5. POST /api/v1/practice-songs - 자작곡 생성(practiceId/title/artist/album?/duration?/refLink?)\n\n각 엔드포인트별 테스트 케이스:\n- 정상 생성 (200/201)\n- Bearer 누락 (401)\n- 무효 토큰 (401)\n- 필수 필드 누락 (400 + fieldErrors)\n- 상태 기반 실패 (404 리소스 미존재, 409 중복 등)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "모든 curl 요청/응답을 /tmp/bandage-create-api-test/*.json 및 *.resp 파일로 저장. HTTP 상태 코드, ApiResponse 구조, fieldErrors 필드 등을 원문 인용하여 재현성 확보.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:26:56.564Z"
           },
           {
             "id": 3,
@@ -2963,9 +2970,10 @@
               2
             ],
             "details": "리포트 고정 섹션 구성:\n1. 메타 - 작성일, 검증 주체, 대상 URL, 검증 도구, 검증 범위\n2. 테스트한 API 목록 - path/method/인증요건/프론트 호출 지점/판정(정상/경고/실패) 표\n3. 케이스별 실제 요청/응답 값 - 요청 헤더/body, 응답 HTTP/body/Set-Cookie, 관련 백엔드 로그를 원문 인용\n4. 권장 조치 내용 및 검토 필요 사항 - 차단/기능저하/품질/참고 우선순위로 분류. 각 항목에 재현 절차/추정 원인/확인 체크리스트 포함\n5. 프론트 관련 구현 지점 - 수정이 필요한 파일 경로\n6. 재현용 페이로드 위치 - /tmp/bandage-create-api-test/ 경로 안내\n\n기존 band-api-verification-2026-04-24.md, practice-song-api-verification-2026-04-24.md 형식을 참조하여 일관된 스타일 유지.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "리포트 내 모든 curl 명령이 재현 가능한지 확인. 발견된 이슈가 차단/기능저하/품질/참고로 명확히 분류되었는지 검토.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:27:00.449Z"
           },
           {
             "id": 4,
@@ -2975,9 +2983,10 @@
               3
             ],
             "details": "API_REQUIRED.md 갱신 내역:\n\n1. 해소 항목 마킹 (2026-04-25 기준):\n   - 1번(GET /api/v1/practices) → API_SPEC 4-1-2로 해소 확인\n   - 2번(POST /api/v1/bands profileImg) → API_SPEC 3-1에서 optional로 해소 확인\n   - 필요시 검증 결과에 따라 추가 항목 해소 마킹\n\n2. FE-API-017 신규 등록 (Task 5 관련):\n   - POST /api/v1/performances/{performanceId}/bands/batch\n   - 요청: { bandIds: string[] }\n   - 용도: 공연에 참여 밴드 일괄 추가\n   - 프론트 사용처: PerformanceBandPickerModal (검색→다중선택→확인)\n\n3. 검증 결과 신규 이슈:\n   - 발견된 스펙 드리프트, 누락 필드, 응답 불일치 등을 해당 우선순위(차단/기능저하/품질/참고) 섹션에 추가",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "API_REQUIRED.md의 항목별 상태가 실제 API_SPEC.md 및 curl 검증 결과와 일치하는지 대조. pnpm lint 통과 확인 (마크다운 린트 제외).",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:27:07.145Z"
           },
           {
             "id": 5,
@@ -2988,19 +2997,21 @@
               4
             ],
             "details": "검토 체크리스트:\n1. .taskmaster/reports/create-api-verification-2026-04-25.md 파일 존재 및 섹션 완성도\n2. API_REQUIRED.md v3 갱신 사항:\n   - 해소 항목에 날짜 마킹\n   - FE-API-017 신규 항목 등록\n   - 검증 결과 신규 이슈 등록\n3. 마크다운 문법 검증 (표, 코드블록, 링크 등)\n4. pnpm lint 실행 - TypeScript/ESLint 오류 없음 확인\n5. 백엔드 담당자가 바로 작업 가능한 수준으로 정리되었는지 검토\n6. 차단 이슈는 프론트 수정 또는 백엔드 요청 항목으로 명확히 분류되었는지 확인",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "pnpm lint 통과. 리포트 내 모든 링크와 파일 경로가 유효한지 확인. API_REQUIRED.md 항목 번호 중복이나 누락 없음 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:27:11.864Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-25T16:27:11.864Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "홈 화면 섹션 노출 개수 상한 적용 (최대 3건) 및 조건부 전체 보기 액션",
         "description": "홈 화면의 '내 밴드', '다가오는 합주', '다가오는 공연' 섹션에 최대 3건 노출 제한을 적용하고, 4건 이상일 때만 '전체 보기' 액션을 표시하며, 3건 미만일 때는 placeholder 카드 또는 EmptyState를 노출한다.",
         "details": "**개요:**\n현재 홈 화면(`src/app/(main)/home/page.tsx`)의 3개 섹션(내 밴드, 다가오는 합주, 다가오는 공연)에 노출 개수 상한(3건)을 적용하고, 데이터 정렬/필터링 로직을 hook 또는 컴포넌트 단계에 격리하여 향후 백엔드 알고리즘 엔드포인트 교체에 대비한다.\n\n**1. 정렬/필터 유틸 분리 (`src/lib/home-feed.ts` 신규):**\n향후 백엔드 `/home/feed` 엔드포인트로 대체 가능하도록 정렬/필터 로직을 한 곳에 격리한다.\n\n```ts\nimport { parseKst } from '@/lib/date';\nimport type { PracticeListItemResponse } from '@/domain/practice/types';\nimport type { PerformanceListItemResponse } from '@/domain/performance/types';\n\nconst HOME_SECTION_LIMIT = 3;\n\n/** 내 밴드: 백엔드 정렬 기준 그대로 상위 3건 */\nexport function sliceMyBands<T>(items: T[]): T[] {\n  return items.slice(0, HOME_SECTION_LIMIT);\n}\n\n/** 다가오는 합주: startAt >= now, startAt 오름차순 정렬 후 상위 3건 */\nexport function filterUpcomingPractices(\n  items: PracticeListItemResponse[],\n  now: Date = new Date(),\n): PracticeListItemResponse[] {\n  return items\n    .filter((p) => parseKst(p.startAt) >= now)\n    .sort((a, b) => parseKst(a.startAt).getTime() - parseKst(b.startAt).getTime())\n    .slice(0, HOME_SECTION_LIMIT);\n}\n\n/** 다가오는 공연: startAt >= now, startAt 오름차순 정렬 후 상위 3건 */\nexport function filterUpcomingPerformances(\n  items: PerformanceListItemResponse[],\n  now: Date = new Date(),\n): PerformanceListItemResponse[] {\n  return items\n    .filter((p) => parseKst(p.startAt) >= now)\n    .sort((a, b) => parseKst(a.startAt).getTime() - parseKst(b.startAt).getTime())\n    .slice(0, HOME_SECTION_LIMIT);\n}\n\nexport function hasMoreThanLimit(totalCount: number): boolean {\n  return totalCount > HOME_SECTION_LIMIT;\n}\n```\n\n**2. 홈 전용 섹션 컴포넌트 신규 생성:**\n기존 `MyBands`, `UpcomingPractices`, `UpcomingPerformances`는 범용이므로 홈 전용 래퍼 컴포넌트를 생성한다.\n\n- `src/app/(main)/home/HomeMyBandsSection.client.tsx`:\n  - `useMyBands(limit=20)` 호출 (여유 있게 fetch 후 클라이언트에서 3건 slice)\n  - `sliceMyBands(data)` 로 상위 3건 추출\n  - 3건 미만: `EmptyState` 또는 placeholder 카드 (현재 디자인 톤 유지)\n  - `totalCount > 3` 이면 `showViewAll=true` prop을 부모에 전달\n\n- `src/app/(main)/home/HomeUpcomingPracticeSection.client.tsx`:\n  - `useUpcomingPractices(limit=20)` 호출\n  - `filterUpcomingPractices(data)` 로 미래 합주만 3건 추출\n  - 빈 경우 기존 EmptyState 사용\n\n- `src/app/(main)/home/HomeUpcomingPerformanceSection.client.tsx`:\n  - `useUpcomingPerformances(limit=20)` 호출\n  - `filterUpcomingPerformances(data)` 로 미래 공연만 3건 추출\n\n**3. page.tsx 수정 (`src/app/(main)/home/page.tsx`):**\n- 기존 `<MyBands limit={6} />` → `<HomeMyBandsSection />`\n- 기존 `<UpcomingPractices limit={3} />` → `<HomeUpcomingPracticeSection />`\n- 기존 `<UpcomingPerformances limit={3} />` → `<HomeUpcomingPerformanceSection />`\n- ViewAllLink 조건부 렌더링: 각 섹션 컴포넌트가 `totalCount` 또는 `hasMore` 콜백을 통해 4건 이상 여부를 부모에 전달하거나, 섹션 내부에서 SectionTitle의 action을 조건부 렌더링\n\n**4. SectionTitle action 조건부 렌더링:**\n```tsx\n<SectionTitle\n  title=\"내 밴드\"\n  action={hasMoreBands ? <ViewAllLink href={ROUTES.BANDS} label=\"전체 밴드 보기\" /> : undefined}\n/>\n```\n- 4건 이상일 때만 `action` prop 전달\n- 3건 이하일 때는 `action={undefined}` 로 전체 보기 링크 숨김\n\n**5. Placeholder 카드 컴포넌트 (선택사항):**\n3건 미만일 때 빈 공간을 채우려면 `PlaceholderCard` 컴포넌트를 `src/components/ui/placeholder-card.tsx`에 생성.\n```tsx\nexport function PlaceholderCard({ className }: { className?: string }) {\n  return (\n    <div className={cn('border-dashed border-border rounded-md border p-4 opacity-50', className)}>\n      <p className=\"text-foreground-muted text-sm text-center\">추가 데이터 없음</p>\n    </div>\n  );\n}\n```\n단, 현재 디자인 톤에 맞게 EmptyState만 사용해도 무방.\n\n**6. API_REQUIRED.md 업데이트:**\n`FE-API-019` 항목 추가:\n```markdown\n### FE-API-019. 홈 피드 우선순위 정렬 엔드포인트\n\n- **엔드포인트**: `GET /api/v1/home/feed`\n- **요청 헤더**: `Authorization: Bearer <accessToken>`\n- **기대 응답**:\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"bands\": [...],      // 상위 3건, 알고리즘 정렬\n    \"practices\": [...],  // 다가오는 합주 상위 3건\n    \"performances\": [...] // 다가오는 공연 상위 3건\n  }\n}\n```\n- **프론트 사용처**: `src/app/(main)/home/` 섹션 컴포넌트\n- **현재 우회**: 각 도메인별 list API를 개별 호출 후 클라이언트에서 정렬/필터링\n- **백엔드 구현 시**: `src/lib/home-feed.ts` 유틸 제거, hook fetcher를 단일 엔드포인트로 교체\n```\n\n**파일 변경 목록:**\n1. `src/lib/home-feed.ts` (신규) — 정렬/필터 유틸\n2. `src/app/(main)/home/HomeMyBandsSection.client.tsx` (신규)\n3. `src/app/(main)/home/HomeUpcomingPracticeSection.client.tsx` (신규)\n4. `src/app/(main)/home/HomeUpcomingPerformanceSection.client.tsx` (신규)\n5. `src/app/(main)/home/page.tsx` (수정) — 신규 섹션 컴포넌트 사용\n6. `API_REQUIRED.md` (수정) — FE-API-019 항목 추가\n7. (선택) `src/components/ui/placeholder-card.tsx` — placeholder 카드",
         "testStrategy": "**1. 단위 테스트 (`src/lib/home-feed.test.ts`):**\n- `sliceMyBands`: 10건 입력 시 3건 반환 확인\n- `filterUpcomingPractices`: 과거 3건 + 미래 5건 입력 시 미래 3건만 startAt 오름차순 반환 확인\n- `filterUpcomingPerformances`: 동일 로직 테스트\n- `hasMoreThanLimit(4)` → true, `hasMoreThanLimit(3)` → false\n\n**2. 컴포넌트 시각 확인:**\n- 홈 화면 진입 후 각 섹션이 최대 3건만 렌더링되는지 확인\n- 4건 이상 데이터 존재 시 '전체 보기 →' 링크 노출 확인\n- 3건 이하 데이터 시 '전체 보기 →' 링크 미노출 확인\n- 0건일 때 EmptyState 정상 표시 확인\n\n**3. 정렬 확인:**\n- 합주/공연 섹션: 현재 시각 이후 데이터만 표시, startAt 오름차순(가장 임박한 순) 정렬 확인\n- 내 밴드 섹션: 백엔드 응답 순서 그대로 상위 3건 표시 확인\n\n**4. 라우팅 확인:**\n- '전체 보기 →' 클릭 시 각각 `/bands`, `/practices`, `/performances` 이동 확인\n\n**5. lint/typecheck:**\n- `pnpm typecheck && pnpm lint` 통과 확인\n\n**6. API_REQUIRED.md 검증:**\n- FE-API-019 항목이 올바른 섹션에 추가되었는지 확인\n- 마크다운 포맷 정상 여부 확인",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "2"
         ],
@@ -3012,9 +3023,10 @@
             "description": "홈 화면 섹션별 데이터 정렬/필터링 로직을 별도 유틸 파일로 격리하여 향후 백엔드 /home/feed 엔드포인트 교체에 대비한다.",
             "dependencies": [],
             "details": "src/lib/home-feed.ts 파일을 신규 생성하고 다음 함수들을 구현:\n\n1. HOME_SECTION_LIMIT = 3 상수 정의\n2. sliceMyBands<T>(items: T[]): T[] - 상위 3건 slice\n3. filterUpcomingPractices(items: PracticeListItemResponse[], now?: Date): PracticeListItemResponse[] - parseKst로 startAt >= now 필터 후 오름차순 정렬, 상위 3건 반환\n4. filterUpcomingPerformances(items: PerformanceListItemResponse[], now?: Date): PerformanceListItemResponse[] - 동일 로직\n5. hasMoreThanLimit(totalCount: number): boolean - totalCount > 3 여부 반환\n\nimport 경로: @/lib/date의 parseKst, @/domain/practice/types와 @/domain/performance/types의 응답 타입",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "src/lib/home-feed.test.ts 단위 테스트 작성:\n- sliceMyBands: 10건 입력시 3건 반환, 2건 입력시 2건 반환\n- filterUpcomingPractices: 과거 3건 + 미래 5건 입력시 미래 3건만 startAt 오름차순 반환\n- filterUpcomingPerformances: 동일 로직 테스트\n- hasMoreThanLimit(4) === true, hasMoreThanLimit(3) === false",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:17:47.572Z"
           },
           {
             "id": 2,
@@ -3024,9 +3036,10 @@
               1
             ],
             "details": "src/app/(main)/home/ 경로에 3개 파일 생성:\n\n1. HomeMyBandsSection.client.tsx:\n- useMyBands(20)으로 여유있게 fetch\n- sliceMyBands로 상위 3건 추출\n- onTotalCount?: (count: number) => void 콜백 또는 내부에서 hasMore 계산\n- 0건시 EmptyState (icon=Users), 렌더링은 기존 BandCard 재사용\n\n2. HomeUpcomingPracticeSection.client.tsx:\n- useUpcomingPractices(20) 호출\n- filterUpcomingPractices로 미래 합주 3건 필터\n- 0건시 EmptyState (icon=Music)\n- PracticeCard 재사용\n\n3. HomeUpcomingPerformanceSection.client.tsx:\n- useUpcomingPerformances(20) 호출\n- filterUpcomingPerformances로 미래 공연 3건 필터\n- 0건시 EmptyState (icon=CalendarDays)\n- PerformanceCard 재사용",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "- 각 컴포넌트가 정확히 최대 3건만 렌더링하는지 확인\n- Loading/Error 상태가 기존 범용 컴포넌트와 동일하게 동작하는지 확인\n- EmptyState가 0건일 때 올바르게 표시되는지 확인\n- pnpm typecheck && pnpm lint 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:17:51.649Z"
           },
           {
             "id": 3,
@@ -3037,9 +3050,10 @@
               2
             ],
             "details": "두 가지 구현 방식 중 선택:\n\n방식 A (권장 - 섹션 내부 캡슐화):\n- 각 Home*Section 컴포넌트가 SectionTitle을 포함\n- 내부에서 hasMoreThanLimit(data.length)로 판단\n- showViewAll이 true일 때만 action prop 전달\n\n방식 B (부모에서 관리):\n- Home*Section이 onHasMore 콜백 prop을 받음\n- page.tsx에서 상태로 관리하여 SectionTitle에 전달\n\n방식 A 채택시:\n- HomeMyBandsSection에서 <SectionTitle title='내 밴드' action={hasMore ? <ViewAllLink href={ROUTES.BANDS} label='전체 밴드 보기' /> : undefined} /> 패턴 적용\n- ViewAllLink 컴포넌트는 page.tsx에서 섹션 컴포넌트로 이동하거나 공용 컴포넌트화",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "- 4건 이상 데이터가 있을 때 '전체 보기' 링크가 표시되는지 확인\n- 3건 이하일 때 '전체 보기' 링크가 숨겨지는지 확인\n- 링크 클릭시 각 도메인 목록 페이지로 정상 이동하는지 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:17:54.974Z"
           },
           {
             "id": 4,
@@ -3050,9 +3064,10 @@
               3
             ],
             "details": "page.tsx 수정 내용:\n\n1. import 변경:\n- 기존: import { MyBands } from '@/domain/band/components/MyBands'\n- 신규: import { HomeMyBandsSection } from './HomeMyBandsSection.client'\n- 동일하게 UpcomingPractices → HomeUpcomingPracticeSection\n- 동일하게 UpcomingPerformances → HomeUpcomingPerformanceSection\n\n2. JSX 변경:\n- <MyBands limit={6} /> → <HomeMyBandsSection />\n- <UpcomingPractices limit={3} /> → <HomeUpcomingPracticeSection />\n- <UpcomingPerformances limit={3} /> → <HomeUpcomingPerformanceSection />\n\n3. ViewAllLink 및 SectionTitle을 섹션 컴포넌트 내부로 이동했다면 page.tsx에서 해당 부분 제거\n\n4. 불필요해진 import 정리",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "- pnpm dev로 홈 화면 접속하여 3개 섹션 정상 렌더링 확인\n- 각 섹션이 최대 3건만 표시하는지 확인\n- 기존 레이아웃(grid 2열 + 단일 섹션)이 유지되는지 확인\n- pnpm typecheck && pnpm lint && pnpm build 통과",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:18:02.521Z"
           },
           {
             "id": 5,
@@ -3065,8 +3080,500 @@
               4
             ],
             "details": "API_REQUIRED.md 파일의 '신규 기능' 섹션에 FE-API-019 항목 추가:\n\n### FE-API-019. 홈 피드 우선순위 정렬 엔드포인트\n\n- **엔드포인트**: GET /api/v1/home/feed\n- **요청 헤더**: Authorization: Bearer <accessToken>\n- **기대 응답**:\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"bands\": [...],      // 내 밴드 상위 3건, 알고리즘 정렬\n    \"practices\": [...],  // 다가오는 합주 상위 3건, startAt 오름차순\n    \"performances\": [...] // 다가오는 공연 상위 3건, startAt 오름차순\n  }\n}\n```\n- **프론트 사용처**: src/app/(main)/home/ 섹션 컴포넌트\n- **현재 우회**: 각 도메인별 list API를 개별 호출 후 클라이언트에서 정렬/필터링 (src/lib/home-feed.ts)\n- **백엔드 구현 시**: src/lib/home-feed.ts 유틸 제거, hook fetcher를 단일 엔드포인트로 교체",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "- API_REQUIRED.md 마크다운 문법 오류 없는지 확인\n- 기존 문서 구조(차단/신규기능/스키마확장/참고 섹션)와 일관성 유지 확인\n- pnpm lint 통과 (마크다운 린트 적용시)",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-25T16:18:09.461Z"
+          }
+        ],
+        "updatedAt": "2026-04-25T16:18:09.461Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-04-25T16:27:11.866Z",
+      "taskCount": 9,
+      "completedCount": 9,
+      "tags": [
+        "mvp-1-fix-v3"
+      ],
+      "created": "2026-04-25T16:41:08.748Z",
+      "description": "Tasks for mvp-1-fix-v3 context"
+    }
+  },
+  "mvp-1-fix-v4": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "마법사 이탈 가드(Navigation Guard) 구현",
+        "description": "사이드바 탭 전환 / 라우트 이탈 / 브라우저 뒤로가기 시 dirty 상태 마법사가 있으면 경고 모달을 표시하여 사용자가 입력 손실을 인지하도록 한다.",
+        "details": "## 구현 대상\n\n1. **DirtyFormContext** (`src/global/navigation/dirty-form-context.tsx`)\n   - `createContext`로 Provider/Consumer 생성\n   - 상태: `{ isDirty: boolean, setDirty: (dirty: boolean) => void }`\n   - `DirtyFormProvider` 컴포넌트를 `src/app/(main)/layout.tsx`의 `<AuthBootstrapper>` 하위에 배치\n\n2. **LeaveConfirmDialog** (`src/components/feedback/leave-confirm-dialog.tsx`)\n   - 기존 `Dialog` 컴포넌트 활용\n   - Props: `open`, `onConfirm: () => void`, `onCancel: () => void`\n   - 카피: \"작성 중인 내용이 있습니다. 정말 나가시겠어요?\"\n   - 버튼: \"머무르기\"(취소), \"나가기\"(확인, danger 스타일)\n\n3. **Sidebar Link 인터셉트** (`src/components/layout/sidebar.tsx`)\n   - `useDirtyForm()` hook으로 `isDirty` 조회\n   - `Link`를 래핑한 `GuardedLink` 컴포넌트로 대체\n   - `onClick` 핸들러에서 `isDirty` 확인 → 모달 오픈 → 확인 시 `setDirty(false)` 후 router.push\n   - `e.preventDefault()` 로 기본 동작 차단\n\n4. **브라우저 이벤트 훅** (`src/hooks/useBeforeUnload.ts`)\n   - `useEffect`로 `beforeunload` 이벤트 등록/해제\n   - `e.preventDefault(); e.returnValue = ''` 로 브라우저 기본 경고\n\n5. **마법사 dirty 플래그 연동** (`PracticeCreateWizard.client.tsx`)\n   - `useDirtyForm()` 훅 호출\n   - step > 0 또는 bandId/songPick 등 입력값 존재 시 `setDirty(true)`, 그 외 `setDirty(false)`\n   - 제출 성공 시 `setDirty(false)`\n\n## 의사 코드\n```tsx\n// DirtyFormContext\nexport const DirtyFormContext = createContext({ isDirty: false, setDirty: () => {} });\nexport function useDirtyForm() { return useContext(DirtyFormContext); }\nexport function DirtyFormProvider({ children }) {\n  const [isDirty, setDirty] = useState(false);\n  return <DirtyFormContext.Provider value={{ isDirty, setDirty }}>{children}</DirtyFormContext.Provider>;\n}\n\n// GuardedLink in Sidebar\nfunction GuardedLink({ href, children }) {\n  const { isDirty, setDirty } = useDirtyForm();\n  const [confirmOpen, setConfirmOpen] = useState(false);\n  const router = useRouter();\n  const handleClick = (e) => {\n    if (isDirty) { e.preventDefault(); setConfirmOpen(true); }\n  };\n  const onConfirm = () => { setDirty(false); router.push(href); };\n  return (\n    <>\n      <Link href={href} onClick={handleClick}>{children}</Link>\n      <LeaveConfirmDialog open={confirmOpen} onConfirm={onConfirm} onCancel={() => setConfirmOpen(false)} />\n    </>\n  );\n}\n```",
+        "testStrategy": "1. 마법사에서 밴드 선택 후 사이드바 \"홈\" 클릭 → LeaveConfirmDialog 노출 확인\n2. \"머무르기\" 클릭 → 모달 닫힘, 라우트 유지\n3. \"나가기\" 클릭 → 홈으로 이동\n4. step 0 + 입력값 없음 상태 → 경고 없이 바로 이동\n5. 브라우저 새로고침/뒤로가기 시 네이티브 beforeunload 경고 표시\n6. 제출 성공 후 사이드바 이동 시 경고 없음\n7. Vitest 단위 테스트: DirtyFormContext 상태 변경 로직",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "DirtyFormContext 및 Provider 생성 + 레이아웃 통합",
+            "description": "전역 dirty 상태를 관리하는 React Context와 Provider를 생성하고, (main) 레이아웃의 AuthBootstrapper 하위에 배치합니다.",
+            "dependencies": [],
+            "details": "1. `src/global/navigation/dirty-form-context.tsx` 파일 생성\n   - `DirtyFormContextType` 인터페이스 정의: `{ isDirty: boolean; setDirty: (dirty: boolean) => void }`\n   - `createContext`로 기본값 `{ isDirty: false, setDirty: () => {} }` 설정\n   - `DirtyFormProvider` 컴포넌트 구현: `useState`로 `isDirty` 상태 관리\n   - `useDirtyForm()` 커스텀 훅 export: `useContext(DirtyFormContext)` 래핑\n\n2. `src/app/(main)/layout.tsx` 수정\n   - `DirtyFormProvider` import 추가\n   - `<AuthBootstrapper>` 내부 children을 `<DirtyFormProvider>`로 래핑\n   - Desktop과 Mobile 영역 모두 동일하게 적용",
+            "status": "done",
+            "testStrategy": "Vitest 단위 테스트로 DirtyFormProvider 렌더링 후 useDirtyForm 훅이 상태 변경을 올바르게 반영하는지 검증. 초기값 isDirty=false 확인, setDirty(true) 호출 후 isDirty=true 확인.",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:05:40.915Z"
+          },
+          {
+            "id": 2,
+            "title": "LeaveConfirmDialog 및 useBeforeUnload 훅 구현",
+            "description": "이탈 경고 모달 컴포넌트와 브라우저 beforeunload 이벤트 핸들링 훅을 구현합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. `src/components/feedback/leave-confirm-dialog.tsx` 파일 생성\n   - Props: `open: boolean`, `onConfirm: () => void`, `onCancel: () => void`\n   - 기존 `Dialog`, `DialogContent`, `DialogHeader`, `DialogBody`, `DialogFooter`, `DialogTitle`, `DialogDescription` 컴포넌트 활용\n   - 카피: 제목 \"작성 중인 내용이 있습니다\", 설명 \"페이지를 떠나면 입력한 내용이 사라집니다. 정말 나가시겠어요?\"\n   - 버튼: \"머무르기\"(secondary, onCancel), \"나가기\"(danger variant, onConfirm)\n   - hideCloseButton 적용하여 X 버튼 숨김\n\n2. `src/hooks/useBeforeUnload.ts` 파일 생성\n   - 파라미터: `enabled: boolean`\n   - `useEffect`로 `beforeunload` 이벤트 리스너 등록/해제\n   - 핸들러: `e.preventDefault(); e.returnValue = ''` 로 브라우저 기본 경고 트리거\n   - enabled가 false면 리스너 등록하지 않음",
+            "status": "done",
+            "testStrategy": "LeaveConfirmDialog: 스토리북 또는 RTL로 open=true 시 모달 렌더링, 버튼 클릭 시 onConfirm/onCancel 콜백 호출 확인. useBeforeUnload: 통합 테스트에서 enabled=true 시 beforeunload 이벤트 리스너 등록 여부 확인.",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:05:45.584Z"
+          },
+          {
+            "id": 3,
+            "title": "Sidebar/BottomNav에 GuardedLink 적용",
+            "description": "Sidebar와 BottomNav의 Link를 GuardedLink로 교체하여 dirty 상태일 때 이탈 경고 모달을 표시합니다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. `src/components/layout/sidebar.tsx` 수정\n   - `GuardedLink` 내부 컴포넌트 추가\n   - Props: `href`, `children`, 기타 Link props (className, aria-current 등)\n   - `useDirtyForm()` 훅으로 `isDirty`, `setDirty` 조회\n   - `useState`로 `confirmOpen` 관리\n   - `onClick`: isDirty면 `e.preventDefault()` + `setConfirmOpen(true)`\n   - `onConfirm`: `setDirty(false)` 후 `router.push(href)`\n   - `onCancel`: `setConfirmOpen(false)`\n   - `LeaveConfirmDialog` 렌더링\n   - `NavRow` 내 `<Link>`를 `<GuardedLink>`로 교체 (서브메뉴 포함)\n   - 하단 프로필 영역 Link도 GuardedLink로 교체\n\n2. `src/components/layout/bottom-nav.tsx` 수정\n   - 동일한 패턴으로 모바일 탭의 Link를 GuardedLink로 교체\n   - `use client` 이미 선언되어 있으므로 훅 사용 가능",
+            "status": "done",
+            "testStrategy": "1. 마법사에서 밴드 선택 후 사이드바 '홈' 클릭 시 LeaveConfirmDialog 노출 확인. 2. '머무르기' 클릭 시 모달 닫힘, 라우트 유지. 3. '나가기' 클릭 시 홈으로 이동. 4. dirty=false 상태에서는 경고 없이 바로 이동. 5. 모바일 BottomNav에서도 동일 동작.",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:05:49.834Z"
+          },
+          {
+            "id": 4,
+            "title": "PracticeCreateWizard에 dirty 플래그 연동",
+            "description": "합주 생성 마법사에서 입력 상태에 따라 dirty 플래그를 설정하고, 제출 성공 시 초기화합니다.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "1. `src/app/(main)/practices/new/PracticeCreateWizard.client.tsx` 수정\n   - `useDirtyForm()` 훅 import 및 호출\n   - `useBeforeUnload(isDirty)` 훅 호출로 브라우저 새로고침/뒤로가기 경고 활성화\n   - dirty 판정 로직 (useEffect로 구현):\n     - step > 0 이면 dirty\n     - step === 0 이고 bandId가 선택되었으면 dirty\n     - 그 외에는 not dirty\n   - mutation onSuccess 콜백에서 `setDirty(false)` 호출 (라우트 이동 전)\n   - 컴포넌트 unmount 시 cleanup으로 `setDirty(false)` (useEffect return)\n\n2. dirty 로직 예시:\n   ```tsx\n   const { setDirty } = useDirtyForm();\n   useEffect(() => {\n     const hasDirtyData = step > 0 || !!bandId;\n     setDirty(hasDirtyData);\n   }, [step, bandId, setDirty]);\n   useEffect(() => () => setDirty(false), [setDirty]);\n   ```",
+            "status": "done",
+            "testStrategy": "1. step 0 + 입력값 없음 상태에서 사이드바 이동 시 경고 없음. 2. 밴드 선택 후 사이드바 이동 시 경고 모달 표시. 3. step 1 이상에서 이동 시 경고 모달 표시. 4. 제출 성공 후 사이드바 이동 시 경고 없음. 5. 브라우저 새로고침 시 네이티브 beforeunload 경고 표시.",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:05:54.063Z"
+          }
+        ],
+        "updatedAt": "2026-04-26T01:05:54.063Z"
+      },
+      {
+        "id": "2",
+        "title": "공연 사이드바 분리 + 풀페이지 마법사 전환",
+        "description": "공연 사이드바를 합주와 동일하게 '나의 공연' / '공연 생성' 서브메뉴로 분리하고, 공연 생성을 풀페이지 마법사로 교체한다.",
+        "details": "## 구현 대상\n\n1. **Sidebar 공연 expandable** (`src/components/layout/sidebar.tsx`)\n   - `mainNav` 배열의 공연 항목에 `subs` 추가:\n   ```ts\n   { href: ROUTES.PERFORMANCES, label: '공연', icon: CalendarDays,\n     subs: [\n       { href: ROUTES.PERFORMANCES, label: '나의 공연' },\n       { href: ROUTES.PERFORMANCE_NEW, label: '공연 생성' },\n     ] }\n   ```\n\n2. **PerformanceCreateWizard** (`src/app/(main)/performances/new/PerformanceCreateWizard.client.tsx`)\n   - 기존 `PerformanceCreateForm.client.tsx`를 마법사로 전환\n   - Step 구조: 0: 기본 정보 (제목/설명), 1: 참여 밴드 (BandPickerModal), 2: 일정 (시작/소요시간), 3: 검토 및 확정 (Task 5와 연계)\n   - Step 0/1/2는 기존 PerformanceCreateModal 로직 재사용\n   - `useDirtyForm()` 연동 (Task 1 완료 후)\n\n3. **performances/new/page.tsx** 수정\n   - `PerformanceCreateWizard` 컴포넌트로 교체\n\n4. **performances/layout.tsx** 수정 (`/performances/new` 풀페이지 opt-out)\n   - `pathname.includes('/new')` 조건으로 PaneSplit 레이아웃 대신 단일 children 렌더\n   - 합주 `/practices/new` 와 동일 패턴 적용\n\n5. **PerformanceCreateModal 제거**\n   - `src/domain/performance/components/PerformanceCreateModal.client.tsx` 삭제\n   - `PerformancesListPane.client.tsx`의 트리거를 `Link to={ROUTES.PERFORMANCE_NEW}` 버튼으로 교체\n\n## 의사 코드\n```tsx\n// PerformanceCreateWizard.client.tsx\nconst STEPS = ['기본 정보', '참여 밴드', '일정', '검토'] as const;\nconst [step, setStep] = useState<0|1|2|3>(0);\nconst [selectedBands, setSelectedBands] = useState<BandInfoResponse[]>([]);\n// Step 0: title input\n// Step 1: BandPickerModal multiple selection\n// Step 2: DateTimePicker + durationMinutes\n// Step 3: WizardSummaryCard (Task 5) + 최종 제출 버튼\n```",
+        "testStrategy": "1. 사이드바 공연 클릭 → 서브메뉴 펼침 확인 (나의 공연/공연 생성)\n2. /performances/new 직접 접근 → 풀페이지 마법사 렌더링\n3. Step 0→1→2→3 이동 및 이전/다음 버튼 동작\n4. Step 3 검토 패널에서 입력값 올바르게 표시\n5. 기존 PerformancesListPane 의 \"새 공연\" 버튼 클릭 → /performances/new 라우트 이동\n6. PerformanceCreateModal 컴포넌트 import 시 빌드 에러 (삭제 확인)\n7. 모바일(<960px)에서도 풀페이지 마법사 동작 확인",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "사이드바 공연 메뉴에 expandable 서브메뉴 추가",
+            "description": "sidebar.tsx의 mainNav 배열에서 공연 항목에 subs 배열을 추가하여 '나의 공연' / '공연 생성' 서브메뉴로 분리한다.",
+            "dependencies": [],
+            "details": "src/components/layout/sidebar.tsx 파일에서 현재 46번째 줄의 공연 항목을 수정한다. 합주 메뉴(37-45줄)와 동일한 패턴으로 subs 배열을 추가:\n\n```ts\n{ href: ROUTES.PERFORMANCES, label: '공연', icon: CalendarDays,\n  subs: [\n    { href: ROUTES.PERFORMANCES, label: '나의 공연' },\n    { href: ROUTES.PERFORMANCE_NEW, label: '공연 생성' },\n  ] }\n```\n\n기존 NavRow 컴포넌트의 expandable 로직(hasSubs, open 상태, ChevronDown 아이콘)이 이미 구현되어 있으므로 subs 배열만 추가하면 자동으로 동작한다. isSubActive 함수도 /performances 정확 매칭을 위해 조건 추가 필요.",
+            "status": "done",
+            "testStrategy": "1. 사이드바에서 공연 클릭 시 서브메뉴 펼침 확인 (나의 공연/공연 생성 노출)\n2. 서브메뉴 '나의 공연' 클릭 → /performances 이동 확인\n3. 서브메뉴 '공연 생성' 클릭 → /performances/new 이동 확인\n4. /performances/new 진입 시 '공연 생성' 서브메뉴 활성 상태 표시\n5. 합주 서브메뉴와 동일한 펼침/접힘 애니메이션 동작 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:10:38.146Z"
+          },
+          {
+            "id": 2,
+            "title": "PerformanceCreateWizard 풀페이지 마법사 컴포넌트 구현",
+            "description": "기존 PerformanceCreateModal의 로직을 재사용하여 4단계 풀페이지 마법사 형태의 PerformanceCreateWizard.client.tsx를 생성한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "src/app/(main)/performances/new/PerformanceCreateWizard.client.tsx 파일 생성. PracticeCreateWizard.client.tsx 패턴을 따르되 공연 생성에 맞게 수정:\n\nSTEPS = ['기본 정보', '참여 밴드', '일정', '검토'] as const;\n\nStep 0 (기본 정보):\n- title Input (필수)\n- description Textarea (선택)\n\nStep 1 (참여 밴드):\n- BandPickerModal multiple 선택 모드\n- 선택된 밴드 칩 리스트 (X 버튼으로 제거)\n- '밴드 검색해서 추가' 버튼\n\nStep 2 (일정):\n- DateTimePicker (startAt)\n- durationMinutes Input (type=number)\n- venue Textarea (선택)\n\nStep 3 (검토):\n- 입력값 요약 카드 (Task 5의 WizardSummaryCard와 연계 준비)\n- 최종 '공연 만들기' 버튼\n\n기존 PerformanceCreateModal의 useCreatePerformance 훅, createPerformanceSchema, BandPickerModal 연동 로직 재사용. useDirtyForm() 연동은 Task 1 완료 후 추가.",
+            "status": "done",
+            "testStrategy": "1. /performances/new 접근 시 풀페이지 마법사 렌더링 확인\n2. Step 0: title 입력 후 '다음' 버튼 활성화\n3. Step 1: BandPickerModal 오픈/선택/제거 동작 확인\n4. Step 2: DateTimePicker, durationMinutes 입력 동작 확인\n5. Step 3: 이전 단계 입력값들이 검토 화면에 표시\n6. '공연 만들기' 클릭 → API 호출 → 성공 시 상세 페이지 이동\n7. '이전' 버튼으로 Step 이동 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:10:41.298Z"
+          },
+          {
+            "id": 3,
+            "title": "performances/layout.tsx 풀페이지 opt-out 및 page.tsx 수정",
+            "description": "/performances/new 경로에서 PaneSplit 레이아웃 대신 단일 children만 렌더링하도록 layout.tsx를 수정하고, page.tsx에서 PerformanceCreateWizard를 사용하도록 변경한다.",
+            "dependencies": [
+              2
+            ],
+            "details": "1. src/app/(main)/performances/layout.tsx 수정:\n   - practices/layout.tsx 패턴 적용\n   - usePathname으로 현재 경로 확인\n   - pathname === ROUTES.PERFORMANCE_NEW || pathname.startsWith(`${ROUTES.PERFORMANCE_NEW}/`) 조건으로 fullPage 판정\n   - fullPage 시 PerformancesListPane 미노출, 단일 `<div className=\"h-full overflow-y-auto\">{children}</div>` 반환\n\n2. src/app/(main)/performances/new/page.tsx 수정 (이미 존재하면 수정, 없으면 생성):\n   - Metadata 설정: title: '공연 만들기 | Bandage'\n   - PerformanceCreateWizard 컴포넌트 import 및 렌더링\n\nimport 추가:\n- 'use client' from usePathname\n- ROUTES from '@/global/config/routes'",
+            "status": "done",
+            "testStrategy": "1. /performances 접근 시 기존 master-detail 레이아웃 유지 확인\n2. /performances/new 접근 시 좌측 ListPane 미노출 + 풀페이지 마법사만 표시\n3. /performances/new에서 사이드바는 그대로 노출 확인\n4. 모바일(<960px)에서도 /performances/new 풀페이지 정상 렌더링\n5. 브라우저 뒤로가기로 /performances 복귀 시 ListPane 다시 노출",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:10:44.332Z"
+          },
+          {
+            "id": 4,
+            "title": "PerformanceCreateModal 제거 및 PerformancesListPane 트리거 교체",
+            "description": "PerformanceCreateModal.client.tsx 파일을 삭제하고, PerformancesListPane의 '새 공연' 버튼을 /performances/new로 이동하는 Link 버튼으로 교체한다.",
+            "dependencies": [
+              3
+            ],
+            "details": "1. src/app/(main)/performances/PerformancesListPane.client.tsx 수정:\n   - PerformanceCreateModal import 제거\n   - 80-86줄의 PerformanceCreateModal 컴포넌트를 Link 버튼으로 교체:\n   ```tsx\n   <Button size=\"sm\" variant=\"accent-outline\" asChild aria-label=\"새 공연 만들기\">\n     <Link href={ROUTES.PERFORMANCE_NEW}>\n       <Plus className=\"h-4 w-4\" /> 새 공연\n     </Link>\n   </Button>\n   ```\n   - Link import 추가 (이미 있으면 유지)\n\n2. src/domain/performance/components/PerformanceCreateModal.client.tsx 삭제:\n   - 파일 완전 삭제\n   - 다른 파일에서 import 참조가 없는지 확인 (Grep으로 검색)\n\n삭제 전 PerformanceCreateModal의 핵심 로직(폼 상태, mutation, 밴드 선택)은 PerformanceCreateWizard로 이미 이전됨.",
+            "status": "done",
+            "testStrategy": "1. PerformancesListPane의 '새 공연' 버튼 클릭 → /performances/new 라우트 이동 확인\n2. 버튼 hover 시 Link 스타일 정상 적용\n3. PerformanceCreateModal import 시 빌드 에러 발생 (삭제 확인)\n4. pnpm typecheck 통과 (import 참조 제거 완료)\n5. pnpm build 성공\n6. 기존 공연 목록 기능 정상 동작 유지",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:10:47.492Z"
+          }
+        ],
+        "updatedAt": "2026-04-26T01:10:47.492Z"
+      },
+      {
+        "id": "3",
+        "title": "탐색 카드 '내 항목' 시인성 강화",
+        "description": "밴드/공연 탐색 탭의 카드에서 사용자가 이미 소속된 항목을 시각적으로 강조하여 구분한다.",
+        "details": "## 구현 대상\n\n1. **MyItemMarker 컴포넌트** (`src/components/ui/my-item-marker.tsx`)\n   - Props: `type: 'band' | 'performance'`\n   - 렌더링: 작은 칩 (accent-soft 배경 + accent 글자)\n   - 카피: `내 밴드` / `내 공연`\n   ```tsx\n   export function MyItemMarker({ type }: { type: 'band' | 'performance' }) {\n     const label = type === 'band' ? '내 밴드' : '내 공연';\n     return (\n       <span className=\"bg-accent-soft text-accent text-micro font-semibold px-s-2 py-0.5 rounded\">\n         {label}\n       </span>\n     );\n   }\n   ```\n\n2. **BandsListPane 수정** (`src/app/(main)/bands/BandsListPane.client.tsx`)\n   - 탐색 탭 `BandRow` 에서 `myRole` 이 존재하면:\n     - 좌상단에 `<MyItemMarker type=\"band\" />` 표시\n     - 카드 좌측에 2px accent 보더 추가: `border-l-2 border-accent`\n   - 기존 `BandRoleBadge`는 별도로 유지 (역할 표시)\n\n3. **PerformancesListPane 수정** (`src/app/(main)/performances/PerformancesListPane.client.tsx`)\n   - 현재 `useMyPerformances` 결과를 Set으로 변환하여 performanceId 매칭\n   - 탐색 탭에서 내 공연인 경우 동일 시각 처리\n\n4. **listItemClasses 확장** (`src/lib/list-item-styles.ts`)\n   - `isMine` 파라미터 추가하여 좌측 보더 조건부 적용\n\n## 시각 단서 조합 (PRD default)\n- (i) 우상단 \"내 밴드/내 공연\" 칩\n- (ii) 좌측 2px accent 보더\n- 모바일에서는 칩만 표시 (보더는 시각 노이즈 — `lg:border-l-2` 조건)\n\n## 의사 코드\n```tsx\n// BandRow 수정\nconst isMine = !!myRole;\nreturn (\n  <Link className={cn(listItemClasses(active, tone), isMine && 'lg:border-l-2 lg:border-accent')}>\n    <div className=\"relative\">\n      {isMine && <MyItemMarker type=\"band\" className=\"absolute -top-1 -right-1\" />}\n      {/* 기존 내용 */}\n    </div>\n  </Link>\n);\n```",
+        "testStrategy": "1. 밴드 탐색 탭에서 소속 밴드 카드 → 좌측 보더 + 칩 노출\n2. 비소속 밴드 카드 → 시각 강조 없음\n3. 공연 탐색 탭 동일 동작\n4. 모바일 뷰포트(<960px)에서 칩만 표시, 보더 미적용\n5. 「내 밴드」탭 에서는 중복 표시 제거 (이미 전부 내 밴드)\n6. 스크린리더 접근성: 칩에 적절한 aria-label",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "in-progress",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "MyItemMarker 컴포넌트 생성",
+            "description": "밴드/공연 탐색 탭에서 사용자 소속 항목임을 표시하는 칩 형태의 마커 컴포넌트를 구현한다.",
+            "dependencies": [],
+            "details": "src/components/ui/my-item-marker.tsx 파일 생성. Props로 type: 'band' | 'performance' 받음. 기존 Badge 컴포넌트(src/components/ui/badge.tsx)의 accent variant 스타일(bg-accent-dim text-accent-hi)을 참고하여 구현. 렌더링: type에 따라 '내 밴드' 또는 '내 공연' 라벨 표시. 스타일: bg-accent-soft(globals.css에 정의된 oklch(0.62 0.22 250 / 0.08)) + text-accent + text-micro(11px) + font-semibold + px-s-2 py-0.5 rounded. 스크린리더 접근성을 위해 aria-label 추가 (예: '현재 소속 중').",
+            "status": "pending",
+            "testStrategy": "Vitest 단위 테스트: type='band'일 때 '내 밴드' 텍스트 렌더링 확인, type='performance'일 때 '내 공연' 텍스트 렌더링 확인. aria-label 속성 존재 확인. Tailwind 클래스 적용 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "listItemClasses 유틸 isMine 파라미터 확장",
+            "description": "리스트 아이템 스타일 유틸 함수에 내 항목 여부를 나타내는 파라미터를 추가하여 좌측 보더 조건부 적용을 지원한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "src/lib/list-item-styles.ts 파일 수정. listItemClasses 함수 시그니처에 isMine?: boolean 파라미터 추가. PRD 요구사항에 따라 모바일에서는 보더 미표시, lg(960px) 이상에서만 좌측 2px accent 보더 표시: isMine이 true일 때 'lg:border-l-2 lg:border-accent' 클래스 추가. cn 유틸로 기존 클래스와 병합. 기존 호출부에 영향 없도록 기본값 false 설정.",
+            "status": "pending",
+            "testStrategy": "Vitest 단위 테스트: isMine=false일 때 기존 동작 동일 확인. isMine=true일 때 'lg:border-l-2 lg:border-accent' 클래스 포함 확인. selected와 isMine 조합 시 모든 클래스가 올바르게 병합되는지 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "BandsListPane 탐색 탭 내 항목 시각 강조 적용",
+            "description": "밴드 탐색 탭의 BandRow 컴포넌트에서 사용자 소속 밴드를 MyItemMarker와 좌측 보더로 시각적으로 강조한다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "src/app/(main)/bands/BandsListPane.client.tsx 파일 수정. BandRow 컴포넌트에 isMine 변수 추가: const isMine = !!myRole. listItemClasses 호출 시 isMine 파라미터 전달. MyItemMarker 임포트 후, isMine이 true인 경우 카드 우상단에 <MyItemMarker type=\"band\" /> 표시. 마커 위치: 기존 콘텐츠 div를 relative로 감싸고 MyItemMarker를 absolute -top-1 -right-1로 배치. 중요: '내 밴드' 탭에서는 모든 항목이 이미 내 밴드이므로 MyItemMarker 미표시 (중복 방지). discover 탭에서만 isMine 시각 강조 적용.",
+            "status": "pending",
+            "testStrategy": "수동 테스트: 1) 탐색 탭에서 소속 밴드 카드에 '내 밴드' 칩 + lg 뷰포트에서 좌측 보더 노출 확인. 2) 비소속 밴드 카드에 시각 강조 없음 확인. 3) 모바일(<960px)에서 칩만 표시, 보더 미적용 확인. 4) '내 밴드' 탭에서는 MyItemMarker 미표시 확인. 5) 스크린리더로 aria-label 읽힘 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "PerformancesListPane 탐색 탭 내 항목 시각 강조 적용",
+            "description": "공연 탐색 탭의 PerformanceRow 컴포넌트에서 사용자 소속 공연을 MyItemMarker와 좌측 보더로 시각적으로 강조한다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "src/app/(main)/performances/PerformancesListPane.client.tsx 파일 수정. useMyPerformances 결과에서 performanceId Set 생성하여 O(1) 조회 지원: const myPerformanceIds = useMemo(() => new Set(all.map(p => p.performanceId)), [all]). PerformanceRow에 isMine prop 추가. listItemClasses 호출 시 isMine 파라미터 전달. MyItemMarker 임포트 후, isMine이 true인 경우 카드 우상단에 <MyItemMarker type=\"performance\" /> 표시. discover 탭에서 렌더링 시 myPerformanceIds.has(p.performanceId)로 내 공연 여부 판정. 참고: 현재 PerformanceListItemResponse에는 myRole 같은 필드가 없어 별도 myPerformanceIds Set 매칭 필요. '내 공연' 탭에서는 MyItemMarker 미표시 (중복 방지).",
+            "status": "pending",
+            "testStrategy": "수동 테스트: 1) 탐색 탭에서 내 공연 카드에 '내 공연' 칩 + lg 뷰포트에서 좌측 보더 노출 확인. 2) 비소속 공연 카드에 시각 강조 없음 확인. 3) 모바일(<960px)에서 칩만 표시, 보더 미적용 확인. 4) '내 공연' 탭에서는 MyItemMarker 미표시 확인. 5) 스크린리더로 aria-label 읽힘 확인.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T01:13:41.376Z"
+      },
+      {
+        "id": "4",
+        "title": "밴드 설정 모달 구현 (정보 수정/사진/삭제)",
+        "description": "밴드 LEADER 권한 사용자가 밴드 정보 수정, 프로필 사진 변경, 밴드 삭제를 수행할 수 있는 설정 모달을 구현한다.",
+        "details": "## 구현 대상\n\n1. **BandSettingsModal** (`src/domain/band/components/BandSettingsModal.client.tsx`)\n   - `Tabs` 컴포넌트 활용 (3개 탭: 정보, 사진, 삭제)\n   - Props: `bandId`, `initialData: BandInfoResponse`, `open`, `onOpenChange`\n\n2. **정보 탭**\n   - 이름(bandName), 설명(description) 편집 폼\n   - `useForm` + zod 스키마 (`{ bandName: z.string().min(1), description: z.string().optional() }`)\n   - 저장 버튼 → `updateBand` API 호출\n\n3. **사진 탭**\n   - 현재 프로필 이미지 미리보기\n   - URL 직접 입력 폼 (백엔드 파일 업로드 미지원 대비)\n   - 향후 멀티파트 업로드 지원 시 교체 예정 (API_REQUIRED.md FE-API-009)\n\n4. **삭제 탭**\n   - 경고 문구 + 밴드명 재입력 확인\n   - input value === bandName 일 때만 삭제 버튼 활성화\n   - `deleteBand` API 호출 후 `/bands` 로 리다이렉트\n\n5. **API 함수 추가**\n   - `src/domain/band/api/updateBand.ts`: PATCH /bands/{bandId}\n   - `src/domain/band/api/deleteBand.ts`: DELETE /bands/{bandId}\n   - `src/domain/band/api/uploadBandProfileImage.ts`: (스텁 — 백엔드 미지원 시 에러 throw)\n\n6. **Hooks 추가**\n   - `useUpdateBand.ts`, `useDeleteBand.ts`, `useUploadBandProfileImage.ts` (TanStack Query mutation)\n\n7. **BandDetailContent 연동**\n   - 기존 \"밴드 설정\" 버튼 (`toast.info` 표시)를 모달 트리거로 교체\n   - `RoleGuard role=\"LEADER\"` 조건 유지\n\n## API_REQUIRED 등록\n- PATCH /bands/{bandId} 미지원 시: FE-API-022\n- DELETE /bands/{bandId} 미지원 시: FE-API-023\n\n## 의사 코드\n```tsx\nexport function BandSettingsModal({ bandId, initialData, open, onOpenChange }) {\n  const [tab, setTab] = useState<'info'|'photo'|'delete'>('info');\n  return (\n    <ResponsiveSheet open={open} onOpenChange={onOpenChange}>\n      <Tabs value={tab} onValueChange={setTab}>\n        <TabsList><TabsTrigger value=\"info\">정보</TabsTrigger>...</TabsList>\n        <TabsContent value=\"info\"><InfoForm bandId={bandId} initial={initialData} /></TabsContent>\n        <TabsContent value=\"photo\"><PhotoForm bandId={bandId} currentImg={initialData.profileImg} /></TabsContent>\n        <TabsContent value=\"delete\"><DeleteForm bandId={bandId} bandName={initialData.bandName} /></TabsContent>\n      </Tabs>\n    </ResponsiveSheet>\n  );\n}\n```",
+        "testStrategy": "1. LEADER 역할로 밴드 상세 진입 → \"밴드 설정\" 버튼 노출 + 클릭 시 모달 오픈\n2. 일반 MEMBER 역할 → 버튼 미노출\n3. 정보 탭: 밴드명 수정 후 저장 → API 호출 + 성공 토스트 + 상세 갱신\n4. 사진 탭: URL 입력 → 미리보기 반영 (실서버 검증 필요)\n5. 삭제 탭: 밴드명 틀리게 입력 → 삭제 버튼 비활성, 정확히 입력 → 활성\n6. 삭제 성공 시 /bands 리다이렉트 + 목록에서 해당 밴드 제거\n7. API 4xx/5xx 에러 시 토스트 표시",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "밴드 수정/삭제 API 함수 및 타입 정의",
+            "description": "updateBand, deleteBand API 함수와 관련 타입(UpdateBandRequest 등)을 추가한다.",
+            "dependencies": [],
+            "details": "1. `src/domain/band/types/req.ts`에 `UpdateBandRequest` 인터페이스 추가 (bandName: string, description?: string, profileImg?: string)\n2. `src/domain/band/api/updateBand.ts` 생성 — `PATCH /api/v1/bands/{bandId}` 호출, apiClient.patch 사용\n3. `src/domain/band/api/deleteBand.ts` 생성 — `DELETE /api/v1/bands/{bandId}` 호출, apiClient.delete 사용\n4. 기존 createBand.ts 패턴을 따라 에러 핸들링 구현\n5. 필요 시 API_REQUIRED.md에 FE-API-022(PATCH), FE-API-023(DELETE) 등록 여부 확인",
+            "status": "pending",
+            "testStrategy": "1. TypeScript 컴파일 통과 확인\n2. 유닛 테스트: updateBand, deleteBand 함수가 올바른 endpoint와 method로 호출되는지 모킹 테스트\n3. 실서버 검증 단계에서 curl로 PATCH/DELETE 요청 테스트",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "useUpdateBand, useDeleteBand TanStack Query 훅 구현",
+            "description": "밴드 수정/삭제를 위한 mutation 훅을 추가하고 캐시 무효화 로직을 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. `src/domain/band/hooks/useUpdateBand.ts` 생성 — useMutation 래퍼, onSuccess 시 queryKeys.band.detail(bandId) 및 queryKeys.band.all 무효화\n2. `src/domain/band/hooks/useDeleteBand.ts` 생성 — useMutation 래퍼, onSuccess 시 queryKeys.band.all 무효화 (목록에서 제거 반영)\n3. 기존 useLeaveBand.ts, useCreateBand.ts 패턴 참조\n4. UseUpdateBandOptions, UseDeleteBandOptions 타입 정의 (onSuccess, onError 콜백)\n5. types/index.ts에 새 타입 export 추가 확인",
+            "status": "pending",
+            "testStrategy": "1. 훅 호출 시 mutation 상태(isPending, isSuccess, isError) 정상 동작 확인\n2. onSuccess 콜백에서 queryClient.invalidateQueries 호출 여부 확인\n3. 실서버 연동 시 밴드 수정 후 상세 페이지 데이터 갱신 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "BandSettingsModal 컴포넌트 구현 (3개 탭 구조)",
+            "description": "ResponsiveSheet + Tabs를 활용한 밴드 설정 모달을 구현하고 정보/사진/삭제 탭별 폼을 작성한다.",
+            "dependencies": [
+              2
+            ],
+            "details": "1. `src/domain/band/components/BandSettingsModal.client.tsx` 생성\n2. Props: bandId, initialData: BandInfoResponse, open, onOpenChange\n3. ResponsiveSheet + Tabs 컴포넌트 조합 (variant='pill')\n4. **정보 탭**: useForm + zod 스키마(bandName: z.string().min(1), description: z.string().optional()), useUpdateBand 호출, 성공 시 토스트 + onOpenChange(false)\n5. **사진 탭**: 현재 이미지 미리보기 + URL 직접 입력 폼, 저장 시 updateBand의 profileImg 필드로 전달\n6. **삭제 탭**: 경고 문구 표시, 밴드명 재입력 input, input === bandName일 때만 삭제 버튼 활성화, useDeleteBand 호출 후 router.replace(ROUTES.BANDS)\n7. 기존 createBandSchema 참조하여 updateBandSchema 추가 또는 재사용",
+            "status": "pending",
+            "testStrategy": "1. 모달 열기/닫기 동작 확인\n2. 정보 탭: 밴드명 필수 검증, 빈 값 시 에러 메시지 표시\n3. 사진 탭: URL 입력 시 미리보기 이미지 갱신\n4. 삭제 탭: 밴드명 불일치 시 버튼 disabled, 일치 시 enabled\n5. 모바일에서 BottomSheet, 데스크톱에서 Dialog로 렌더링 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "BandDetailContent에 설정 모달 연동 및 LEADER 권한 가드",
+            "description": "기존 '밴드 설정' 버튼을 BandSettingsModal 트리거로 교체하고 LEADER 역할 가드를 유지한다.",
+            "dependencies": [
+              3
+            ],
+            "details": "1. `src/app/(main)/bands/[bandId]/BandDetailContent.client.tsx` 수정\n2. BandSettingsModal import 추가\n3. useState<boolean>로 settingsOpen 상태 관리\n4. 기존 `onClick={() => toast.info(...)}` 대신 `onClick={() => setSettingsOpen(true)}`로 변경 (line 118)\n5. BandSettingsModal 컴포넌트 렌더링: `<BandSettingsModal bandId={bandId} initialData={band} open={settingsOpen} onOpenChange={setSettingsOpen} />`\n6. isLeader 조건 유지 (hasRole(myRole, 'LEADER') 체크)\n7. 삭제 성공 시 /bands 리다이렉트는 모달 내부에서 처리하므로 별도 처리 불필요",
+            "status": "pending",
+            "testStrategy": "1. LEADER 역할로 밴드 상세 진입 → '밴드 설정' 버튼 노출 확인\n2. 버튼 클릭 → BandSettingsModal 오픈 확인\n3. 일반 MEMBER 역할 → 버튼 미노출 확인\n4. 정보 수정 후 저장 → API 호출 + 상세 화면 데이터 갱신\n5. 삭제 성공 → /bands 리다이렉트 + 목록에서 해당 밴드 제거 확인\n6. API 에러 시 토스트 메시지 표시 확인",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "5",
+        "title": "마법사 검토(확정) 단계 + 리소스 생성 알림 표준화",
+        "description": "합주/공연 생성 마법사의 마지막 단계에 입력값 전체를 검토할 수 있는 패널을 추가하고, 생성 성공 시 강조된 알림을 표시한다.",
+        "details": "## 구현 대상\n\n1. **WizardSummaryCard** (`src/components/ui/wizard-summary-card.tsx`)\n   - 재사용 가능한 검토 패널\n   - Props: `sections: Array<{ title: string, items: Array<{ label: string, value: string }>, onEdit?: () => void }>`\n   - 렌더링: 카드 내 Section별 라벨/값 쌍 + 우측 \"수정\" 링크\n   - 날짜/시간 항목은 success/accent 톤 + font-bold + text-title (Phase E-3 일관성)\n\n2. **PracticeCreateWizard Step 4 추가**\n   - STEPS 배열에 '검토' 추가\n   - Step 3(메타) 완료 후 Step 4로 이동\n   - WizardSummaryCard에 4개 Section: 밴드, 곡, 일정, 메타\n   - 각 Section의 \"수정\" 버튼 → `setStep(해당 step)`\n   - \"합주 만들기\" 버튼이 실제 mutation.mutate() 호출\n\n3. **PerformanceCreateWizard Step 3** (Task 2와 연계)\n   - 동일 패턴으로 검토 단계 추가\n\n4. **ResourceCreatedToast 강화** (`src/components/feedback/resource-created-toast.tsx`)\n   - 기존 toast.success 대신 더 시각적으로 강조된 토스트\n   - Props: `title: string`, `message: string`, `cta: { label: string, href: string }`\n   - 렌더링: 상단 아이콘(CheckCircle2 larger), 볼드 제목, CTA 버튼\n   - 5초 후 자동 닫힘\n   - `useResourceCreatedToast` 훅으로 호출 단순화\n\n5. **기존 마법사 mutation.onSuccess 수정**\n   - `toast.success` → `resourceCreatedToast.show({ title: '합주가 생성되었습니다', cta: { label: '보러가기', href: ... } })`\n\n## 의사 코드\n```tsx\n// WizardSummaryCard\nexport function WizardSummaryCard({ sections }) {\n  return (\n    <div className=\"space-y-s-4\">\n      {sections.map((sec) => (\n        <div key={sec.title} className=\"bg-card border rounded-md p-s-4\">\n          <div className=\"flex justify-between items-center mb-s-2\">\n            <h3 className=\"text-body font-semibold\">{sec.title}</h3>\n            {sec.onEdit && <button onClick={sec.onEdit} className=\"text-accent text-caption\">수정</button>}\n          </div>\n          {sec.items.map(item => (\n            <div key={item.label} className=\"flex justify-between text-caption\">\n              <span className=\"text-foreground-muted\">{item.label}</span>\n              <span className={item.highlight ? 'text-accent font-bold' : ''}>{item.value}</span>\n            </div>\n          ))}\n        </div>\n      ))}\n    </div>\n  );\n}\n```",
+        "testStrategy": "1. 합주 마법사 Step 3 완료 → Step 4 검토 단계 노출\n2. 검토 패널에 선택한 밴드/곡/일정/제목 정보 올바르게 표시\n3. \"수정\" 버튼 클릭 → 해당 Step으로 이동\n4. 검토 단계에서 \"합주 만들기\" → mutation 호출 + 성공 시 강화 토스트\n5. 토스트 CTA 버튼 클릭 → 생성된 합주 상세 페이지 이동\n6. 토스트 5초 후 자동 닫힘\n7. 공연 마법사 동일 동작 확인 (Task 2 완료 후)",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "WizardSummaryCard 재사용 컴포넌트 구현",
+            "description": "합주/공연 마법사의 검토 단계에서 사용할 재사용 가능한 요약 카드 컴포넌트를 구현한다.",
+            "dependencies": [],
+            "details": "## 구현 파일\n`src/components/ui/wizard-summary-card.tsx`\n\n## Props 인터페이스\n```typescript\ntype SummaryItem = {\n  label: string;\n  value: string;\n  highlight?: boolean; // true면 text-accent font-bold 적용\n};\n\ntype SummarySection = {\n  title: string;\n  items: SummaryItem[];\n  onEdit?: () => void;\n};\n\ntype WizardSummaryCardProps = {\n  sections: SummarySection[];\n  className?: string;\n};\n```\n\n## 렌더링 구조\n- 전체: `space-y-s-4` 컨테이너\n- 섹션별: `bg-card border-border rounded-md border p-s-4`\n- 헤더: `flex justify-between items-center mb-s-2`\n  - 제목: `text-body font-semibold`\n  - 수정 버튼: `text-accent text-caption hover:underline` (onEdit 있을 때만)\n- 항목: `flex justify-between text-caption py-s-1`\n  - 라벨: `text-foreground-muted`\n  - 값: 기본 `text-foreground`, highlight면 `text-accent font-bold`\n\n## 접근성\n- 수정 버튼에 `aria-label=\"{섹션명} 수정\"` 추가\n- 섹션별 `role=\"group\"` + `aria-labelledby`\n\n## 기존 Card 컴포넌트 활용\n기존 `src/components/ui/card.tsx`의 Card 컴포넌트를 활용하거나, 디자인 일관성을 위해 동일한 스타일링 패턴 적용",
+            "status": "pending",
+            "testStrategy": "1. 빈 sections 배열 전달 시 빈 컨테이너 렌더링\n2. 단일 섹션 + 복수 항목 렌더링 확인\n3. 복수 섹션 렌더링 확인\n4. onEdit 콜백 전달 시 '수정' 버튼 표시 + 클릭 핸들러 호출\n5. onEdit 미전달 시 '수정' 버튼 미표시\n6. highlight: true 항목에 accent 색상 + bold 스타일 적용\n7. 키보드 접근성: Tab으로 수정 버튼 포커스 가능",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "PracticeCreateWizard Step 4 검토 단계 추가",
+            "description": "합주 생성 마법사에 4번째 단계(검토)를 추가하여 입력값 전체를 확인하고 수정할 수 있도록 한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 수정 파일\n`src/app/(main)/practices/new/PracticeCreateWizard.client.tsx`\n\n## 변경 사항\n\n### 1. STEPS 배열 확장\n```typescript\nconst STEPS = ['밴드 선택', '곡 선택', '일정 설정', '검토'] as const;\n```\n\n### 2. step 타입 확장\n```typescript\nconst [step, setStep] = useState<0 | 1 | 2 | 3>(0);\n```\n\n### 3. Step 3(메타) 완료 후 Step 4로 이동\n- `next()` 함수에서 step 2 → 3 전환 로직 추가\n- `canNext` 조건 수정: step 2일 때 startAt + durationMinutes 검증 후 next 가능\n\n### 4. Step 4 검토 섹션 추가\n```tsx\n{step === 3 && (\n  <section data-slot=\"wizard-step-review\">\n    <WizardSummaryCard\n      sections={[\n        {\n          title: '밴드',\n          items: [{ label: '선택한 밴드', value: selectedBandName }],\n          onEdit: () => setStep(0),\n        },\n        {\n          title: '곡',\n          items: [\n            { label: '곡 제목', value: songTitle },\n            { label: '아티스트', value: songArtist },\n          ],\n          onEdit: () => setStep(1),\n        },\n        {\n          title: '일정',\n          items: [\n            { label: '시작 시각', value: formatKst(startAt), highlight: true },\n            { label: '소요 시간', value: `${durationMinutes}분` },\n          ],\n          onEdit: () => setStep(2),\n        },\n        {\n          title: '메타',\n          items: [\n            { label: '합주 제목', value: title || '(미입력)' },\n            { label: '장소', value: venue || '(미입력)' },\n          ],\n          onEdit: () => setStep(2),\n        },\n      ]}\n    />\n  </section>\n)}\n```\n\n### 5. 하단 버튼 로직 수정\n- step < 3일 때 '다음' 버튼\n- step === 3일 때 '합주 만들기' 버튼 (mutation.mutate 호출)\n- canSubmit 조건을 step === 3으로 변경\n\n### 6. 헬퍼 함수 추가\n- 선택된 밴드 이름 조회: `myBands.data?.find(b => b.bandId === bandId)?.bandName`\n- 날짜 포맷팅: `lib/date.ts`의 `formatKst` 사용",
+            "status": "pending",
+            "testStrategy": "1. Step 3(일정 설정) 완료 후 '다음' 클릭 시 Step 4(검토) 이동 확인\n2. 검토 패널에 선택한 밴드명 표시 확인\n3. 검토 패널에 선택한 곡 제목/아티스트 표시 확인\n4. 검토 패널에 시작 시각(highlight) + 소요 시간 표시 확인\n5. 검토 패널에 합주 제목/장소 표시 확인 (미입력 시 '(미입력)' 표시)\n6. 각 섹션 '수정' 버튼 클릭 시 해당 step으로 이동\n7. Step 4에서 '합주 만들기' 버튼 클릭 시 mutation 호출\n8. StepIndicator에 4단계 표시 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "ResourceCreatedToast 강화 컴포넌트 및 훅 구현",
+            "description": "리소스 생성 성공 시 시각적으로 강조된 토스트와 CTA 버튼을 제공하는 컴포넌트 및 훅을 구현한다.",
+            "dependencies": [],
+            "details": "## 구현 파일\n1. `src/components/feedback/resource-created-toast.tsx` - 강화 토스트 컴포넌트\n2. `src/hooks/useResourceCreatedToast.ts` - 호출 단순화 훅\n\n## ResourceCreatedToast 컴포넌트\n### Props\n```typescript\ntype ResourceCreatedToastProps = {\n  id: string;\n  title: string;\n  message?: string;\n  cta?: { label: string; href: string };\n  onDismiss: (id: string) => void;\n};\n```\n\n### 렌더링 구조\n- 컨테이너: 기존 Toast보다 넓은 `w-96`, `bg-card border-success/60 shadow-xl`\n- 상단: CheckCircle2 아이콘 `h-6 w-6 text-success` (기존보다 큼)\n- 제목: `text-body font-bold text-foreground`\n- 메시지(선택): `text-caption text-foreground-muted`\n- CTA 버튼: `Button variant=\"accent-outline\" size=\"sm\"` + Link 조합\n- 닫기 버튼: 우측 상단 X 아이콘\n- 5초 후 자동 닫힘 (useEffect + setTimeout)\n\n### 애니메이션\n- 기존 `animate-toast-in` 클래스 재사용\n\n## useResourceCreatedToast 훅\n```typescript\ntype ShowOptions = {\n  title: string;\n  message?: string;\n  cta?: { label: string; href: string };\n};\n\nexport function useResourceCreatedToast() {\n  const addRich = useToastStore((s) => s.addRich); // 새 store 메서드 필요\n  const remove = useToastStore((s) => s.remove);\n\n  const show = useCallback((options: ShowOptions) => {\n    return addRich({ ...options, type: 'resource-created', duration: 5000 });\n  }, [addRich]);\n\n  return { show, dismiss: remove };\n}\n```\n\n## ToastStore 확장 (대안 접근)\n기존 store를 최소 변경하려면, 별도의 resourceCreatedToastStore를 생성하거나 기존 Toast 타입에 'resource-created' 추가 + Toast 컴포넌트에서 분기 렌더링",
+            "status": "pending",
+            "testStrategy": "1. ResourceCreatedToast 렌더링: title, message, cta 모두 표시\n2. CTA 버튼 클릭 시 href로 이동\n3. 5초 후 자동 닫힘 (jest.useFakeTimers로 검증)\n4. X 버튼 클릭 시 즉시 닫힘\n5. cta prop 미전달 시 CTA 버튼 미표시\n6. message prop 미전달 시 메시지 영역 미표시\n7. useResourceCreatedToast 훅으로 show 호출 시 토스트 표시",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "마법사 mutation.onSuccess 강화 토스트 적용",
+            "description": "PracticeCreateWizard와 PerformanceCreateWizard의 생성 성공 시 기존 toast.success 대신 강화된 ResourceCreatedToast를 표시하도록 수정한다.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "## 수정 파일\n1. `src/app/(main)/practices/new/PracticeCreateWizard.client.tsx`\n2. `src/app/(main)/performances/new/PerformanceCreateForm.client.tsx` (또는 Task 2 완료 후 PerformanceCreateWizard)\n\n## PracticeCreateWizard 수정\n### 1. 훅 import 추가\n```typescript\nimport { useResourceCreatedToast } from '@/hooks/useResourceCreatedToast';\n```\n\n### 2. 훅 초기화\n```typescript\nconst resourceCreatedToast = useResourceCreatedToast();\n```\n\n### 3. mutation.onSuccess 수정\n```typescript\nconst mutation = useCreatePractice({\n  onSuccess: (data) => {\n    resourceCreatedToast.show({\n      title: '합주가 생성되었습니다',\n      cta: {\n        label: '보러가기',\n        href: ROUTES.PRACTICE_DETAIL(data.practiceId),\n      },\n    });\n    router.replace(ROUTES.PRACTICE_DETAIL(data.practiceId));\n  },\n  onError: (err) => toast.error(err.message || '합주 생성에 실패했습니다.'),\n});\n```\n\n## PerformanceCreateForm (또는 Wizard) 수정\n동일 패턴 적용:\n```typescript\nconst mutation = useCreatePerformance({\n  onSuccess: (data) => {\n    resourceCreatedToast.show({\n      title: '공연이 생성되었습니다',\n      cta: {\n        label: '보러가기',\n        href: ROUTES.PERFORMANCE_DETAIL(data.performanceId),\n      },\n    });\n    router.replace(ROUTES.PERFORMANCE_DETAIL(data.performanceId));\n  },\n  onError: (err) => toast.error(err.message || '공연 생성에 실패했습니다.'),\n});\n```\n\n## 참고 사항\n- router.replace는 유지하여 뒤로가기 시 마법사로 돌아가지 않도록 함\n- 강화 토스트는 상세 페이지로 이동 후에도 표시됨 (CTA 클릭 시 무시됨)\n- Task 2(PerformanceCreateWizard)가 완료된 후 해당 파일에도 적용 필요",
+            "status": "pending",
+            "testStrategy": "1. 합주 마법사 Step 4에서 '합주 만들기' 클릭 후 강화 토스트 표시 확인\n2. 토스트에 '합주가 생성되었습니다' 제목 표시\n3. 토스트에 '보러가기' CTA 버튼 표시\n4. CTA 버튼 클릭 시 합주 상세 페이지로 이동 (이미 해당 페이지일 수 있음)\n5. 토스트 5초 후 자동 닫힘\n6. 공연 생성 시 동일 동작 확인\n7. 기존 toast.success 호출이 제거되었는지 확인",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "6",
+        "title": "DateTimePicker UX 보강 (연/월 빠른 선택 + 시간 듀얼 모드)",
+        "description": "캘린더 헤더에서 연/월을 빠르게 선택할 수 있는 드롭다운을 추가하고, 시간 선택 휠 위에 직접 입력 가능한 텍스트 박스를 제공한다.",
+        "details": "## 구현 대상\n\n### 6-1: 연/월 빠른 선택\n1. **YearMonthPicker** (`src/components/ui/year-month-picker.tsx`)\n   - Props: `year: number`, `month: number`, `minYear: number`, `maxYear: number`, `onChange: (y, m) => void`\n   - 렌더링: 팝오버 내 연도 그리드 (현재±5년 = 12칸) + 월 그리드 (1~12, 4×3)\n   - 키보드: Arrow 키 이동, Enter 확정, Esc 닫기\n\n2. **Calendar 컴포넌트 수정** (`src/components/ui/date-time-picker.tsx`)\n   - 헤더의 \"2026년 4월\" 텍스트를 버튼으로 변경\n   - 클릭 시 YearMonthPicker 팝오버 오픈\n   - 선택 완료 → `setView({ y, mo })` 호출\n\n### 6-2: 시간 입력 듀얼 모드 (PRD default: (a))\n1. **Wheel 컴포넌트 위에 input 추가**\n   - 시/분 각각 `<input type=\"number\" />` 추가\n   - 휠 스크롤과 input 값 양방향 동기화\n   - input focus 시 전체 선택 (UX 편의)\n   - 범위 validation: 시 0~23, 분 0~59 (step 단위로 반올림)\n\n2. **휠 감도 보정**\n   - `scroll-snap-type: y mandatory` 이미 적용됨\n   - snap target 높이 증가: ITEM_H 32 → 40\n   - `-webkit-overflow-scrolling: touch` 추가\n\n### 6-3: 시작/소요 시간 시각 강조\n- 마법사 메타 단계 UI 수정 (PracticeCreateWizard Step 2)\n- 시작 시각 + 소요 시간을 2컬럼 그리드 카드로 배치\n- 텍스트: success/accent 톤, font-bold, text-subtitle 사이즈\n- 제목/장소 input은 기존 크기 유지\n\n## 의사 코드\n```tsx\n// YearMonthPicker\nexport function YearMonthPicker({ year, month, onChange, onClose }) {\n  const years = Array.from({ length: 11 }, (_, i) => year - 5 + i);\n  const months = Array.from({ length: 12 }, (_, i) => i + 1);\n  const [selY, setSelY] = useState(year);\n  const [selM, setSelM] = useState(month);\n  \n  return (\n    <div className=\"p-s-3\">\n      <div className=\"grid grid-cols-4 gap-1 mb-s-2\">\n        {years.map(y => <button onClick={() => setSelY(y)} className={selY === y ? 'bg-accent' : ''}>{y}</button>)}\n      </div>\n      <div className=\"grid grid-cols-4 gap-1\">\n        {months.map(m => <button onClick={() => { onChange(selY, m); onClose(); }}>{m}월</button>)}\n      </div>\n    </div>\n  );\n}\n\n// Wheel with input\nfunction Wheel({ label, values, value, onChange }) {\n  return (\n    <div>\n      <input type=\"number\" value={value} onChange={e => onChange(clamp(Number(e.target.value), min, max))} />\n      {/* 기존 휠 렌더링 */}\n    </div>\n  );\n}\n```",
+        "testStrategy": "1. 캘린더 헤더 \"2026년 4월\" 클릭 → YearMonthPicker 팝오버 표시\n2. 2024년 선택 → 6월 클릭 → 캘린더가 2024-06으로 이동\n3. 키보드 Arrow 키로 연/월 이동, Enter 확정, Esc 닫기\n4. 시간 input에 직접 \"14\" 입력 → 휠이 14시 위치로 스크롤\n5. 휠 스크롤 → input 값 동기화\n6. input에 25 입력 시 23으로 자동 보정\n7. 마법사 메타 단계에서 시작 시각/소요 시간 카드 스타일 확인 (볼드, accent 톤)",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "YearMonthPicker 컴포넌트 신규 생성",
+            "description": "캘린더 헤더에서 연/월을 빠르게 선택할 수 있는 YearMonthPicker 컴포넌트를 src/components/ui/year-month-picker.tsx에 구현한다.",
+            "dependencies": [],
+            "details": "Props로 year, month, minYear, maxYear, onChange, onClose를 받는 컴포넌트 생성. 연도 그리드는 현재 연도 기준 ±5년(총 11개) 배치, 월 그리드는 1~12월을 4×3으로 배치. 연도 선택 시 내부 state만 업데이트하고, 월 클릭 시 onChange(selectedYear, selectedMonth) 호출 후 onClose() 실행. 키보드 접근성: Arrow 키로 포커스 이동, Enter로 확정, Escape로 닫기. 스타일은 기존 Dialog/Chip 패턴(bg-card, border-border, bg-accent 선택 상태)을 따르며, 팝오버 형태로 position: absolute 또는 Radix Popover 사용.",
+            "status": "pending",
+            "testStrategy": "1) YearMonthPicker 단독 렌더링 시 현재 연도±5년 그리드 표시 확인 2) 월 클릭 시 onChange 콜백 호출 검증 3) Arrow 키보드 이동 및 Enter/Esc 동작 확인 4) minYear/maxYear 범위 외 연도 비활성화 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Calendar 컴포넌트에 YearMonthPicker 팝오버 통합",
+            "description": "date-time-picker.tsx의 Calendar 헤더 '2026년 4월' 텍스트를 버튼으로 변경하고, 클릭 시 YearMonthPicker 팝오버를 표시한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "Calendar 컴포넌트(line 277~363)의 헤더 영역에서 '{viewYear}년 {viewMonth}월' div를 button으로 변경. 클릭 시 로컬 state(showYearMonthPicker)를 true로 설정하여 YearMonthPicker 팝오버 오픈. 팝오버는 헤더 버튼 아래에 절대 위치로 표시. YearMonthPicker의 onChange 콜백에서 onNav 대신 직접 setView({ y, mo })를 호출하도록 부모(DateTimePicker)로부터 새 prop(onViewChange) 전달. aria-expanded, aria-haspopup 속성 추가. 팝오버 외부 클릭 시 닫기 처리.",
+            "status": "pending",
+            "testStrategy": "1) 캘린더 헤더 '2026년 4월' 클릭 시 YearMonthPicker 팝오버 표시 2) 2024년 선택 후 6월 클릭 시 캘린더가 2024-06으로 이동 3) 팝오버 외부 클릭 시 닫힘 4) Escape 키로 팝오버 닫기 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Wheel 컴포넌트에 직접 입력 input 추가 (듀얼 모드)",
+            "description": "시간 선택 Wheel 컴포넌트 상단에 직접 입력 가능한 number input을 추가하여 휠 스크롤과 양방향 동기화한다.",
+            "dependencies": [],
+            "details": "Wheel 컴포넌트(line 366~466)에 <input type='number'> 추가. input value는 현재 선택값(pad 적용), onChange 시 clamp(Number(value), min, max) 후 부모 onChange 호출. 시(0~23), 분(step 단위 반올림) 범위 validation 적용. input focus 시 전체 선택(select()) UX 구현. input과 휠 스크롤 양방향 동기화: input 변경 시 ref.current.scrollTop 업데이트, 휠 스크롤 시 input 값 자동 반영. ITEM_H를 32에서 40으로 증가하여 터치 감도 개선. 스타일: input은 휠 영역 상단 중앙, bg-transparent border-b text-center 형태.",
+            "status": "pending",
+            "testStrategy": "1) 시간 input에 '14' 직접 입력 시 휠이 14시 위치로 스크롤 2) 휠 스크롤 시 input 값 동기화 확인 3) input에 25 입력 시 23으로 자동 보정 4) 분 input에 62 입력 시 step 단위로 반올림 5) input focus 시 전체 선택 동작",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "PracticeCreateWizard Step 3 메타 단계 시작/소요 시간 시각 강조",
+            "description": "합주 생성 마법사 Step 3(일정 설정)에서 시작 시각과 소요 시간을 2컬럼 그리드 카드로 배치하고 시각적으로 강조한다.",
+            "dependencies": [],
+            "details": "PracticeCreateWizard.client.tsx의 step === 2 섹션(line 281~318) 수정. 시작 시각 DateTimePicker와 소요 시간 Input을 기존 세로 나열에서 'grid grid-cols-1 sm:grid-cols-2 gap-s-3' 2컬럼 카드 레이아웃으로 변경. 각 카드는 bg-card border-border rounded-md p-s-4 스타일 적용. 라벨 텍스트는 text-success 또는 text-accent 톤, font-bold, text-subtitle 사이즈로 강조. 제목/장소 input은 기존 크기 유지(변경 없음). 카드 내부에 아이콘(Clock, Timer) 추가하여 시각적 구분.",
+            "status": "pending",
+            "testStrategy": "1) 마법사 Step 3에서 시작 시각/소요 시간이 2컬럼 카드로 표시 확인 2) 모바일(<sm)에서 1컬럼 세로 배치 확인 3) 라벨에 accent/success 톤, font-bold 적용 확인 4) 제목/장소 input 스타일 변경 없음 확인",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "7",
+        "title": "마법사 밴드 선택 6개 그리드 + 검색 통합",
+        "description": "합주/공연 생성 마법사의 밴드 선택 단계에서 최대 6개 카드 그리드를 표시하고, '전체 보기/검색' 버튼으로 BandPickerModal을 연다.",
+        "details": "## 구현 대상\n\n1. **PracticeCreateWizard Step 1 수정**\n   - `useMyBands(6)` 으로 최대 6개만 fetch\n   - 그리드: `grid-cols-2 sm:grid-cols-3` (2×3 레이아웃)\n   - 6개 초과 밴드가 있는 경우 \"전체 보기\" 버튼 표시\n   - 버튼 클릭 → BandPickerModal 오픈 (single 선택 모드)\n   - 모달에서 선택한 밴드 → `setBandId(selected.bandId)`\n   - 선택된 밴드가 6개 그리드에 없으면 별도 \"선택됨\" 카드로 상단 표시\n\n2. **PerformanceCreateWizard Step 1 (Task 2)** 동일 패턴\n   - 다중 선택(multiple) 이므로 조금 다른 UX\n   - 그리드 + \"더 추가\" 버튼 → BandPickerModal multiple\n   - 선택된 밴드들을 칩 형태로 표시\n\n3. **밴드 카드 선택 시각 강조** (Task 8-4와 연계)\n   - 선택된 카드: 좌측 2px accent 보더 + 우상단 ✓ 아이콘 + bg-accent-dim\n\n## 의사 코드\n```tsx\n// PracticeCreateWizard Step 1\nconst myBands = useMyBands(6);\nconst hasMore = myBands.total > 6; // total count from API or hasNext\nconst [pickerOpen, setPickerOpen] = useState(false);\n\nreturn (\n  <section>\n    <h2>합주를 진행할 밴드를 선택하세요</h2>\n    <ul className=\"grid grid-cols-2 sm:grid-cols-3 gap-s-2\">\n      {myBands.data?.slice(0, 6).map(b => (\n        <BandSelectCard key={b.bandId} band={b} selected={b.bandId === bandId} onSelect={() => setBandId(b.bandId)} />\n      ))}\n    </ul>\n    {hasMore && (\n      <Button variant=\"secondary\" onClick={() => setPickerOpen(true)}>전체 보기 / 검색</Button>\n    )}\n    <BandPickerModal\n      open={pickerOpen}\n      onOpenChange={setPickerOpen}\n      multiple={false}\n      onConfirm={([band]) => setBandId(band.bandId)}\n    />\n  </section>\n);\n```",
+        "testStrategy": "1. 6개 미만 밴드 소속 → 그리드에 모든 밴드 표시, \"전체 보기\" 버튼 미표시\n2. 7개 이상 밴드 소속 → 6개 그리드 + \"전체 보기\" 버튼 표시\n3. \"전체 보기\" 클릭 → BandPickerModal 오픈\n4. 모달에서 밴드 선택 → 그리드에 없던 밴드면 상단에 \"선택됨\" 카드 표시\n5. 카드 선택 시 좌측 보더 + ✓ 아이콘 시각 확인\n6. 공연 마법사 다중 선택 모드 동작 확인",
+        "priority": "medium",
+        "dependencies": [
+          "2"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "useMyBands 훅 확장 — hasNext 반환 지원",
+            "description": "현재 useMyBands 훅은 content 배열만 반환하지만, '전체 보기' 버튼 표시 여부 결정을 위해 hasNext 플래그도 함께 반환하도록 확장합니다.",
+            "dependencies": [],
+            "details": "## 수정 파일\n- `src/domain/band/hooks/useMyBands.ts`\n\n## 변경 내용\n1. 반환 타입을 `{ data: MyBandInfoResponse[], hasNext: boolean }` 구조로 확장\n2. getMyBands API가 반환하는 CursorResponse의 hasNext 필드를 함께 반환\n3. 기존 호출부(PracticeCreateWizard)와의 하위 호환성 유지 — data.data 또는 data 자체로 접근 가능\n\n## 의사 코드\n```ts\nexport function useMyBands(limit = 10) {\n  return useQuery({\n    queryKey: [...queryKeys.band.my(), limit],\n    queryFn: async () => {\n      const page = await getMyBands({ pageSize: limit });\n      return { data: page.content, hasNext: page.hasNext };\n    },\n  });\n}\n```\n\n## 참조\n- `src/domain/band/api/getMyBands.ts` — CursorResponse<T, string> 반환\n- `src/global/types/index.ts` — CursorResponse 타입 정의",
+            "status": "pending",
+            "testStrategy": "1. useMyBands(6) 호출 시 data.data (배열)와 data.hasNext (boolean) 모두 접근 가능 확인\n2. 6개 미만 밴드 → hasNext: false\n3. 6개 초과 밴드 → hasNext: true\n4. TypeScript 타입 체크 통과",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "PracticeCreateWizard Step 1 그리드 레이아웃 및 BandPickerModal 통합",
+            "description": "합주 생성 마법사 Step 1을 2x3 그리드(최대 6개)로 변경하고, hasNext=true일 때 '전체 보기/검색' 버튼을 표시하여 BandPickerModal을 연결합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 수정 파일\n- `src/app/(main)/practices/new/PracticeCreateWizard.client.tsx`\n\n## 변경 내용\n1. **useMyBands 호출 변경**: `useMyBands(50)` → `useMyBands(6)`\n2. **그리드 레이아웃**: `grid-cols-1 sm:grid-cols-2` → `grid-cols-2 sm:grid-cols-3`\n3. **hasNext 조건부 버튼**: hasNext=true일 때 '전체 보기/검색' 버튼 표시\n4. **BandPickerModal 상태 추가**: `pickerOpen` state + BandPickerModal import\n5. **모달 onConfirm 핸들러**: 선택한 밴드의 bandId를 setBandId에 설정\n6. **선택된 밴드가 그리드에 없을 때 상단 표시**: 모달에서 선택한 밴드가 6개 그리드에 없으면 별도 '선택됨' 카드로 상단에 표시\n\n## 추가 import\n```ts\nimport { BandPickerModal } from '@/domain/band/components/BandPickerModal.client';\nimport type { BandInfoResponse } from '@/domain/band/types';\n```\n\n## 참조\n- `src/domain/band/components/BandPickerModal.client.tsx` — multiple=false (단일 선택)\n- 기존 PracticeCreateWizard.client.tsx:134-166 (현재 Step 1 구현)",
+            "status": "pending",
+            "testStrategy": "1. 6개 미만 밴드 소속 → 그리드에 모든 밴드 표시, '전체 보기' 버튼 미표시\n2. 7개 이상 밴드 소속 → 6개 그리드 + '전체 보기' 버튼 표시\n3. '전체 보기' 클릭 → BandPickerModal 오픈\n4. 모달에서 밴드 선택 → setBandId 호출, 모달 닫힘\n5. 모달에서 선택한 밴드가 그리드에 없으면 상단에 '선택됨' 카드 표시\n6. 반응형 확인: 모바일 2열, sm+ 3열",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "PerformanceCreateWizard Step 1 (밴드 선택) 그리드 + 다중 선택 모드 구현",
+            "description": "공연 생성 마법사 Step 1에 6개 밴드 그리드를 추가하고, '더 추가' 버튼으로 BandPickerModal(multiple 모드)을 연결합니다. 선택된 밴드는 칩 형태로 표시합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 수정 파일\n- `src/domain/performance/components/PerformanceCreateModal.client.tsx`\n- `src/app/(main)/performances/new/PerformanceCreateForm.client.tsx` (동일 패턴 적용)\n\n## 변경 내용 (PerformanceCreateModal Step 0)\n1. **useMyBands 훅 추가**: `useMyBands(6)` import 및 호출\n2. **그리드 레이아웃 추가**: Step 0에 2x3 밴드 그리드 (grid-cols-2 sm:grid-cols-3)\n3. **기존 칩 UI 유지**: selectedBands를 칩으로 표시 (현재 구현 유지)\n4. **그리드 카드 클릭 → 토글**: 그리드 카드 클릭 시 selectedBands에 추가/제거\n5. **'더 추가' 버튼 조건**: hasNext=true 또는 selectedBands에 그리드에 없는 밴드가 있을 때\n6. **BandPickerModal multiple=true**: 다중 선택 모드로 모달 연결\n\n## 의사 코드\n```tsx\n// Step 0 수정\n{step === 0 && (\n  <>\n    <Input ... />\n    <div className=\"space-y-s-2\">\n      <label>참여 밴드</label>\n      {/* 선택된 밴드 칩 */}\n      {selectedBands.length > 0 && (\n        <ul className=\"flex flex-wrap gap-s-2\">...</ul>\n      )}\n      {/* 6개 그리드 */}\n      <ul className=\"grid grid-cols-2 sm:grid-cols-3 gap-s-2\">\n        {myBands.data?.data.map(b => (\n          <BandSelectCard band={b} selected={isSelected} onToggle={toggle} />\n        ))}\n      </ul>\n      {hasNext && (\n        <Button onClick={() => setPickerOpen(true)}>더 추가</Button>\n      )}\n    </div>\n  </>\n)}\n```\n\n## 참조\n- PerformanceCreateModal.client.tsx:102-153 (현재 Step 0)\n- PerformanceCreateForm.client.tsx:107-145 (폼 버전 밴드 선택)",
+            "status": "pending",
+            "testStrategy": "1. 공연 마법사 Step 0에서 6개 밴드 그리드 표시\n2. 그리드 카드 클릭 → 칩에 추가 (토글)\n3. hasNext=true → '더 추가' 버튼 표시\n4. '더 추가' 클릭 → BandPickerModal(multiple) 오픈\n5. 모달에서 여러 밴드 선택 → selectedBands 갱신\n6. 선택된 밴드 칩에서 X 클릭 → 제거",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "밴드 카드 선택 시각 강조 통합 (좌측 보더 + 체크 아이콘)",
+            "description": "밴드 선택 카드에 선택 시각 강조를 적용합니다: 좌측 2px accent 보더 + 우상단 체크 아이콘 + bg-accent-dim 배경.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "## 수정 파일\n1. `src/app/(main)/practices/new/PracticeCreateWizard.client.tsx` — Step 1 밴드 카드\n2. `src/domain/performance/components/PerformanceCreateModal.client.tsx` — Step 0 밴드 카드\n3. `src/domain/band/components/BandPickerModal.client.tsx` — 모달 내 renderItem\n\n## 시각 강조 패턴\n1. **기본 상태**: `border-border bg-card hover:bg-card-hover`\n2. **선택 상태**: \n   - `border-l-2 border-l-accent border-accent bg-accent-dim`\n   - 우상단 체크 아이콘: `<Check className=\"h-4 w-4 text-accent\" />`\n   - 아이콘 위치: `absolute top-2 right-2` 또는 flex justify-between\n\n## 공통 카드 구조 예시\n```tsx\n<button\n  className={\n    'relative border bg-card hover:bg-card-hover gap-s-3 px-s-4 py-s-3 flex w-full items-center rounded-md text-left transition-colors ' +\n    (selected ? 'border-l-2 border-l-accent border-accent bg-accent-dim' : 'border-border')\n  }\n  aria-pressed={selected}\n>\n  {selected && (\n    <span className=\"absolute top-2 right-2 text-accent\">\n      <Check className=\"h-4 w-4\" />\n    </span>\n  )}\n  {/* 카드 내용 */}\n</button>\n```\n\n## 참조\n- StepIndicator의 Check 아이콘 사용 패턴 (lucide-react)\n- 기존 선택 강조: `border-accent bg-accent-dim` (PracticeCreateWizard.client.tsx:145)",
+            "status": "pending",
+            "testStrategy": "1. 합주 마법사 밴드 카드 선택 → 좌측 accent 보더 + 우상단 체크 아이콘 + 배경색 변경\n2. 공연 마법사 밴드 카드 동일 동작\n3. BandPickerModal 검색 결과 카드 동일 동작\n4. 선택 해제 시 기본 스타일로 복귀\n5. 키보드 접근성: aria-pressed 상태 정확히 반영",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "8",
+        "title": "잔존 결함 정리 (카피/시각/무한스크롤/멤버명)",
+        "description": "PRD Phase H에 명시된 잔존 결함들을 일괄 수정한다: 안내 카피 제거, 카드 선택 시각 강조, 무한 스크롤 검증, 멤버 이름 표시 분석, \"(자작곡)\" 라벨 제거.",
+        "details": "## 구현 대상\n\n### 8-1: 카피 제거\n- `PracticeCreateWizard.client.tsx` line 118\n- 삭제: `<p className=\"text-foreground-muted\">밴드 → 곡 → 일정 순서로 진행합니다.</p>`\n\n### 8-2: 무한 스크롤 검증\n- 검증 대상: 밴드 목록, 합주 목록, 공연 목록, 멤버 목록, 가입 신청 목록\n- 검증 방법:\n  1. 백엔드 pageSize=2 설정 후 5개 이상 데이터 생성\n  2. 스크롤 → IntersectionObserver 트리거 확인\n  3. `fetchNextPage` 호출 → 다음 페이지 로드\n- 결과: `.taskmaster/reports/infinite-scroll-verification-2026-04-26.md` 작성\n\n### 8-3: 멤버 이름 표시 분석\n- 현상: \"멤버 #2718\" 표시 (getMemberDisplayName 폴백)\n- 분석:\n  1. curl로 `/bands/{id}/members` 실제 응답 확인\n  2. `BandMemberInfoResponse.name` 필드 존재 여부\n  3. 빈 문자열인지 undefined인지 확인\n- 조치:\n  - 백엔드 미지원 → API_REQUIRED.md FE-API-012 업데이트\n  - 빈 문자열 케이스 → `getMemberDisplayName` 로직 보강 (이미 `.trim()` 처리됨)\n\n### 8-4: 카드 선택 시각 강조 일관화\n- 대상: 합주곡 검색 카드, 밴드 그리드 카드, EntityPickerModal 결과 카드\n- 적용 스타일 (선택 시):\n  ```css\n  border-l-2 border-accent bg-accent-dim\n  /* 우상단 체크 아이콘 */\n  <Check className=\"absolute top-2 right-2 h-4 w-4 text-accent\" />\n  ```\n- 공통 컴포넌트화: `SelectableCard` wrapper 또는 유틸 클래스\n\n### 8-5: \"(자작곡)\" 라벨 제거\n- `PracticeCreateWizard.client.tsx` line 196\n- 변경: `직접 입력 (자작곡)` → `직접 입력`\n\n## 의사 코드\n```tsx\n// 8-4 SelectableCard\nexport function SelectableCard({ selected, children, ...props }) {\n  return (\n    <div className={cn(\n      'relative border rounded-md p-s-3 transition-colors',\n      selected && 'border-l-2 border-accent bg-accent-dim'\n    )} {...props}>\n      {selected && <Check className=\"absolute top-2 right-2 h-4 w-4 text-accent\" />}\n      {children}\n    </div>\n  );\n}\n```",
+        "testStrategy": "### 8-1\n- 마법사 헤더에 \"밴드 → 곡 → 일정\" 문구 없음 확인\n\n### 8-2\n- 무한 스크롤 검증 리포트 작성 완료\n- 각 목록에서 스크롤 시 추가 데이터 로드 확인\n- hasNext=false 시 fetchNextPage 미호출\n\n### 8-3\n- 멤버 탭에서 실제 이름 표시 or 폴백 규칙 동작 확인\n- API 응답에 name 필드 포함 시 정상 표시\n\n### 8-4\n- 합주곡 검색 카드 선택 → 좌측 보더 + ✓ 아이콘 + 배경 변경\n- 밴드 그리드 카드, EntityPickerModal 동일 동작\n\n### 8-5\n- 마법사 Step 2 탭에 \"직접 입력\"만 표시 (\"자작곡\" 없음)",
+        "priority": "medium",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "안내 카피 제거 및 (자작곡) 라벨 수정",
+            "description": "PracticeCreateWizard에서 불필요한 안내 카피를 삭제하고 직접 입력 탭의 라벨을 수정한다.",
+            "dependencies": [],
+            "details": "PracticeCreateWizard.client.tsx 파일에서 두 가지 수정을 수행한다. 첫째, line 118의 `<p className=\"text-foreground-muted text-caption\">밴드 → 곡 → 일정 순서로 진행합니다.</p>` 요소를 삭제한다. 둘째, line 196의 `직접 입력 (자작곡)` 텍스트를 `직접 입력`으로 변경한다. 두 수정 모두 단순 문자열 변경이므로 별도의 로직 수정은 필요 없다.",
+            "status": "pending",
+            "testStrategy": "마법사 헤더에 '밴드 → 곡 → 일정' 문구가 없는지 확인. 곡 선택 단계에서 탭 라벨이 '직접 입력'으로만 표시되는지 확인. 기존 기능(밴드 선택, 곡 검색/입력, 일정 설정)이 정상 동작하는지 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "SelectableCard 공통 컴포넌트 구현 및 카드 선택 시각 강조 일관화",
+            "description": "선택 가능한 카드에 좌측 보더, 배경, 체크 아이콘을 적용하는 공통 컴포넌트를 만들고 마법사 및 EntityPickerModal에 적용한다.",
+            "dependencies": [],
+            "details": "src/components/ui/selectable-card.tsx에 SelectableCard 컴포넌트를 생성한다. Props: selected (boolean), children, 나머지 div 속성. 선택 시 스타일: `border-l-2 border-accent bg-accent-dim`, 우상단에 Check 아이콘(lucide-react) 표시. 기존 listItemClasses 유틸(src/lib/list-item-styles.ts)의 패턴을 참고하되 좌측 보더와 체크 아이콘을 추가한다. 적용 대상: PracticeCreateWizard의 밴드 카드(line 137-163), 곡 검색 카드(line 223-244), BandPickerModal의 renderItem(line 51-68), EntityPickerModal 내부 버튼 래퍼. 기존 인라인 스타일을 SelectableCard로 교체한다.",
+            "status": "pending",
+            "testStrategy": "합주곡 검색 카드 선택 시 좌측 보더 + 체크 아이콘 + 배경 변경 확인. 밴드 그리드 카드에서 동일 동작 확인. EntityPickerModal에서 검색 결과 카드 선택 시 동일 시각 효과 확인. BandPickerModal에서 밴드 선택 시 시각 효과 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "무한 스크롤 검증 및 리포트 작성",
+            "description": "밴드/합주/공연/멤버/가입 신청 목록의 무한 스크롤 동작을 백엔드와 함께 검증하고 리포트를 작성한다.",
+            "dependencies": [],
+            "details": "검증 대상 파일: BandsList.client.tsx(밴드), PracticesList.client.tsx(합주), PerformancesList.client.tsx(공연), BandDetailContent.client.tsx 내 MembersTab(멤버)/ApplicationsTab(가입 신청). 검증 방법: (1) 백엔드 pageSize=2로 설정 후 각 목록에 5개 이상 데이터 생성. (2) 화면 스크롤 → IntersectionObserver 트리거 확인. (3) fetchNextPage 호출 → 다음 페이지 로드 확인. (4) hasNext=false일 때 fetchNextPage 미호출 확인. 멤버/신청 목록은 IntersectionObserver 대신 '더 불러오기' 버튼 방식이므로 버튼 클릭 동작도 검증. 결과를 .taskmaster/reports/infinite-scroll-verification-2026-04-26.md에 작성하며, 각 목록별 판정(정상/이슈)과 스크린샷 또는 네트워크 로그를 포함한다.",
+            "status": "pending",
+            "testStrategy": "각 목록에서 스크롤 시 추가 데이터 로드 확인. hasNext=false 상태에서 더 이상 요청이 발생하지 않음 확인. 빠른 스크롤 시 중복 요청 방지 확인(isFetchingNextPage 가드). 빈 목록 상태에서 IntersectionObserver가 무한 트리거되지 않음 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "멤버 이름 표시 분석 및 getMemberDisplayName 보강",
+            "description": "멤버 #2718 폴백 표시 현상의 원인을 분석하고 필요 시 getMemberDisplayName 로직을 보강하거나 API 요청 문서를 업데이트한다.",
+            "dependencies": [],
+            "details": "분석 단계: (1) curl로 /api/v1/bands/{id}/members 실제 응답 확인. (2) BandMemberInfoResponse에 name 필드 존재 여부 및 값 확인(null, undefined, 빈 문자열 구분). (3) getMemberDisplayName.ts(src/domain/member/utils/) 로직 검토 - 현재 .trim() 처리는 되어 있으나 빈 문자열 케이스 추가 확인. 조치: 백엔드가 name을 응답하지 않는 경우 API_REQUIRED.md의 FE-API-012 항목 업데이트. 백엔드가 빈 문자열을 반환하는 경우 getMemberDisplayName에서 이미 처리되므로 추가 조치 불필요. 분석 결과와 조치 내용을 .taskmaster/reports/infinite-scroll-verification-2026-04-26.md의 멤버 이름 섹션에 추가로 기록한다.",
+            "status": "pending",
+            "testStrategy": "멤버 탭에서 백엔드가 name을 응답할 경우 실제 이름 표시 확인. name이 null/undefined/빈 문자열일 경우 '멤버 #XXXX' 폴백 정상 동작 확인. BandMemberRow, SessionRow, PracticeDetailContent 등 getMemberDisplayName 사용처에서 일관된 표시 확인.",
             "parentId": "undefined"
           }
         ]
@@ -3074,11 +3581,11 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-25T16:10:37.163Z",
-      "taskCount": 9,
-      "completedCount": 6,
+      "lastModified": "2026-04-26T01:13:41.381Z",
+      "taskCount": 8,
+      "completedCount": 2,
       "tags": [
-        "mvp-1-fix-v3"
+        "mvp-1-fix-v4"
       ]
     }
   }

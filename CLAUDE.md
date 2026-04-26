@@ -252,6 +252,8 @@ Task-master 태스크를 실행하라는 지시를 받으면 반드시 이 워�
 - 이슈 제목은 `{Type}: {task title}` 형식. Type은 커밋 컨벤션의 타입을 **Title Case**로 사용: `Feat`, `Design`, `Chore`, `Fix`, `Refactor`, `Style`, `Test`, `Ai`.
 - 본문은 `.github/ISSUE_TEMPLATE/` 하위의 해당 타입 템플릿(`✨-feature.md`, `🎨-design.md`, `⚙️-chore.md`, `🛸-ai.md`, `🐛-fix.md`, `♻️-refactor.md`, `🪄-style.md`, `✅-test.md`)을 채워 작성.
 - 라벨을 타입에 맞게 부여: `✨ feature`, `🎨 design`, `⚙️ chore`, `🛸 ai`, `🐛 bug/error`, `♻️ refactor`, `🪄 style`, `✅ test`.
+- **신규 컴포넌트 / 모듈 추가 항목은 이슈 본문에 명시**: 새로 만들 컴포넌트, 훅, API 함수, 라우트, 유틸의 경로와 역할을 `## 신규 컴포넌트` 섹션으로 정리. 검토자가 "이 PR 이 도입하는 표면적" 을 한눈에 파악할 수 있도록.
+  - 예: `- src/components/ui/year-month-picker.tsx — 캘린더 헤더의 연/월 빠른 선택 드롭다운`
 
 ### 2. "Bandage Project" 자동 편입
 - 별도 지시가 없는 한 새로 만든 모든 이슈는 GitHub Project **"Bandage Project"** 에 `Todo` 상태로 편입합니다.
