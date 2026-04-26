@@ -21,6 +21,10 @@ export interface MeetingChatBoxProps {
   songId: string;
 }
 
+// 채팅 박스 높이 — 드래그로 위로만 늘어남. 기본/최소 280px, 최대는 viewport-200 (런타임 계산).
+const DEFAULT_HEIGHT = 280;
+const MIN_HEIGHT = DEFAULT_HEIGHT;
+
 export function MeetingChatBox({ songId }: MeetingChatBoxProps) {
   // selector 내부 find 가 매 렌더마다 새 참조 → 무한 루프. 배열 select + useMemo 로 분리.
   const songs = useSetlistStore((s) => s.songs);
@@ -32,9 +36,6 @@ export function MeetingChatBox({ songId }: MeetingChatBoxProps) {
   const listRef = useRef<HTMLDivElement | null>(null);
   const [draft, setDraft] = useState('');
 
-  // 채팅 박스 높이 — 드래그로 위로 늘릴 수 있다. 기본 280px, 최소 200px, 최대 viewport-200.
-  const DEFAULT_HEIGHT = 280;
-  const MIN_HEIGHT = 200;
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const dragRef = useRef<{ y: number; h: number } | null>(null);
 

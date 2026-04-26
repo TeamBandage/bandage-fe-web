@@ -13,12 +13,12 @@ export interface SongTableProps {
   songs: Song[];
   members: Member[];
   selectedSongId: string | null;
-  focusedSessionId: string | null;
   currentUserId: string;
   /** true 이면 모든 곡에 삭제 버튼 노출(매니저). false 이면 본인이 제안한 곡만. */
   isManager?: boolean;
+  /** 멤버 검색 매칭 결과 — 해당 userId 가 속한 세션에 빨간 점 표시. */
+  matchedUserIds?: ReadonlySet<string>;
   onSelectSong: (songId: string) => void;
-  onFocusSession: (songId: string, sessionId: string) => void;
   onDeleteSong?: (songId: string) => void;
 }
 
@@ -30,11 +30,10 @@ export function SongTable({
   songs,
   members,
   selectedSongId,
-  focusedSessionId,
   currentUserId,
   isManager = false,
+  matchedUserIds,
   onSelectSong,
-  onFocusSession,
   onDeleteSong,
 }: SongTableProps) {
   if (songs.length === 0) {
@@ -107,17 +106,26 @@ export function SongTable({
                 </td>
                 <td className="px-s-2 py-s-2">
                   <div className="gap-s-3 flex flex-wrap items-end">
-                    {song.sessions.map((s) => (
-                      <SessionTrack
-                        key={s.id}
-                        session={s}
-                        applicants={song.applicants[s.id] ?? []}
-                        confirmed={song.confirmed[s.id] ?? []}
-                        active={selected && focusedSessionId === s.id}
-                        mine={(song.applicants[s.id] ?? []).includes(currentUserId)}
-                        onClick={() => onFocusSession(song.id, s.id)}
-                      />
-                    ))}
+                    {song.sessions.map((s) => {
+                      const apps = song.applicants[s.id] ?? [];
+                      const conf = song.confirmed[s.id] ?? [];
+                      const highlighted =
+                        !!matchedUserIds &&
+                        matchedUserIds.size > 0 &&
+                        (apps.some((u) => matchedUserIds.has(u)) ||
+                          conf.some((u) => matchedUserIds.has(u)));
+                      return (
+                        <SessionTrack
+                          key={s.id}
+                          session={s}
+                          applicants={apps}
+                          confirmed={conf}
+                          active={false}
+                          mine={apps.includes(currentUserId)}
+                          highlighted={highlighted}
+                        />
+                      );
+                    })}
                   </div>
                 </td>
                 <td className="px-s-2 py-s-2 align-middle">
