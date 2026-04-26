@@ -8,6 +8,8 @@ export type {
   CreatePerformanceResponse,
   PerformanceListItemResponse,
   PerformanceDetailResponse,
+  PerformanceBandSummary,
+  PerformancePracticeSummary,
   PerformancePracticeResponse,
 } from './res';
 export {

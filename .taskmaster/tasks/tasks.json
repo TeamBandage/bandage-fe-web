@@ -3305,7 +3305,7 @@
         "testStrategy": "1. LEADER 역할로 밴드 상세 진입 → \"밴드 설정\" 버튼 노출 + 클릭 시 모달 오픈\n2. 일반 MEMBER 역할 → 버튼 미노출\n3. 정보 탭: 밴드명 수정 후 저장 → API 호출 + 성공 토스트 + 상세 갱신\n4. 사진 탭: URL 입력 → 미리보기 반영 (실서버 검증 필요)\n5. 삭제 탭: 밴드명 틀리게 입력 → 삭제 버튼 비활성, 정확히 입력 → 활성\n6. 삭제 성공 시 /bands 리다이렉트 + 목록에서 해당 밴드 제거\n7. API 4xx/5xx 에러 시 토스트 표시",
         "priority": "high",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3313,9 +3313,10 @@
             "description": "updateBand, deleteBand API 함수와 관련 타입(UpdateBandRequest 등)을 추가한다.",
             "dependencies": [],
             "details": "1. `src/domain/band/types/req.ts`에 `UpdateBandRequest` 인터페이스 추가 (bandName: string, description?: string, profileImg?: string)\n2. `src/domain/band/api/updateBand.ts` 생성 — `PATCH /api/v1/bands/{bandId}` 호출, apiClient.patch 사용\n3. `src/domain/band/api/deleteBand.ts` 생성 — `DELETE /api/v1/bands/{bandId}` 호출, apiClient.delete 사용\n4. 기존 createBand.ts 패턴을 따라 에러 핸들링 구현\n5. 필요 시 API_REQUIRED.md에 FE-API-022(PATCH), FE-API-023(DELETE) 등록 여부 확인",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. TypeScript 컴파일 통과 확인\n2. 유닛 테스트: updateBand, deleteBand 함수가 올바른 endpoint와 method로 호출되는지 모킹 테스트\n3. 실서버 검증 단계에서 curl로 PATCH/DELETE 요청 테스트",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T04:32:28.200Z"
           },
           {
             "id": 2,
@@ -3325,9 +3326,10 @@
               1
             ],
             "details": "1. `src/domain/band/hooks/useUpdateBand.ts` 생성 — useMutation 래퍼, onSuccess 시 queryKeys.band.detail(bandId) 및 queryKeys.band.all 무효화\n2. `src/domain/band/hooks/useDeleteBand.ts` 생성 — useMutation 래퍼, onSuccess 시 queryKeys.band.all 무효화 (목록에서 제거 반영)\n3. 기존 useLeaveBand.ts, useCreateBand.ts 패턴 참조\n4. UseUpdateBandOptions, UseDeleteBandOptions 타입 정의 (onSuccess, onError 콜백)\n5. types/index.ts에 새 타입 export 추가 확인",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 훅 호출 시 mutation 상태(isPending, isSuccess, isError) 정상 동작 확인\n2. onSuccess 콜백에서 queryClient.invalidateQueries 호출 여부 확인\n3. 실서버 연동 시 밴드 수정 후 상세 페이지 데이터 갱신 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T04:32:35.847Z"
           },
           {
             "id": 3,
@@ -3337,9 +3339,10 @@
               2
             ],
             "details": "1. `src/domain/band/components/BandSettingsModal.client.tsx` 생성\n2. Props: bandId, initialData: BandInfoResponse, open, onOpenChange\n3. ResponsiveSheet + Tabs 컴포넌트 조합 (variant='pill')\n4. **정보 탭**: useForm + zod 스키마(bandName: z.string().min(1), description: z.string().optional()), useUpdateBand 호출, 성공 시 토스트 + onOpenChange(false)\n5. **사진 탭**: 현재 이미지 미리보기 + URL 직접 입력 폼, 저장 시 updateBand의 profileImg 필드로 전달\n6. **삭제 탭**: 경고 문구 표시, 밴드명 재입력 input, input === bandName일 때만 삭제 버튼 활성화, useDeleteBand 호출 후 router.replace(ROUTES.BANDS)\n7. 기존 createBandSchema 참조하여 updateBandSchema 추가 또는 재사용",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 모달 열기/닫기 동작 확인\n2. 정보 탭: 밴드명 필수 검증, 빈 값 시 에러 메시지 표시\n3. 사진 탭: URL 입력 시 미리보기 이미지 갱신\n4. 삭제 탭: 밴드명 불일치 시 버튼 disabled, 일치 시 enabled\n5. 모바일에서 BottomSheet, 데스크톱에서 Dialog로 렌더링 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T04:32:39.879Z"
           },
           {
             "id": 4,
@@ -3349,12 +3352,13 @@
               3
             ],
             "details": "1. `src/app/(main)/bands/[bandId]/BandDetailContent.client.tsx` 수정\n2. BandSettingsModal import 추가\n3. useState<boolean>로 settingsOpen 상태 관리\n4. 기존 `onClick={() => toast.info(...)}` 대신 `onClick={() => setSettingsOpen(true)}`로 변경 (line 118)\n5. BandSettingsModal 컴포넌트 렌더링: `<BandSettingsModal bandId={bandId} initialData={band} open={settingsOpen} onOpenChange={setSettingsOpen} />`\n6. isLeader 조건 유지 (hasRole(myRole, 'LEADER') 체크)\n7. 삭제 성공 시 /bands 리다이렉트는 모달 내부에서 처리하므로 별도 처리 불필요",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. LEADER 역할로 밴드 상세 진입 → '밴드 설정' 버튼 노출 확인\n2. 버튼 클릭 → BandSettingsModal 오픈 확인\n3. 일반 MEMBER 역할 → 버튼 미노출 확인\n4. 정보 수정 후 저장 → API 호출 + 상세 화면 데이터 갱신\n5. 삭제 성공 → /bands 리다이렉트 + 목록에서 해당 밴드 제거 확인\n6. API 에러 시 토스트 메시지 표시 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T04:32:43.813Z"
           }
         ],
-        "updatedAt": "2026-04-26T01:17:07.171Z"
+        "updatedAt": "2026-04-26T04:32:43.813Z"
       },
       {
         "id": "5",
@@ -3606,9 +3610,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-26T01:36:14.466Z",
+      "lastModified": "2026-04-26T04:32:43.814Z",
       "taskCount": 8,
-      "completedCount": 7,
+      "completedCount": 8,
       "tags": [
         "mvp-1-fix-v4"
       ]

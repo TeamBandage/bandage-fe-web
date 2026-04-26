@@ -198,7 +198,7 @@ export function DateTimePicker({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           className="bg-bg max-w-[620px] gap-0 rounded-2xl border p-0"
-          aria-label="날짜와 시간 선택"
+          srOnlyTitle="날짜와 시간 선택"
           hideCloseButton
         >
           {/* 빠른 선택 칩 */}

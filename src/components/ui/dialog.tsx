@@ -28,6 +28,12 @@ export const DialogClose = Close;
 type DialogContentProps = ComponentPropsWithoutRef<typeof Content> & {
   fullscreen?: boolean;
   hideCloseButton?: boolean;
+  /**
+   * 시각 디자인상 DialogTitle 헤더가 없을 때 스크린리더용 a11y 제목.
+   * Radix Dialog 는 Title 이 필수 — 미제공 시 콘솔 경고.
+   * 값이 주어지면 sr-only 로 숨겨진 Title 을 자동 삽입.
+   */
+  srOnlyTitle?: string;
 };
 
 const overlayClasses =
@@ -35,7 +41,7 @@ const overlayClasses =
 
 export const DialogContent = forwardRef<ElementRef<typeof Content>, DialogContentProps>(
   function DialogContent(
-    { className, children, fullscreen = false, hideCloseButton, ...props },
+    { className, children, fullscreen = false, hideCloseButton, srOnlyTitle, ...props },
     ref,
   ) {
     return (
@@ -53,6 +59,11 @@ export const DialogContent = forwardRef<ElementRef<typeof Content>, DialogConten
           )}
           {...props}
         >
+          {srOnlyTitle && (
+            <Title className="sr-only" asChild>
+              <span>{srOnlyTitle}</span>
+            </Title>
+          )}
           {children}
           {!hideCloseButton && (
             <Close
