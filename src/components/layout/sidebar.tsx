@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Guitar,
   Home,
+  ListMusic,
   Music,
   User,
   Users,
@@ -52,6 +53,7 @@ const mainNav: NavItem[] = [
       { href: ROUTES.PERFORMANCE_NEW, label: '공연 생성' },
     ],
   },
+  { href: ROUTES.SETLIST_MEETINGS, label: '선곡 회의', icon: ListMusic },
   { href: ROUTES.ME, label: '마이페이지', icon: User },
 ];
 
