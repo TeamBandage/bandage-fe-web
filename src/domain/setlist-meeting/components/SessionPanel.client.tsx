@@ -157,13 +157,22 @@ function OverviewSessionView({
               : state === 'partial'
                 ? 'border-warn/30 bg-warn-dim/40'
                 : 'border-border bg-card';
+          // 카드의 정체성: 누가 이 세션을 맡는지 한눈에 보여주는 것.
+          // 1순위: 확정자(이름·아바타). 2순위: 지원자 미니 그룹. 3순위: '미확정'.
+          const confirmedMembers = conf
+            .map((uid) => members.find((m) => m.id === uid))
+            .filter((m): m is Member => Boolean(m));
+          const applicantMembers = apps
+            .filter((uid) => !conf.includes(uid))
+            .map((uid) => members.find((m) => m.id === uid))
+            .filter((m): m is Member => Boolean(m));
           return (
             <li key={s.id}>
               <button
                 type="button"
                 onClick={() => onFocus(s.id)}
                 className={cn(
-                  'gap-s-3 px-s-3 py-s-3 hover:border-border-hi flex w-full items-center rounded-lg border transition-colors',
+                  'gap-s-3 px-s-3 py-s-3 hover:border-border-hi flex w-full items-start rounded-lg border transition-colors',
                   tone,
                 )}
               >
@@ -181,34 +190,71 @@ function OverviewSessionView({
                   {s.custom && <span className="text-amber ml-0.5">*</span>}
                 </span>
                 <div className="min-w-0 flex-1 text-left">
-                  <div className="text-caption gap-s-2 flex items-center font-bold">
-                    {s.label}
-                    {s.custom && <span className="text-amber text-micro font-bold">커스텀</span>}
-                  </div>
-                  <div className="text-foreground-muted text-micro gap-s-2 mt-0.5 flex items-center">
+                  {/* 1행: 라벨 + 우측 경쟁률 칩 */}
+                  <div className="gap-s-2 flex items-center justify-between">
+                    <div className="text-caption gap-s-2 flex items-center font-bold">
+                      {s.label}
+                      {s.custom && <span className="text-amber text-micro font-bold">커스텀</span>}
+                    </div>
                     <span
                       className={cn(
-                        'font-mono font-bold',
+                        'px-s-2 text-micro rounded-full py-0.5 font-mono font-bold',
                         state === 'full'
-                          ? 'text-success'
-                          : state === 'partial'
-                            ? 'text-warn'
-                            : 'text-foreground-muted',
+                          ? 'bg-success-dim text-success'
+                          : apps.length > 0
+                            ? 'bg-warn-dim text-warn'
+                            : 'bg-card text-foreground-muted',
                       )}
                     >
-                      확정 {conf.length}/{s.need}
+                      지원 {apps.length}/{s.need}
                     </span>
-                    <span>·</span>
-                    <span>지원 {apps.length}명</span>
-                    {isMineConfirmed && (
-                      <span className="text-accent font-bold">· 내가 확정됨</span>
+                  </div>
+                  {/* 2행: 멤버 표시 — 확정자 우선, 없으면 지원자 미니 그룹 */}
+                  <div className="mt-s-2 gap-s-2 flex flex-wrap items-center">
+                    {confirmedMembers.length > 0 ? (
+                      confirmedMembers.map((m) => (
+                        <span
+                          key={m.id}
+                          className="bg-success/15 border-success/35 gap-s-1 px-s-2 inline-flex items-center rounded-full border py-0.5"
+                        >
+                          <MemberAvatar member={m} size="sm" className="-ml-1" />
+                          <span className="text-caption font-semibold">{m.name}</span>
+                          {m.id === currentUserId && (
+                            <span className="text-accent text-micro font-bold">나</span>
+                          )}
+                          <span className="text-success text-micro font-bold">확정</span>
+                        </span>
+                      ))
+                    ) : applicantMembers.length > 0 ? (
+                      <span className="gap-s-1 flex items-center">
+                        <span className="flex -space-x-1.5">
+                          {applicantMembers.slice(0, 4).map((m) => (
+                            <MemberAvatar
+                              key={m.id}
+                              member={m}
+                              size="sm"
+                              className="border-card border-2"
+                            />
+                          ))}
+                        </span>
+                        <span className="text-foreground-muted text-micro">
+                          {applicantMembers.length === 1
+                            ? applicantMembers[0]!.name
+                            : `${applicantMembers[0]!.name} 외 ${applicantMembers.length - 1}명`}
+                          {' 지원'}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-foreground-muted text-micro">미확정 · 지원자 없음</span>
                     )}
-                    {!isMineConfirmed && isMine && (
-                      <span className="text-accent font-bold">· 내가 지원함</span>
+                    {isMine && !isMineConfirmed && (
+                      <span className="bg-accent-dim text-accent text-micro px-s-2 rounded-full py-0.5 font-bold">
+                        내 지원
+                      </span>
                     )}
                   </div>
                 </div>
-                <ChevronRight className="text-foreground-muted h-4 w-4 shrink-0" />
+                <ChevronRight className="text-foreground-muted mt-s-1 h-4 w-4 shrink-0" />
               </button>
             </li>
           );

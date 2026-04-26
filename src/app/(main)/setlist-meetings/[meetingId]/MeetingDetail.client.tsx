@@ -191,8 +191,10 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
       {selectedSongId && (
         <aside
           aria-hidden={!sessionPanelOpen}
+          // 하단 채팅(h-280)과 동시에 열리므로 우측 패널은 채팅 영역을 침범하지 않도록 bottom-[280px].
+          // 패널 body 는 자체 overflow-y-auto 라 작은 뷰포트에서도 자연 스크롤.
           className={cn(
-            'absolute inset-y-0 right-0 z-20 hidden shadow-lg transition-transform duration-200 ease-out lg:flex',
+            'absolute top-0 right-0 bottom-[280px] z-20 hidden shadow-lg transition-transform duration-200 ease-out lg:flex',
             sessionPanelOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
           )}
           style={{ width: 380 }}
