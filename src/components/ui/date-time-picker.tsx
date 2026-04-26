@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Chip } from '@/components/ui/chip';
 import { Dialog, DialogClose, DialogContent } from '@/components/ui/dialog';
+import { YearMonthPicker } from '@/components/ui/year-month-picker';
 import { cn } from '@/lib/cn';
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
@@ -222,10 +223,39 @@ export function DateTimePicker({
               minDate={minDate}
               onNav={navMonth}
               onPick={(p) => setDraft((prev) => ({ ...prev, y: p.y, mo: p.mo, d: p.d }))}
+              onSetYM={({ year, month }) => setView({ y: year, mo: month })}
             />
             <div className="border-border px-s-4 py-s-4 flex flex-col border-t sm:w-[240px] sm:border-t-0 sm:border-l">
-              <div className="text-foreground-muted text-micro mb-s-3 text-center font-semibold tracking-wider uppercase">
+              <div className="text-foreground-muted text-micro mb-s-2 text-center font-semibold tracking-wider uppercase">
                 시간 선택
+              </div>
+              {/* 듀얼 모드: 직접 타이핑 가능한 input + 보조 휠 */}
+              <div className="mb-s-3 gap-s-2 flex items-center justify-center">
+                <input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={pad(draft.h)}
+                  onChange={(e) => {
+                    const h = Math.max(0, Math.min(23, Number(e.target.value) || 0));
+                    setDraft((prev) => ({ ...prev, h }));
+                  }}
+                  className="bg-card border-border text-foreground text-title focus-visible:border-accent w-16 rounded-md border-2 px-2 py-1 text-center font-bold tabular-nums outline-none"
+                  aria-label="시 직접 입력"
+                />
+                <span className="text-foreground-sub text-title font-bold">:</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={59}
+                  value={pad(draft.mi)}
+                  onChange={(e) => {
+                    const mi = Math.max(0, Math.min(59, Number(e.target.value) || 0));
+                    setDraft((prev) => ({ ...prev, mi }));
+                  }}
+                  className="bg-card border-border text-foreground text-title focus-visible:border-accent w-16 rounded-md border-2 px-2 py-1 text-center font-bold tabular-nums outline-none"
+                  aria-label="분 직접 입력"
+                />
               </div>
               <div className="gap-s-2 flex items-end justify-center">
                 <Wheel
@@ -272,12 +302,23 @@ interface CalendarProps {
   minDate: ParsedDate | null;
   onNav: (dir: number) => void;
   onPick: (p: { y: number; mo: number; d: number }) => void;
+  /** YearMonthPicker 의 직접 변경. */
+  onSetYM?: (next: { year: number; month: number }) => void;
 }
 
-function Calendar({ viewYear, viewMonth, selected, minDate, onNav, onPick }: CalendarProps) {
+function Calendar({
+  viewYear,
+  viewMonth,
+  selected,
+  minDate,
+  onNav,
+  onPick,
+  onSetYM,
+}: CalendarProps) {
   const firstDow = new Date(viewYear, viewMonth - 1, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
   const today = useMemo(todayParts, []);
+  const [ymOpen, setYmOpen] = useState(false);
 
   const cells: Array<number | null> = [];
   for (let i = 0; i < firstDow; i += 1) cells.push(null);
@@ -295,8 +336,25 @@ function Calendar({ viewYear, viewMonth, selected, minDate, onNav, onPick }: Cal
         >
           ‹
         </button>
-        <div className="text-foreground text-body font-bold">
-          {viewYear}년 {viewMonth}월
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => onSetYM && setYmOpen((v) => !v)}
+            className="text-foreground text-body hover:text-accent inline-flex items-center gap-1 font-bold transition-colors"
+            aria-haspopup="dialog"
+            aria-expanded={ymOpen}
+            aria-label="연도와 월 빠른 선택 열기"
+          >
+            {viewYear}년 {viewMonth}월{onSetYM && <span aria-hidden="true">▾</span>}
+          </button>
+          {ymOpen && onSetYM && (
+            <YearMonthPicker
+              year={viewYear}
+              month={viewMonth}
+              onChange={onSetYM}
+              onClose={() => setYmOpen(false)}
+            />
+          )}
         </div>
         <button
           type="button"
