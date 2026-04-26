@@ -86,7 +86,8 @@ function parseDuration(d?: string): { mm: string; ss: string } {
   if (!d) return { mm: '', ss: '' };
   const m = d.match(/^(\d{1,2}):(\d{2})$/);
   if (!m) return { mm: '', ss: '' };
-  return { mm: String(parseInt(m[1]!, 10)), ss: String(parseInt(m[2]!, 10)) };
+  // 입력 필드는 0 패딩된 형식을 그대로 보여줌. 단일 자리 입력 후 onBlur 가 패딩을 보장.
+  return { mm: m[1]!.padStart(2, '0'), ss: m[2]! };
 }
 
 function splitSessions(sessions: SessionDef[]): {
@@ -331,40 +332,37 @@ export function AddSongModal({
         </ResponsiveSheetHeader>
         <form onSubmit={onSubmit}>
           <ResponsiveSheetBody>
-            {/* 모드 탭 — 수정 모드에서는 검색 비활성(편집은 직접만). */}
+            {/* 모드 탭 — 밴드 정보/멤버 탭과 동일한 underline 스타일. 수정 모드에서는 검색 비활성. */}
             {!isEdit && (
-              <div className="bg-card border-border mb-s-4 inline-flex items-center rounded-md border p-1">
-                <button
-                  type="button"
-                  onClick={() => setMode('manual')}
-                  className={cn(
-                    'px-s-3 py-s-1 text-caption rounded-sm font-semibold transition-colors',
-                    mode === 'manual'
-                      ? 'bg-accent text-foreground'
-                      : 'text-foreground-muted hover:text-foreground',
-                  )}
-                >
-                  직접 추가
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode('search')}
-                  className={cn(
-                    'px-s-3 py-s-1 text-caption rounded-sm font-semibold transition-colors',
-                    mode === 'search'
-                      ? 'bg-accent text-foreground'
-                      : 'text-foreground-muted hover:text-foreground',
-                  )}
-                >
-                  검색
-                </button>
+              <div className="border-border mb-s-4 gap-s-6 -mx-s-1 flex border-b">
+                {[
+                  { id: 'manual' as const, label: '직접 추가' },
+                  { id: 'search' as const, label: '검색' },
+                ].map((tab) => {
+                  const active = mode === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setMode(tab.id)}
+                      aria-pressed={active}
+                      className={cn(
+                        'px-s-1 -mb-px h-10 border-b-2 text-sm font-semibold transition-colors',
+                        active
+                          ? 'border-accent text-accent'
+                          : 'text-foreground-sub hover:text-foreground border-transparent',
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
             <div className="gap-s-3 flex flex-col">
-              {/* 상단 입력 영역 — 직접 추가 / 검색 두 모드의 모달 높이를 일치시키기 위해 동일 min-h. */}
               {mode === 'manual' || isEdit ? (
-                <div className="gap-s-3 flex min-h-[400px] flex-col">
+                <div className="gap-s-3 flex flex-col">
                   <Input
                     label="곡명"
                     required
@@ -440,7 +438,7 @@ export function AddSongModal({
                   </div>
                 </div>
               ) : (
-                <div className="min-h-[400px]">
+                <div>
                   <label className="text-foreground text-sm font-medium">곡 검색</label>
                   <div className="bg-surface border-border gap-s-2 px-s-3 focus-within:ring-accent focus-within:ring-offset-bg mt-1.5 flex h-10 items-center rounded-md border focus-within:ring-2 focus-within:ring-offset-2">
                     <Search className="text-foreground-muted h-4 w-4 shrink-0" />
@@ -457,8 +455,8 @@ export function AddSongModal({
                     외부 곡 DB 에서 검색합니다 (현재 mock — 추후 SONG 검색 API 로 교체). 결과 클릭
                     시 폼이 채워지고 직접 추가 탭으로 전환됩니다.
                   </div>
-                  {/* 결과 영역 — 고정 높이 + 스크롤. ~3곡 이상 노출되도록 320px. 직접 추가 탭과 모달 높이 일치. */}
-                  <div className="border-border mt-s-3 h-[320px] overflow-y-auto rounded-md border">
+                  {/* 결과 영역 — 카드 ~64px × 3곡 + 약간 = 200px. 그 이상은 스크롤. */}
+                  <div className="border-border mt-s-3 h-[200px] overflow-y-auto rounded-md border">
                     {!searchQuery ? (
                       <div className="text-foreground-muted gap-s-2 px-s-4 py-s-12 text-caption flex flex-col items-center justify-center text-center">
                         <Search className="h-6 w-6 opacity-50" />

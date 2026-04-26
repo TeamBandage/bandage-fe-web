@@ -19,6 +19,8 @@ export interface SongTableProps {
   currentUserId: string;
   /** true 이면 모든 곡에 삭제/수정 버튼 노출(매니저). false 이면 본인이 제안한 곡만. */
   isManager?: boolean;
+  /** 회의가 매니저에 의해 선곡 확정됨 — 모든 멤버의 수정/삭제 비활성. */
+  isLocked?: boolean;
   /** 멤버 검색 매칭 결과 — 해당 userId 가 속한 세션에 빨간 점 표시. */
   matchedUserIds?: ReadonlySet<string>;
   /** 정렬 상태(부모에서 관리). null 이면 원본 순서. */
@@ -49,6 +51,7 @@ export function SongTable({
   selectedSongId,
   currentUserId,
   isManager = false,
+  isLocked = false,
   matchedUserIds,
   sortKey = null,
   sortDir = 'asc',
@@ -219,6 +222,8 @@ export function SongTable({
                 </td>
                 <td className="px-s-3 py-s-2 align-middle">
                   {(() => {
+                    // 잠긴 회의는 모든 멤버에 대해 수정/삭제 비활성.
+                    if (isLocked) return null;
                     const canMutate = isManager || song.proposerId === currentUserId;
                     if (!canMutate) return null;
                     // 확정된 곡(모든 세션이 정원만큼 확정)은 수정 비활성 — 확정자 데이터 보호.
