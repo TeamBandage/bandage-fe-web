@@ -43,7 +43,15 @@ const mainNav: NavItem[] = [
       { href: ROUTES.PRACTICE_NEW, label: '합주 시작하기' },
     ],
   },
-  { href: ROUTES.PERFORMANCES, label: '공연', icon: CalendarDays },
+  {
+    href: ROUTES.PERFORMANCES,
+    label: '공연',
+    icon: CalendarDays,
+    subs: [
+      { href: ROUTES.PERFORMANCES, label: '나의 공연' },
+      { href: ROUTES.PERFORMANCE_NEW, label: '공연 생성' },
+    ],
+  },
   { href: ROUTES.ME, label: '마이페이지', icon: User },
 ];
 
@@ -53,8 +61,9 @@ function isActive(pathname: string, href: string) {
 }
 
 function isSubActive(pathname: string, href: string) {
-  // 정확 매칭 — `/practices` vs `/practices/new` 가 둘 다 매칭되지 않도록.
+  // 정확 매칭 — 부모 경로(/practices, /performances)와 자식(/new) 이 동시에 매칭되지 않도록.
   if (href === ROUTES.PRACTICES) return pathname === ROUTES.PRACTICES;
+  if (href === ROUTES.PERFORMANCES) return pathname === ROUTES.PERFORMANCES;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

@@ -8,7 +8,6 @@ import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PerformanceCreateModal } from '@/domain/performance/components/PerformanceCreateModal.client';
 import { useMyPerformances } from '@/domain/performance/hooks/useMyPerformances';
 import type { PerformanceListItemResponse } from '@/domain/performance/types';
 import { ROUTES } from '@/global/config/routes';
@@ -77,13 +76,11 @@ export function PerformancesListPane() {
     >
       <div className="border-border px-s-5 py-s-4 flex items-center justify-between border-b">
         <h2 className="text-subtitle font-bold">공연 탐색</h2>
-        <PerformanceCreateModal
-          trigger={
-            <Button size="sm" variant="accent-outline" aria-label="새 공연 만들기">
-              <Plus className="h-4 w-4" /> 새 공연
-            </Button>
-          }
-        />
+        <Button asChild size="sm" variant="accent-outline" aria-label="공연 생성">
+          <Link href={ROUTES.PERFORMANCE_NEW}>
+            <Plus className="h-4 w-4" /> 공연 생성
+          </Link>
+        </Button>
       </div>
       <Tabs
         value={tab}

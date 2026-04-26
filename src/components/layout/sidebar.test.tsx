@@ -7,6 +7,7 @@ import { Sidebar } from './sidebar';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/bands',
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
 vi.mock('@/domain/member/hooks/useMe', () => ({
