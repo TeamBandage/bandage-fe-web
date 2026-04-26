@@ -60,6 +60,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   const setSelectedMeeting = useSetlistStore((s) => s.setSelectedMeeting);
   const setSelectedSong = useSetlistStore((s) => s.setSelectedSong);
   const setFocusedSession = useSetlistStore((s) => s.setFocusedSession);
+  const deleteSong = useSetlistStore((s) => s.deleteSong);
 
   const isManager = meeting ? meeting.managerId === currentUserId : false;
 
@@ -153,6 +154,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             selectedSongId={selectedSongId}
             focusedSessionId={focusedSessionId}
             currentUserId={currentUserId}
+            isManager={isManager}
             onSelectSong={(id) => {
               setSelectedSong(id);
               setSessionPanelOpen(true);
@@ -162,23 +164,25 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
               setFocusedSession(sessionId);
               setSessionPanelOpen(true);
             }}
+            onDeleteSong={(id) => deleteSong(id)}
           />
         </div>
+        {/* 메인 컬럼 하단 채팅 — 우측 패널과 sessionPanelOpen 으로 동기 토글. */}
+        {selectedSongId && sessionPanelOpen && <MeetingChatBox songId={selectedSongId} />}
       </div>
 
-      {/* 우측 오버레이: SessionPanel + MeetingChatBox 가 한 덩어리로 묶여 함께 슬라이드. */}
+      {/* 우측 오버레이 SessionPanel — 메인 차트 위로 absolute. */}
       {selectedSongId && (
-        <div
+        <aside
           aria-hidden={!sessionPanelOpen}
           className={cn(
-            'absolute inset-y-0 right-0 z-20 hidden flex-col shadow-lg transition-transform duration-200 ease-out lg:flex',
+            'absolute inset-y-0 right-0 z-20 hidden shadow-lg transition-transform duration-200 ease-out lg:flex',
             sessionPanelOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
           )}
           style={{ width: 380 }}
         >
           <SessionPanel songId={selectedSongId} onClose={() => setSessionPanelOpen(false)} />
-          <MeetingChatBox songId={selectedSongId} />
-        </div>
+        </aside>
       )}
 
       {/* 닫혔을 때 다시 열기 핸들. */}

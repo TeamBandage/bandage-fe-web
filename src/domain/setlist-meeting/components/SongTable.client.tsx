@@ -1,6 +1,6 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 
@@ -15,8 +15,11 @@ export interface SongTableProps {
   selectedSongId: string | null;
   focusedSessionId: string | null;
   currentUserId: string;
+  /** true 이면 모든 곡에 삭제 버튼 노출(매니저). false 이면 본인이 제안한 곡만. */
+  isManager?: boolean;
   onSelectSong: (songId: string) => void;
   onFocusSession: (songId: string, sessionId: string) => void;
+  onDeleteSong?: (songId: string) => void;
 }
 
 function memberName(members: Member[], id: string): string {
@@ -29,8 +32,10 @@ export function SongTable({
   selectedSongId,
   focusedSessionId,
   currentUserId,
+  isManager = false,
   onSelectSong,
   onFocusSession,
+  onDeleteSong,
 }: SongTableProps) {
   if (songs.length === 0) {
     return (
@@ -58,6 +63,7 @@ export function SongTable({
             <th className="px-s-2 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
               추천자 의견
             </th>
+            <th className="px-s-2 py-s-2 w-10" aria-label="삭제" />
           </tr>
         </thead>
         <tbody>
@@ -143,6 +149,23 @@ export function SongTable({
                     </span>
                   ) : (
                     <span className="text-foreground-muted">-</span>
+                  )}
+                </td>
+                <td className="px-s-2 py-s-2 text-right align-middle">
+                  {(isManager || song.proposerId === currentUserId) && onDeleteSong && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`'${song.title}' 을 삭제하시겠습니까?`)) {
+                          onDeleteSong(song.id);
+                        }
+                      }}
+                      aria-label={`${song.title} 삭제`}
+                      className="text-foreground-muted hover:bg-danger-dim hover:text-danger inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   )}
                 </td>
               </tr>

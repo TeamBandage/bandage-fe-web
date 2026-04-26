@@ -64,6 +64,19 @@ describe('setlistStore — chat / addSong / addCustomSession', () => {
     }
   });
 
+  it('deleteSong 은 곡을 제거하고, 선택 상태였다면 selection/focus 를 정리한다', () => {
+    const { addSong, setSelectedSong, setFocusedSession, deleteSong } = useSetlistStore.getState();
+    const id = addSong('mt1', { title: 'X', artist: 'Y', proposerId: 'u1' });
+    setSelectedSong(id);
+    setFocusedSession('V');
+    expect(useSetlistStore.getState().selectedSongId).toBe(id);
+    deleteSong(id);
+    const state = useSetlistStore.getState();
+    expect(state.songs.find((s) => s.id === id)).toBeUndefined();
+    expect(state.selectedSongId).toBeNull();
+    expect(state.focusedSessionId).toBeNull();
+  });
+
   it('addCustomSession 은 custom 플래그를 강제하고 동일 id 중복 추가를 막는다', () => {
     const { addCustomSession } = useSetlistStore.getState();
     addCustomSession('s1', { id: 'K', label: '키보드', short: 'K', need: 1 });

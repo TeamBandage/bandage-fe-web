@@ -42,6 +42,7 @@ type Actions = {
       sessions?: SessionDef[];
     },
   ) => string;
+  deleteSong: (songId: string) => void;
   addCustomSession: (songId: string, session: SessionDef) => void;
   addMeeting: (meeting: Omit<Meeting, 'id' | 'createdAt' | 'updatedAt'>) => string;
   /** 테스트/디버그용. seed 로 되돌림. */
@@ -162,6 +163,14 @@ export const useSetlistStore = create<SetlistStore>()(
         set((state) => ({ songs: [...state.songs, next] }));
         return id;
       },
+
+      deleteSong: (songId) =>
+        set((state) => ({
+          songs: state.songs.filter((s) => s.id !== songId),
+          // 삭제 곡이 현재 선택 상태였다면 선택 해제.
+          selectedSongId: state.selectedSongId === songId ? null : state.selectedSongId,
+          focusedSessionId: state.selectedSongId === songId ? null : state.focusedSessionId,
+        })),
 
       addCustomSession: (songId, session) =>
         set((state) => ({

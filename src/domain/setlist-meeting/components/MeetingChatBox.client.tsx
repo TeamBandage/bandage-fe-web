@@ -41,6 +41,9 @@ export function MeetingChatBox({ songId }: MeetingChatBoxProps) {
   };
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // 한글 등 IME 조합 중에는 Enter 가 글자 확정용으로 쓰여 e.key 가 'Enter' 로 들어옴.
+    // 그대로 submit 하면 마지막 글자가 한 번 더 메시지로 전송되는 버그 발생 → 조합 중이면 무시.
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       submit();
@@ -50,7 +53,7 @@ export function MeetingChatBox({ songId }: MeetingChatBoxProps) {
   return (
     <section
       data-slot="meeting-chat-box"
-      className="bg-surface border-border flex h-[280px] shrink-0 flex-col border-t border-l"
+      className="bg-surface border-border flex h-[280px] shrink-0 flex-col border-t"
       aria-label={`${song.title} 의견 채팅`}
     >
       <header className="border-border px-s-5 py-s-2 gap-s-2 flex items-center border-b">
