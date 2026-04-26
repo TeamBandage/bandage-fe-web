@@ -8,11 +8,6 @@ export const addSongSchema = z.object({
     .max(100)
     .optional()
     .or(z.literal('').transform(() => undefined)),
-  duration: z
-    .string()
-    .regex(/^([0-9]{1,2}):[0-5][0-9]$/, '재생 시간은 mm:ss 형식 (예: 4:32) 으로 입력하세요.')
-    .optional()
-    .or(z.literal('').transform(() => undefined)),
   note: z
     .string()
     .max(500)
