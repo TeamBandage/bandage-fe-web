@@ -1,7 +1,15 @@
 'use client';
 
-import { MessageSquare, Send } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { GripHorizontal, MessageSquare, Minimize2, Send } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 
 import { cn } from '@/lib/cn';
 
@@ -23,6 +31,52 @@ export function MeetingChatBox({ songId }: MeetingChatBoxProps) {
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const [draft, setDraft] = useState('');
+
+  // 채팅 박스 높이 — 드래그로 위로 늘릴 수 있다. 기본 280px, 최소 200px, 최대 viewport-200.
+  const DEFAULT_HEIGHT = 280;
+  const MIN_HEIGHT = 200;
+  const [height, setHeight] = useState(DEFAULT_HEIGHT);
+  const dragRef = useRef<{ y: number; h: number } | null>(null);
+
+  const onDragStart = useCallback(
+    (e: ReactPointerEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+      dragRef.current = { y: e.clientY, h: height };
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+    },
+    [height],
+  );
+
+  // 전역 pointermove/up — 드래그 시작 후 핸들 밖으로 벗어나도 추적.
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const start = dragRef.current;
+      if (!start) return;
+      const delta = start.y - e.clientY; // 위로 끌면 +
+      const max = Math.max(MIN_HEIGHT, window.innerHeight - 200);
+      const next = Math.min(Math.max(start.h + delta, MIN_HEIGHT), max);
+      setHeight(next);
+    };
+    const onUp = () => {
+      if (!dragRef.current) return;
+      dragRef.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, []);
+
+  const isExpanded = height !== DEFAULT_HEIGHT;
+  const resetHeight = () => setHeight(DEFAULT_HEIGHT);
 
   // 새 메시지 추가 시 자동 스크롤.
   useEffect(() => {
@@ -53,13 +107,35 @@ export function MeetingChatBox({ songId }: MeetingChatBoxProps) {
   return (
     <section
       data-slot="meeting-chat-box"
-      className="bg-surface border-border flex h-[280px] shrink-0 flex-col border-t"
+      className="bg-surface border-border relative flex shrink-0 flex-col border-t"
+      style={{ height }}
       aria-label={`${song.title} 의견 채팅`}
     >
+      {/* 드래그 핸들 — 상단 1px 영역. 위/아래로 끌어 채팅 높이 조절. */}
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="채팅 영역 크기 조절"
+        onPointerDown={onDragStart}
+        className="hover:bg-accent/40 absolute -top-1 right-0 left-0 z-10 flex h-2 cursor-row-resize items-center justify-center"
+      >
+        <GripHorizontal className="text-foreground-muted h-3 w-3" />
+      </div>
+
       <header className="border-border px-s-5 py-s-2 gap-s-2 flex items-center border-b">
         <MessageSquare className="text-foreground-muted h-4 w-4" />
         <span className="text-caption font-bold">{song.title}</span>
         <span className="text-foreground-muted text-micro">의견 {song.chat.length}개</span>
+        {isExpanded && (
+          <button
+            type="button"
+            onClick={resetHeight}
+            aria-label="채팅 크기 원래대로"
+            className="text-foreground-muted hover:text-foreground ml-auto rounded-md p-1"
+          >
+            <Minimize2 className="h-3.5 w-3.5" />
+          </button>
+        )}
       </header>
 
       <div ref={listRef} className="px-s-5 py-s-3 flex-1 overflow-y-auto">
