@@ -7,11 +7,11 @@ import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
+import { MeetingCreateModal } from '@/domain/setlist-meeting/components/MeetingCreateModal.client';
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
 import type { Meeting, Song } from '@/domain/setlist-meeting/types';
 import { isReady } from '@/domain/setlist-meeting/utils';
 import { ROUTES } from '@/global/config/routes';
-import { useToast } from '@/hooks/useToast';
 import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
 
@@ -73,7 +73,6 @@ export function SetlistMeetingsListPane() {
   const pathname = usePathname() ?? '';
   const meetings = useSetlistStore((s) => s.meetings);
   const songs = useSetlistStore((s) => s.songs);
-  const toast = useToast();
 
   const summaries = useMemo<MeetingSummary[]>(() => {
     return meetings.map((meeting) => {
@@ -96,14 +95,13 @@ export function SetlistMeetingsListPane() {
           <h2 className="text-body font-bold">선곡 회의</h2>
           <p className="text-foreground-muted text-micro mt-0.5">{meetings.length}건 참여</p>
         </div>
-        <Button
-          size="sm"
-          variant="accent-outline"
-          onClick={() => toast.info('회의 만들기 기능은 곧 제공됩니다.')}
-          aria-label="새 선곡 회의 만들기"
-        >
-          <Plus className="h-4 w-4" /> 회의 만들기
-        </Button>
+        <MeetingCreateModal
+          trigger={
+            <Button size="sm" variant="accent-outline" aria-label="새 선곡 회의 만들기">
+              <Plus className="h-4 w-4" /> 회의 만들기
+            </Button>
+          }
+        />
       </div>
       <div className="px-s-2 py-s-2 flex-1 overflow-y-auto">
         {summaries.length === 0 ? (
