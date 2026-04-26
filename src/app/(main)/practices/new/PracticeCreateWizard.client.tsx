@@ -13,6 +13,8 @@ import { StepIndicator } from '@/components/ui/step-indicator';
 import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
 import { useCreatePractice } from '@/domain/practice/hooks/useCreatePractice';
+import { createPracticeSongFromFields } from '@/domain/practice-song/api/createPracticeSongFromFields';
+import { createPracticeSongFromSong } from '@/domain/practice-song/api/createPracticeSongFromSong';
 import { useSearchSongs } from '@/domain/practice-song/hooks/useSearchSongs';
 import type { SongSearchItem } from '@/domain/practice-song/types';
 import { ROUTES } from '@/global/config/routes';
@@ -117,23 +119,32 @@ export function PracticeCreateWizard() {
     if (step > 0) setStep((step - 1) as Step);
   }
 
-  function submit() {
+  async function submit() {
     if (!songPick) return;
     if (!startAt) return toast.error('시작 시각을 설정해 주세요.');
-    // NOTE: §4-1 song 필드는 songId(UUID) 를 요구하지만 §5-2/§5-3 합주곡 생성은 practiceId 가 선행되어야 하는 닭-달걀
-    //       문제. 본 라운드는 곡 메타 텍스트(`title — artist`) 를 임시 식별자로 전송하고, 백엔드 응답을 Task 8 에서
-    //       검증 후 후속 보정 (FE-API-020 등록).
-    const songIdentifier =
-      songPick.mode === 'picked'
-        ? `${songPick.picked.title} — ${songPick.picked.artist}`
-        : `${songPick.custom.title} — ${songPick.custom.artist}`;
-    mutation.mutate({
-      title: title || undefined,
-      song: songIdentifier,
-      venue: venue || undefined,
-      startAt,
-      durationMinutes,
-    });
+    // API_SPEC v3 (FE-API-020 해소): practiceId 옵셔널 PracticeSong 생성 → 응답 songId → POST /practices.
+    try {
+      const song =
+        songPick.mode === 'picked'
+          ? await createPracticeSongFromSong({ song: songPick.picked })
+          : await createPracticeSongFromFields({
+              title: songPick.custom.title,
+              artist: songPick.custom.artist,
+              album: songPick.custom.album || '',
+              duration: songPick.custom.duration,
+              refLink: songPick.custom.refLink ?? null,
+            });
+      mutation.mutate({
+        title: title || undefined,
+        song: song.songId,
+        venue: venue || undefined,
+        startAt,
+        durationMinutes,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '합주곡 생성에 실패했습니다.';
+      toast.error(message);
+    }
   }
 
   return (

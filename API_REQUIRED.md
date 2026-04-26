@@ -2,20 +2,20 @@
 
 본 문서는 mvp-1-fix Task 15 실서버 검증과 Task 18~20 구현 과정에서 발견된, 현재 백엔드(`http://localhost:8080`)에 **존재하지 않거나 계약이 어긋나** 프론트가 mock 또는 우회 구현으로 대체한 API 항목을 정리한 것입니다. 백엔드 구현이 완료되면 프론트의 `domain/{name}/api/`만 교체하면 즉시 활성화됩니다.
 
-작성일: 2026-04-26 (mvp-1-fix-v3 Task 8 검증 결과 반영) / 영향 범위: Bandage MVP 1차 보정 v3
+작성일: 2026-04-26 (BE API_SPEC v3 갱신 반영) / 영향 범위: Bandage MVP 1차 보정 v3 / v4
 
-## 0. mvp-1-fix-v3 Task 8 검증 (2026-04-26) 요약
+## 0. mvp-1-fix-v3 Task 8 검증 결과 (2026-04-26) — BE 후속 대응 완료
 
 상세 리포트: [`.taskmaster/reports/create-api-verification-2026-04-26.md`](./.taskmaster/reports/create-api-verification-2026-04-26.md)
 
-| 항목                                                                              | 우선순위 | 상태                                                    |
-| --------------------------------------------------------------------------------- | -------- | ------------------------------------------------------- |
-| `/bands/me` myRole 포함                                                           | —        | 해소 (정상 동작 확인)                                   |
-| `/practices/me`, `/performances/me`, `/bands/search` 등 me/search 엔드포인트 일괄 | —        | 해소                                                    |
-| `POST /performances` `bandIds` non-null 강제 (§6-1 명세 vs 실제 불일치)           | P0       | FE 즉시 수정 (항상 배열 전송) + BE 의 default 처리 권고 |
-| Practice ↔ PracticeSong 닭-달걀 (FE-API-020)                                      | P0       | 미해소 — 본 라운드 마법사 end-to-end 차단               |
-| 입력 검증 메시지 raw 노출                                                         | P1       | 검토 필요                                               |
-| 공연/합주 startAt 과거 허용                                                       | P2       | 백엔드 검증 권고                                        |
+| 항목                                                                              | 우선순위 | 상태                                                                                                |
+| --------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------- |
+| `/bands/me` myRole 포함                                                           | —        | 해소 (정상 동작 확인)                                                                               |
+| `/practices/me`, `/performances/me`, `/bands/search` 등 me/search 엔드포인트 일괄 | —        | 해소                                                                                                |
+| `POST /performances` `bandIds` non-null 강제 (§6-1 명세 vs 실제 불일치)           | P0       | **해소** — BE 가 `bandIds: List<UUID>? = null` 로 변경 + 빈 배열 보정 (API_SPEC §6-1)               |
+| Practice ↔ PracticeSong 닭-달걀 (FE-API-020)                                      | P0       | **해소** — BE §5-2/§5-3 의 `practiceId` 옵셔널화. FE 마법사가 PracticeSong 선행 생성 후 songId 전달 |
+| 입력 검증 메시지 raw 노출                                                         | P1       | **해소** — BE `HttpMessageNotReadableException` 핸들러가 한국어 + fieldErrors 매핑                  |
+| 공연/합주 startAt 과거 허용                                                       | P2       | **해소** — BE Practice/Performance 생성·수정·일정 변경 DTO 에 `@Future` 적용                        |
 
 ---
 
@@ -124,16 +124,12 @@ mvp-1-fix-v3 Task 5 의 BandPickerModal 결과를 적용할 백엔드 엔드포�
 - **응답**: `BandMemberInfoResponse[]` (또는 `MemberInfoResponse[]`)
 - **프론트 사용처**: `MemberPickerModal` (현재는 신규 사용처 없음 — 합주 멤버 추가 picker 도입 시 활성화)
 
-### 8-6. 합주곡 검색 + Practice 생성 닭-달걀 해결 (FE-API-020)
+### 8-6. 합주곡 검색 + Practice 생성 닭-달걀 해결 (FE-API-020) — **✅ 해소 (2026-04-26)**
 
-§4-1 `POST /practices` 의 `song` 필드는 songId(UUID) 를 요구하지만, §5-2/§5-3 합주곡 생성은 `practiceId` 가 선행되어야 한다. 마법사 UX 상 곡을 먼저 선택/입력한 후 합주를 만드는 흐름이 자연스러운데, 백엔드 계약이 이를 막고 있음.
+BE 가 §5-2/§5-3 의 `practiceId` 를 옵셔널화 (해결안 2 채택). 마법사는 PracticeSong 선행 생성 후 응답 `songId` 를 §4-1 의 `song` 으로 전달하는 시퀀스로 동작.
 
-해결안 (택일):
-
-1. **§4-1 `song` 필드 확장** — UUID 외에 `SongSearchItem` 객체 또는 `{ title, artist, album, duration, refLink }` 풀 메타도 허용. 백엔드는 songId 가 없으면 새 PracticeSong 을 함께 생성.
-2. **§5-2/§5-3 `practiceId` 선택화** — practiceId 없이 PracticeSong 만 먼저 만들고 응답의 songId 를 §4-1 에 전달.
-
-- **프론트 사용처**: `PracticeCreateWizard.submit` (현재 임시로 `<title> — <artist>` 텍스트 식별자 전송)
+- **프론트 사용처**: `PracticeCreateWizard.submit` — `createPracticeSongFromSong({song})` 또는 `createPracticeSongFromFields({...})` 호출 후 응답 songId 를 `useCreatePractice` 의 `song` 으로 전달
+- 후속 라운드에서 실서버 재검증 필요
 
 ### 8-8. 밴드 정보 수정 / 삭제 (FE-API-022, FE-API-023)
 
