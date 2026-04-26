@@ -5,7 +5,7 @@ import { Check, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 import type { Member, Song } from '../types';
-import { confirmedCount, isReady, totalNeed } from '../utils';
+import { confirmedCount, displaySessionShort, isReady, totalNeed } from '../utils';
 
 import { SessionTrack } from './SessionTrack';
 
@@ -131,6 +131,7 @@ export function SongTable({
                           active={false}
                           mine={apps.includes(currentUserId)}
                           highlighted={highlighted}
+                          displayShort={displaySessionShort(s, song.sessions)}
                         />
                       );
                     })}

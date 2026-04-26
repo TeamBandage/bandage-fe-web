@@ -139,36 +139,24 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
     <div className="relative flex h-full">
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="border-border px-s-5 py-s-4 border-b">
-          <div className="gap-s-3 flex items-start justify-between">
-            <div className="min-w-0">
-              <div className="text-accent text-caption font-semibold">{meeting.bandName}</div>
-              <h1 className="text-title-lg mt-s-1 font-bold">{meeting.title}</h1>
-              <div className="text-foreground-muted text-caption gap-s-3 mt-s-2 flex flex-wrap items-center">
-                <span>
-                  전체 <strong className="text-foreground">{stats.total}</strong>곡
-                </span>
-                <span className="text-success">
-                  합주 가능 <strong>{stats.ready}</strong>
-                </span>
-                <span className="text-warn">
-                  모집 중 <strong>{stats.pending}</strong>
-                </span>
-              </div>
+          <div className="min-w-0">
+            <div className="text-accent text-caption font-semibold">{meeting.bandName}</div>
+            <h1 className="text-title-lg mt-s-1 font-bold">{meeting.title}</h1>
+            <div className="text-foreground-muted text-caption gap-s-3 mt-s-2 flex flex-wrap items-center">
+              <span>
+                전체 <strong className="text-foreground">{stats.total}</strong>곡
+              </span>
+              <span className="text-success">
+                합주 가능 <strong>{stats.ready}</strong>
+              </span>
+              <span className="text-warn">
+                모집 중 <strong>{stats.pending}</strong>
+              </span>
             </div>
-            {isManager && (
-              <AddSongModal
-                meetingId={meetingId}
-                trigger={
-                  <Button size="sm" variant="accent-outline" aria-label="새 곡 추가">
-                    <Plus className="h-4 w-4" /> 곡 추가
-                  </Button>
-                }
-              />
-            )}
           </div>
 
-          {/* 필터 탭 + 검색을 같은 라인 좌측에 인라인 배치 — 우측 380px 오버레이가 검색을 가리지 않도록. */}
-          <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:items-center">
+          {/* 필터 탭 + 검색 + '곡 추가'(매니저) 를 같은 라인에 — 사용자가 표 바로 위에서 즉시 곡을 추가할 수 있도록. */}
+          <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:flex-wrap md:items-center">
             <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
               <TabsList>
                 <TabsTrigger value="all">전체</TabsTrigger>
@@ -199,6 +187,18 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
               />
             </div>
+            {isManager && (
+              <div className="md:ml-auto">
+                <AddSongModal
+                  meetingId={meetingId}
+                  trigger={
+                    <Button size="sm" variant="primary" aria-label="새 곡 추가">
+                      <Plus className="h-4 w-4" /> 곡 추가
+                    </Button>
+                  }
+                />
+              </div>
+            )}
           </div>
         </header>
 

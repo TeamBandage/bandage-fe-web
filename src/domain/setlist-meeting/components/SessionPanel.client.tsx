@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 
 import { useSetlistStore } from '../store/setlistStore';
 import type { Member, SessionDef, Song } from '../types';
-import { findSession, missingCount, sessionState } from '../utils';
+import { displaySessionShort, findSession, missingCount, sessionState } from '../utils';
 import { useToast } from '@/hooks/useToast';
 
 import { MemberAvatar } from './MemberAvatar';
@@ -186,7 +186,7 @@ function OverviewSessionView({
                         : 'border-border text-foreground-muted',
                   )}
                 >
-                  {s.short}
+                  {displaySessionShort(s, song.sessions)}
                 </span>
                 <div className="min-w-0 flex-1 text-left">
                   {/* 1행: 라벨 + 우측 경쟁률 칩 */}

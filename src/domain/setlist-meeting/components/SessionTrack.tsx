@@ -14,6 +14,8 @@ export interface SessionTrackProps {
   mine: boolean;
   /** 멤버 검색 매칭 — 빨간 점 표시. */
   highlighted?: boolean;
+  /** 표시용 약어. 생략 시 session.short 그대로. (예: G/G2 동시 존재 시 'G1' 로 변환된 값을 부모가 전달) */
+  displayShort?: string;
   /** 생략 시 비-인터랙티브 div 로 렌더(메인 행에서는 클릭 동작 없이 시각 표기만). */
   onClick?: () => void;
 }
@@ -39,6 +41,7 @@ export function SessionTrack({
   active,
   mine,
   highlighted = false,
+  displayShort,
   onClick,
 }: SessionTrackProps) {
   const state = sessionState(confirmed, session.need);
@@ -63,7 +66,7 @@ export function SessionTrack({
           labelTone[tone],
         )}
       >
-        {session.short}
+        {displayShort ?? session.short}
       </span>
       <span className="bg-border relative block h-0.5 overflow-hidden rounded-[1px]">
         <span
