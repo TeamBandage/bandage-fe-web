@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, X } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -22,12 +22,17 @@ import { cn } from '@/lib/cn';
 import { useToast } from '@/hooks/useToast';
 
 import { useSetlistStore } from '../store/setlistStore';
-import type { SessionDef } from '../types';
+import type { SessionDef, Song } from '../types';
 import { addSongSchema, type AddSongSchema } from '../types/schema';
 
 export interface AddSongModalProps {
   meetingId: string;
-  trigger: ReactNode;
+  /** 제공 시 수정 모드. 기존 곡 데이터로 폼이 사전 채움된다. */
+  song?: Song;
+  /** 외부에서 open 상태를 제어하고 싶을 때(수정 모드 사용 시 권장). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: ReactNode;
 }
 
 /** 표준 프리셋. 1행: 기본 + G2, 2행: 보조/멀티 세션. */
@@ -83,33 +88,105 @@ function formatDuration(mm: string, ss: string): string {
   return `${m}:${s}`;
 }
 
-export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
-  const [open, setOpen] = useState(false);
-  // 활성화된 프리셋 id 집합. 토글로 켜고 끔.
-  const [activePresetIds, setActivePresetIds] =
-    useState<ReadonlyArray<string>>(DEFAULT_ACTIVE_PRESETS);
-  const [extras, setExtras] = useState<SessionDef[]>([]);
+/** 'mm:ss' → {mm,ss} 분리. 미지정/포맷 오류 시 빈 문자열. */
+function parseDuration(d?: string): { mm: string; ss: string } {
+  if (!d) return { mm: '', ss: '' };
+  const m = d.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return { mm: '', ss: '' };
+  return { mm: String(parseInt(m[1]!, 10)), ss: String(parseInt(m[2]!, 10)) };
+}
+
+/** 곡의 세션 배열에서 PRESETS 에 속한 활성 id 와 커스텀 extras 분리. */
+function splitSessions(sessions: SessionDef[]): {
+  activeIds: ReadonlyArray<string>;
+  extras: SessionDef[];
+} {
+  const activeIds: string[] = [];
+  const extras: SessionDef[] = [];
+  for (const s of sessions) {
+    if (s.id in PRESETS) activeIds.push(s.id);
+    else extras.push(s);
+  }
+  return { activeIds, extras };
+}
+
+export function AddSongModal({
+  meetingId,
+  song,
+  open: controlledOpen,
+  onOpenChange,
+  trigger,
+}: AddSongModalProps) {
+  const isEdit = !!song;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setInternalOpen(v);
+  };
+
+  // 초기 상태 계산 — 수정 모드면 song 으로부터, 아니면 디폴트.
+  const initial = useMemo(() => {
+    if (song) {
+      const split = splitSessions(song.sessions);
+      const dur = parseDuration(song.duration);
+      return {
+        activeIds: split.activeIds,
+        extras: split.extras,
+        durationMm: dur.mm,
+        durationSs: dur.ss,
+        formValues: {
+          title: song.title,
+          artist: song.artist,
+          album: song.album ?? '',
+          note: song.note ?? '',
+        },
+      };
+    }
+    return {
+      activeIds: DEFAULT_ACTIVE_PRESETS,
+      extras: [] as SessionDef[],
+      durationMm: '',
+      durationSs: '',
+      formValues: { title: '', artist: '', album: '', note: '' } as AddSongSchema,
+    };
+  }, [song]);
+
+  const [activePresetIds, setActivePresetIds] = useState<ReadonlyArray<string>>(initial.activeIds);
+  const [extras, setExtras] = useState<SessionDef[]>(initial.extras);
   const [extraDraft, setExtraDraft] = useState('');
-  // 재생 시간 — 분/초 분리 입력. 기본 '00:00'.
-  const [durationMm, setDurationMm] = useState('');
-  const [durationSs, setDurationSs] = useState('');
+  const [durationMm, setDurationMm] = useState(initial.durationMm);
+  const [durationSs, setDurationSs] = useState(initial.durationSs);
   const addSong = useSetlistStore((s) => s.addSong);
+  const updateSong = useSetlistStore((s) => s.updateSong);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
   const toast = useToast();
 
   const form = useForm<AddSongSchema>({
     resolver: zodResolver(addSongSchema),
-    defaultValues: { title: '', artist: '', album: '', note: '' },
+    defaultValues: initial.formValues,
     mode: 'onTouched',
   });
 
-  const reset = () => {
-    form.reset();
-    setActivePresetIds(DEFAULT_ACTIVE_PRESETS);
-    setExtras([]);
+  // 모달이 열릴 때, 또는 song 이 변경될 때(다른 곡 수정으로 전환) 폼/세션 상태를 initial 로 동기화.
+  useEffect(() => {
+    if (!open) return;
+    setActivePresetIds(initial.activeIds);
+    setExtras(initial.extras);
     setExtraDraft('');
-    setDurationMm('');
-    setDurationSs('');
+    setDurationMm(initial.durationMm);
+    setDurationSs(initial.durationSs);
+    form.reset(initial.formValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial 은 song 변경 시에만 갱신됨
+  }, [open, initial]);
+
+  const reset = () => {
+    form.reset(initial.formValues);
+    setActivePresetIds(initial.activeIds);
+    setExtras(initial.extras);
+    setExtraDraft('');
+    setDurationMm(initial.durationMm);
+    setDurationSs(initial.durationSs);
   };
 
   const togglePreset = (id: string) =>
@@ -156,16 +233,21 @@ export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
       return;
     }
     const duration = formatDuration(durationMm, durationSs);
-    addSong(meetingId, {
+    const payload = {
       title: values.title,
       artist: values.artist,
       album: values.album,
       duration: duration === '00:00' ? undefined : duration,
       note: values.note,
-      proposerId: currentUserId,
       sessions: composedSessions,
-    });
-    toast.success('곡이 추가되었습니다.');
+    };
+    if (song) {
+      updateSong(song.id, payload);
+      toast.success('곡 정보가 수정되었습니다.');
+    } else {
+      addSong(meetingId, { ...payload, proposerId: currentUserId });
+      toast.success('곡이 추가되었습니다.');
+    }
     setOpen(false);
     reset();
   });
@@ -178,10 +260,10 @@ export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
         if (!v) reset();
       }}
     >
-      <ResponsiveSheetTrigger asChild>{trigger}</ResponsiveSheetTrigger>
+      {trigger && <ResponsiveSheetTrigger asChild>{trigger}</ResponsiveSheetTrigger>}
       <ResponsiveSheetContent>
         <ResponsiveSheetHeader>
-          <ResponsiveSheetTitle>곡 추가</ResponsiveSheetTitle>
+          <ResponsiveSheetTitle>{isEdit ? '곡 수정' : '곡 추가'}</ResponsiveSheetTitle>
         </ResponsiveSheetHeader>
         <form onSubmit={onSubmit}>
           <ResponsiveSheetBody>
@@ -352,7 +434,7 @@ export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
               </Button>
             </ResponsiveSheetClose>
             <Button type="submit" variant="primary" disabled={!canSubmit}>
-              곡 추가
+              {isEdit ? '저장' : '곡 추가'}
             </Button>
           </ResponsiveSheetFooter>
         </form>
