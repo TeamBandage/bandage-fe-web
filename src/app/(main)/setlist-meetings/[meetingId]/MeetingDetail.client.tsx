@@ -124,7 +124,8 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             )}
           </div>
 
-          <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:items-center md:justify-between">
+          {/* 필터 탭 + 검색을 같은 라인 좌측에 인라인 배치 — 우측 380px 오버레이가 검색을 가리지 않도록. */}
+          <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:items-center">
             <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
               <TabsList>
                 <TabsTrigger value="all">전체</TabsTrigger>
@@ -156,10 +157,20 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             currentUserId={currentUserId}
             isManager={isManager}
             onSelectSong={(id) => {
+              // 같은 곡을 다시 클릭하면 토글: 패널이 열려있으면 닫고, 닫혀있으면 다시 열기.
+              if (id === selectedSongId) {
+                setSessionPanelOpen((v) => !v);
+                return;
+              }
               setSelectedSong(id);
               setSessionPanelOpen(true);
             }}
             onFocusSession={(songId, sessionId) => {
+              // 같은 곡 + 같은 세션 셀 재클릭 시에도 토글.
+              if (songId === selectedSongId && sessionId === focusedSessionId) {
+                setSessionPanelOpen((v) => !v);
+                return;
+              }
               setSelectedSong(songId);
               setFocusedSession(sessionId);
               setSessionPanelOpen(true);
@@ -167,8 +178,13 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             onDeleteSong={(id) => deleteSong(id)}
           />
         </div>
-        {/* 메인 컬럼 하단 채팅 — 우측 패널과 sessionPanelOpen 으로 동기 토글. */}
-        {selectedSongId && sessionPanelOpen && <MeetingChatBox songId={selectedSongId} />}
+        {/* 메인 컬럼 하단 채팅 — 우측 패널과 sessionPanelOpen 으로 동기 토글.
+            우측 absolute 패널(z-20)보다 위에 보이도록 relative z-30. */}
+        {selectedSongId && sessionPanelOpen && (
+          <div className="relative z-30">
+            <MeetingChatBox songId={selectedSongId} />
+          </div>
+        )}
       </div>
 
       {/* 우측 오버레이 SessionPanel — 메인 차트 위로 absolute. */}
