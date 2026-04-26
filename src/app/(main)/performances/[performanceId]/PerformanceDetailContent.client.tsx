@@ -133,14 +133,14 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
       <Tabs defaultValue="bands">
         <TabsList>
           <TabsTrigger value="bands">참여 밴드</TabsTrigger>
-          <TabsTrigger value="practices">연결 합주 ({perf.practiceIds.length})</TabsTrigger>
+          <TabsTrigger value="practices">연결 합주 ({perf.practices.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="bands">
           <Card
             header={
               <div className="flex items-center justify-between">
-                <span>참여 밴드 ({perf.bandIds.length})</span>
+                <span>참여 밴드 ({perf.bands.length})</span>
                 {isManager && (
                   <Button size="sm" onClick={() => setBandPickerOpen(true)}>
                     <Plus className="h-4 w-4" />
@@ -151,7 +151,7 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
             }
             padding="md"
           >
-            <PerformanceBandChips bandIds={perf.bandIds} />
+            <PerformanceBandChips bands={perf.bands} />
           </Card>
         </TabsContent>
 
@@ -159,7 +159,7 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
           <Card
             header={
               <div className="flex items-center justify-between">
-                <span>연결된 합주 ({perf.practiceIds.length})</span>
+                <span>연결된 합주 ({perf.practices.length})</span>
                 {isManager && (
                   <Button size="sm" onClick={() => setAttachOpen(true)}>
                     <Plus className="h-4 w-4" />
@@ -170,15 +170,15 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
             }
             padding="md"
           >
-            {perf.practiceIds.length === 0 ? (
+            {perf.practices.length === 0 ? (
               <EmptyState title="연결된 합주가 없습니다" />
             ) : (
               <div>
-                {perf.practiceIds.map((pid) => (
+                {perf.practices.map((p) => (
                   <PerformancePracticeRow
-                    key={pid}
+                    key={p.practiceId}
                     performanceId={performanceId}
-                    practiceId={pid}
+                    practiceId={p.practiceId}
                   />
                 ))}
               </div>

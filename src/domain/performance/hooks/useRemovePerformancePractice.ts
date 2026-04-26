@@ -26,7 +26,7 @@ export function useRemovePerformancePractice(performanceId: string, options?: Op
       if (previous) {
         queryClient.setQueryData<PerformanceDetailResponse>(queryKey, {
           ...previous,
-          practiceIds: previous.practiceIds.filter((id) => id !== practiceId),
+          practices: previous.practices.filter((p) => p.practiceId !== practiceId),
         });
       }
       return { previous };
