@@ -49,23 +49,25 @@ export function SongTable({
       <table className="w-full border-collapse text-left">
         <thead className="bg-surface text-foreground-muted text-micro sticky top-0 z-10 uppercase">
           <tr className="border-border border-b">
-            <th className="px-s-2 py-s-2 w-10 text-center font-semibold tracking-wider">#</th>
-            <th className="px-s-2 py-s-2 font-semibold tracking-wider">곡명</th>
-            <th className="px-s-2 py-s-2 hidden font-semibold tracking-wider md:table-cell">
+            <th className="px-s-3 py-s-2 w-10 text-center font-semibold tracking-wider">#</th>
+            <th className="px-s-3 py-s-2 font-semibold tracking-wider">곡명</th>
+            <th className="px-s-3 py-s-2 hidden font-semibold tracking-wider md:table-cell">
               아티스트
             </th>
-            <th className="px-s-2 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
+            <th className="px-s-3 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
               앨범
             </th>
-            <th className="px-s-2 py-s-2 hidden w-16 text-right font-semibold tracking-wider md:table-cell">
+            <th className="px-s-3 py-s-2 pr-s-5 hidden w-20 text-right font-semibold tracking-wider md:table-cell">
               재생 시간
             </th>
-            <th className="px-s-2 py-s-2 font-semibold tracking-wider">세션</th>
-            <th className="px-s-2 py-s-2 w-28 text-right font-semibold tracking-wider">진행도</th>
-            <th className="px-s-2 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
+            <th className="px-s-3 py-s-2 pl-s-4 min-w-[160px] font-semibold tracking-wider">
+              세션
+            </th>
+            <th className="px-s-3 py-s-2 w-28 text-right font-semibold tracking-wider">진행도</th>
+            <th className="px-s-3 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
               추천자 의견
             </th>
-            <th className="px-s-2 py-s-2 w-10" aria-label="삭제" />
+            <th className="px-s-3 py-s-2 w-10" aria-label="삭제" />
           </tr>
         </thead>
         <tbody>
@@ -85,10 +87,10 @@ export function SongTable({
                   selected && 'bg-accent-dim border-l-accent border-l-[3px]',
                 )}
               >
-                <td className="px-s-2 py-s-2 text-foreground-muted text-micro text-center font-mono tabular-nums">
+                <td className="px-s-3 py-s-2 text-foreground-muted text-micro text-center font-mono tabular-nums">
                   {String(idx + 1).padStart(2, '0')}
                 </td>
-                <td className="px-s-2 py-s-2 max-w-[180px]">
+                <td className="px-s-3 py-s-2 max-w-[180px]">
                   <div className="gap-s-2 flex items-center">
                     {ready && (
                       <span
@@ -103,16 +105,16 @@ export function SongTable({
                     </span>
                   </div>
                 </td>
-                <td className="px-s-2 py-s-2 text-foreground-sub text-caption hidden md:table-cell">
+                <td className="px-s-3 py-s-2 text-foreground-sub text-caption hidden md:table-cell">
                   {song.artist}
                 </td>
-                <td className="px-s-2 py-s-2 text-foreground-muted text-caption hidden lg:table-cell">
+                <td className="px-s-3 py-s-2 text-foreground-muted text-caption hidden lg:table-cell">
                   {song.album ?? '-'}
                 </td>
-                <td className="px-s-2 py-s-2 text-foreground-muted text-micro hidden text-right font-mono tabular-nums md:table-cell">
+                <td className="px-s-3 py-s-2 pr-s-5 text-foreground-muted text-micro hidden text-right font-mono tabular-nums md:table-cell">
                   {song.duration ?? '-'}
                 </td>
-                <td className="px-s-2 py-s-2">
+                <td className="px-s-3 py-s-2 pl-s-4">
                   <div className="gap-s-3 flex flex-wrap items-end">
                     {song.sessions.map((s) => {
                       const apps = song.applicants[s.id] ?? [];
@@ -137,7 +139,7 @@ export function SongTable({
                     })}
                   </div>
                 </td>
-                <td className="px-s-2 py-s-2 align-middle">
+                <td className="px-s-3 py-s-2 align-middle">
                   <div className="gap-s-2 flex items-center justify-end">
                     <div
                       className="bg-card border-border h-1.5 w-12 overflow-hidden rounded-full border"
@@ -156,7 +158,7 @@ export function SongTable({
                     </span>
                   </div>
                 </td>
-                <td className="px-s-2 py-s-2 text-foreground-muted text-caption hidden max-w-[280px] lg:table-cell">
+                <td className="px-s-3 py-s-2 text-foreground-muted text-caption hidden max-w-[280px] lg:table-cell">
                   {song.note ? (
                     <span className="block truncate" title={song.note}>
                       <span className="text-foreground-sub font-semibold">
@@ -168,7 +170,7 @@ export function SongTable({
                     <span className="text-foreground-muted">-</span>
                   )}
                 </td>
-                <td className="px-s-2 py-s-2 text-right align-middle">
+                <td className="px-s-3 py-s-2 text-right align-middle">
                   {(isManager || song.proposerId === currentUserId) && onDeleteSong && (
                     <button
                       type="button"
