@@ -1,0 +1,142 @@
+'use client';
+
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  ResponsiveSheet,
+  ResponsiveSheetBody,
+  ResponsiveSheetContent,
+  ResponsiveSheetFooter,
+  ResponsiveSheetHeader,
+  ResponsiveSheetTitle,
+} from '@/components/ui/responsive-sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/useToast';
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  band: { bandId: string; bandName: string; description?: string; profileImg?: string };
+}
+
+/**
+ * 밴드 설정 모달 — 정보 수정 / 사진 변경 / 삭제 3탭.
+ * 백엔드 PATCH/DELETE/profile-image 엔드포인트 미지원 (API_REQUIRED FE-API-022, 023, 009).
+ * 본 라운드는 UI 완성 + toast 안내, 백엔드 도입 시 mutation 만 교체.
+ */
+export function BandSettingsModal({ open, onOpenChange, band }: Props) {
+  const toast = useToast();
+  const [tab, setTab] = useState<'info' | 'image' | 'delete'>('info');
+
+  // 정보
+  const [name, setName] = useState(band.bandName);
+  const [description, setDescription] = useState(band.description ?? '');
+
+  // 사진
+  const [profileImg, setProfileImg] = useState(band.profileImg ?? '');
+
+  // 삭제
+  const [confirmText, setConfirmText] = useState('');
+
+  function handleSaveInfo() {
+    toast.info('정보 수정 API 가 백엔드에 추가되면 자동 반영됩니다 (FE-API-022).');
+    onOpenChange(false);
+  }
+
+  function handleSaveImage() {
+    toast.info('프로필 이미지 업로드 API 가 백엔드에 추가되면 자동 반영됩니다 (FE-API-009).');
+    onOpenChange(false);
+  }
+
+  function handleDelete() {
+    if (confirmText !== band.bandName) {
+      toast.error('밴드 이름을 정확히 입력해 주세요.');
+      return;
+    }
+    toast.info('밴드 삭제 API 가 백엔드에 추가되면 자동 반영됩니다 (FE-API-023).');
+    onOpenChange(false);
+  }
+
+  return (
+    <ResponsiveSheet open={open} onOpenChange={onOpenChange}>
+      <ResponsiveSheetContent>
+        <ResponsiveSheetHeader>
+          <ResponsiveSheetTitle>밴드 설정</ResponsiveSheetTitle>
+        </ResponsiveSheetHeader>
+        <ResponsiveSheetBody>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as 'info' | 'image' | 'delete')}>
+            <TabsList className="mb-s-4 w-full">
+              <TabsTrigger value="info" className="flex-1">
+                정보
+              </TabsTrigger>
+              <TabsTrigger value="image" className="flex-1">
+                사진
+              </TabsTrigger>
+              <TabsTrigger value="delete" className="flex-1">
+                삭제
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="info" className="space-y-s-3">
+              <Input
+                label="밴드 이름"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <Textarea
+                label="소개 (선택)"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+              <p className="text-foreground-muted text-micro">
+                백엔드에 PATCH /bands/&#123;id&#125; 가 추가되면 즉시 반영됩니다 (FE-API-022).
+              </p>
+            </TabsContent>
+
+            <TabsContent value="image" className="space-y-s-3">
+              <Input
+                label="프로필 이미지 URL"
+                placeholder="https://..."
+                value={profileImg}
+                onChange={(e) => setProfileImg(e.target.value)}
+                hint="업로드 엔드포인트 도입 전까지는 URL 입력으로 대체합니다."
+              />
+            </TabsContent>
+
+            <TabsContent value="delete" className="space-y-s-3">
+              <p className="text-foreground-sub text-sm">
+                밴드를 삭제하면 모든 멤버·합주·공연 연결이 함께 제거되며 복구할 수 없습니다.
+              </p>
+              <Input
+                label={`밴드 이름(${band.bandName}) 을 그대로 입력해 주세요`}
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder={band.bandName}
+              />
+            </TabsContent>
+          </Tabs>
+        </ResponsiveSheetBody>
+        <ResponsiveSheetFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            취소
+          </Button>
+          {tab === 'info' && <Button onClick={handleSaveInfo}>저장</Button>}
+          {tab === 'image' && <Button onClick={handleSaveImage}>저장</Button>}
+          {tab === 'delete' && (
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              disabled={confirmText !== band.bandName}
+            >
+              삭제
+            </Button>
+          )}
+        </ResponsiveSheetFooter>
+      </ResponsiveSheetContent>
+    </ResponsiveSheet>
+  );
+}

@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BandApplicationRow } from '@/domain/band/components/BandApplicationRow';
 import { BandMemberRow } from '@/domain/band/components/BandMemberRow';
+import { BandSettingsModal } from '@/domain/band/components/BandSettingsModal.client';
 import { useApplyBand } from '@/domain/band/hooks/useApplyBand';
 import { useBandApplications } from '@/domain/band/hooks/useBandApplications';
 import { useBandDetail } from '@/domain/band/hooks/useBandDetail';
@@ -39,6 +40,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
   const router = useRouter();
   const toast = useToast();
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const { data: band, isLoading, isError, refetch } = useBandDetail(bandId);
   const { data: myRole } = useBandRole(bandId);
@@ -112,11 +114,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
             </Button>
           )}
           {isLeader && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => toast.info('밴드 설정 화면은 곧 제공될 예정입니다.')}
-            >
+            <Button size="sm" variant="secondary" onClick={() => setSettingsOpen(true)}>
               <Settings className="h-4 w-4" />
               밴드 설정
             </Button>
@@ -156,6 +154,17 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
           )}
         </div>
       </Tabs>
+
+      <BandSettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        band={{
+          bandId: band.bandId,
+          bandName: band.bandName,
+          description: band.description,
+          profileImg: band.profileImg,
+        }}
+      />
 
       <Dialog open={leaveOpen} onOpenChange={setLeaveOpen}>
         <DialogContent>
