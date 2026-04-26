@@ -1,9 +1,11 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
+
+import { cn } from '@/lib/cn';
 
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
@@ -69,7 +71,18 @@ function MeetingRow({ summary, active }: { summary: MeetingSummary; active: bool
   );
 }
 
-export function SetlistMeetingsListPane() {
+export interface SetlistMeetingsListPaneProps {
+  /** 'overlay' 모드: absolute 로 메인 위에 띄우고 open 으로 표시 토글. default: 'fixed' (기존 sidecar). */
+  mode?: 'overlay' | 'fixed';
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export function SetlistMeetingsListPane({
+  mode = 'fixed',
+  open = false,
+  onClose,
+}: SetlistMeetingsListPaneProps = {}) {
   const pathname = usePathname() ?? '';
   const meetings = useSetlistStore((s) => s.meetings);
   const songs = useSetlistStore((s) => s.songs);
@@ -83,25 +96,48 @@ export function SetlistMeetingsListPane() {
     });
   }, [meetings, songs]);
 
+  const overlay = mode === 'overlay';
+
   return (
     <aside
-      className="bg-surface border-border hidden shrink-0 flex-col border-r lg:flex"
+      className={cn(
+        'bg-surface border-border shrink-0 flex-col border-r shadow-lg',
+        overlay
+          ? cn(
+              'absolute top-0 left-0 z-30 h-full transition-transform duration-200 ease-out',
+              open ? 'flex translate-x-0' : 'pointer-events-none flex -translate-x-full',
+            )
+          : 'hidden lg:flex',
+      )}
       style={{ width: 'var(--list-pane-w)' }}
       data-slot="setlist-meetings-list-pane"
       aria-label="선곡 회의 목록"
+      aria-hidden={overlay && !open ? true : undefined}
     >
-      <div className="border-border px-s-3 py-s-3 flex items-center justify-between border-b">
+      <div className="border-border px-s-3 py-s-3 gap-s-2 flex items-center justify-between border-b">
         <div className="min-w-0">
           <h2 className="text-body font-bold">선곡 회의</h2>
           <p className="text-foreground-muted text-micro mt-0.5">{meetings.length}건 참여</p>
         </div>
-        <MeetingCreateModal
-          trigger={
-            <Button size="sm" variant="accent-outline" aria-label="새 선곡 회의 만들기">
-              <Plus className="h-4 w-4" /> 회의 만들기
-            </Button>
-          }
-        />
+        <div className="gap-s-1 flex items-center">
+          <MeetingCreateModal
+            trigger={
+              <Button size="sm" variant="accent-outline" aria-label="새 선곡 회의 만들기">
+                <Plus className="h-4 w-4" /> 회의 만들기
+              </Button>
+            }
+          />
+          {overlay && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-foreground-muted hover:text-foreground rounded-md p-1"
+              aria-label="목록 닫기"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
       <div className="px-s-2 py-s-2 flex-1 overflow-y-auto">
         {summaries.length === 0 ? (
