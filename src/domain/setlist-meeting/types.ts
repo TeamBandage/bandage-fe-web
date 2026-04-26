@@ -78,6 +78,10 @@ export type Meeting = {
   practiceSongMap?: Record<string, string>;
   /** 직전 잠금 시점의 곡 스냅샷(재확정 시 변경분 diff 계산용). 단순화: songId 집합. */
   lockSnapshotSongIds?: string[];
+  /** 합주 가능 기간. mvp: 'YYYY-MM-DD'. 공연 모드는 오늘~공연일자 자동, 일반 모드는 사용자 입력. */
+  practiceWindow?: { from: string; to: string };
+  /** 매니저가 확정한 합주 슬롯. */
+  confirmedSlot?: { date: string; startMin: number; endMin: number } | null;
 };
 
 export type SessionState = 'full' | 'partial' | 'empty';

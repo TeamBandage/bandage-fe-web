@@ -4204,8 +4204,9 @@
         "testStrategy": "1. '/setlist-meetings/new' 접속 시 마법사 페이지 렌더 확인\n2. 사이드바에서 '선곡 회의' 클릭 시 서브탭 펼침 확인\n3. '나의 선곡 회의' 클릭 시 '/setlist-meetings?listOpen=1'로 이동하고 마스터 패널 자동 펼침 확인\n4. '회의 만들기' 클릭 시 '/setlist-meetings/new'로 이동 확인",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:50:32.211Z"
       },
       {
         "id": 2,
@@ -4215,10 +4216,11 @@
         "testStrategy": "1. StepIndicator가 4단계 모두 표시되는지 확인\n2. '다음' 버튼 클릭 시 단계 전환 확인\n3. '이전' 버튼 클릭 시 이전 단계로 이동 확인\n4. Navigation Guard 동작 확인 (입력 후 페이지 이탈 시 경고)",
         "priority": "high",
         "dependencies": [
-          1
+          "1"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:50:35.916Z"
       },
       {
         "id": 3,
@@ -4228,10 +4230,11 @@
         "testStrategy": "1. 언더라인 탭으로 목적 전환 시 UI 변경 확인\n2. 공연 모드에서 검색어 입력 시 결과 표시 확인\n3. 공연 선택 시 선택 상태 표시(체크마크, 테두리 강조) 확인\n4. '공연 즉시 생성' 클릭 시 '/performances/new'로 리다이렉트 확인\n5. 공연 미선택 시 '다음' 버튼 비활성화 확인",
         "priority": "high",
         "dependencies": [
-          2
+          "2"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:50:39.655Z"
       },
       {
         "id": 4,
@@ -4241,10 +4244,11 @@
         "testStrategy": "1. 공연 모드에서 멤버 풀이 자동으로 체크되어 표시되는지 확인\n2. 체크박스 토글로 멤버 제외/포함 동작 확인\n3. 일반 모드에서 밴드 검색 시 결과 표시 및 선택 확인\n4. 일반 모드에서 멤버 검색 시 결과 표시 및 개별 추가 확인\n5. 참여 인원 0명일 때 '다음' 버튼 비활성화 확인",
         "priority": "high",
         "dependencies": [
-          2
+          "2"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:50:43.779Z"
       },
       {
         "id": 5,
@@ -4254,10 +4258,11 @@
         "testStrategy": "1. 회의 제목 입력 필드 동작 확인\n2. Step 2에서 선택한 참여 인원만 매니저 후보로 표시되는지 확인\n3. 라디오 버튼으로 매니저 단일 선택 동작 확인\n4. 제목 미입력 또는 매니저 미선택 시 '다음' 버튼 비활성화 확인",
         "priority": "medium",
         "dependencies": [
-          4
+          "4"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:50:47.876Z"
       },
       {
         "id": 6,
@@ -4267,10 +4272,11 @@
         "testStrategy": "1. 확인 단계에서 모든 입력 정보가 올바르게 요약 표시되는지 확인\n2. '수정' 버튼 클릭 시 해당 단계로 이동 확인\n3. '회의 만들기' 클릭 시 store에 회의 추가 확인\n4. 회의 생성 후 디테일 페이지로 리다이렉트 확인\n5. 토스트 메시지 표시 확인",
         "priority": "medium",
         "dependencies": [
-          5
+          "5"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:50:51.787Z"
       },
       {
         "id": 7,
@@ -4280,8 +4286,9 @@
         "testStrategy": "1. 타입 정의가 올바르게 확장되었는지 TypeScript 컴파일 확인\n2. SEED_MEMBERS에 email, profileImg 필드가 추가되었는지 확인\n3. memberSearchMock 함수가 검색어에 따라 올바른 결과 반환 확인\n4. performanceSearchMock 함수가 검색어에 따라 올바른 결과 반환 확인\n5. 기존 기능(회의 목록, 디테일)이 정상 동작하는지 회귀 테스트",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:50:55.527Z"
       },
       {
         "id": 8,
@@ -4291,10 +4298,11 @@
         "testStrategy": "1. 선곡 확정 시 lockSnapshots에 곡 목록 저장 확인\n2. 회의 재개 → 곡 추가/삭제 → 재확정 시 diff가 올바르게 계산되는지 확인\n3. practiceSongMap에 새로 매핑된 항목 추가 확인\n4. 기존 lockMeeting/unlockMeeting 동작 회귀 테스트",
         "priority": "medium",
         "dependencies": [
-          7
+          "7"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:50:59.247Z"
       },
       {
         "id": 9,
@@ -4304,23 +4312,38 @@
         "testStrategy": "1. API_REQUIRED 문서에 모든 엔드포인트가 정확하게 기록되었는지 확인\n2. lint, typecheck, format 모두 통과 확인\n3. 전체 플로우 E2E 수동 테스트:\n   - 사이드바 > 회의 만들기 클릭\n   - 목적 선택 (공연/일반)\n   - 참여 인원 선택\n   - 회의 정보 입력\n   - 확인 및 생성\n   - 디테일 페이지에서 선곡 확정/재개",
         "priority": "low",
         "dependencies": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-26T12:51:03.203Z"
       }
     ],
     "metadata": {
-      "created": "2026-04-26T12:37:04.749Z",
-      "updated": "2026-04-26T12:40:48.963Z",
+      "version": "1.0.0",
+      "lastModified": "2026-04-26T12:51:03.204Z",
+      "taskCount": 9,
+      "completedCount": 9,
+      "tags": [
+        "setlist-phase2"
+      ],
+      "created": "2026-04-26T13:07:38.631Z",
       "description": "Tasks for setlist-phase2 context"
+    }
+  },
+  "schedule-coordination": {
+    "tasks": [],
+    "metadata": {
+      "created": "2026-04-26T13:07:38.635Z",
+      "updated": "2026-04-26T13:07:38.635Z",
+      "description": "합주 일정 조율"
     }
   }
 }

@@ -60,6 +60,7 @@ const mainNav: NavItem[] = [
     subs: [
       { href: `${ROUTES.SETLIST_MEETINGS}?listOpen=1`, label: '나의 선곡 회의' },
       { href: ROUTES.SETLIST_MEETING_NEW, label: '회의 만들기' },
+      { href: ROUTES.SETLIST_SCHEDULING, label: '합주 일정 조율' },
     ],
   },
   { href: ROUTES.ME, label: '마이페이지', icon: User },

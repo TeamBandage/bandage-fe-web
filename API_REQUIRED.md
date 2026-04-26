@@ -330,6 +330,39 @@ POST /api/v1/setlist-meetings/{meetingId}/unlock
 
 - 단순 잠금 해제. 매핑은 유지(다음 확정에서 diff 계산 기준).
 
+### FE-API-040 회의 합주 기간
+
+- 회의 생성/수정 시 `practiceWindow: { from, to }` 포함.
+- v1 mock 은 store/Wizard 의 from/to input 으로 저장.
+
+### FE-API-041 멤버 스케줄 제출
+
+```
+POST /api/v1/setlist-meetings/{meetingId}/schedule
+Body: { availableDates: string[], unavailableDates: string[], blocks: Record<date, boolean[48]>, note: string }
+```
+
+- 본인만 제출 가능. 부분 입력 저장 시 멱등 PATCH 가능.
+- v1 mock 은 `domain/schedule-coordination/store/scheduleStore` 의 localStorage persist 로 우회.
+
+### FE-API-042 회의 스케줄 종합 조회
+
+```
+GET /api/v1/setlist-meetings/{meetingId}/schedule
+Response: { perMember: MemberSchedule[], aggregate: Record<date, number[48]> }
+```
+
+- 회의 참여 멤버 + 매니저만 조회 가능.
+
+### FE-API-043 합주 일정 확정 (매니저)
+
+```
+POST /api/v1/setlist-meetings/{meetingId}/practice-schedule
+Body: { date, startMin, endMin }
+```
+
+- 매니저만. 응답: 확정된 슬롯 + 영향 받는 합주곡 매핑.
+
 ### FE-API-036 회의 곡 벌크 수정 (재확정 시 변경분 동기)
 
 ```
