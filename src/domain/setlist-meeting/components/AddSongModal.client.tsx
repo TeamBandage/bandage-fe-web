@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/cn';
 import { useToast } from '@/hooks/useToast';
 
+import { searchMockSongs, type SongSearchResult } from '../mock/songSearchMock';
 import { useSetlistStore } from '../store/setlistStore';
 import type { SessionDef, Song } from '../types';
 import { addSongSchema, type AddSongSchema } from '../types/schema';
@@ -156,7 +157,6 @@ export function AddSongModal({
   const ssInputRef = useRef<HTMLInputElement | null>(null);
   const titleRef = useRef<HTMLInputElement | null>(null);
 
-  const allSongs = useSetlistStore((s) => s.songs);
   const addSong = useSetlistStore((s) => s.addSong);
   const updateSong = useSetlistStore((s) => s.updateSong);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
@@ -289,26 +289,14 @@ export function AddSongModal({
     form.setFocus('note');
   };
 
-  // 검색 결과 — 전체 곡 풀(현재 모든 회의)에서 부분 매칭. BE 도입 시 별도 API 로 교체 예정.
-  const searchResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return [];
-    return allSongs
-      .filter(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          s.artist.toLowerCase().includes(q) ||
-          (s.album ?? '').toLowerCase().includes(q) ||
-          (s.duration ?? '').toLowerCase().includes(q),
-      )
-      .slice(0, 12);
-  }, [allSongs, searchQuery]);
+  // 외부 곡 DB mock 검색. 향후 SONG 검색 API 도입 시 fetcher 만 교체.
+  const searchResults = useMemo(() => searchMockSongs(searchQuery, 30), [searchQuery]);
 
-  const pickSearchResult = (s: Song) => {
+  const pickSearchResult = (s: SongSearchResult) => {
     form.setValue('title', s.title);
     form.setValue('artist', s.artist);
     form.setValue('album', s.album ?? '');
-    form.setValue('note', s.note ?? '');
+    form.setValue('note', '');
     const dur = parseDuration(s.duration);
     setDurationMm(dur.mm);
     setDurationSs(dur.ss);
@@ -374,8 +362,9 @@ export function AddSongModal({
             )}
 
             <div className="gap-s-3 flex flex-col">
+              {/* 상단 입력 영역 — 직접 추가 / 검색 두 모드의 모달 높이를 일치시키기 위해 동일 min-h. */}
               {mode === 'manual' || isEdit ? (
-                <>
+                <div className="gap-s-3 flex min-h-[400px] flex-col">
                   <Input
                     label="곡명"
                     required
@@ -449,9 +438,9 @@ export function AddSongModal({
                       </div>
                     </div>
                   </div>
-                </>
+                </div>
               ) : (
-                <div>
+                <div className="min-h-[400px]">
                   <label className="text-foreground text-sm font-medium">곡 검색</label>
                   <div className="bg-surface border-border gap-s-2 px-s-3 focus-within:ring-accent focus-within:ring-offset-bg mt-1.5 flex h-10 items-center rounded-md border focus-within:ring-2 focus-within:ring-offset-2">
                     <Search className="text-foreground-muted h-4 w-4 shrink-0" />
@@ -465,11 +454,11 @@ export function AddSongModal({
                     />
                   </div>
                   <div className="text-foreground-muted text-micro mt-s-2">
-                    합주곡 풀에서 검색합니다. 결과 클릭 시 폼이 채워지고 직접 추가 탭으로
-                    전환됩니다.
+                    외부 곡 DB 에서 검색합니다 (현재 mock — 추후 SONG 검색 API 로 교체). 결과 클릭
+                    시 폼이 채워지고 직접 추가 탭으로 전환됩니다.
                   </div>
-                  {/* 결과 영역 — 직접 추가 탭과 모달 높이를 맞추기 위해 항상 고정 높이(min-h). */}
-                  <div className="border-border mt-s-3 min-h-[280px] overflow-y-auto rounded-md border">
+                  {/* 결과 영역 — 고정 높이 + 스크롤. ~3곡 이상 노출되도록 320px. 직접 추가 탭과 모달 높이 일치. */}
+                  <div className="border-border mt-s-3 h-[320px] overflow-y-auto rounded-md border">
                     {!searchQuery ? (
                       <div className="text-foreground-muted gap-s-2 px-s-4 py-s-12 text-caption flex flex-col items-center justify-center text-center">
                         <Search className="h-6 w-6 opacity-50" />
@@ -482,7 +471,7 @@ export function AddSongModal({
                     ) : (
                       <ul>
                         {searchResults.map((s) => (
-                          <li key={s.id}>
+                          <li key={s.externalId}>
                             <button
                               type="button"
                               onClick={() => pickSearchResult(s)}
