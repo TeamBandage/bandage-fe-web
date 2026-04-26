@@ -5,13 +5,13 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AddSongModal } from '@/domain/setlist-meeting/components/AddSongModal.client';
 import { MeetingChatBox } from '@/domain/setlist-meeting/components/MeetingChatBox.client';
 import { SessionPanel } from '@/domain/setlist-meeting/components/SessionPanel.client';
 import { SongTable } from '@/domain/setlist-meeting/components/SongTable.client';
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
 import type { Song } from '@/domain/setlist-meeting/types';
 import { isReady } from '@/domain/setlist-meeting/utils';
-import { useToast } from '@/hooks/useToast';
 
 type Filter = 'all' | 'ready' | 'pending' | 'mine';
 
@@ -52,7 +52,8 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   const setSelectedMeeting = useSetlistStore((s) => s.setSelectedMeeting);
   const setSelectedSong = useSetlistStore((s) => s.setSelectedSong);
   const setFocusedSession = useSetlistStore((s) => s.setFocusedSession);
-  const toast = useToast();
+
+  const isManager = meeting ? meeting.managerId === currentUserId : false;
 
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -100,14 +101,16 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 </span>
               </div>
             </div>
-            <Button
-              size="sm"
-              variant="accent-outline"
-              onClick={() => toast.info('곡 추가 모달은 곧 제공됩니다.')}
-              aria-label="새 곡 추가"
-            >
-              <Plus className="h-4 w-4" /> 곡 추가
-            </Button>
+            {isManager && (
+              <AddSongModal
+                meetingId={meetingId}
+                trigger={
+                  <Button size="sm" variant="accent-outline" aria-label="새 곡 추가">
+                    <Plus className="h-4 w-4" /> 곡 추가
+                  </Button>
+                }
+              />
+            )}
           </div>
 
           <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:items-center md:justify-between">
