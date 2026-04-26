@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, CalendarDays, Music, Search, Users } from 'lucide-react';
+import { ArrowRight, CalendarDays, Music, Search, Users, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -50,7 +50,8 @@ export function MeetingCreateWizard() {
 
   // Step 2
   const [generalTab, setGeneralTab] = useState<GeneralTab>('band');
-  const [selectedBandId, setSelectedBandId] = useState<string | null>(null);
+  /** 일반 모드에서 다중 선택된 밴드 id. */
+  const [selectedBandIds, setSelectedBandIds] = useState<string[]>([]);
   const [memberQuery, setMemberQuery] = useState('');
   /** 선택된 참여 멤버 — uniq id 집합. */
   const [participantIds, setParticipantIds] = useState<string[]>([]);
@@ -70,35 +71,38 @@ export function MeetingCreateWizard() {
     setParticipantIds(flattenPerformanceMembers(p).map((m) => m.id));
   };
 
-  // Step 2 일반 모드 멤버 후보 — 선택된 밴드 + 멤버 검색 결과.
-  const generalCandidates = useMemo<Member[]>(() => {
-    const out: Member[] = [];
-    const seen = new Set<string>();
-    if (selectedBandId) {
-      const band = MOCK_BANDS.find((b) => b.bandId === selectedBandId);
-      if (band) {
-        for (const uid of band.memberIds) {
-          const m = GLOBAL_MEMBER_POOL.find((x) => x.id === uid);
-          if (m && !seen.has(m.id)) {
-            seen.add(m.id);
-            out.push(m);
-          }
-        }
-      }
-    }
-    if (memberQuery.trim()) {
-      for (const m of searchMockMembers(memberQuery)) {
-        if (!seen.has(m.id)) {
-          seen.add(m.id);
-          out.push(m);
-        }
-      }
-    }
-    return out;
-  }, [selectedBandId, memberQuery]);
+  // 멤버 검색 결과 — 검색창 아래 자체 패널에 노출. 클릭 시 참여 풀에 추가.
+  const memberSearchResults = useMemo<Member[]>(() => {
+    if (!memberQuery.trim()) return [];
+    return searchMockMembers(memberQuery);
+  }, [memberQuery]);
 
   const toggleParticipant = (id: string) => {
     setParticipantIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const addParticipant = (id: string) => {
+    setParticipantIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  };
+
+  const removeParticipant = (id: string) => {
+    setParticipantIds((prev) => prev.filter((x) => x !== id));
+  };
+
+  /** 다중 선택된 밴드의 멤버를 일괄 import → participantIds 에 합집합. */
+  const importBandMembers = () => {
+    const bandIds = new Set(selectedBandIds);
+    const memberIdsToAdd = MOCK_BANDS.filter((b) => bandIds.has(b.bandId)).flatMap(
+      (b) => b.memberIds,
+    );
+    setParticipantIds((prev) => Array.from(new Set([...prev, ...memberIdsToAdd])));
+    toast.success(`${memberIdsToAdd.length}명의 멤버를 추가했습니다.`);
+  };
+
+  const toggleBand = (id: string) => {
+    setSelectedBandIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   };
 
   // Step 3 매니저 풀 — Step 2 에서 모은 참여 멤버.
@@ -132,12 +136,14 @@ export function MeetingCreateWizard() {
     const bandLabel =
       purpose === 'performance' && performance
         ? performance.bands.map((b) => b.bandName).join(' · ')
-        : selectedBandId
-          ? (MOCK_BANDS.find((b) => b.bandId === selectedBandId)?.bandName ?? '회의')
+        : selectedBandIds.length > 0
+          ? MOCK_BANDS.filter((b) => selectedBandIds.includes(b.bandId))
+              .map((b) => b.bandName)
+              .join(' · ')
           : '회의';
     const id = addMeeting({
       title: title.trim(),
-      bandId: selectedBandId ?? performance?.bands[0]?.bandId ?? `local_${Date.now()}`,
+      bandId: selectedBandIds[0] ?? performance?.bands[0]?.bandId ?? `local_${Date.now()}`,
       bandName: bandLabel,
       managerId,
       purpose,
@@ -183,13 +189,16 @@ export function MeetingCreateWizard() {
           performancePool={performancePool}
           generalTab={generalTab}
           setGeneralTab={setGeneralTab}
-          selectedBandId={selectedBandId}
-          setSelectedBandId={setSelectedBandId}
-          generalCandidates={generalCandidates}
+          selectedBandIds={selectedBandIds}
+          onToggleBand={toggleBand}
+          onImportBandMembers={importBandMembers}
           memberQuery={memberQuery}
           setMemberQuery={setMemberQuery}
+          memberSearchResults={memberSearchResults}
           participantIds={participantIds}
-          onToggle={toggleParticipant}
+          onToggleParticipant={toggleParticipant}
+          onAddParticipant={addParticipant}
+          onRemoveParticipant={removeParticipant}
         />
       )}
       {step === 2 && (
@@ -206,7 +215,7 @@ export function MeetingCreateWizard() {
         <Step4Review
           purpose={purpose}
           performance={performance}
-          selectedBandId={selectedBandId}
+          selectedBandIds={selectedBandIds}
           participantMembers={participantMembers}
           title={title}
           managerId={managerId}
@@ -333,26 +342,33 @@ function Step2Participants({
   performancePool,
   generalTab,
   setGeneralTab,
-  selectedBandId,
-  setSelectedBandId,
-  generalCandidates,
+  selectedBandIds,
+  onToggleBand,
+  onImportBandMembers,
   memberQuery,
   setMemberQuery,
+  memberSearchResults,
   participantIds,
-  onToggle,
+  onToggleParticipant,
+  onAddParticipant,
+  onRemoveParticipant,
 }: {
   purpose: MeetingPurpose;
   performancePool: Member[];
   generalTab: GeneralTab;
   setGeneralTab: (t: GeneralTab) => void;
-  selectedBandId: string | null;
-  setSelectedBandId: (id: string) => void;
-  generalCandidates: Member[];
+  selectedBandIds: string[];
+  onToggleBand: (id: string) => void;
+  onImportBandMembers: () => void;
   memberQuery: string;
   setMemberQuery: (q: string) => void;
+  memberSearchResults: Member[];
   participantIds: string[];
-  onToggle: (id: string) => void;
+  onToggleParticipant: (id: string) => void;
+  onAddParticipant: (id: string) => void;
+  onRemoveParticipant: (id: string) => void;
 }) {
+  // 공연 모드 — 자동 풀 + 체크 토글.
   if (purpose === 'performance') {
     return (
       <section className="gap-s-3 flex flex-col">
@@ -369,7 +385,7 @@ function Step2Participants({
                     type="checkbox"
                     className="accent-accent h-4 w-4"
                     checked={checked}
-                    onChange={() => onToggle(m.id)}
+                    onChange={() => onToggleParticipant(m.id)}
                   />
                   <MemberAvatar member={m} size="sm" />
                   <div className="min-w-0 flex-1">
@@ -386,6 +402,9 @@ function Step2Participants({
       </section>
     );
   }
+
+  // 일반 모드 — 밴드 다중 선택 + 멤버 검색 결과 패널 + 참여 확정 리스트.
+  const participantSet = new Set(participantIds);
   return (
     <section className="gap-s-3 flex flex-col">
       <UnderlineTabs
@@ -396,78 +415,143 @@ function Step2Participants({
           { id: 'member', label: '멤버 검색' },
         ]}
       />
+
       {generalTab === 'band' ? (
-        <ul className="gap-s-1 flex flex-col">
-          {MOCK_BANDS.map((b) => {
-            const active = selectedBandId === b.bandId;
-            return (
-              <li key={b.bandId}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedBandId(b.bandId)}
-                  className={cn(
-                    'gap-s-3 px-s-3 py-s-2 hover:bg-card flex w-full items-center rounded-md text-left transition-colors',
-                    active && 'bg-accent-dim border-accent/30 border',
-                  )}
-                >
-                  <Users className="text-foreground-muted h-4 w-4 shrink-0" />
-                  <span className="text-caption font-bold">{b.bandName}</span>
-                  <span className="text-foreground-muted text-micro ml-auto">
-                    멤버 {b.memberIds.length}명
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          <p className="text-foreground-muted text-caption">
+            여러 밴드를 다중 선택할 수 있습니다. 선택 후 &lsquo;선택 멤버 추가&rsquo; 로 일괄
+            추가하세요.
+          </p>
+          <ul className="gap-s-1 flex flex-col">
+            {MOCK_BANDS.map((b) => {
+              const active = selectedBandIds.includes(b.bandId);
+              return (
+                <li key={b.bandId}>
+                  <label
+                    className={cn(
+                      'gap-s-3 px-s-3 py-s-2 hover:bg-card flex w-full cursor-pointer items-center rounded-md text-left transition-colors',
+                      active && 'bg-accent-dim border-accent/30 border',
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-accent h-4 w-4"
+                      checked={active}
+                      onChange={() => onToggleBand(b.bandId)}
+                    />
+                    <Users className="text-foreground-muted h-4 w-4 shrink-0" />
+                    <span className="text-caption font-bold">{b.bandName}</span>
+                    <span className="text-foreground-muted text-micro ml-auto">
+                      멤버 {b.memberIds.length}명
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={onImportBandMembers}
+            disabled={selectedBandIds.length === 0}
+          >
+            선택 밴드 멤버 추가 ({selectedBandIds.length}개 밴드)
+          </Button>
+        </>
       ) : (
-        <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border">
-          <Search className="text-foreground-muted h-4 w-4 shrink-0" />
-          <input
-            type="search"
-            value={memberQuery}
-            onChange={(e) => setMemberQuery(e.target.value)}
-            placeholder="이름 · 이메일로 검색"
-            aria-label="멤버 검색"
-            className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
-          />
-        </div>
+        <>
+          <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border">
+            <Search className="text-foreground-muted h-4 w-4 shrink-0" />
+            <input
+              type="search"
+              value={memberQuery}
+              onChange={(e) => setMemberQuery(e.target.value)}
+              placeholder="이름 · 이메일로 검색"
+              aria-label="멤버 검색"
+              className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+            />
+          </div>
+          {/* 검색 결과 패널 — 검색창 바로 아래, 스크롤. 결과 클릭 시 참여 풀로 이동. */}
+          <div className="border-border h-[200px] overflow-y-auto rounded-md border">
+            {!memberQuery.trim() ? (
+              <div className="text-foreground-muted text-caption px-s-4 py-s-8 text-center">
+                이름 또는 이메일로 검색하세요.
+              </div>
+            ) : memberSearchResults.length === 0 ? (
+              <div className="text-foreground-muted text-caption px-s-4 py-s-8 text-center">
+                일치하는 멤버가 없습니다.
+              </div>
+            ) : (
+              <ul>
+                {memberSearchResults.map((m) => {
+                  const added = participantSet.has(m.id);
+                  return (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() => (added ? onRemoveParticipant(m.id) : onAddParticipant(m.id))}
+                        className="hover:bg-card border-border px-s-3 py-s-2 gap-s-3 flex w-full items-center border-b text-left last:border-b-0"
+                      >
+                        <MemberAvatar member={m} size="sm" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-caption truncate font-semibold">{m.name}</div>
+                          <div className="text-foreground-muted text-micro truncate">
+                            {m.email ?? m.role}
+                          </div>
+                        </div>
+                        <span
+                          className={cn(
+                            'text-micro px-s-2 shrink-0 rounded-full py-0.5 font-bold',
+                            added ? 'bg-success-dim text-success' : 'bg-accent-dim text-accent',
+                          )}
+                        >
+                          {added ? '추가됨' : '+ 추가'}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </>
       )}
-      <div className="text-foreground-muted text-micro mt-s-2 font-semibold uppercase">
-        후보 ({generalCandidates.length}) — 체크하여 참여 확정
-      </div>
-      <ul className="border-border gap-s-1 flex h-[260px] flex-col overflow-y-auto rounded-md border p-1">
-        {generalCandidates.length === 0 ? (
-          <li className="text-foreground-muted text-caption py-s-8 text-center">
-            밴드 또는 멤버를 검색해 후보를 추가하세요.
-          </li>
+
+      {/* 참여 확정 풀 — 항상 노출. 칩 X 로 즉시 제거. */}
+      <div className="border-border mt-s-2 px-s-3 py-s-3 rounded-md border">
+        <div className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">
+          참여 확정 ({participantIds.length})
+        </div>
+        {participantIds.length === 0 ? (
+          <p className="text-foreground-muted text-caption">
+            아직 추가된 멤버가 없습니다. 위에서 밴드 또는 검색으로 추가하세요.
+          </p>
         ) : (
-          generalCandidates.map((m) => {
-            const checked = participantIds.includes(m.id);
-            return (
-              <li key={m.id}>
-                <label className="gap-s-3 px-s-3 py-s-2 hover:bg-card flex cursor-pointer items-center rounded-md">
-                  <input
-                    type="checkbox"
-                    className="accent-accent h-4 w-4"
-                    checked={checked}
-                    onChange={() => onToggle(m.id)}
-                  />
+          <ul className="gap-s-2 flex flex-wrap">
+            {participantIds.map((id) => {
+              const m = GLOBAL_MEMBER_POOL.find((x) => x.id === id);
+              if (!m) return null;
+              return (
+                <li
+                  key={id}
+                  className="bg-card border-border gap-s-1 px-s-2 inline-flex items-center rounded-full border py-0.5"
+                >
                   <MemberAvatar member={m} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-caption truncate font-semibold">{m.name}</div>
-                    <div className="text-foreground-muted text-micro truncate">
-                      {m.email ?? m.role}
-                    </div>
-                  </div>
-                </label>
-              </li>
-            );
-          })
+                  <span className="text-micro font-semibold">{m.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveParticipant(id)}
+                    aria-label={`${m.name} 제거`}
+                    className="text-foreground-muted hover:text-danger ml-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </ul>
-      <div className="text-foreground-sub text-caption">
-        참여 확정 <strong className="text-foreground">{participantIds.length}</strong>명
       </div>
     </section>
   );
@@ -549,14 +633,14 @@ function Step3Info({
 function Step4Review({
   purpose,
   performance,
-  selectedBandId,
+  selectedBandIds,
   participantMembers,
   title,
   managerId,
 }: {
   purpose: MeetingPurpose;
   performance: PerformanceMock | null;
-  selectedBandId: string | null;
+  selectedBandIds: string[];
   participantMembers: Member[];
   title: string;
   managerId: string | null;
@@ -577,9 +661,11 @@ function Step4Review({
           </div>
         </SummaryRow>
       )}
-      {purpose === 'general' && selectedBandId && (
+      {purpose === 'general' && selectedBandIds.length > 0 && (
         <SummaryRow icon={<Users className="h-4 w-4" />} label="기준 밴드">
-          {MOCK_BANDS.find((b) => b.bandId === selectedBandId)?.bandName ?? '-'}
+          {MOCK_BANDS.filter((b) => selectedBandIds.includes(b.bandId))
+            .map((b) => b.bandName)
+            .join(' · ')}
         </SummaryRow>
       )}
       <SummaryRow
