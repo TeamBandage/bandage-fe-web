@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/ui/step-indicator';
+import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
 import { useCreatePractice } from '@/domain/practice/hooks/useCreatePractice';
 import { useSearchSongs } from '@/domain/practice-song/hooks/useSearchSongs';
@@ -17,7 +18,8 @@ import { useRegisterDirtyForm } from '@/global/navigation/dirty-form-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToast } from '@/hooks/useToast';
 
-const STEPS = ['밴드 선택', '곡 선택', '일정 설정'] as const;
+const STEPS = ['밴드 선택', '곡 선택', '일정 설정', '검토'] as const;
+type Step = 0 | 1 | 2 | 3;
 
 type SongPick =
   | { mode: 'picked'; picked: SongSearchItem }
@@ -29,7 +31,7 @@ type SongPick =
 export function PracticeCreateWizard() {
   const router = useRouter();
   const toast = useToast();
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [step, setStep] = useState<Step>(0);
 
   // Step 1 상태
   const [bandId, setBandId] = useState<string>('');
@@ -66,7 +68,7 @@ export function PracticeCreateWizard() {
 
   const mutation = useCreatePractice({
     onSuccess: (data) => {
-      toast.success('합주가 생성되었습니다.');
+      toast.resourceCreated('합주', { name: title || '새 합주' });
       router.replace(ROUTES.PRACTICE_DETAIL(data.practiceId));
     },
     onError: (err) => toast.error(err.message || '합주 생성에 실패했습니다.'),
@@ -89,17 +91,25 @@ export function PracticeCreateWizard() {
           }
         : null;
 
-  const canNext = step === 0 ? !!bandId : step === 1 ? !!songPick : false;
-  const canSubmit = step === 2 && !!startAt && durationMinutes >= 15;
+  const canNext =
+    step === 0
+      ? !!bandId
+      : step === 1
+        ? !!songPick
+        : step === 2
+          ? !!startAt && durationMinutes >= 15
+          : false;
+  const canSubmit = step === 3 && !!songPick && !!startAt && durationMinutes >= 15;
 
   function next() {
     if (step === 0 && !bandId) return toast.error('밴드를 선택해 주세요.');
     if (step === 1 && !songPick) return toast.error('곡을 선택하거나 직접 입력해 주세요.');
-    if (step < 2) setStep((step + 1) as 0 | 1 | 2);
+    if (step === 2 && !startAt) return toast.error('시작 시각을 설정해 주세요.');
+    if (step < 3) setStep((step + 1) as Step);
   }
 
   function back() {
-    if (step > 0) setStep((step - 1) as 0 | 1 | 2);
+    if (step > 0) setStep((step - 1) as Step);
   }
 
   function submit() {
@@ -128,7 +138,6 @@ export function PracticeCreateWizard() {
     >
       <header className="mb-s-6 flex items-baseline justify-between gap-3">
         <h1 className="text-title font-bold">합주 시작하기</h1>
-        <p className="text-foreground-muted text-caption">밴드 → 곡 → 일정 순서로 진행합니다.</p>
       </header>
 
       <StepIndicator steps={STEPS} current={step} />
@@ -305,28 +314,86 @@ export function PracticeCreateWizard() {
             value={venue}
             onChange={(e) => setVenue(e.target.value)}
           />
-          <div className="space-y-s-2">
-            <label className="text-foreground text-caption font-semibold">
-              시작 시각 <span className="text-danger">*</span>
-            </label>
-            <DateTimePicker
-              value={startAt}
-              onChange={setStartAt}
-              aria-label="시작 시각"
-              required
-              futureOnly
-            />
+          {/* 시작 시각 / 소요 시간 — 강조 패널 (success 톤, 굵은 글씨) */}
+          <div className="gap-s-3 grid grid-cols-1 sm:grid-cols-2">
+            <div className="border-success/40 bg-success/10 px-s-4 py-s-3 space-y-s-2 rounded-md border-2">
+              <label className="text-success text-caption font-bold">
+                시작 시각 <span aria-hidden="true">*</span>
+              </label>
+              <DateTimePicker
+                value={startAt}
+                onChange={setStartAt}
+                aria-label="시작 시각"
+                required
+                futureOnly
+              />
+            </div>
+            <div className="border-success/40 bg-success/10 px-s-4 py-s-3 space-y-s-2 rounded-md border-2">
+              <label className="text-success text-caption font-bold">
+                소요 시간 (분) <span aria-hidden="true">*</span>
+              </label>
+              <input
+                type="number"
+                min={15}
+                max={480}
+                step={15}
+                required
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(Number(e.target.value) || 0)}
+                className="text-success text-title w-full border-0 bg-transparent font-bold outline-none"
+              />
+            </div>
           </div>
-          <Input
-            label="소요 시간 (분)"
-            type="number"
-            min={15}
-            max={480}
-            step={15}
-            required
-            value={durationMinutes}
-            onChange={(e) => setDurationMinutes(Number(e.target.value) || 0)}
+        </section>
+      )}
+
+      {/* Step 4 — 검토 및 확정 */}
+      {step === 3 && (
+        <section data-slot="wizard-step-review" className="space-y-s-4">
+          <h2 className="text-subtitle font-semibold">아래 내용을 확인해주세요</h2>
+          <WizardSummaryCard
+            sections={[
+              {
+                label: '밴드',
+                value: myBands.data?.find((b) => b.bandId === bandId)?.bandName ?? '—',
+                onEdit: () => setStep(0),
+              },
+              {
+                label: '곡',
+                value: songPick
+                  ? songPick.mode === 'picked'
+                    ? `${songPick.picked.title} — ${songPick.picked.artist}`
+                    : `${songPick.custom.title} — ${songPick.custom.artist} (직접 입력)`
+                  : '—',
+                onEdit: () => setStep(1),
+              },
+              {
+                label: '시작 시각',
+                value: startAt || '—',
+                emphasized: true,
+                onEdit: () => setStep(2),
+              },
+              {
+                label: '소요 시간',
+                value: `${durationMinutes}분`,
+                emphasized: true,
+                onEdit: () => setStep(2),
+              },
+              {
+                label: '제목',
+                value: title || '미지정',
+                onEdit: () => setStep(2),
+              },
+              {
+                label: '장소',
+                value: venue || '미지정',
+                onEdit: () => setStep(2),
+              },
+            ]}
           />
+          <p className="text-foreground-muted text-caption">
+            확정 버튼을 눌러야 실제로 합주가 생성됩니다.
+          </p>
         </section>
       )}
 
@@ -334,7 +401,7 @@ export function PracticeCreateWizard() {
         <Button variant="ghost" onClick={back} disabled={step === 0}>
           이전
         </Button>
-        {step < 2 ? (
+        {step < 3 ? (
           <Button onClick={next} disabled={!canNext}>
             다음
           </Button>

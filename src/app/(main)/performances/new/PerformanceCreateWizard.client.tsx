@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/ui/step-indicator';
+import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
 import { BandPickerModal } from '@/domain/band/components/BandPickerModal.client';
 import type { BandInfoResponse } from '@/domain/band/types';
 import { useCreatePerformance } from '@/domain/performance/hooks/useCreatePerformance';
@@ -38,7 +39,7 @@ export function PerformanceCreateWizard() {
 
   const mutation = useCreatePerformance({
     onSuccess: (data) => {
-      toast.success('공연이 생성되었습니다.');
+      toast.resourceCreated('공연', { name: title });
       router.replace(ROUTES.PERFORMANCE_DETAIL(data.performanceId));
     },
     onError: (err) => toast.error(err.message || '공연 생성에 실패했습니다.'),
@@ -165,36 +166,41 @@ export function PerformanceCreateWizard() {
       {/* Step 3 — 검토 */}
       {step === 2 && (
         <section data-slot="wizard-step-review" className="space-y-s-4">
-          <h2 className="text-subtitle font-semibold">검토 후 만들기</h2>
-          <dl className="bg-card border-border space-y-s-2 px-s-4 py-s-3 rounded-md border">
-            <div className="flex justify-between">
-              <dt className="text-foreground-muted text-caption">제목</dt>
-              <dd className="text-body font-semibold">{title || '—'}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-foreground-muted text-caption">장소</dt>
-              <dd className="text-body">{venue || '—'}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-foreground-muted text-caption">시작 시각</dt>
-              <dd className="text-body font-semibold">
-                <CalendarDays className="mr-1 inline h-4 w-4" aria-hidden="true" />
-                {startAt || '—'}
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-foreground-muted text-caption">소요 시간</dt>
-              <dd className="text-body">{durationMinutes}분</dd>
-            </div>
-            <div className="flex items-start justify-between gap-3">
-              <dt className="text-foreground-muted text-caption">참여 밴드</dt>
-              <dd className="text-body">
-                {selectedBands.length === 0
-                  ? '없음'
-                  : selectedBands.map((b) => b.bandName).join(', ')}
-              </dd>
-            </div>
-          </dl>
+          <h2 className="text-subtitle font-semibold">아래 내용을 확인해주세요</h2>
+          <WizardSummaryCard
+            sections={[
+              { label: '제목', value: title || '—', onEdit: () => setStep(0) },
+              { label: '장소', value: venue || '미지정', onEdit: () => setStep(0) },
+              {
+                label: '시작 시각',
+                value: (
+                  <span>
+                    <CalendarDays className="mr-1 inline h-4 w-4" aria-hidden="true" />
+                    {startAt || '—'}
+                  </span>
+                ),
+                emphasized: true,
+                onEdit: () => setStep(0),
+              },
+              {
+                label: '소요 시간',
+                value: `${durationMinutes}분`,
+                emphasized: true,
+                onEdit: () => setStep(0),
+              },
+              {
+                label: '참여 밴드',
+                value:
+                  selectedBands.length === 0
+                    ? '없음'
+                    : selectedBands.map((b) => b.bandName).join(', '),
+                onEdit: () => setStep(1),
+              },
+            ]}
+          />
+          <p className="text-foreground-muted text-caption">
+            확정 버튼을 눌러야 실제로 공연이 생성됩니다.
+          </p>
         </section>
       )}
 
