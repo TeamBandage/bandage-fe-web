@@ -30,7 +30,7 @@ export interface AddSongModalProps {
   trigger: ReactNode;
 }
 
-/** 표준 프리셋. 1행: 기본 4세션, 2행: 보조/멀티 세션. */
+/** 표준 프리셋. 1행: 기본 + G2, 2행: 보조/멀티 세션. */
 const PRESETS: Record<string, SessionDef> = {
   V: { id: 'V', label: '보컬', short: 'V', need: 1 },
   G: { id: 'G', label: '기타', short: 'G', need: 1 },
@@ -38,17 +38,35 @@ const PRESETS: Record<string, SessionDef> = {
   D: { id: 'D', label: '드럼', short: 'D', need: 1 },
   V2: { id: 'V2', label: '보컬2', short: 'V2', need: 1 },
   G2: { id: 'G2', label: '기타2', short: 'G2', need: 1 },
+  G3: { id: 'G3', label: '기타3', short: 'G3', need: 1 },
   D2: { id: 'D2', label: '드럼2', short: 'D2', need: 1 },
   S1: { id: 'S1', label: '신스1', short: 'S1', need: 1 },
   S2: { id: 'S2', label: '신스2', short: 'S2', need: 1 },
 };
 
 const PRESET_ROWS: ReadonlyArray<ReadonlyArray<string>> = [
-  ['V', 'G', 'B', 'D'],
-  ['V2', 'G2', 'D2', 'S1', 'S2'],
+  ['V', 'G', 'G2', 'B', 'D'],
+  ['V2', 'G3', 'D2', 'S1', 'S2'],
 ];
 
-/** 모달 오픈 시 기본 활성화되는 프리셋 — 1행 전체. */
+/**
+ * 곡 표/패널 노출 시 항상 따라야 하는 표준 순서. V → V2 → G → G2 → G3 → B → D → D2 → S1 → S2.
+ * 사용자가 토글하는 순서와 무관하게 안정적으로 표시되도록.
+ */
+const CANONICAL_ORDER: ReadonlyArray<string> = [
+  'V',
+  'V2',
+  'G',
+  'G2',
+  'G3',
+  'B',
+  'D',
+  'D2',
+  'S1',
+  'S2',
+];
+
+/** 모달 오픈 시 기본 활성화되는 프리셋. */
 const DEFAULT_ACTIVE_PRESETS: ReadonlyArray<string> = ['V', 'G', 'B', 'D'];
 
 /** 0~99 범위의 숫자 두자리로 정규화. 빈 문자열은 그대로 두고, 화면에 표시할 때 padStart. */
@@ -99,28 +117,32 @@ export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
 
-  // 활성 프리셋 + 커스텀 결합. 출력 순서는 PRESET_ROWS 정의 순서를 따라 안정적으로 유지.
+  // 활성 프리셋 + 커스텀 결합. 표시 순서는 CANONICAL_ORDER 를 따라 토글 순서와 무관하게 안정.
   const composedSessions = useMemo<SessionDef[]>(() => {
     const ordered: SessionDef[] = [];
-    for (const row of PRESET_ROWS) {
-      for (const id of row) {
-        if (activePresetIds.includes(id)) ordered.push(PRESETS[id]!);
-      }
+    for (const id of CANONICAL_ORDER) {
+      if (activePresetIds.includes(id)) ordered.push(PRESETS[id]!);
     }
     return [...ordered, ...extras];
   }, [activePresetIds, extras]);
 
   const addExtra = () => {
-    const raw = extraDraft.trim().toUpperCase();
-    if (!raw) return;
-    const cleaned = raw.replace(/[^A-Z]/g, '');
+    const cleaned = extraDraft
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '');
     if (!cleaned) return;
     const id = `X_${cleaned}`;
-    if (composedSessions.some((s) => s.id === id || s.short === cleaned)) {
+    const short = cleaned.slice(0, 2);
+    if (composedSessions.some((s) => s.id === id || s.short === short || s.label === cleaned)) {
       toast.warn('이미 같은 라벨의 세션이 있습니다.');
       return;
     }
-    setExtras((prev) => [...prev, { id, label: cleaned, short: cleaned, need: 1, custom: true }]);
+    setExtras((prev) => [
+      ...prev,
+      // label: 사용자가 입력한 풀텍스트(대문자), short: 표시용 앞 2자.
+      { id, label: cleaned, short, need: 1, custom: true },
+    ]);
     setExtraDraft('');
   };
 
@@ -254,28 +276,30 @@ export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
                 </div>
 
                 {/* 커스텀 세션 추가 — 영문 알파벳만 허용 */}
-                <div className="gap-s-2 mt-s-3 flex">
-                  <Input
-                    value={extraDraft}
-                    onChange={(e) =>
-                      setExtraDraft(
-                        e.target.value
-                          .toUpperCase()
-                          .replace(/[^A-Z]/g, '')
-                          .slice(0, 4),
-                      )
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addExtra();
+                <div className="gap-s-2 mt-s-3 flex items-end">
+                  <div className="flex-1">
+                    <Input
+                      value={extraDraft}
+                      onChange={(e) =>
+                        // 대/소문자 자유 입력 → toUpperCase 로 저장. A-Z 외 문자는 차단. 최대 10자.
+                        setExtraDraft(
+                          e.target.value
+                            .toUpperCase()
+                            .replace(/[^A-Z]/g, '')
+                            .slice(0, 10),
+                        )
                       }
-                    }}
-                    placeholder="커스텀 라벨 (영문 알파벳만, 최대 4자)"
-                    autoCapitalize="characters"
-                    autoComplete="off"
-                    pattern="[A-Za-z]*"
-                  />
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addExtra();
+                        }
+                      }}
+                      placeholder="커스텀 세션 라벨 (영문 최대 10자, 표시는 앞 2자)"
+                      autoComplete="off"
+                      maxLength={10}
+                    />
+                  </div>
                   <Button
                     type="button"
                     variant="secondary"
