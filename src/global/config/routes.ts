@@ -22,6 +22,7 @@ export const ROUTES = {
   ME: '/me',
 
   SETLIST_MEETINGS: '/setlist-meetings',
+  SETLIST_MEETING_NEW: '/setlist-meetings/new',
   SETLIST_MEETING_DETAIL: (id: string) => `/setlist-meetings/${id}`,
 } as const;
 

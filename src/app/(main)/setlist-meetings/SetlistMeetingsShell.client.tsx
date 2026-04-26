@@ -1,8 +1,8 @@
 'use client';
 
 import { PanelLeftOpen } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import { Suspense, useEffect, useState, type ReactNode } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { SetlistMeetingsListPane } from './SetlistMeetingsListPane.client';
 
@@ -14,10 +14,18 @@ import { SetlistMeetingsListPane } from './SetlistMeetingsListPane.client';
  */
 export function SetlistMeetingsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? '';
-  const [listOpen, setListOpen] = useState(false);
+  const searchParams = useSearchParams();
+  // '?listOpen=1' 진입 시 좌측 마스터 패널 자동 펼침 ('나의 선곡 회의' 서브탭).
+  const initialListOpen = searchParams?.get('listOpen') === '1';
+  const [listOpen, setListOpen] = useState(initialListOpen);
 
-  // 경로 변경 시 자동 닫기.
+  // 경로 변경 시 자동 닫기. 단, '?listOpen=1' 로 진입한 첫 마운트는 펼침 유지.
+  const didMountRef = useRef(false);
   useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
     setListOpen(false);
   }, [pathname]);
 

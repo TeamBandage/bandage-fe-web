@@ -50,7 +50,12 @@ type Actions = {
     },
   ) => void;
   addCustomSession: (songId: string, session: SessionDef) => void;
-  addMeeting: (meeting: Omit<Meeting, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  addMeeting: (
+    meeting: Omit<
+      Meeting,
+      'id' | 'createdAt' | 'updatedAt' | 'practiceSongMap' | 'lockSnapshotSongIds'
+    >,
+  ) => string;
   /** 매니저가 선곡 확정 — 곡 추가/수정/삭제 잠금. */
   lockMeeting: (meetingId: string) => void;
   /** 매니저가 회의 재개 — 잠금 해제. */
@@ -228,11 +233,34 @@ export const useSetlistStore = create<SetlistStore>()(
       },
 
       lockMeeting: (meetingId) =>
-        set((state) => ({
-          meetings: state.meetings.map((m) =>
-            m.id === meetingId ? { ...m, lockedAt: new Date().toISOString() } : m,
-          ),
-        })),
+        set((state) => {
+          // 잠금 시점의 곡 목록을 lockSnapshot 으로 저장 → 재확정 시 변경분 diff 계산용.
+          // BE 도입 시: 여기서 POST /lock 호출 후 응답 받은 practiceSongMap 으로 갱신.
+          const meetingSongIds = state.songs
+            .filter((s) => s.meetingId === meetingId)
+            .map((s) => s.id);
+          const prev = state.meetings.find((m) => m.id === meetingId);
+          // mock practiceSongMap — 신규 추가된 곡에 대해 임시 practiceSongId 부여, 기존 매핑은 유지.
+          const prevMap = prev?.practiceSongMap ?? {};
+          const nextMap: Record<string, string> = { ...prevMap };
+          for (const sid of meetingSongIds) {
+            if (!nextMap[sid]) {
+              nextMap[sid] = `ps_${sid}_${Date.now().toString(36)}`;
+            }
+          }
+          return {
+            meetings: state.meetings.map((m) =>
+              m.id === meetingId
+                ? {
+                    ...m,
+                    lockedAt: new Date().toISOString(),
+                    lockSnapshotSongIds: meetingSongIds,
+                    practiceSongMap: nextMap,
+                  }
+                : m,
+            ),
+          };
+        }),
 
       unlockMeeting: (meetingId) =>
         set((state) => ({

@@ -279,6 +279,73 @@ POST /api/v1/setlist-meetings/{meetingId}/convert-to-practices
 
 ---
 
+## 선곡 회의 Phase 2 (2026-04-26 추가)
+
+회의 만들기 마법사 + 선곡 확정 시 합주곡 벌크 매핑.
+
+### FE-API-031 회의 생성 (확장)
+
+```
+POST /api/v1/setlist-meetings
+Body: { title, bandId, purpose: 'PERFORMANCE'|'GENERAL', performanceId?, managerId, participantUserIds: string[] }
+```
+
+- 응답: `SetlistMeetingResponse` (기존 + purpose/performanceId/participantUserIds)
+- 권한: 인증 사용자 + 해당 밴드 멤버.
+
+### FE-API-032 멤버 검색 (글로벌)
+
+```
+GET /api/v1/members/search?q=&limit=20
+```
+
+- 응답: `[{ memberId, name, email, profileImg? }]`
+- 회의 만들기 Step 2 의 '멤버 검색' 탭 backing API. 현재 `mock/memberSearchMock.ts` 로 우회.
+
+### FE-API-033 공연 검색
+
+```
+GET /api/v1/performances/search?q=&limit=20
+```
+
+- 응답: `[{ performanceId, title, venue, startAt, bands: [{ bandId, bandName, members: [...] }] }]`
+- 회의 만들기 Step 1 의 공연 선택용. 현재 `mock/performanceSearchMock.ts` 로 우회.
+
+### FE-API-034 회의 확정 (선곡 확정 → 합주곡 벌크 생성)
+
+```
+POST /api/v1/setlist-meetings/{meetingId}/lock
+Body: { songs: [{ meetingSongId, title, artist, album?, duration?, sessions: [...] }] }
+```
+
+- 응답: `{ lockedAt: ISO, practiceSongs: [{ meetingSongId, practiceSongId }] }`
+- 공연 모드일 때 BE 가 자동으로 performance.setlist 에 추가 (서버 트리거)
+- 프론트는 응답의 매핑을 `meeting.practiceSongMap` 에 저장 — 현재는 mock 매핑.
+
+### FE-API-035 회의 잠금 해제
+
+```
+POST /api/v1/setlist-meetings/{meetingId}/unlock
+```
+
+- 단순 잠금 해제. 매핑은 유지(다음 확정에서 diff 계산 기준).
+
+### FE-API-036 회의 곡 벌크 수정 (재확정 시 변경분 동기)
+
+```
+PATCH /api/v1/setlist-meetings/{meetingId}/songs/bulk
+Body: {
+  add: [{ tempId, title, artist, album?, duration?, sessions: [...] }],
+  remove: [meetingSongId],
+  update: [{ meetingSongId, ...patch }]
+}
+```
+
+- 응답: `{ practiceSongs: [{ meetingSongId, practiceSongId }] }` (신규 매핑된 것만)
+- FE 책임: 직전 lockSnapshot 과 현재 곡 목록 diff 계산 후 호출.
+
+---
+
 ## ℹ️ 참고 — 프론트 mock / 우회 현황 (2026-04-25 기준)
 
 | 영역              | 우회 방법                                                                                       |

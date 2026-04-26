@@ -4,13 +4,13 @@ import type { Meeting, Member, SessionDef, Song } from '../types';
 export const SEED_CURRENT_USER_ID = 'u1';
 
 export const SEED_MEMBERS: Member[] = [
-  { id: 'u1', name: '정선우', role: '기타', avatar: '#F59E0B' },
-  { id: 'u2', name: '신선경', role: '베이스', avatar: '#EF4444' },
-  { id: 'u3', name: '지범준', role: '기타', avatar: '#3B82F6' },
-  { id: 'u4', name: '안성진', role: '보컬', avatar: '#8B5CF6' },
-  { id: 'u5', name: '이동후', role: '드럼', avatar: '#10B981' },
-  { id: 'u6', name: '임지수', role: '키보드', avatar: '#EC4899' },
-  { id: 'u7', name: '최홍석', role: '드럼', avatar: '#06B6D4' },
+  { id: 'u1', name: '정선우', role: '기타', avatar: '#F59E0B', email: 'sunwoo@bandage.dev' },
+  { id: 'u2', name: '신선경', role: '베이스', avatar: '#EF4444', email: 'sunkyung@bandage.dev' },
+  { id: 'u3', name: '지범준', role: '기타', avatar: '#3B82F6', email: 'beomjun@bandage.dev' },
+  { id: 'u4', name: '안성진', role: '보컬', avatar: '#8B5CF6', email: 'sungjin@bandage.dev' },
+  { id: 'u5', name: '이동후', role: '드럼', avatar: '#10B981', email: 'dongwhu@bandage.dev' },
+  { id: 'u6', name: '임지수', role: '키보드', avatar: '#EC4899', email: 'jisoo@bandage.dev' },
+  { id: 'u7', name: '최홍석', role: '드럼', avatar: '#06B6D4', email: 'hongseok@bandage.dev' },
 ];
 
 export const SEED_MEETINGS: Meeting[] = [
