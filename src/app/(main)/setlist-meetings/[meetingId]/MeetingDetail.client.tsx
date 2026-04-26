@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SessionPanel } from '@/domain/setlist-meeting/components/SessionPanel.client';
 import { SongTable } from '@/domain/setlist-meeting/components/SongTable.client';
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
 import type { Song } from '@/domain/setlist-meeting/types';
@@ -79,71 +80,74 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="border-border px-s-5 py-s-4 border-b">
-        <div className="gap-s-3 flex items-start justify-between">
-          <div className="min-w-0">
-            <div className="text-accent text-caption font-semibold">{meeting.bandName}</div>
-            <h1 className="text-title-lg mt-s-1 font-bold">{meeting.title}</h1>
-            <div className="text-foreground-muted text-caption gap-s-3 mt-s-2 flex flex-wrap items-center">
-              <span>
-                전체 <strong className="text-foreground">{stats.total}</strong>곡
-              </span>
-              <span className="text-success">
-                합주 가능 <strong>{stats.ready}</strong>
-              </span>
-              <span className="text-warn">
-                모집 중 <strong>{stats.pending}</strong>
-              </span>
+    <div className="flex h-full">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="border-border px-s-5 py-s-4 border-b">
+          <div className="gap-s-3 flex items-start justify-between">
+            <div className="min-w-0">
+              <div className="text-accent text-caption font-semibold">{meeting.bandName}</div>
+              <h1 className="text-title-lg mt-s-1 font-bold">{meeting.title}</h1>
+              <div className="text-foreground-muted text-caption gap-s-3 mt-s-2 flex flex-wrap items-center">
+                <span>
+                  전체 <strong className="text-foreground">{stats.total}</strong>곡
+                </span>
+                <span className="text-success">
+                  합주 가능 <strong>{stats.ready}</strong>
+                </span>
+                <span className="text-warn">
+                  모집 중 <strong>{stats.pending}</strong>
+                </span>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="accent-outline"
+              onClick={() => toast.info('곡 추가 모달은 곧 제공됩니다.')}
+              aria-label="새 곡 추가"
+            >
+              <Plus className="h-4 w-4" /> 곡 추가
+            </Button>
+          </div>
+
+          <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:items-center md:justify-between">
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+              <TabsList>
+                <TabsTrigger value="all">전체</TabsTrigger>
+                <TabsTrigger value="ready">합주 가능</TabsTrigger>
+                <TabsTrigger value="pending">모집 중</TabsTrigger>
+                <TabsTrigger value="mine">내 지원</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border md:w-72">
+              <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="곡명 · 아티스트 · 앨범 검색"
+                aria-label="곡 검색"
+                className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+              />
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="accent-outline"
-            onClick={() => toast.info('곡 추가 모달은 곧 제공됩니다.')}
-            aria-label="새 곡 추가"
-          >
-            <Plus className="h-4 w-4" /> 곡 추가
-          </Button>
-        </div>
+        </header>
 
-        <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:items-center md:justify-between">
-          <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-            <TabsList>
-              <TabsTrigger value="all">전체</TabsTrigger>
-              <TabsTrigger value="ready">합주 가능</TabsTrigger>
-              <TabsTrigger value="pending">모집 중</TabsTrigger>
-              <TabsTrigger value="mine">내 지원</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border md:w-72">
-            <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="곡명 · 아티스트 · 앨범 검색"
-              aria-label="곡 검색"
-              className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto">
+          <SongTable
+            songs={visible}
+            members={members}
+            selectedSongId={selectedSongId}
+            focusedSessionId={focusedSessionId}
+            currentUserId={currentUserId}
+            onSelectSong={(id) => setSelectedSong(id)}
+            onFocusSession={(songId, sessionId) => {
+              setSelectedSong(songId);
+              setFocusedSession(sessionId);
+            }}
+          />
         </div>
-      </header>
-
-      <div className="flex-1 overflow-y-auto">
-        <SongTable
-          songs={visible}
-          members={members}
-          selectedSongId={selectedSongId}
-          focusedSessionId={focusedSessionId}
-          currentUserId={currentUserId}
-          onSelectSong={(id) => setSelectedSong(id)}
-          onFocusSession={(songId, sessionId) => {
-            setSelectedSong(songId);
-            setFocusedSession(sessionId);
-          }}
-        />
       </div>
+      {selectedSongId && <SessionPanel songId={selectedSongId} />}
     </div>
   );
 }
