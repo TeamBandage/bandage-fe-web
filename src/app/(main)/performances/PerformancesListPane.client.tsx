@@ -38,7 +38,7 @@ function PerformanceRow({ p, pathname }: { p: PerformanceListItemResponse; pathn
       >
         <IconTile icon={<PerformanceIcon />} size="sm" tone={DOMAIN_TONES.performance} />
         <div className="min-w-0 flex-1">
-          <div className="text-body truncate font-semibold">{p.title}</div>
+          <div className="text-caption truncate font-semibold">{p.title}</div>
           <div className="text-foreground-muted text-caption mt-0.5 truncate">{p.startAt}</div>
         </div>
       </Link>
@@ -74,8 +74,8 @@ export function PerformancesListPane() {
       data-slot="performances-list-pane"
       aria-label="공연 탐색"
     >
-      <div className="border-border px-s-5 py-s-4 flex items-center justify-between border-b">
-        <h2 className="text-subtitle font-bold">공연 탐색</h2>
+      <div className="border-border px-s-3 py-s-3 flex items-center justify-between border-b">
+        <h2 className="text-body font-bold">공연 탐색</h2>
         <Button asChild size="sm" variant="accent-outline" aria-label="공연 생성">
           <Link href={ROUTES.PERFORMANCE_NEW}>
             <Plus className="h-4 w-4" /> 공연 생성
