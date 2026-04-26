@@ -79,32 +79,39 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   // 곡 수정 / 삭제 다이얼로그 상태.
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [pendingDeleteSong, setPendingDeleteSong] = useState<Song | null>(null);
-  // 채팅 영역 staggered exit — 우측 패널이 먼저 슬라이드 아웃, 채팅은 75ms 늦게.
-  const [chatRendered, setChatRendered] = useState(false);
-  const [chatExiting, setChatExiting] = useState(false);
+  // 우측 패널 / 하단 채팅 순차 애니메이션:
+  //  - 오픈 시: 채팅이 먼저 슬라이드 업(0~200ms) → 끝나면 우측 패널 슬라이드 인(200~400ms)
+  //  - 닫기 시: 우측 패널이 먼저 슬라이드 아웃(0~200ms) → 끝나면 채팅 슬라이드 다운(200~400ms) → 480ms 후 unmount
+  // 결과: 우측 패널은 항상 채팅이 자리잡은 후에만 보이고, 채팅은 우측 패널이 사라진 후에야 사라짐.
+  const [chatMounted, setChatMounted] = useState(false);
+  const [chatSlideIn, setChatSlideIn] = useState(false);
+  const [panelSlideIn, setPanelSlideIn] = useState(false);
 
   useEffect(() => {
     setSelectedMeeting(meetingId);
   }, [meetingId, setSelectedMeeting]);
 
-  // 채팅 mount/unmount 와 transition 클래스 제어.
-  // - 열릴 때: 즉시 렌더 + translate-y-0 으로 등장(스냅)
-  // - 닫힐 때: chatExiting=true → translate-y-full + delay-75 로 우측 패널 보다 늦게 슬라이드 다운 → 그 후 unmount
   useEffect(() => {
     if (sessionPanelOpen && selectedSongId) {
-      setChatExiting(false);
-      setChatRendered(true);
-      return;
+      // 오픈 시퀀스: 채팅 먼저 → 200ms 후 우측 패널.
+      setChatMounted(true);
+      // 다음 프레임에 translate 클래스 변경(이전 mount 직후 transition 발동).
+      const enter = requestAnimationFrame(() => setChatSlideIn(true));
+      const panelTimer = setTimeout(() => setPanelSlideIn(true), 200);
+      return () => {
+        cancelAnimationFrame(enter);
+        clearTimeout(panelTimer);
+      };
     }
-    if (chatRendered) {
-      setChatExiting(true);
-      const t = setTimeout(() => {
-        setChatRendered(false);
-        setChatExiting(false);
-      }, 280);
-      return () => clearTimeout(t);
-    }
-  }, [sessionPanelOpen, selectedSongId, chatRendered]);
+    // 클로즈 시퀀스: 우측 패널 먼저 → 200ms 후 채팅 슬라이드 다운 → 480ms 후 unmount.
+    setPanelSlideIn(false);
+    const chatOut = setTimeout(() => setChatSlideIn(false), 200);
+    const unmount = setTimeout(() => setChatMounted(false), 480);
+    return () => {
+      clearTimeout(chatOut);
+      clearTimeout(unmount);
+    };
+  }, [sessionPanelOpen, selectedSongId]);
 
   const stats = useMemo(() => {
     const total = allSongs.length;
@@ -295,12 +302,12 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             }}
           />
         </div>
-        {/* 메인 컬럼 하단 채팅. 닫힐 때는 staggered exit (우측 패널 먼저, 채팅은 75ms 후). */}
-        {chatRendered && selectedSongId && (
+        {/* 메인 컬럼 하단 채팅 — 시퀀싱: 오픈 시 먼저 들어오고, 닫을 때는 우측 패널 후에 나감. */}
+        {chatMounted && selectedSongId && (
           <div
             className={cn(
               'relative z-30 transition-transform duration-200 ease-out',
-              chatExiting ? 'pointer-events-none translate-y-full delay-75' : 'translate-y-0',
+              chatSlideIn ? 'translate-y-0' : 'pointer-events-none translate-y-full',
             )}
           >
             <MeetingChatBox songId={selectedSongId} />
@@ -308,15 +315,13 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
         )}
       </div>
 
-      {/* 우측 오버레이 SessionPanel — 메인 차트 위로 absolute. */}
+      {/* 우측 오버레이 SessionPanel — panelSlideIn 상태로 슬라이드. 채팅이 자리잡은 후에만 보이고 채팅이 사라지기 전에 먼저 빠짐. */}
       {selectedSongId && (
         <aside
-          aria-hidden={!sessionPanelOpen}
-          // 하단 채팅(h-280)과 동시에 열리므로 우측 패널은 채팅 영역을 침범하지 않도록 bottom-[280px].
-          // 패널 body 는 자체 overflow-y-auto 라 작은 뷰포트에서도 자연 스크롤.
+          aria-hidden={!panelSlideIn}
           className={cn(
             'absolute top-0 right-0 bottom-[280px] z-20 hidden shadow-lg transition-transform duration-200 ease-out lg:flex',
-            sessionPanelOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
+            panelSlideIn ? 'translate-x-0' : 'pointer-events-none translate-x-full',
           )}
           style={{ width: 380 }}
         >
