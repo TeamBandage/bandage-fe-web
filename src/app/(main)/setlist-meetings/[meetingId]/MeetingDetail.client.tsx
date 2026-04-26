@@ -56,7 +56,6 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   const members = useSetlistStore((s) => s.members);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
   const selectedSongId = useSetlistStore((s) => s.selectedSongId);
-  const focusedSessionId = useSetlistStore((s) => s.focusedSessionId);
   const setSelectedMeeting = useSetlistStore((s) => s.setSelectedMeeting);
   const setSelectedSong = useSetlistStore((s) => s.setSelectedSong);
   const setFocusedSession = useSetlistStore((s) => s.setFocusedSession);
@@ -66,6 +65,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
 
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
+  const [memberQuery, setMemberQuery] = useState('');
   // 우측 세션 패널 토글. 곡을 새로 선택하면 자동 열림.
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
 
@@ -79,10 +79,53 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
     return { total, ready: readyCount, pending: total - readyCount };
   }, [allSongs]);
 
-  const visible = useMemo(
-    () => applySearch(applyFilter(allSongs, filter, currentUserId), query),
-    [allSongs, filter, currentUserId, query],
-  );
+  // 멤버 이름 부분 매칭 → userId 집합. 빈 검색이면 빈 Set.
+  const matchedUserIds = useMemo(() => {
+    const t = memberQuery.trim().toLowerCase();
+    if (!t) return new Set<string>();
+    return new Set(members.filter((m) => m.name.toLowerCase().includes(t)).map((m) => m.id));
+  }, [members, memberQuery]);
+
+  const visible = useMemo(() => {
+    let result = applySearch(applyFilter(allSongs, filter, currentUserId), query);
+    if (matchedUserIds.size > 0) {
+      // 곡 필터 + 멤버 필터 AND: 매칭 유저가 어떤 세션이든 들어있는 곡만.
+      result = result.filter(
+        (s) =>
+          Object.values(s.applicants).some((list) => list.some((u) => matchedUserIds.has(u))) ||
+          Object.values(s.confirmed).some((list) => list.some((u) => matchedUserIds.has(u))),
+      );
+    }
+    return result;
+  }, [allSongs, filter, currentUserId, query, matchedUserIds]);
+
+  // ↑/↓ 키보드 네비게이션 — 입력 필드 포커스 시에는 무시. 이동 시 focusedSession 정리(overview 모드).
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (visible.length === 0) return;
+      e.preventDefault();
+      const idx = selectedSongId ? visible.findIndex((s) => s.id === selectedSongId) : -1;
+      let nextIdx: number;
+      if (idx < 0) {
+        nextIdx = e.key === 'ArrowDown' ? 0 : visible.length - 1;
+      } else {
+        nextIdx =
+          e.key === 'ArrowUp' ? Math.max(0, idx - 1) : Math.min(visible.length - 1, idx + 1);
+      }
+      const nextSong = visible[nextIdx];
+      if (!nextSong) return;
+      if (nextSong.id !== selectedSongId) {
+        setSelectedSong(nextSong.id);
+        setFocusedSession(null);
+        setSessionPanelOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visible, selectedSongId, setSelectedSong, setFocusedSession]);
 
   if (!meeting) {
     return (
@@ -134,14 +177,25 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 <TabsTrigger value="mine">내 지원</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border md:w-72">
+            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border md:w-60">
               <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
               <input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="곡명 · 아티스트 · 앨범 검색"
+                placeholder="곡명 · 아티스트 · 앨범"
                 aria-label="곡 검색"
+                className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+              />
+            </div>
+            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border md:w-52">
+              <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
+              <input
+                type="search"
+                value={memberQuery}
+                onChange={(e) => setMemberQuery(e.target.value)}
+                placeholder="멤버 이름"
+                aria-label="멤버 검색"
                 className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
               />
             </div>
@@ -153,26 +207,17 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             songs={visible}
             members={members}
             selectedSongId={selectedSongId}
-            focusedSessionId={focusedSessionId}
             currentUserId={currentUserId}
             isManager={isManager}
+            matchedUserIds={matchedUserIds}
             onSelectSong={(id) => {
-              // 같은 곡을 다시 클릭하면 토글: 패널이 열려있으면 닫고, 닫혀있으면 다시 열기.
+              // 메인 행 클릭은 항상 overview 모드로 진입. 세션 focus 는 우측 패널에서만.
               if (id === selectedSongId) {
                 setSessionPanelOpen((v) => !v);
                 return;
               }
               setSelectedSong(id);
-              setSessionPanelOpen(true);
-            }}
-            onFocusSession={(songId, sessionId) => {
-              // 같은 곡 + 같은 세션 셀 재클릭 시에도 토글.
-              if (songId === selectedSongId && sessionId === focusedSessionId) {
-                setSessionPanelOpen((v) => !v);
-                return;
-              }
-              setSelectedSong(songId);
-              setFocusedSession(sessionId);
+              setFocusedSession(null);
               setSessionPanelOpen(true);
             }}
             onDeleteSong={(id) => deleteSong(id)}
