@@ -1,0 +1,149 @@
+'use client';
+
+import { Plus, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SongTable } from '@/domain/setlist-meeting/components/SongTable.client';
+import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
+import type { Song } from '@/domain/setlist-meeting/types';
+import { isReady } from '@/domain/setlist-meeting/utils';
+import { useToast } from '@/hooks/useToast';
+
+type Filter = 'all' | 'ready' | 'pending' | 'mine';
+
+function applyFilter(songs: Song[], filter: Filter, currentUserId: string): Song[] {
+  switch (filter) {
+    case 'ready':
+      return songs.filter(isReady);
+    case 'pending':
+      return songs.filter((s) => !isReady(s));
+    case 'mine':
+      return songs.filter((s) =>
+        Object.values(s.applicants).some((list) => list.includes(currentUserId)),
+      );
+    case 'all':
+    default:
+      return songs;
+  }
+}
+
+function applySearch(songs: Song[], q: string): Song[] {
+  const t = q.trim().toLowerCase();
+  if (!t) return songs;
+  return songs.filter(
+    (s) =>
+      s.title.toLowerCase().includes(t) ||
+      s.artist.toLowerCase().includes(t) ||
+      (s.album ?? '').toLowerCase().includes(t),
+  );
+}
+
+export function MeetingDetail({ meetingId }: { meetingId: string }) {
+  const meeting = useSetlistStore((s) => s.meetings.find((m) => m.id === meetingId));
+  const allSongs = useSetlistStore((s) => s.songs.filter((song) => song.meetingId === meetingId));
+  const members = useSetlistStore((s) => s.members);
+  const currentUserId = useSetlistStore((s) => s.currentUserId);
+  const selectedSongId = useSetlistStore((s) => s.selectedSongId);
+  const focusedSessionId = useSetlistStore((s) => s.focusedSessionId);
+  const setSelectedMeeting = useSetlistStore((s) => s.setSelectedMeeting);
+  const setSelectedSong = useSetlistStore((s) => s.setSelectedSong);
+  const setFocusedSession = useSetlistStore((s) => s.setFocusedSession);
+  const toast = useToast();
+
+  const [filter, setFilter] = useState<Filter>('all');
+  const [query, setQuery] = useState('');
+
+  useEffect(() => {
+    setSelectedMeeting(meetingId);
+  }, [meetingId, setSelectedMeeting]);
+
+  const stats = useMemo(() => {
+    const total = allSongs.length;
+    const readyCount = allSongs.filter(isReady).length;
+    return { total, ready: readyCount, pending: total - readyCount };
+  }, [allSongs]);
+
+  const visible = useMemo(
+    () => applySearch(applyFilter(allSongs, filter, currentUserId), query),
+    [allSongs, filter, currentUserId, query],
+  );
+
+  if (!meeting) {
+    return (
+      <div className="px-s-5 py-s-6">
+        <p className="text-foreground-muted text-caption">회의를 찾을 수 없습니다.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <header className="border-border px-s-5 py-s-4 border-b">
+        <div className="gap-s-3 flex items-start justify-between">
+          <div className="min-w-0">
+            <div className="text-accent text-caption font-semibold">{meeting.bandName}</div>
+            <h1 className="text-title-lg mt-s-1 font-bold">{meeting.title}</h1>
+            <div className="text-foreground-muted text-caption gap-s-3 mt-s-2 flex flex-wrap items-center">
+              <span>
+                전체 <strong className="text-foreground">{stats.total}</strong>곡
+              </span>
+              <span className="text-success">
+                합주 가능 <strong>{stats.ready}</strong>
+              </span>
+              <span className="text-warn">
+                모집 중 <strong>{stats.pending}</strong>
+              </span>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="accent-outline"
+            onClick={() => toast.info('곡 추가 모달은 곧 제공됩니다.')}
+            aria-label="새 곡 추가"
+          >
+            <Plus className="h-4 w-4" /> 곡 추가
+          </Button>
+        </div>
+
+        <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:items-center md:justify-between">
+          <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+            <TabsList>
+              <TabsTrigger value="all">전체</TabsTrigger>
+              <TabsTrigger value="ready">합주 가능</TabsTrigger>
+              <TabsTrigger value="pending">모집 중</TabsTrigger>
+              <TabsTrigger value="mine">내 지원</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border md:w-72">
+            <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="곡명 · 아티스트 · 앨범 검색"
+              aria-label="곡 검색"
+              className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+            />
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto">
+        <SongTable
+          songs={visible}
+          members={members}
+          selectedSongId={selectedSongId}
+          focusedSessionId={focusedSessionId}
+          currentUserId={currentUserId}
+          onSelectSong={(id) => setSelectedSong(id)}
+          onFocusSession={(songId, sessionId) => {
+            setSelectedSong(songId);
+            setFocusedSession(sessionId);
+          }}
+        />
+      </div>
+    </div>
+  );
+}
