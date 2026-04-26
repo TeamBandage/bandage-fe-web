@@ -57,9 +57,16 @@ export function slotToMin(slot: number): number {
   return slot * 30;
 }
 
-/** ISO week (월요일 시작) — 주차 시작일. */
+/** YYYY-MM-DD 유효성 가드 — 잘못된/빈 입력은 오늘 일자로 폴백. */
+function safeDate(input: string): Date {
+  const d = input ? new Date(`${input}T00:00:00`) : new Date();
+  if (isNaN(d.getTime())) return new Date();
+  return d;
+}
+
+/** ISO week (월요일 시작) — 주차 시작일. 빈 문자열/잘못된 입력 시 오늘 기준. */
 export function startOfWeek(date: string): string {
-  const d = new Date(`${date}T00:00:00`);
+  const d = safeDate(date);
   const day = d.getDay(); // 0=일
   const diff = day === 0 ? -6 : 1 - day; // 월요일 기준
   d.setDate(d.getDate() + diff);
@@ -67,7 +74,7 @@ export function startOfWeek(date: string): string {
 }
 
 export function addDays(date: string, n: number): string {
-  const d = new Date(`${date}T00:00:00`);
+  const d = safeDate(date);
   d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 }
