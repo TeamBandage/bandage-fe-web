@@ -57,7 +57,7 @@ export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
 
   const form = useForm<AddSongSchema>({
     resolver: zodResolver(addSongSchema),
-    defaultValues: { title: '', artist: '', album: '', note: '' },
+    defaultValues: { title: '', artist: '', album: '', duration: '', note: '' },
     mode: 'onTouched',
   });
 
@@ -107,6 +107,7 @@ export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
       title: values.title,
       artist: values.artist,
       album: values.album,
+      duration: values.duration,
       note: values.note,
       proposerId: currentUserId,
       sessions: composedSessions,
@@ -147,12 +148,25 @@ export function AddSongModal({ meetingId, trigger }: AddSongModalProps) {
                 placeholder="예: Tool"
                 {...form.register('artist')}
               />
-              <Input
-                label="앨범"
-                error={form.formState.errors.album?.message}
-                placeholder="선택"
-                {...form.register('album')}
-              />
+              <div className="gap-s-3 flex">
+                <div className="flex-1">
+                  <Input
+                    label="앨범"
+                    error={form.formState.errors.album?.message}
+                    placeholder="선택"
+                    {...form.register('album')}
+                  />
+                </div>
+                <div className="w-28">
+                  <Input
+                    label="재생 시간"
+                    error={form.formState.errors.duration?.message}
+                    placeholder="mm:ss"
+                    inputMode="numeric"
+                    {...form.register('duration')}
+                  />
+                </div>
+              </div>
               <Textarea
                 label="추천자 의견"
                 error={form.formState.errors.note?.message}

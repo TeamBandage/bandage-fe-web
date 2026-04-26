@@ -187,7 +187,6 @@ function OverviewSessionView({
                   )}
                 >
                   {s.short}
-                  {s.custom && <span className="text-amber ml-0.5">*</span>}
                 </span>
                 <div className="min-w-0 flex-1 text-left">
                   {/* 1행: 라벨 + 우측 경쟁률 칩 */}
