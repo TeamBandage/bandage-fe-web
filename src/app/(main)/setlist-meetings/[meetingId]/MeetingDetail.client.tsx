@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Search } from 'lucide-react';
+import { PanelRightOpen, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,8 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
 
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
+  // 우측 세션 패널 토글. 곡을 새로 선택하면 자동 열림.
+  const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
 
   useEffect(() => {
     setSelectedMeeting(meetingId);
@@ -89,7 +91,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="relative flex h-full">
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="border-border px-s-5 py-s-4 border-b">
           <div className="gap-s-3 flex items-start justify-between">
@@ -150,16 +152,32 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             selectedSongId={selectedSongId}
             focusedSessionId={focusedSessionId}
             currentUserId={currentUserId}
-            onSelectSong={(id) => setSelectedSong(id)}
+            onSelectSong={(id) => {
+              setSelectedSong(id);
+              setSessionPanelOpen(true);
+            }}
             onFocusSession={(songId, sessionId) => {
               setSelectedSong(songId);
               setFocusedSession(sessionId);
+              setSessionPanelOpen(true);
             }}
           />
         </div>
         {selectedSongId && <MeetingChatBox songId={selectedSongId} />}
       </div>
-      {selectedSongId && <SessionPanel songId={selectedSongId} />}
+      {selectedSongId && sessionPanelOpen && (
+        <SessionPanel songId={selectedSongId} onClose={() => setSessionPanelOpen(false)} />
+      )}
+      {selectedSongId && !sessionPanelOpen && (
+        <button
+          type="button"
+          onClick={() => setSessionPanelOpen(true)}
+          aria-label="세션 패널 열기"
+          className="bg-surface border-border text-foreground-sub hover:bg-card hover:text-foreground top-s-3 right-s-3 absolute z-10 hidden h-8 w-8 items-center justify-center rounded-md border shadow-sm transition-colors lg:inline-flex"
+        >
+          <PanelRightOpen className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }
