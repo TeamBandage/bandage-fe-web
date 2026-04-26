@@ -43,6 +43,12 @@ type Actions = {
     },
   ) => string;
   deleteSong: (songId: string) => void;
+  updateSong: (
+    songId: string,
+    patch: Partial<Pick<Song, 'title' | 'artist' | 'album' | 'duration' | 'note'>> & {
+      sessions?: SessionDef[];
+    },
+  ) => void;
   addCustomSession: (songId: string, session: SessionDef) => void;
   addMeeting: (meeting: Omit<Meeting, 'id' | 'createdAt' | 'updatedAt'>) => string;
   /** 테스트/디버그용. seed 로 되돌림. */
@@ -171,6 +177,28 @@ export const useSetlistStore = create<SetlistStore>()(
           // 삭제 곡이 현재 선택 상태였다면 선택 해제.
           selectedSongId: state.selectedSongId === songId ? null : state.selectedSongId,
           focusedSessionId: state.selectedSongId === songId ? null : state.focusedSessionId,
+        })),
+
+      updateSong: (songId, patch) =>
+        set((state) => ({
+          songs: state.songs.map((s) => {
+            if (s.id !== songId) return s;
+            const next: Song = { ...s, ...patch };
+            // 세션 목록이 변경된 경우 applicants/confirmed 버킷을 새 세션 기준으로 재정렬:
+            // - 새로 추가된 세션은 빈 배열로 초기화
+            // - 제거된 세션은 데이터도 함께 정리 (확정자 데이터 유실 — 호출 측에서 사전 검증)
+            if (patch.sessions) {
+              const applicants: Record<string, string[]> = {};
+              const confirmed: Record<string, string[]> = {};
+              for (const sess of patch.sessions) {
+                applicants[sess.id] = s.applicants[sess.id] ?? [];
+                confirmed[sess.id] = s.confirmed[sess.id] ?? [];
+              }
+              next.applicants = applicants;
+              next.confirmed = confirmed;
+            }
+            return next;
+          }),
         })),
 
       addCustomSession: (songId, session) =>

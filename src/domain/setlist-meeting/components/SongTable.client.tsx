@@ -1,11 +1,14 @@
 'use client';
 
-import { Check, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Pencil, Trash2 } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 
 import type { Member, Song } from '../types';
 import { confirmedCount, displaySessionShort, isReady, totalNeed } from '../utils';
+
+export type SongSortKey = 'progress' | 'duration';
+export type SongSortDir = 'asc' | 'desc';
 
 import { SessionTrack } from './SessionTrack';
 
@@ -14,16 +17,30 @@ export interface SongTableProps {
   members: Member[];
   selectedSongId: string | null;
   currentUserId: string;
-  /** true 이면 모든 곡에 삭제 버튼 노출(매니저). false 이면 본인이 제안한 곡만. */
+  /** true 이면 모든 곡에 삭제/수정 버튼 노출(매니저). false 이면 본인이 제안한 곡만. */
   isManager?: boolean;
   /** 멤버 검색 매칭 결과 — 해당 userId 가 속한 세션에 빨간 점 표시. */
   matchedUserIds?: ReadonlySet<string>;
+  /** 정렬 상태(부모에서 관리). null 이면 원본 순서. */
+  sortKey?: SongSortKey | null;
+  sortDir?: SongSortDir;
+  onToggleSort?: (key: SongSortKey) => void;
   onSelectSong: (songId: string) => void;
+  onEditSong?: (songId: string) => void;
   onDeleteSong?: (songId: string) => void;
 }
 
 function memberName(members: Member[], id: string): string {
   return members.find((m) => m.id === id)?.name ?? '?';
+}
+
+function SortIcon({ active, dir }: { active: boolean; dir: SongSortDir }) {
+  if (!active) return <ArrowUpDown className="text-foreground-muted ml-s-1 inline h-3 w-3" />;
+  return dir === 'asc' ? (
+    <ArrowUp className="text-accent ml-s-1 inline h-3 w-3" />
+  ) : (
+    <ArrowDown className="text-accent ml-s-1 inline h-3 w-3" />
+  );
 }
 
 export function SongTable({
@@ -33,7 +50,11 @@ export function SongTable({
   currentUserId,
   isManager = false,
   matchedUserIds,
+  sortKey = null,
+  sortDir = 'asc',
+  onToggleSort,
   onSelectSong,
+  onEditSong,
   onDeleteSong,
 }: SongTableProps) {
   if (songs.length === 0) {
@@ -57,17 +78,43 @@ export function SongTable({
             <th className="px-s-3 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
               앨범
             </th>
-            <th className="px-s-3 py-s-2 pr-s-5 hidden w-20 text-right font-semibold tracking-wider md:table-cell">
-              재생 시간
+            <th className="px-s-3 py-s-2 pr-s-5 hidden w-24 text-right font-semibold tracking-wider md:table-cell">
+              {onToggleSort ? (
+                <button
+                  type="button"
+                  onClick={() => onToggleSort('duration')}
+                  className="hover:text-foreground inline-flex items-center font-semibold tracking-wider uppercase"
+                  aria-label="재생 시간 정렬"
+                >
+                  재생 시간
+                  <SortIcon active={sortKey === 'duration'} dir={sortDir} />
+                </button>
+              ) : (
+                <>재생 시간</>
+              )}
             </th>
             <th className="px-s-3 py-s-2 pl-s-4 min-w-[160px] font-semibold tracking-wider">
               세션
             </th>
-            <th className="px-s-3 py-s-2 w-28 text-right font-semibold tracking-wider">진행도</th>
+            <th className="px-s-3 py-s-2 w-36 text-right font-semibold tracking-wider">
+              {onToggleSort ? (
+                <button
+                  type="button"
+                  onClick={() => onToggleSort('progress')}
+                  className="hover:text-foreground inline-flex items-center font-semibold tracking-wider uppercase"
+                  aria-label="세션 모집 현황 정렬"
+                >
+                  세션 모집 현황
+                  <SortIcon active={sortKey === 'progress'} dir={sortDir} />
+                </button>
+              ) : (
+                <>세션 모집 현황</>
+              )}
+            </th>
             <th className="px-s-3 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
               추천자 의견
             </th>
-            <th className="px-s-3 py-s-2 w-10" aria-label="삭제" />
+            <th className="px-s-3 py-s-2 w-20" aria-label="작업" />
           </tr>
         </thead>
         <tbody>
@@ -142,7 +189,7 @@ export function SongTable({
                 <td className="px-s-3 py-s-2 align-middle">
                   <div className="gap-s-2 flex items-center justify-end">
                     <div
-                      className="bg-card border-border h-1.5 w-12 overflow-hidden rounded-full border"
+                      className="bg-card border-border h-1.5 w-20 overflow-hidden rounded-full border"
                       role="progressbar"
                       aria-valuenow={pct}
                       aria-valuemin={0}
@@ -170,22 +217,54 @@ export function SongTable({
                     <span className="text-foreground-muted">-</span>
                   )}
                 </td>
-                <td className="px-s-3 py-s-2 text-right align-middle">
-                  {(isManager || song.proposerId === currentUserId) && onDeleteSong && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm(`'${song.title}' 을 삭제하시겠습니까?`)) {
-                          onDeleteSong(song.id);
-                        }
-                      }}
-                      aria-label={`${song.title} 삭제`}
-                      className="text-foreground-muted hover:bg-danger-dim hover:text-danger inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+                <td className="px-s-3 py-s-2 align-middle">
+                  {(() => {
+                    const canMutate = isManager || song.proposerId === currentUserId;
+                    if (!canMutate) return null;
+                    // 확정된 곡(모든 세션이 정원만큼 확정)은 수정 비활성 — 확정자 데이터 보호.
+                    const editLocked = ready;
+                    return (
+                      <div className="gap-s-1 flex items-center justify-end">
+                        {onEditSong && (
+                          <button
+                            type="button"
+                            disabled={editLocked}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditSong(song.id);
+                            }}
+                            aria-label={
+                              editLocked
+                                ? `${song.title} 수정 불가 (확정 완료)`
+                                : `${song.title} 수정`
+                            }
+                            title={editLocked ? '확정된 곡은 수정할 수 없습니다.' : '곡 수정'}
+                            className={cn(
+                              'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                              editLocked
+                                ? 'text-foreground-muted/40 cursor-not-allowed'
+                                : 'text-foreground-muted hover:bg-accent-dim hover:text-accent',
+                            )}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {onDeleteSong && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteSong(song.id);
+                            }}
+                            aria-label={`${song.title} 삭제`}
+                            className="text-foreground-muted hover:bg-danger-dim hover:text-danger inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </td>
               </tr>
             );

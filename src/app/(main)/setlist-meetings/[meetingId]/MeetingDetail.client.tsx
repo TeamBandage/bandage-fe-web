@@ -4,14 +4,19 @@ import { PanelRightOpen, Plus, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddSongModal } from '@/domain/setlist-meeting/components/AddSongModal.client';
 import { MeetingChatBox } from '@/domain/setlist-meeting/components/MeetingChatBox.client';
 import { SessionPanel } from '@/domain/setlist-meeting/components/SessionPanel.client';
-import { SongTable } from '@/domain/setlist-meeting/components/SongTable.client';
+import {
+  SongTable,
+  type SongSortDir,
+  type SongSortKey,
+} from '@/domain/setlist-meeting/components/SongTable.client';
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
 import type { Song } from '@/domain/setlist-meeting/types';
-import { isReady } from '@/domain/setlist-meeting/utils';
+import { confirmedCount, isReady, totalNeed } from '@/domain/setlist-meeting/utils';
 import { cn } from '@/lib/cn';
 
 type Filter = 'all' | 'ready' | 'pending' | 'mine';
@@ -68,10 +73,38 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   const [memberQuery, setMemberQuery] = useState('');
   // 우측 세션 패널 토글. 곡을 새로 선택하면 자동 열림.
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
+  // 컬럼 정렬 — 재생시간 / 세션 모집 현황. 동일 컬럼 재클릭 시 asc↔desc 토글.
+  const [sortKey, setSortKey] = useState<SongSortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SongSortDir>('asc');
+  // 곡 수정 / 삭제 다이얼로그 상태.
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const [pendingDeleteSong, setPendingDeleteSong] = useState<Song | null>(null);
+  // 채팅 영역 staggered exit — 우측 패널이 먼저 슬라이드 아웃, 채팅은 75ms 늦게.
+  const [chatRendered, setChatRendered] = useState(false);
+  const [chatExiting, setChatExiting] = useState(false);
 
   useEffect(() => {
     setSelectedMeeting(meetingId);
   }, [meetingId, setSelectedMeeting]);
+
+  // 채팅 mount/unmount 와 transition 클래스 제어.
+  // - 열릴 때: 즉시 렌더 + translate-y-0 으로 등장(스냅)
+  // - 닫힐 때: chatExiting=true → translate-y-full + delay-75 로 우측 패널 보다 늦게 슬라이드 다운 → 그 후 unmount
+  useEffect(() => {
+    if (sessionPanelOpen && selectedSongId) {
+      setChatExiting(false);
+      setChatRendered(true);
+      return;
+    }
+    if (chatRendered) {
+      setChatExiting(true);
+      const t = setTimeout(() => {
+        setChatRendered(false);
+        setChatExiting(false);
+      }, 280);
+      return () => clearTimeout(t);
+    }
+  }, [sessionPanelOpen, selectedSongId, chatRendered]);
 
   const stats = useMemo(() => {
     const total = allSongs.length;
@@ -86,7 +119,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
     return new Set(members.filter((m) => m.name.toLowerCase().includes(t)).map((m) => m.id));
   }, [members, memberQuery]);
 
-  const visible = useMemo(() => {
+  const filtered = useMemo(() => {
     let result = applySearch(applyFilter(allSongs, filter, currentUserId), query);
     if (matchedUserIds.size > 0) {
       // 곡 필터 + 멤버 필터 AND: 매칭 유저가 어떤 세션이든 들어있는 곡만.
@@ -98,6 +131,35 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
     }
     return result;
   }, [allSongs, filter, currentUserId, query, matchedUserIds]);
+
+  // 컬럼 정렬 적용. progress = confirmed/totalNeed 비율, duration = mm*60+ss 초.
+  const visible = useMemo(() => {
+    if (!sortKey) return filtered;
+    const score = (s: Song): number => {
+      if (sortKey === 'duration') {
+        if (!s.duration) return Number.NEGATIVE_INFINITY;
+        const m = s.duration.match(/^(\d{1,2}):(\d{2})$/);
+        if (!m) return Number.NEGATIVE_INFINITY;
+        return parseInt(m[1]!, 10) * 60 + parseInt(m[2]!, 10);
+      }
+      const total = totalNeed(s);
+      return total === 0 ? 0 : confirmedCount(s) / total;
+    };
+    return [...filtered].sort((a, b) => {
+      const av = score(a);
+      const bv = score(b);
+      return sortDir === 'asc' ? av - bv : bv - av;
+    });
+  }, [filtered, sortKey, sortDir]);
+
+  const handleToggleSort = (key: SongSortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
 
   // ↑/↓ 키보드 네비게이션 — 입력 필드 포커스 시에는 무시. 이동 시 focusedSession 정리(overview 모드).
   useEffect(() => {
@@ -210,6 +272,9 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             currentUserId={currentUserId}
             isManager={isManager}
             matchedUserIds={matchedUserIds}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onToggleSort={handleToggleSort}
             onSelectSong={(id) => {
               // 메인 행 클릭은 항상 overview 모드로 진입. 세션 focus 는 우측 패널에서만.
               if (id === selectedSongId) {
@@ -220,13 +285,24 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
               setFocusedSession(null);
               setSessionPanelOpen(true);
             }}
-            onDeleteSong={(id) => deleteSong(id)}
+            onEditSong={(id) => {
+              const s = visible.find((x) => x.id === id);
+              if (s) setEditingSong(s);
+            }}
+            onDeleteSong={(id) => {
+              const s = visible.find((x) => x.id === id);
+              if (s) setPendingDeleteSong(s);
+            }}
           />
         </div>
-        {/* 메인 컬럼 하단 채팅 — 우측 패널과 sessionPanelOpen 으로 동기 토글.
-            우측 absolute 패널(z-20)보다 위에 보이도록 relative z-30. */}
-        {selectedSongId && sessionPanelOpen && (
-          <div className="relative z-30">
+        {/* 메인 컬럼 하단 채팅. 닫힐 때는 staggered exit (우측 패널 먼저, 채팅은 75ms 후). */}
+        {chatRendered && selectedSongId && (
+          <div
+            className={cn(
+              'relative z-30 transition-transform duration-200 ease-out',
+              chatExiting ? 'pointer-events-none translate-y-full delay-75' : 'translate-y-0',
+            )}
+          >
             <MeetingChatBox songId={selectedSongId} />
           </div>
         )}
@@ -259,6 +335,40 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
           <PanelRightOpen className="h-4 w-4" />
         </button>
       )}
+
+      {/* 곡 수정 모달 — 외부에서 open 제어. song 이 있으면 수정 모드로 동작. */}
+      {editingSong && (
+        <AddSongModal
+          meetingId={meetingId}
+          song={editingSong}
+          open={true}
+          onOpenChange={(o) => {
+            if (!o) setEditingSong(null);
+          }}
+        />
+      )}
+
+      {/* 삭제 확인 다이얼로그 — 브라우저 기본 confirm 대신 디자인 토큰 적용. */}
+      <ConfirmDialog
+        open={pendingDeleteSong !== null}
+        onOpenChange={(o) => {
+          if (!o) setPendingDeleteSong(null);
+        }}
+        title="곡 삭제"
+        description={
+          pendingDeleteSong ? (
+            <>
+              <strong className="text-foreground">{pendingDeleteSong.title}</strong> 곡을 정말
+              삭제하시겠습니까? 지원/확정 정보도 함께 사라집니다.
+            </>
+          ) : null
+        }
+        confirmLabel="삭제"
+        tone="danger"
+        onConfirm={() => {
+          if (pendingDeleteSong) deleteSong(pendingDeleteSong.id);
+        }}
+      />
     </div>
   );
 }
