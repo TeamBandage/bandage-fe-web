@@ -7,6 +7,7 @@ import { useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
+import { MyItemMarker, myItemBorder } from '@/components/ui/my-item-marker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BandCreateModal } from '@/domain/band/components/BandCreateModal.client';
 import { BandRoleBadge } from '@/domain/band/components/BandRoleBadge';
@@ -28,10 +29,13 @@ function BandRow({
   band,
   pathname,
   myRole,
+  showMineMarker = false,
 }: {
   band: BandInfoResponse;
   pathname: string;
   myRole?: MyBandInfoResponse['myRole'];
+  /** 탐색 탭에서 본인이 이미 가입한 밴드일 때 우상단 칩 + 좌측 보더 표시. */
+  showMineMarker?: boolean;
 }) {
   const href = ROUTES.BAND_DETAIL(band.bandId);
   const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -44,7 +48,8 @@ function BandRow({
         className={listItemClasses(
           active,
           DOMAIN_LIST_SELECTED_TONES.band,
-          'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+          'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ' +
+            myItemBorder(showMineMarker),
         )}
       >
         <IconTile icon={<BandIcon />} size="sm" tone={DOMAIN_TONES.band} />
@@ -59,6 +64,7 @@ function BandRow({
             </div>
           )}
         </div>
+        {showMineMarker && <MyItemMarker label="내 밴드" />}
       </Link>
     </li>
   );
@@ -164,7 +170,13 @@ export function BandsListPane() {
                 {filtered.map((b) => {
                   const myEntry = myBands?.find((mb) => mb.bandId === b.bandId);
                   return (
-                    <BandRow key={b.bandId} band={b} pathname={pathname} myRole={myEntry?.myRole} />
+                    <BandRow
+                      key={b.bandId}
+                      band={b}
+                      pathname={pathname}
+                      myRole={myEntry?.myRole}
+                      showMineMarker={!!myEntry}
+                    />
                   );
                 })}
               </ul>
