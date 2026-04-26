@@ -1,14 +1,14 @@
+import { redirect } from 'next/navigation';
+
+import { SEED_MEETINGS } from '@/domain/setlist-meeting/mock/seed';
+import { ROUTES } from '@/global/config/routes';
+
 /**
- * 선곡 회의 라우트 placeholder.
- * Task 4 (마스터 패널) 머지 후 ListPane 진입점으로 대체된다.
+ * /setlist-meetings 진입 시 첫 번째 mock 회의로 자동 redirect.
+ * 빈 상태 UX 는 layout 의 children empty fallback 에서 처리.
  */
 export default function SetlistMeetingsPage() {
-  return (
-    <div className="px-s-5 py-s-6">
-      <h1 className="text-title font-bold">선곡 회의</h1>
-      <p className="text-foreground-muted text-body mt-s-3">
-        곧 회의 목록이 표시됩니다. (마스터 패널 구현 대기 중)
-      </p>
-    </div>
-  );
+  const first = SEED_MEETINGS[0];
+  if (first) redirect(ROUTES.SETLIST_MEETING_DETAIL(first.id));
+  return null;
 }
