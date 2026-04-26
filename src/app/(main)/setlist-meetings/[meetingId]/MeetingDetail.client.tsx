@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MeetingChatBox } from '@/domain/setlist-meeting/components/MeetingChatBox.client';
 import { SessionPanel } from '@/domain/setlist-meeting/components/SessionPanel.client';
 import { SongTable } from '@/domain/setlist-meeting/components/SongTable.client';
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
@@ -146,6 +147,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             }}
           />
         </div>
+        {selectedSongId && <MeetingChatBox songId={selectedSongId} />}
       </div>
       {selectedSongId && <SessionPanel songId={selectedSongId} />}
     </div>
