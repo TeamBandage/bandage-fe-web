@@ -1,6 +1,6 @@
 'use client';
 
-import { Music2, Search } from 'lucide-react';
+import { Check, Music2, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -172,7 +172,7 @@ export function PracticeCreateWizard() {
                         aria-pressed={selected}
                         className={
                           'border-border bg-card hover:bg-card-hover gap-s-3 px-s-4 py-s-3 flex w-full items-center rounded-md border text-left transition-colors ' +
-                          (selected ? 'border-accent bg-accent-dim' : '')
+                          (selected ? 'border-l-accent bg-accent-dim border-accent border-l-4' : '')
                         }
                       >
                         <span className="bg-accent-dim text-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
@@ -190,6 +190,14 @@ export function PracticeCreateWizard() {
                                   : '검색에서 추가'}
                           </div>
                         </div>
+                        {selected && (
+                          <span
+                            className="bg-accent text-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                            aria-label="선택됨"
+                          >
+                            <Check className="h-4 w-4" aria-hidden="true" />
+                          </span>
+                        )}
                       </button>
                     </li>
                   );
@@ -234,7 +242,7 @@ export function PracticeCreateWizard() {
                   : 'text-foreground-sub border-transparent')
               }
             >
-              직접 입력 (자작곡)
+              직접 입력
             </button>
           </div>
 
@@ -267,11 +275,11 @@ export function PracticeCreateWizard() {
                           onClick={() => setPicked(s)}
                           aria-pressed={isPick}
                           className={
-                            'border-border bg-card hover:bg-card-hover px-s-4 py-s-3 flex w-full items-center justify-between rounded-md border text-left transition-colors ' +
-                            (isPick ? 'border-accent bg-accent-dim' : '')
+                            'gap-s-3 border-border bg-card hover:bg-card-hover px-s-4 py-s-3 flex w-full items-center rounded-md border text-left transition-colors ' +
+                            (isPick ? 'border-l-accent bg-accent-dim border-accent border-l-4' : '')
                           }
                         >
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="text-body truncate font-semibold">{s.title}</div>
                             <div className="text-foreground-muted text-caption truncate">
                               {s.artist} · {s.album}
@@ -280,6 +288,14 @@ export function PracticeCreateWizard() {
                           <span className="text-foreground-muted text-micro shrink-0">
                             {Math.floor(s.duration / 60)}:{String(s.duration % 60).padStart(2, '0')}
                           </span>
+                          {isPick && (
+                            <span
+                              className="bg-accent text-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                              aria-label="선택됨"
+                            >
+                              <Check className="h-4 w-4" aria-hidden="true" />
+                            </span>
+                          )}
                         </button>
                       </li>
                     );
