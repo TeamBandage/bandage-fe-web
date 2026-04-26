@@ -3240,7 +3240,7 @@
         "testStrategy": "1. 밴드 탐색 탭에서 소속 밴드 카드 → 좌측 보더 + 칩 노출\n2. 비소속 밴드 카드 → 시각 강조 없음\n3. 공연 탐색 탭 동일 동작\n4. 모바일 뷰포트(<960px)에서 칩만 표시, 보더 미적용\n5. 「내 밴드」탭 에서는 중복 표시 제거 (이미 전부 내 밴드)\n6. 스크린리더 접근성: 칩에 적절한 aria-label",
         "priority": "medium",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3248,9 +3248,10 @@
             "description": "밴드/공연 탐색 탭에서 사용자 소속 항목임을 표시하는 칩 형태의 마커 컴포넌트를 구현한다.",
             "dependencies": [],
             "details": "src/components/ui/my-item-marker.tsx 파일 생성. Props로 type: 'band' | 'performance' 받음. 기존 Badge 컴포넌트(src/components/ui/badge.tsx)의 accent variant 스타일(bg-accent-dim text-accent-hi)을 참고하여 구현. 렌더링: type에 따라 '내 밴드' 또는 '내 공연' 라벨 표시. 스타일: bg-accent-soft(globals.css에 정의된 oklch(0.62 0.22 250 / 0.08)) + text-accent + text-micro(11px) + font-semibold + px-s-2 py-0.5 rounded. 스크린리더 접근성을 위해 aria-label 추가 (예: '현재 소속 중').",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Vitest 단위 테스트: type='band'일 때 '내 밴드' 텍스트 렌더링 확인, type='performance'일 때 '내 공연' 텍스트 렌더링 확인. aria-label 속성 존재 확인. Tailwind 클래스 적용 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:15:47.708Z"
           },
           {
             "id": 2,
@@ -3260,9 +3261,10 @@
               1
             ],
             "details": "src/lib/list-item-styles.ts 파일 수정. listItemClasses 함수 시그니처에 isMine?: boolean 파라미터 추가. PRD 요구사항에 따라 모바일에서는 보더 미표시, lg(960px) 이상에서만 좌측 2px accent 보더 표시: isMine이 true일 때 'lg:border-l-2 lg:border-accent' 클래스 추가. cn 유틸로 기존 클래스와 병합. 기존 호출부에 영향 없도록 기본값 false 설정.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Vitest 단위 테스트: isMine=false일 때 기존 동작 동일 확인. isMine=true일 때 'lg:border-l-2 lg:border-accent' 클래스 포함 확인. selected와 isMine 조합 시 모든 클래스가 올바르게 병합되는지 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:15:51.733Z"
           },
           {
             "id": 3,
@@ -3273,9 +3275,10 @@
               2
             ],
             "details": "src/app/(main)/bands/BandsListPane.client.tsx 파일 수정. BandRow 컴포넌트에 isMine 변수 추가: const isMine = !!myRole. listItemClasses 호출 시 isMine 파라미터 전달. MyItemMarker 임포트 후, isMine이 true인 경우 카드 우상단에 <MyItemMarker type=\"band\" /> 표시. 마커 위치: 기존 콘텐츠 div를 relative로 감싸고 MyItemMarker를 absolute -top-1 -right-1로 배치. 중요: '내 밴드' 탭에서는 모든 항목이 이미 내 밴드이므로 MyItemMarker 미표시 (중복 방지). discover 탭에서만 isMine 시각 강조 적용.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "수동 테스트: 1) 탐색 탭에서 소속 밴드 카드에 '내 밴드' 칩 + lg 뷰포트에서 좌측 보더 노출 확인. 2) 비소속 밴드 카드에 시각 강조 없음 확인. 3) 모바일(<960px)에서 칩만 표시, 보더 미적용 확인. 4) '내 밴드' 탭에서는 MyItemMarker 미표시 확인. 5) 스크린리더로 aria-label 읽힘 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:15:55.698Z"
           },
           {
             "id": 4,
@@ -3286,12 +3289,13 @@
               2
             ],
             "details": "src/app/(main)/performances/PerformancesListPane.client.tsx 파일 수정. useMyPerformances 결과에서 performanceId Set 생성하여 O(1) 조회 지원: const myPerformanceIds = useMemo(() => new Set(all.map(p => p.performanceId)), [all]). PerformanceRow에 isMine prop 추가. listItemClasses 호출 시 isMine 파라미터 전달. MyItemMarker 임포트 후, isMine이 true인 경우 카드 우상단에 <MyItemMarker type=\"performance\" /> 표시. discover 탭에서 렌더링 시 myPerformanceIds.has(p.performanceId)로 내 공연 여부 판정. 참고: 현재 PerformanceListItemResponse에는 myRole 같은 필드가 없어 별도 myPerformanceIds Set 매칭 필요. '내 공연' 탭에서는 MyItemMarker 미표시 (중복 방지).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "수동 테스트: 1) 탐색 탭에서 내 공연 카드에 '내 공연' 칩 + lg 뷰포트에서 좌측 보더 노출 확인. 2) 비소속 공연 카드에 시각 강조 없음 확인. 3) 모바일(<960px)에서 칩만 표시, 보더 미적용 확인. 4) '내 공연' 탭에서는 MyItemMarker 미표시 확인. 5) 스크린리더로 aria-label 읽힘 확인.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:15:59.718Z"
           }
         ],
-        "updatedAt": "2026-04-26T01:13:41.376Z"
+        "updatedAt": "2026-04-26T01:15:59.718Z"
       },
       {
         "id": "4",
@@ -3301,7 +3305,7 @@
         "testStrategy": "1. LEADER 역할로 밴드 상세 진입 → \"밴드 설정\" 버튼 노출 + 클릭 시 모달 오픈\n2. 일반 MEMBER 역할 → 버튼 미노출\n3. 정보 탭: 밴드명 수정 후 저장 → API 호출 + 성공 토스트 + 상세 갱신\n4. 사진 탭: URL 입력 → 미리보기 반영 (실서버 검증 필요)\n5. 삭제 탭: 밴드명 틀리게 입력 → 삭제 버튼 비활성, 정확히 입력 → 활성\n6. 삭제 성공 시 /bands 리다이렉트 + 목록에서 해당 밴드 제거\n7. API 4xx/5xx 에러 시 토스트 표시",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -3349,7 +3353,8 @@
             "testStrategy": "1. LEADER 역할로 밴드 상세 진입 → '밴드 설정' 버튼 노출 확인\n2. 버튼 클릭 → BandSettingsModal 오픈 확인\n3. 일반 MEMBER 역할 → 버튼 미노출 확인\n4. 정보 수정 후 저장 → API 호출 + 상세 화면 데이터 갱신\n5. 삭제 성공 → /bands 리다이렉트 + 목록에서 해당 밴드 제거 확인\n6. API 에러 시 토스트 메시지 표시 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-26T01:17:07.171Z"
       },
       {
         "id": "5",
@@ -3362,7 +3367,7 @@
           "1",
           "2"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -3409,7 +3414,8 @@
             "testStrategy": "1. 합주 마법사 Step 4에서 '합주 만들기' 클릭 후 강화 토스트 표시 확인\n2. 토스트에 '합주가 생성되었습니다' 제목 표시\n3. 토스트에 '보러가기' CTA 버튼 표시\n4. CTA 버튼 클릭 시 합주 상세 페이지로 이동 (이미 해당 페이지일 수 있음)\n5. 토스트 5초 후 자동 닫힘\n6. 공연 생성 시 동일 동작 확인\n7. 기존 toast.success 호출이 제거되었는지 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-26T01:20:42.032Z"
       },
       {
         "id": "6",
@@ -3581,9 +3587,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-26T01:13:41.381Z",
+      "lastModified": "2026-04-26T01:20:42.036Z",
       "taskCount": 8,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "mvp-1-fix-v4"
       ]
