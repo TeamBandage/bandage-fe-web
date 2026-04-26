@@ -60,6 +60,8 @@ export type Meeting = {
   managerId: string;
   createdAt: string;
   updatedAt: string;
+  /** 매니저가 선곡을 확정한 시각(ISO). null/undefined 면 진행 중. */
+  lockedAt?: string | null;
 };
 
 export type SessionState = 'full' | 'partial' | 'empty';

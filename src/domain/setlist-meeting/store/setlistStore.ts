@@ -51,6 +51,10 @@ type Actions = {
   ) => void;
   addCustomSession: (songId: string, session: SessionDef) => void;
   addMeeting: (meeting: Omit<Meeting, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  /** 매니저가 선곡 확정 — 곡 추가/수정/삭제 잠금. */
+  lockMeeting: (meetingId: string) => void;
+  /** 매니저가 회의 재개 — 잠금 해제. */
+  unlockMeeting: (meetingId: string) => void;
   /** 테스트/디버그용. seed 로 되돌림. */
   reset: () => void;
 };
@@ -222,6 +226,18 @@ export const useSetlistStore = create<SetlistStore>()(
         set((state) => ({ meetings: [...state.meetings, next], selectedMeetingId: id }));
         return id;
       },
+
+      lockMeeting: (meetingId) =>
+        set((state) => ({
+          meetings: state.meetings.map((m) =>
+            m.id === meetingId ? { ...m, lockedAt: new Date().toISOString() } : m,
+          ),
+        })),
+
+      unlockMeeting: (meetingId) =>
+        set((state) => ({
+          meetings: state.meetings.map((m) => (m.id === meetingId ? { ...m, lockedAt: null } : m)),
+        })),
 
       reset: () => set({ ...initial }),
     }),

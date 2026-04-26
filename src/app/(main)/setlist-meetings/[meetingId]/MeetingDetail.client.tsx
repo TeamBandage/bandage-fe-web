@@ -1,6 +1,6 @@
 'use client';
 
-import { PanelRightOpen, Plus, Search } from 'lucide-react';
+import { CheckCircle2, Lock, PanelRightOpen, Plus, RotateCcw, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
   type SongSortKey,
 } from '@/domain/setlist-meeting/components/SongTable.client';
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
+import { useToast } from '@/hooks/useToast';
 import type { Song } from '@/domain/setlist-meeting/types';
 import { confirmedCount, isReady, totalNeed } from '@/domain/setlist-meeting/utils';
 import { cn } from '@/lib/cn';
@@ -65,8 +66,13 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   const setSelectedSong = useSetlistStore((s) => s.setSelectedSong);
   const setFocusedSession = useSetlistStore((s) => s.setFocusedSession);
   const deleteSong = useSetlistStore((s) => s.deleteSong);
+  const lockMeeting = useSetlistStore((s) => s.lockMeeting);
+  const unlockMeeting = useSetlistStore((s) => s.unlockMeeting);
 
   const isManager = meeting ? meeting.managerId === currentUserId : false;
+  const isLocked = !!meeting?.lockedAt;
+  const [pendingLockAction, setPendingLockAction] = useState<'lock' | 'unlock' | null>(null);
+  const toast = useToast();
 
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -256,8 +262,8 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
               />
             </div>
-            {isManager && (
-              <div className="md:ml-auto">
+            <div className="gap-s-2 flex items-center md:ml-auto">
+              {isManager && !isLocked && (
                 <AddSongModal
                   meetingId={meetingId}
                   trigger={
@@ -266,9 +272,41 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                     </Button>
                   }
                 />
-              </div>
-            )}
+              )}
+              {isManager && !isLocked && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setPendingLockAction('lock')}
+                  aria-label="선곡 확정"
+                  className="bg-success hover:bg-success/90 text-white"
+                >
+                  <CheckCircle2 className="h-4 w-4" /> 선곡 확정
+                </Button>
+              )}
+              {isManager && isLocked && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setPendingLockAction('unlock')}
+                  aria-label="회의 재개"
+                >
+                  <RotateCcw className="h-4 w-4" /> 회의 재개
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* 잠금 안내 배너 — 모든 멤버에게 노출. */}
+          {isLocked && (
+            <div className="bg-success-dim border-success/30 mt-s-3 px-s-3 py-s-2 gap-s-2 text-caption text-success flex items-center rounded-md border">
+              <Lock className="h-4 w-4 shrink-0" />
+              <span className="font-semibold">선곡이 확정된 회의입니다.</span>
+              <span className="text-foreground-sub">
+                곡 추가/수정/삭제는 매니저가 회의를 재개할 때까지 잠겨 있습니다.
+              </span>
+            </div>
+          )}
         </header>
 
         <div className="flex-1 overflow-y-auto">
@@ -278,6 +316,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             selectedSongId={selectedSongId}
             currentUserId={currentUserId}
             isManager={isManager}
+            isLocked={isLocked}
             matchedUserIds={matchedUserIds}
             sortKey={sortKey}
             sortDir={sortDir}
@@ -372,6 +411,30 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
         tone="danger"
         onConfirm={() => {
           if (pendingDeleteSong) deleteSong(pendingDeleteSong.id);
+        }}
+      />
+
+      {/* 선곡 확정 / 회의 재개 확인 다이얼로그 — 매니저 전용 액션. */}
+      <ConfirmDialog
+        open={pendingLockAction !== null}
+        onOpenChange={(o) => {
+          if (!o) setPendingLockAction(null);
+        }}
+        title={pendingLockAction === 'lock' ? '선곡 확정' : '회의 재개'}
+        description={
+          pendingLockAction === 'lock'
+            ? '선곡을 확정하면 모든 멤버의 곡 추가·수정·삭제가 잠깁니다. 진행하시겠습니까?'
+            : '회의를 재개하면 다시 곡 추가·수정·삭제가 가능해집니다. 진행하시겠습니까?'
+        }
+        confirmLabel={pendingLockAction === 'lock' ? '확정' : '재개'}
+        onConfirm={() => {
+          if (pendingLockAction === 'lock') {
+            lockMeeting(meetingId);
+            toast.success('선곡이 확정되었습니다.');
+          } else if (pendingLockAction === 'unlock') {
+            unlockMeeting(meetingId);
+            toast.info('회의가 재개되었습니다.');
+          }
         }}
       />
     </div>
