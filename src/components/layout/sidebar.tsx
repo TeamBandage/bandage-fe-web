@@ -10,7 +10,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import { GuardedLink as Link } from '@/global/navigation/guarded-link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

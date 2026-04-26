@@ -13,6 +13,7 @@ import { useCreatePractice } from '@/domain/practice/hooks/useCreatePractice';
 import { useSearchSongs } from '@/domain/practice-song/hooks/useSearchSongs';
 import type { SongSearchItem } from '@/domain/practice-song/types';
 import { ROUTES } from '@/global/config/routes';
+import { useRegisterDirtyForm } from '@/global/navigation/dirty-form-context';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToast } from '@/hooks/useToast';
 
@@ -50,6 +51,18 @@ export function PracticeCreateWizard() {
   const [venue, setVenue] = useState('');
   const [startAt, setStartAt] = useState('');
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
+
+  // Navigation Guard 등록 — 어느 단계든 입력값이 있으면 dirty.
+  const dirty =
+    step > 0 ||
+    !!bandId ||
+    !!picked ||
+    customTitle.length > 0 ||
+    customArtist.length > 0 ||
+    title.length > 0 ||
+    venue.length > 0 ||
+    !!startAt;
+  useRegisterDirtyForm('practice-create-wizard', dirty);
 
   const mutation = useCreatePractice({
     onSuccess: (data) => {
