@@ -28,8 +28,9 @@ export function findSession(song: Song, sessionId: string): SessionDef | undefin
 }
 
 /**
- * 곡 내에서 보여줄 세션 약어. 같은 패밀리(V↔V2, G↔G2, D↔D2)가 함께 있으면
- * 기본 세션을 'V1' / 'G1' / 'D1' 로 표기해 시각적 짝을 맞춘다. 단일이면 'V'/'G'/'D' 유지.
+ * 곡 내에서 보여줄 세션 약어.
+ * - V↔V2, G↔G2, D↔D2 가 함께 있으면 기본을 V1/G1/D1 로 표기.
+ * - S1/S2 는 기본 'S' 가 별도로 없으므로 둘 중 하나만 있으면 'S' 로, 둘 다 있으면 S1/S2 그대로.
  */
 export function displaySessionShort(session: SessionDef, all: SessionDef[]): string {
   const pairs: Array<[string, string]> = [
@@ -40,5 +41,12 @@ export function displaySessionShort(session: SessionDef, all: SessionDef[]): str
   for (const [base, sibling] of pairs) {
     if (session.id === base && all.some((s) => s.id === sibling)) return `${base}1`;
   }
+
+  const synthIds = ['S1', 'S2'];
+  if (synthIds.includes(session.id)) {
+    const synthsPresent = all.filter((s) => synthIds.includes(s.id));
+    if (synthsPresent.length === 1) return 'S';
+  }
+
   return session.short;
 }
