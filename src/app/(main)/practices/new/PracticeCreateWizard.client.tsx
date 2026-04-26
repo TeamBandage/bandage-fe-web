@@ -4,6 +4,8 @@ import { Music2, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { BandPickerModal } from '@/domain/band/components/BandPickerModal.client';
+import type { BandInfoResponse, MyBandInfoResponse } from '@/domain/band/types';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
@@ -36,6 +38,9 @@ export function PracticeCreateWizard() {
   // Step 1 상태
   const [bandId, setBandId] = useState<string>('');
   const myBands = useMyBands(50);
+  const [bandPickerOpen, setBandPickerOpen] = useState(false);
+  // 검색 모달에서 추가된 외부 밴드 (myBands 그리드에 안 보이는 것).
+  const [extraBands, setExtraBands] = useState<BandInfoResponse[]>([]);
 
   // Step 2 상태
   const [songMode, setSongMode] = useState<'picked' | 'custom'>('picked');
@@ -153,38 +158,52 @@ export function PracticeCreateWizard() {
               참여 중인 밴드가 없습니다. 먼저 밴드에 가입하거나 새 밴드를 만들어 주세요.
             </p>
           ) : (
-            <ul className="gap-s-2 grid grid-cols-1 sm:grid-cols-2">
-              {myBands.data.map((b) => {
-                const selected = b.bandId === bandId;
-                return (
-                  <li key={b.bandId}>
-                    <button
-                      type="button"
-                      onClick={() => setBandId(b.bandId)}
-                      aria-pressed={selected}
-                      className={
-                        'border-border bg-card hover:bg-card-hover gap-s-3 px-s-4 py-s-3 flex w-full items-center rounded-md border text-left transition-colors ' +
-                        (selected ? 'border-accent bg-accent-dim' : '')
-                      }
-                    >
-                      <span className="bg-accent-dim text-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
-                        <Music2 className="h-4 w-4" aria-hidden="true" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-body truncate font-semibold">{b.bandName}</div>
-                        <div className="text-foreground-muted text-caption truncate">
-                          {b.myRole === 'LEADER'
-                            ? '리더'
-                            : b.myRole === 'ADMIN'
-                              ? '관리자'
-                              : '멤버'}
+            <>
+              <ul className="gap-s-2 grid grid-cols-1 sm:grid-cols-2">
+                {/* 최대 6 개 + 검색 모달로 추가된 외부 밴드 */}
+                {[...myBands.data.slice(0, 6), ...extraBands].map((b) => {
+                  const selected = b.bandId === bandId;
+                  const myRole = (b as MyBandInfoResponse).myRole;
+                  return (
+                    <li key={b.bandId}>
+                      <button
+                        type="button"
+                        onClick={() => setBandId(b.bandId)}
+                        aria-pressed={selected}
+                        className={
+                          'border-border bg-card hover:bg-card-hover gap-s-3 px-s-4 py-s-3 flex w-full items-center rounded-md border text-left transition-colors ' +
+                          (selected ? 'border-accent bg-accent-dim' : '')
+                        }
+                      >
+                        <span className="bg-accent-dim text-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
+                          <Music2 className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-body truncate font-semibold">{b.bandName}</div>
+                          <div className="text-foreground-muted text-caption truncate">
+                            {myRole === 'LEADER'
+                              ? '리더'
+                              : myRole === 'ADMIN'
+                                ? '관리자'
+                                : myRole === 'MEMBER'
+                                  ? '멤버'
+                                  : '검색에서 추가'}
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setBandPickerOpen(true)}
+                className="w-full"
+              >
+                <Search className="h-4 w-4" /> 다른 밴드 검색해서 찾기
+              </Button>
+            </>
           )}
         </section>
       )}
@@ -411,6 +430,23 @@ export function PracticeCreateWizard() {
           </Button>
         )}
       </footer>
+
+      <BandPickerModal
+        open={bandPickerOpen}
+        onOpenChange={setBandPickerOpen}
+        title="밴드 검색"
+        onConfirm={(bands) => {
+          const picked = bands[0];
+          if (!picked) return;
+          // 이미 표시 중이면 무시. 아니면 extraBands 에 추가.
+          const isInMine = myBands.data?.slice(0, 6).some((b) => b.bandId === picked.bandId);
+          const isInExtra = extraBands.some((b) => b.bandId === picked.bandId);
+          if (!isInMine && !isInExtra) {
+            setExtraBands((prev) => [...prev, picked]);
+          }
+          setBandId(picked.bandId);
+        }}
+      />
     </div>
   );
 }

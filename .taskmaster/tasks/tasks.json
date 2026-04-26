@@ -3367,7 +3367,7 @@
           "1",
           "2"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3375,9 +3375,10 @@
             "description": "합주/공연 마법사의 검토 단계에서 사용할 재사용 가능한 요약 카드 컴포넌트를 구현한다.",
             "dependencies": [],
             "details": "## 구현 파일\n`src/components/ui/wizard-summary-card.tsx`\n\n## Props 인터페이스\n```typescript\ntype SummaryItem = {\n  label: string;\n  value: string;\n  highlight?: boolean; // true면 text-accent font-bold 적용\n};\n\ntype SummarySection = {\n  title: string;\n  items: SummaryItem[];\n  onEdit?: () => void;\n};\n\ntype WizardSummaryCardProps = {\n  sections: SummarySection[];\n  className?: string;\n};\n```\n\n## 렌더링 구조\n- 전체: `space-y-s-4` 컨테이너\n- 섹션별: `bg-card border-border rounded-md border p-s-4`\n- 헤더: `flex justify-between items-center mb-s-2`\n  - 제목: `text-body font-semibold`\n  - 수정 버튼: `text-accent text-caption hover:underline` (onEdit 있을 때만)\n- 항목: `flex justify-between text-caption py-s-1`\n  - 라벨: `text-foreground-muted`\n  - 값: 기본 `text-foreground`, highlight면 `text-accent font-bold`\n\n## 접근성\n- 수정 버튼에 `aria-label=\"{섹션명} 수정\"` 추가\n- 섹션별 `role=\"group\"` + `aria-labelledby`\n\n## 기존 Card 컴포넌트 활용\n기존 `src/components/ui/card.tsx`의 Card 컴포넌트를 활용하거나, 디자인 일관성을 위해 동일한 스타일링 패턴 적용",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 빈 sections 배열 전달 시 빈 컨테이너 렌더링\n2. 단일 섹션 + 복수 항목 렌더링 확인\n3. 복수 섹션 렌더링 확인\n4. onEdit 콜백 전달 시 '수정' 버튼 표시 + 클릭 핸들러 호출\n5. onEdit 미전달 시 '수정' 버튼 미표시\n6. highlight: true 항목에 accent 색상 + bold 스타일 적용\n7. 키보드 접근성: Tab으로 수정 버튼 포커스 가능",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:24:43.524Z"
           },
           {
             "id": 2,
@@ -3387,9 +3388,10 @@
               1
             ],
             "details": "## 수정 파일\n`src/app/(main)/practices/new/PracticeCreateWizard.client.tsx`\n\n## 변경 사항\n\n### 1. STEPS 배열 확장\n```typescript\nconst STEPS = ['밴드 선택', '곡 선택', '일정 설정', '검토'] as const;\n```\n\n### 2. step 타입 확장\n```typescript\nconst [step, setStep] = useState<0 | 1 | 2 | 3>(0);\n```\n\n### 3. Step 3(메타) 완료 후 Step 4로 이동\n- `next()` 함수에서 step 2 → 3 전환 로직 추가\n- `canNext` 조건 수정: step 2일 때 startAt + durationMinutes 검증 후 next 가능\n\n### 4. Step 4 검토 섹션 추가\n```tsx\n{step === 3 && (\n  <section data-slot=\"wizard-step-review\">\n    <WizardSummaryCard\n      sections={[\n        {\n          title: '밴드',\n          items: [{ label: '선택한 밴드', value: selectedBandName }],\n          onEdit: () => setStep(0),\n        },\n        {\n          title: '곡',\n          items: [\n            { label: '곡 제목', value: songTitle },\n            { label: '아티스트', value: songArtist },\n          ],\n          onEdit: () => setStep(1),\n        },\n        {\n          title: '일정',\n          items: [\n            { label: '시작 시각', value: formatKst(startAt), highlight: true },\n            { label: '소요 시간', value: `${durationMinutes}분` },\n          ],\n          onEdit: () => setStep(2),\n        },\n        {\n          title: '메타',\n          items: [\n            { label: '합주 제목', value: title || '(미입력)' },\n            { label: '장소', value: venue || '(미입력)' },\n          ],\n          onEdit: () => setStep(2),\n        },\n      ]}\n    />\n  </section>\n)}\n```\n\n### 5. 하단 버튼 로직 수정\n- step < 3일 때 '다음' 버튼\n- step === 3일 때 '합주 만들기' 버튼 (mutation.mutate 호출)\n- canSubmit 조건을 step === 3으로 변경\n\n### 6. 헬퍼 함수 추가\n- 선택된 밴드 이름 조회: `myBands.data?.find(b => b.bandId === bandId)?.bandName`\n- 날짜 포맷팅: `lib/date.ts`의 `formatKst` 사용",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. Step 3(일정 설정) 완료 후 '다음' 클릭 시 Step 4(검토) 이동 확인\n2. 검토 패널에 선택한 밴드명 표시 확인\n3. 검토 패널에 선택한 곡 제목/아티스트 표시 확인\n4. 검토 패널에 시작 시각(highlight) + 소요 시간 표시 확인\n5. 검토 패널에 합주 제목/장소 표시 확인 (미입력 시 '(미입력)' 표시)\n6. 각 섹션 '수정' 버튼 클릭 시 해당 step으로 이동\n7. Step 4에서 '합주 만들기' 버튼 클릭 시 mutation 호출\n8. StepIndicator에 4단계 표시 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:24:46.801Z"
           },
           {
             "id": 3,
@@ -3397,9 +3399,10 @@
             "description": "리소스 생성 성공 시 시각적으로 강조된 토스트와 CTA 버튼을 제공하는 컴포넌트 및 훅을 구현한다.",
             "dependencies": [],
             "details": "## 구현 파일\n1. `src/components/feedback/resource-created-toast.tsx` - 강화 토스트 컴포넌트\n2. `src/hooks/useResourceCreatedToast.ts` - 호출 단순화 훅\n\n## ResourceCreatedToast 컴포넌트\n### Props\n```typescript\ntype ResourceCreatedToastProps = {\n  id: string;\n  title: string;\n  message?: string;\n  cta?: { label: string; href: string };\n  onDismiss: (id: string) => void;\n};\n```\n\n### 렌더링 구조\n- 컨테이너: 기존 Toast보다 넓은 `w-96`, `bg-card border-success/60 shadow-xl`\n- 상단: CheckCircle2 아이콘 `h-6 w-6 text-success` (기존보다 큼)\n- 제목: `text-body font-bold text-foreground`\n- 메시지(선택): `text-caption text-foreground-muted`\n- CTA 버튼: `Button variant=\"accent-outline\" size=\"sm\"` + Link 조합\n- 닫기 버튼: 우측 상단 X 아이콘\n- 5초 후 자동 닫힘 (useEffect + setTimeout)\n\n### 애니메이션\n- 기존 `animate-toast-in` 클래스 재사용\n\n## useResourceCreatedToast 훅\n```typescript\ntype ShowOptions = {\n  title: string;\n  message?: string;\n  cta?: { label: string; href: string };\n};\n\nexport function useResourceCreatedToast() {\n  const addRich = useToastStore((s) => s.addRich); // 새 store 메서드 필요\n  const remove = useToastStore((s) => s.remove);\n\n  const show = useCallback((options: ShowOptions) => {\n    return addRich({ ...options, type: 'resource-created', duration: 5000 });\n  }, [addRich]);\n\n  return { show, dismiss: remove };\n}\n```\n\n## ToastStore 확장 (대안 접근)\n기존 store를 최소 변경하려면, 별도의 resourceCreatedToastStore를 생성하거나 기존 Toast 타입에 'resource-created' 추가 + Toast 컴포넌트에서 분기 렌더링",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. ResourceCreatedToast 렌더링: title, message, cta 모두 표시\n2. CTA 버튼 클릭 시 href로 이동\n3. 5초 후 자동 닫힘 (jest.useFakeTimers로 검증)\n4. X 버튼 클릭 시 즉시 닫힘\n5. cta prop 미전달 시 CTA 버튼 미표시\n6. message prop 미전달 시 메시지 영역 미표시\n7. useResourceCreatedToast 훅으로 show 호출 시 토스트 표시",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:24:50.102Z"
           },
           {
             "id": 4,
@@ -3410,12 +3413,13 @@
               3
             ],
             "details": "## 수정 파일\n1. `src/app/(main)/practices/new/PracticeCreateWizard.client.tsx`\n2. `src/app/(main)/performances/new/PerformanceCreateForm.client.tsx` (또는 Task 2 완료 후 PerformanceCreateWizard)\n\n## PracticeCreateWizard 수정\n### 1. 훅 import 추가\n```typescript\nimport { useResourceCreatedToast } from '@/hooks/useResourceCreatedToast';\n```\n\n### 2. 훅 초기화\n```typescript\nconst resourceCreatedToast = useResourceCreatedToast();\n```\n\n### 3. mutation.onSuccess 수정\n```typescript\nconst mutation = useCreatePractice({\n  onSuccess: (data) => {\n    resourceCreatedToast.show({\n      title: '합주가 생성되었습니다',\n      cta: {\n        label: '보러가기',\n        href: ROUTES.PRACTICE_DETAIL(data.practiceId),\n      },\n    });\n    router.replace(ROUTES.PRACTICE_DETAIL(data.practiceId));\n  },\n  onError: (err) => toast.error(err.message || '합주 생성에 실패했습니다.'),\n});\n```\n\n## PerformanceCreateForm (또는 Wizard) 수정\n동일 패턴 적용:\n```typescript\nconst mutation = useCreatePerformance({\n  onSuccess: (data) => {\n    resourceCreatedToast.show({\n      title: '공연이 생성되었습니다',\n      cta: {\n        label: '보러가기',\n        href: ROUTES.PERFORMANCE_DETAIL(data.performanceId),\n      },\n    });\n    router.replace(ROUTES.PERFORMANCE_DETAIL(data.performanceId));\n  },\n  onError: (err) => toast.error(err.message || '공연 생성에 실패했습니다.'),\n});\n```\n\n## 참고 사항\n- router.replace는 유지하여 뒤로가기 시 마법사로 돌아가지 않도록 함\n- 강화 토스트는 상세 페이지로 이동 후에도 표시됨 (CTA 클릭 시 무시됨)\n- Task 2(PerformanceCreateWizard)가 완료된 후 해당 파일에도 적용 필요",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1. 합주 마법사 Step 4에서 '합주 만들기' 클릭 후 강화 토스트 표시 확인\n2. 토스트에 '합주가 생성되었습니다' 제목 표시\n3. 토스트에 '보러가기' CTA 버튼 표시\n4. CTA 버튼 클릭 시 합주 상세 페이지로 이동 (이미 해당 페이지일 수 있음)\n5. 토스트 5초 후 자동 닫힘\n6. 공연 생성 시 동일 동작 확인\n7. 기존 toast.success 호출이 제거되었는지 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:24:53.244Z"
           }
         ],
-        "updatedAt": "2026-04-26T01:20:42.032Z"
+        "updatedAt": "2026-04-26T01:24:53.244Z"
       },
       {
         "id": "6",
@@ -3425,7 +3429,7 @@
         "testStrategy": "1. 캘린더 헤더 \"2026년 4월\" 클릭 → YearMonthPicker 팝오버 표시\n2. 2024년 선택 → 6월 클릭 → 캘린더가 2024-06으로 이동\n3. 키보드 Arrow 키로 연/월 이동, Enter 확정, Esc 닫기\n4. 시간 input에 직접 \"14\" 입력 → 휠이 14시 위치로 스크롤\n5. 휠 스크롤 → input 값 동기화\n6. input에 25 입력 시 23으로 자동 보정\n7. 마법사 메타 단계에서 시작 시각/소요 시간 카드 스타일 확인 (볼드, accent 톤)",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3433,9 +3437,10 @@
             "description": "캘린더 헤더에서 연/월을 빠르게 선택할 수 있는 YearMonthPicker 컴포넌트를 src/components/ui/year-month-picker.tsx에 구현한다.",
             "dependencies": [],
             "details": "Props로 year, month, minYear, maxYear, onChange, onClose를 받는 컴포넌트 생성. 연도 그리드는 현재 연도 기준 ±5년(총 11개) 배치, 월 그리드는 1~12월을 4×3으로 배치. 연도 선택 시 내부 state만 업데이트하고, 월 클릭 시 onChange(selectedYear, selectedMonth) 호출 후 onClose() 실행. 키보드 접근성: Arrow 키로 포커스 이동, Enter로 확정, Escape로 닫기. 스타일은 기존 Dialog/Chip 패턴(bg-card, border-border, bg-accent 선택 상태)을 따르며, 팝오버 형태로 position: absolute 또는 Radix Popover 사용.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1) YearMonthPicker 단독 렌더링 시 현재 연도±5년 그리드 표시 확인 2) 월 클릭 시 onChange 콜백 호출 검증 3) Arrow 키보드 이동 및 Enter/Esc 동작 확인 4) minYear/maxYear 범위 외 연도 비활성화 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:28:18.050Z"
           },
           {
             "id": 2,
@@ -3445,9 +3450,10 @@
               1
             ],
             "details": "Calendar 컴포넌트(line 277~363)의 헤더 영역에서 '{viewYear}년 {viewMonth}월' div를 button으로 변경. 클릭 시 로컬 state(showYearMonthPicker)를 true로 설정하여 YearMonthPicker 팝오버 오픈. 팝오버는 헤더 버튼 아래에 절대 위치로 표시. YearMonthPicker의 onChange 콜백에서 onNav 대신 직접 setView({ y, mo })를 호출하도록 부모(DateTimePicker)로부터 새 prop(onViewChange) 전달. aria-expanded, aria-haspopup 속성 추가. 팝오버 외부 클릭 시 닫기 처리.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1) 캘린더 헤더 '2026년 4월' 클릭 시 YearMonthPicker 팝오버 표시 2) 2024년 선택 후 6월 클릭 시 캘린더가 2024-06으로 이동 3) 팝오버 외부 클릭 시 닫힘 4) Escape 키로 팝오버 닫기 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:28:21.952Z"
           },
           {
             "id": 3,
@@ -3455,9 +3461,10 @@
             "description": "시간 선택 Wheel 컴포넌트 상단에 직접 입력 가능한 number input을 추가하여 휠 스크롤과 양방향 동기화한다.",
             "dependencies": [],
             "details": "Wheel 컴포넌트(line 366~466)에 <input type='number'> 추가. input value는 현재 선택값(pad 적용), onChange 시 clamp(Number(value), min, max) 후 부모 onChange 호출. 시(0~23), 분(step 단위 반올림) 범위 validation 적용. input focus 시 전체 선택(select()) UX 구현. input과 휠 스크롤 양방향 동기화: input 변경 시 ref.current.scrollTop 업데이트, 휠 스크롤 시 input 값 자동 반영. ITEM_H를 32에서 40으로 증가하여 터치 감도 개선. 스타일: input은 휠 영역 상단 중앙, bg-transparent border-b text-center 형태.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1) 시간 input에 '14' 직접 입력 시 휠이 14시 위치로 스크롤 2) 휠 스크롤 시 input 값 동기화 확인 3) input에 25 입력 시 23으로 자동 보정 4) 분 input에 62 입력 시 step 단위로 반올림 5) input focus 시 전체 선택 동작",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:28:26.158Z"
           },
           {
             "id": 4,
@@ -3465,11 +3472,13 @@
             "description": "합주 생성 마법사 Step 3(일정 설정)에서 시작 시각과 소요 시간을 2컬럼 그리드 카드로 배치하고 시각적으로 강조한다.",
             "dependencies": [],
             "details": "PracticeCreateWizard.client.tsx의 step === 2 섹션(line 281~318) 수정. 시작 시각 DateTimePicker와 소요 시간 Input을 기존 세로 나열에서 'grid grid-cols-1 sm:grid-cols-2 gap-s-3' 2컬럼 카드 레이아웃으로 변경. 각 카드는 bg-card border-border rounded-md p-s-4 스타일 적용. 라벨 텍스트는 text-success 또는 text-accent 톤, font-bold, text-subtitle 사이즈로 강조. 제목/장소 input은 기존 크기 유지(변경 없음). 카드 내부에 아이콘(Clock, Timer) 추가하여 시각적 구분.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "1) 마법사 Step 3에서 시작 시각/소요 시간이 2컬럼 카드로 표시 확인 2) 모바일(<sm)에서 1컬럼 세로 배치 확인 3) 라벨에 accent/success 톤, font-bold 적용 확인 4) 제목/장소 input 스타일 변경 없음 확인",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T01:28:29.620Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-26T01:28:29.620Z"
       },
       {
         "id": "7",
@@ -3481,7 +3490,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -3530,7 +3539,8 @@
             "testStrategy": "1. 합주 마법사 밴드 카드 선택 → 좌측 accent 보더 + 우상단 체크 아이콘 + 배경색 변경\n2. 공연 마법사 밴드 카드 동일 동작\n3. BandPickerModal 검색 결과 카드 동일 동작\n4. 선택 해제 시 기본 스타일로 복귀\n5. 키보드 접근성: aria-pressed 상태 정확히 반영",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-26T01:29:27.785Z"
       },
       {
         "id": "8",
@@ -3587,9 +3597,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-26T01:20:42.036Z",
+      "lastModified": "2026-04-26T01:29:27.790Z",
       "taskCount": 8,
-      "completedCount": 3,
+      "completedCount": 5,
       "tags": [
         "mvp-1-fix-v4"
       ]
