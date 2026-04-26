@@ -50,7 +50,7 @@ export function MeetingChatBox({ songId }: MeetingChatBoxProps) {
   return (
     <section
       data-slot="meeting-chat-box"
-      className="bg-surface border-border hidden h-[280px] flex-col border-t lg:flex"
+      className="bg-surface border-border flex h-[280px] shrink-0 flex-col border-t border-l"
       aria-label={`${song.title} 의견 채팅`}
     >
       <header className="border-border px-s-5 py-s-2 gap-s-2 flex items-center border-b">

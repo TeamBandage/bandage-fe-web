@@ -48,8 +48,7 @@ export function SessionPanel({ songId, onClose }: SessionPanelProps) {
   return (
     <aside
       data-slot="session-panel"
-      className="bg-surface border-border hidden flex-col overflow-hidden border-l lg:flex"
-      style={{ width: 380 }}
+      className="bg-surface border-border flex min-h-0 flex-1 flex-col overflow-hidden border-l"
       aria-label="세션 지원 패널"
     >
       <header className="border-border px-s-5 py-s-4 gap-s-3 flex items-start justify-between border-b">

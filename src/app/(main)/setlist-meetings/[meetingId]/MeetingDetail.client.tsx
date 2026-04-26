@@ -12,6 +12,7 @@ import { SongTable } from '@/domain/setlist-meeting/components/SongTable.client'
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
 import type { Song } from '@/domain/setlist-meeting/types';
 import { isReady } from '@/domain/setlist-meeting/utils';
+import { cn } from '@/lib/cn';
 
 type Filter = 'all' | 'ready' | 'pending' | 'mine';
 
@@ -52,7 +53,6 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
     () => songs.filter((song) => song.meetingId === meetingId),
     [songs, meetingId],
   );
-  const members = useSetlistStore((s) => s.members);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
   const selectedSongId = useSetlistStore((s) => s.selectedSongId);
   const focusedSessionId = useSetlistStore((s) => s.focusedSessionId);
@@ -148,7 +148,6 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
         <div className="flex-1 overflow-y-auto">
           <SongTable
             songs={visible}
-            members={members}
             selectedSongId={selectedSongId}
             focusedSessionId={focusedSessionId}
             currentUserId={currentUserId}
@@ -163,17 +162,30 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             }}
           />
         </div>
-        {selectedSongId && <MeetingChatBox songId={selectedSongId} />}
       </div>
-      {selectedSongId && sessionPanelOpen && (
-        <SessionPanel songId={selectedSongId} onClose={() => setSessionPanelOpen(false)} />
+
+      {/* 우측 오버레이: SessionPanel + MeetingChatBox 가 한 덩어리로 묶여 함께 슬라이드. */}
+      {selectedSongId && (
+        <div
+          aria-hidden={!sessionPanelOpen}
+          className={cn(
+            'absolute inset-y-0 right-0 z-20 hidden flex-col shadow-lg transition-transform duration-200 ease-out lg:flex',
+            sessionPanelOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
+          )}
+          style={{ width: 380 }}
+        >
+          <SessionPanel songId={selectedSongId} onClose={() => setSessionPanelOpen(false)} />
+          <MeetingChatBox songId={selectedSongId} />
+        </div>
       )}
+
+      {/* 닫혔을 때 다시 열기 핸들. */}
       {selectedSongId && !sessionPanelOpen && (
         <button
           type="button"
           onClick={() => setSessionPanelOpen(true)}
           aria-label="세션 패널 열기"
-          className="bg-surface border-border text-foreground-sub hover:bg-card hover:text-foreground top-s-3 right-s-3 absolute z-10 hidden h-8 w-8 items-center justify-center rounded-md border shadow-sm transition-colors lg:inline-flex"
+          className="bg-surface border-border text-foreground-sub hover:bg-card hover:text-foreground top-s-3 right-s-3 absolute z-30 hidden h-8 w-8 items-center justify-center rounded-md border shadow-sm transition-colors lg:inline-flex"
         >
           <PanelRightOpen className="h-4 w-4" />
         </button>
