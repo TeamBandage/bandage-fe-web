@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMe } from '@/domain/member/hooks/useMe';
-import { setUnauthorizedHandler } from '@/global/api/apiClient';
+import { bootstrapAccessToken, setUnauthorizedHandler } from '@/global/api/apiClient';
 import { ROUTES } from '@/global/config/routes';
 import { useAuthStore } from '@/global/store/authStore';
 import { useToast } from '@/hooks/useToast';
@@ -17,24 +17,23 @@ interface Props {
 /**
  * 보호된 (main) 레이아웃의 인증 부트스트랩.
  *
- * 책임
- * 1. 401 → refresh 실패 시 useAuthStore.clear + Next.js 라우터 replace('/login') (window.location 대신)
- *    + "세션이 만료되었습니다" 토스트.
- * 2. 첫 진입 시 useMe 가 settled 될 때까지 Skeleton 으로 children 가드 — 토큰 없는 채 /home 이
- *    잠깐 렌더되는 깜빡임 방지.
- *
- * 미들웨어(refreshToken 쿠키 검사) 와 직교: 미들웨어가 차단하지 못하는 "쿠키 유효 + accessToken 메모리 무"
- * 케이스를 클라이언트 레이어에서 보강.
+ * 동작 순서
+ * 1. 마운트 시 401 핸들러 등록 (refresh 실패 → /login 라우팅 + 토스트).
+ * 2. accessToken 이 메모리에 없으면 refresh 한 번 시도 (refreshToken 쿠키 기반).
+ *    - 성공 → useMe 가 활성화되어 children 렌더 가능.
+ *    - 실패 → /login 으로 라우팅.
+ * 3. 부트스트랩 진행 중에는 Skeleton 으로 children 가드 → /home 깜빡임 방지.
  */
 export function AuthBootstrapper({ children }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
-  const { data, isPending, isError } = useMe();
   const authenticated = useAuthStore((s) => s.accessToken !== null);
   const handlerInstalled = useRef(false);
+  const bootstrapTried = useRef(false);
+  const [bootstrapping, setBootstrapping] = useState(!authenticated);
 
-  // 401 핸들러 등록 — 마운트 시 1회.
+  // 401 핸들러 등록.
   useEffect(() => {
     if (handlerInstalled.current) return;
     handlerInstalled.current = true;
@@ -46,16 +45,29 @@ export function AuthBootstrapper({ children }: Props) {
     });
   }, [router, toast]);
 
-  // useMe 가 에러로 끝났을 때 (refresh 도 실패한 직후) 추가 안전망.
+  // accessToken 부트스트랩.
   useEffect(() => {
-    if (isError && !authenticated) {
-      const from = searchParams?.toString();
-      const url = from ? `${ROUTES.LOGIN}?from=${encodeURIComponent(from)}` : ROUTES.LOGIN;
-      router.replace(url);
+    if (bootstrapTried.current) return;
+    bootstrapTried.current = true;
+    if (authenticated) {
+      setBootstrapping(false);
+      return;
     }
-  }, [isError, authenticated, router, searchParams]);
+    bootstrapAccessToken()
+      .then(() => setBootstrapping(false))
+      .catch(() => {
+        // refresh 실패 → /login 으로 (handleAuthFailure 가 이미 처리하지만 안전망).
+        setBootstrapping(false);
+        const from = searchParams?.toString();
+        const url = from ? `${ROUTES.LOGIN}?from=${encodeURIComponent(from)}` : ROUTES.LOGIN;
+        router.replace(url);
+      });
+  }, [authenticated, router, searchParams]);
 
-  if (isPending && !data) {
+  // useMe 는 인증 후에만 자연스럽게 동작 — 깜빡임 가드는 부트스트랩 완료까지만.
+  const me = useMe();
+
+  if (bootstrapping || (authenticated && me.isPending && !me.data)) {
     return <AuthLoadingSkeleton />;
   }
 
