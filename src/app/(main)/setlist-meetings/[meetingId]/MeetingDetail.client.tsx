@@ -43,8 +43,15 @@ function applySearch(songs: Song[], q: string): Song[] {
 }
 
 export function MeetingDetail({ meetingId }: { meetingId: string }) {
-  const meeting = useSetlistStore((s) => s.meetings.find((m) => m.id === meetingId));
-  const allSongs = useSetlistStore((s) => s.songs.filter((song) => song.meetingId === meetingId));
+  // selector 내부에서 find/filter 같은 새 참조를 만들면 useSyncExternalStore 가 매 렌더마다 변경으로 인식해 무한 루프.
+  // 배열 자체(stable reference)를 select 하고 파생값은 useMemo 로 계산.
+  const meetings = useSetlistStore((s) => s.meetings);
+  const songs = useSetlistStore((s) => s.songs);
+  const meeting = useMemo(() => meetings.find((m) => m.id === meetingId), [meetings, meetingId]);
+  const allSongs = useMemo(
+    () => songs.filter((song) => song.meetingId === meetingId),
+    [songs, meetingId],
+  );
   const members = useSetlistStore((s) => s.members);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
   const selectedSongId = useSetlistStore((s) => s.selectedSongId);

@@ -1,7 +1,7 @@
 'use client';
 
 import { MessageSquare, Send } from 'lucide-react';
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 import { cn } from '@/lib/cn';
 
@@ -14,7 +14,9 @@ export interface MeetingChatBoxProps {
 }
 
 export function MeetingChatBox({ songId }: MeetingChatBoxProps) {
-  const song = useSetlistStore((s) => s.songs.find((x) => x.id === songId));
+  // selector 내부 find 가 매 렌더마다 새 참조 → 무한 루프. 배열 select + useMemo 로 분리.
+  const songs = useSetlistStore((s) => s.songs);
+  const song = useMemo(() => songs.find((x) => x.id === songId), [songs, songId]);
   const members = useSetlistStore((s) => s.members);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
   const sendChat = useSetlistStore((s) => s.sendChat);
