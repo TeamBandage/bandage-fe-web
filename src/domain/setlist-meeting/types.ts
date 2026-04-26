@@ -32,6 +32,10 @@ export type Member = {
   role: string;
   /** 아바타 색(hex). */
   avatar: string;
+  /** 멤버 검색·연락용 이메일 (mock). */
+  email?: string;
+  /** 외부 프로필 이미지 URL. 없으면 MemberAvatar 가 hex 색 + 이니셜. */
+  profileImg?: string;
 };
 
 export type Song = {
@@ -52,6 +56,8 @@ export type Song = {
   chat: ChatMessage[];
 };
 
+export type MeetingPurpose = 'performance' | 'general';
+
 export type Meeting = {
   id: string;
   bandId: string;
@@ -62,6 +68,16 @@ export type Meeting = {
   updatedAt: string;
   /** 매니저가 선곡을 확정한 시각(ISO). null/undefined 면 진행 중. */
   lockedAt?: string | null;
+  /** 회의 목적 — 공연 셋리스트 / 일반 합주곡 벌크. */
+  purpose?: MeetingPurpose;
+  /** purpose='performance' 일 때 연결된 공연. */
+  performanceId?: string | null;
+  /** 회의 참여 멤버 userId 목록. */
+  participantUserIds?: string[];
+  /** 매니저 확정 시 BE 매핑 — 회의 곡 id → 합주곡 id. */
+  practiceSongMap?: Record<string, string>;
+  /** 직전 잠금 시점의 곡 스냅샷(재확정 시 변경분 diff 계산용). 단순화: songId 집합. */
+  lockSnapshotSongIds?: string[];
 };
 
 export type SessionState = 'full' | 'partial' | 'empty';

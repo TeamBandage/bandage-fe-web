@@ -3098,13 +3098,14 @@
         "mvp-1-fix-v3"
       ],
       "created": "2026-04-25T16:41:08.748Z",
-      "description": "Tasks for mvp-1-fix-v3 context"
+      "description": "Tasks for mvp-1-fix-v3 context",
+      "updated": "2026-04-25T16:41:08.748Z"
     }
   },
   "mvp-1-fix-v4": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "마법사 이탈 가드(Navigation Guard) 구현",
         "description": "사이드바 탭 전환 / 라우트 이탈 / 브라우저 뒤로가기 시 dirty 상태 마법사가 있으면 경고 모달을 표시하여 사용자가 입력 손실을 인지하도록 한다.",
         "details": "## 구현 대상\n\n1. **DirtyFormContext** (`src/global/navigation/dirty-form-context.tsx`)\n   - `createContext`로 Provider/Consumer 생성\n   - 상태: `{ isDirty: boolean, setDirty: (dirty: boolean) => void }`\n   - `DirtyFormProvider` 컴포넌트를 `src/app/(main)/layout.tsx`의 `<AuthBootstrapper>` 하위에 배치\n\n2. **LeaveConfirmDialog** (`src/components/feedback/leave-confirm-dialog.tsx`)\n   - 기존 `Dialog` 컴포넌트 활용\n   - Props: `open`, `onConfirm: () => void`, `onCancel: () => void`\n   - 카피: \"작성 중인 내용이 있습니다. 정말 나가시겠어요?\"\n   - 버튼: \"머무르기\"(취소), \"나가기\"(확인, danger 스타일)\n\n3. **Sidebar Link 인터셉트** (`src/components/layout/sidebar.tsx`)\n   - `useDirtyForm()` hook으로 `isDirty` 조회\n   - `Link`를 래핑한 `GuardedLink` 컴포넌트로 대체\n   - `onClick` 핸들러에서 `isDirty` 확인 → 모달 오픈 → 확인 시 `setDirty(false)` 후 router.push\n   - `e.preventDefault()` 로 기본 동작 차단\n\n4. **브라우저 이벤트 훅** (`src/hooks/useBeforeUnload.ts`)\n   - `useEffect`로 `beforeunload` 이벤트 등록/해제\n   - `e.preventDefault(); e.returnValue = ''` 로 브라우저 기본 경고\n\n5. **마법사 dirty 플래그 연동** (`PracticeCreateWizard.client.tsx`)\n   - `useDirtyForm()` 훅 호출\n   - step > 0 또는 bandId/songPick 등 입력값 존재 시 `setDirty(true)`, 그 외 `setDirty(false)`\n   - 제출 성공 시 `setDirty(false)`\n\n## 의사 코드\n```tsx\n// DirtyFormContext\nexport const DirtyFormContext = createContext({ isDirty: false, setDirty: () => {} });\nexport function useDirtyForm() { return useContext(DirtyFormContext); }\nexport function DirtyFormProvider({ children }) {\n  const [isDirty, setDirty] = useState(false);\n  return <DirtyFormContext.Provider value={{ isDirty, setDirty }}>{children}</DirtyFormContext.Provider>;\n}\n\n// GuardedLink in Sidebar\nfunction GuardedLink({ href, children }) {\n  const { isDirty, setDirty } = useDirtyForm();\n  const [confirmOpen, setConfirmOpen] = useState(false);\n  const router = useRouter();\n  const handleClick = (e) => {\n    if (isDirty) { e.preventDefault(); setConfirmOpen(true); }\n  };\n  const onConfirm = () => { setDirty(false); router.push(href); };\n  return (\n    <>\n      <Link href={href} onClick={handleClick}>{children}</Link>\n      <LeaveConfirmDialog open={confirmOpen} onConfirm={onConfirm} onCancel={() => setConfirmOpen(false)} />\n    </>\n  );\n}\n```",
@@ -3170,7 +3171,7 @@
         "updatedAt": "2026-04-26T01:05:54.063Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "공연 사이드바 분리 + 풀페이지 마법사 전환",
         "description": "공연 사이드바를 합주와 동일하게 '나의 공연' / '공연 생성' 서브메뉴로 분리하고, 공연 생성을 풀페이지 마법사로 교체한다.",
         "details": "## 구현 대상\n\n1. **Sidebar 공연 expandable** (`src/components/layout/sidebar.tsx`)\n   - `mainNav` 배열의 공연 항목에 `subs` 추가:\n   ```ts\n   { href: ROUTES.PERFORMANCES, label: '공연', icon: CalendarDays,\n     subs: [\n       { href: ROUTES.PERFORMANCES, label: '나의 공연' },\n       { href: ROUTES.PERFORMANCE_NEW, label: '공연 생성' },\n     ] }\n   ```\n\n2. **PerformanceCreateWizard** (`src/app/(main)/performances/new/PerformanceCreateWizard.client.tsx`)\n   - 기존 `PerformanceCreateForm.client.tsx`를 마법사로 전환\n   - Step 구조: 0: 기본 정보 (제목/설명), 1: 참여 밴드 (BandPickerModal), 2: 일정 (시작/소요시간), 3: 검토 및 확정 (Task 5와 연계)\n   - Step 0/1/2는 기존 PerformanceCreateModal 로직 재사용\n   - `useDirtyForm()` 연동 (Task 1 완료 후)\n\n3. **performances/new/page.tsx** 수정\n   - `PerformanceCreateWizard` 컴포넌트로 교체\n\n4. **performances/layout.tsx** 수정 (`/performances/new` 풀페이지 opt-out)\n   - `pathname.includes('/new')` 조건으로 PaneSplit 레이아웃 대신 단일 children 렌더\n   - 합주 `/practices/new` 와 동일 패턴 적용\n\n5. **PerformanceCreateModal 제거**\n   - `src/domain/performance/components/PerformanceCreateModal.client.tsx` 삭제\n   - `PerformancesListPane.client.tsx`의 트리거를 `Link to={ROUTES.PERFORMANCE_NEW}` 버튼으로 교체\n\n## 의사 코드\n```tsx\n// PerformanceCreateWizard.client.tsx\nconst STEPS = ['기본 정보', '참여 밴드', '일정', '검토'] as const;\nconst [step, setStep] = useState<0|1|2|3>(0);\nconst [selectedBands, setSelectedBands] = useState<BandInfoResponse[]>([]);\n// Step 0: title input\n// Step 1: BandPickerModal multiple selection\n// Step 2: DateTimePicker + durationMinutes\n// Step 3: WizardSummaryCard (Task 5) + 최종 제출 버튼\n```",
@@ -3233,7 +3234,7 @@
         "updatedAt": "2026-04-26T01:10:47.492Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "탐색 카드 '내 항목' 시인성 강화",
         "description": "밴드/공연 탐색 탭의 카드에서 사용자가 이미 소속된 항목을 시각적으로 강조하여 구분한다.",
         "details": "## 구현 대상\n\n1. **MyItemMarker 컴포넌트** (`src/components/ui/my-item-marker.tsx`)\n   - Props: `type: 'band' | 'performance'`\n   - 렌더링: 작은 칩 (accent-soft 배경 + accent 글자)\n   - 카피: `내 밴드` / `내 공연`\n   ```tsx\n   export function MyItemMarker({ type }: { type: 'band' | 'performance' }) {\n     const label = type === 'band' ? '내 밴드' : '내 공연';\n     return (\n       <span className=\"bg-accent-soft text-accent text-micro font-semibold px-s-2 py-0.5 rounded\">\n         {label}\n       </span>\n     );\n   }\n   ```\n\n2. **BandsListPane 수정** (`src/app/(main)/bands/BandsListPane.client.tsx`)\n   - 탐색 탭 `BandRow` 에서 `myRole` 이 존재하면:\n     - 좌상단에 `<MyItemMarker type=\"band\" />` 표시\n     - 카드 좌측에 2px accent 보더 추가: `border-l-2 border-accent`\n   - 기존 `BandRoleBadge`는 별도로 유지 (역할 표시)\n\n3. **PerformancesListPane 수정** (`src/app/(main)/performances/PerformancesListPane.client.tsx`)\n   - 현재 `useMyPerformances` 결과를 Set으로 변환하여 performanceId 매칭\n   - 탐색 탭에서 내 공연인 경우 동일 시각 처리\n\n4. **listItemClasses 확장** (`src/lib/list-item-styles.ts`)\n   - `isMine` 파라미터 추가하여 좌측 보더 조건부 적용\n\n## 시각 단서 조합 (PRD default)\n- (i) 우상단 \"내 밴드/내 공연\" 칩\n- (ii) 좌측 2px accent 보더\n- 모바일에서는 칩만 표시 (보더는 시각 노이즈 — `lg:border-l-2` 조건)\n\n## 의사 코드\n```tsx\n// BandRow 수정\nconst isMine = !!myRole;\nreturn (\n  <Link className={cn(listItemClasses(active, tone), isMine && 'lg:border-l-2 lg:border-accent')}>\n    <div className=\"relative\">\n      {isMine && <MyItemMarker type=\"band\" className=\"absolute -top-1 -right-1\" />}\n      {/* 기존 내용 */}\n    </div>\n  </Link>\n);\n```",
@@ -3298,7 +3299,7 @@
         "updatedAt": "2026-04-26T01:15:59.718Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "밴드 설정 모달 구현 (정보 수정/사진/삭제)",
         "description": "밴드 LEADER 권한 사용자가 밴드 정보 수정, 프로필 사진 변경, 밴드 삭제를 수행할 수 있는 설정 모달을 구현한다.",
         "details": "## 구현 대상\n\n1. **BandSettingsModal** (`src/domain/band/components/BandSettingsModal.client.tsx`)\n   - `Tabs` 컴포넌트 활용 (3개 탭: 정보, 사진, 삭제)\n   - Props: `bandId`, `initialData: BandInfoResponse`, `open`, `onOpenChange`\n\n2. **정보 탭**\n   - 이름(bandName), 설명(description) 편집 폼\n   - `useForm` + zod 스키마 (`{ bandName: z.string().min(1), description: z.string().optional() }`)\n   - 저장 버튼 → `updateBand` API 호출\n\n3. **사진 탭**\n   - 현재 프로필 이미지 미리보기\n   - URL 직접 입력 폼 (백엔드 파일 업로드 미지원 대비)\n   - 향후 멀티파트 업로드 지원 시 교체 예정 (API_REQUIRED.md FE-API-009)\n\n4. **삭제 탭**\n   - 경고 문구 + 밴드명 재입력 확인\n   - input value === bandName 일 때만 삭제 버튼 활성화\n   - `deleteBand` API 호출 후 `/bands` 로 리다이렉트\n\n5. **API 함수 추가**\n   - `src/domain/band/api/updateBand.ts`: PATCH /bands/{bandId}\n   - `src/domain/band/api/deleteBand.ts`: DELETE /bands/{bandId}\n   - `src/domain/band/api/uploadBandProfileImage.ts`: (스텁 — 백엔드 미지원 시 에러 throw)\n\n6. **Hooks 추가**\n   - `useUpdateBand.ts`, `useDeleteBand.ts`, `useUploadBandProfileImage.ts` (TanStack Query mutation)\n\n7. **BandDetailContent 연동**\n   - 기존 \"밴드 설정\" 버튼 (`toast.info` 표시)를 모달 트리거로 교체\n   - `RoleGuard role=\"LEADER\"` 조건 유지\n\n## API_REQUIRED 등록\n- PATCH /bands/{bandId} 미지원 시: FE-API-022\n- DELETE /bands/{bandId} 미지원 시: FE-API-023\n\n## 의사 코드\n```tsx\nexport function BandSettingsModal({ bandId, initialData, open, onOpenChange }) {\n  const [tab, setTab] = useState<'info'|'photo'|'delete'>('info');\n  return (\n    <ResponsiveSheet open={open} onOpenChange={onOpenChange}>\n      <Tabs value={tab} onValueChange={setTab}>\n        <TabsList><TabsTrigger value=\"info\">정보</TabsTrigger>...</TabsList>\n        <TabsContent value=\"info\"><InfoForm bandId={bandId} initial={initialData} /></TabsContent>\n        <TabsContent value=\"photo\"><PhotoForm bandId={bandId} currentImg={initialData.profileImg} /></TabsContent>\n        <TabsContent value=\"delete\"><DeleteForm bandId={bandId} bandName={initialData.bandName} /></TabsContent>\n      </Tabs>\n    </ResponsiveSheet>\n  );\n}\n```",
@@ -3361,7 +3362,7 @@
         "updatedAt": "2026-04-26T04:32:43.813Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "마법사 검토(확정) 단계 + 리소스 생성 알림 표준화",
         "description": "합주/공연 생성 마법사의 마지막 단계에 입력값 전체를 검토할 수 있는 패널을 추가하고, 생성 성공 시 강조된 알림을 표시한다.",
         "details": "## 구현 대상\n\n1. **WizardSummaryCard** (`src/components/ui/wizard-summary-card.tsx`)\n   - 재사용 가능한 검토 패널\n   - Props: `sections: Array<{ title: string, items: Array<{ label: string, value: string }>, onEdit?: () => void }>`\n   - 렌더링: 카드 내 Section별 라벨/값 쌍 + 우측 \"수정\" 링크\n   - 날짜/시간 항목은 success/accent 톤 + font-bold + text-title (Phase E-3 일관성)\n\n2. **PracticeCreateWizard Step 4 추가**\n   - STEPS 배열에 '검토' 추가\n   - Step 3(메타) 완료 후 Step 4로 이동\n   - WizardSummaryCard에 4개 Section: 밴드, 곡, 일정, 메타\n   - 각 Section의 \"수정\" 버튼 → `setStep(해당 step)`\n   - \"합주 만들기\" 버튼이 실제 mutation.mutate() 호출\n\n3. **PerformanceCreateWizard Step 3** (Task 2와 연계)\n   - 동일 패턴으로 검토 단계 추가\n\n4. **ResourceCreatedToast 강화** (`src/components/feedback/resource-created-toast.tsx`)\n   - 기존 toast.success 대신 더 시각적으로 강조된 토스트\n   - Props: `title: string`, `message: string`, `cta: { label: string, href: string }`\n   - 렌더링: 상단 아이콘(CheckCircle2 larger), 볼드 제목, CTA 버튼\n   - 5초 후 자동 닫힘\n   - `useResourceCreatedToast` 훅으로 호출 단순화\n\n5. **기존 마법사 mutation.onSuccess 수정**\n   - `toast.success` → `resourceCreatedToast.show({ title: '합주가 생성되었습니다', cta: { label: '보러가기', href: ... } })`\n\n## 의사 코드\n```tsx\n// WizardSummaryCard\nexport function WizardSummaryCard({ sections }) {\n  return (\n    <div className=\"space-y-s-4\">\n      {sections.map((sec) => (\n        <div key={sec.title} className=\"bg-card border rounded-md p-s-4\">\n          <div className=\"flex justify-between items-center mb-s-2\">\n            <h3 className=\"text-body font-semibold\">{sec.title}</h3>\n            {sec.onEdit && <button onClick={sec.onEdit} className=\"text-accent text-caption\">수정</button>}\n          </div>\n          {sec.items.map(item => (\n            <div key={item.label} className=\"flex justify-between text-caption\">\n              <span className=\"text-foreground-muted\">{item.label}</span>\n              <span className={item.highlight ? 'text-accent font-bold' : ''}>{item.value}</span>\n            </div>\n          ))}\n        </div>\n      ))}\n    </div>\n  );\n}\n```",
@@ -3426,7 +3427,7 @@
         "updatedAt": "2026-04-26T01:24:53.244Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "DateTimePicker UX 보강 (연/월 빠른 선택 + 시간 듀얼 모드)",
         "description": "캘린더 헤더에서 연/월을 빠르게 선택할 수 있는 드롭다운을 추가하고, 시간 선택 휠 위에 직접 입력 가능한 텍스트 박스를 제공한다.",
         "details": "## 구현 대상\n\n### 6-1: 연/월 빠른 선택\n1. **YearMonthPicker** (`src/components/ui/year-month-picker.tsx`)\n   - Props: `year: number`, `month: number`, `minYear: number`, `maxYear: number`, `onChange: (y, m) => void`\n   - 렌더링: 팝오버 내 연도 그리드 (현재±5년 = 12칸) + 월 그리드 (1~12, 4×3)\n   - 키보드: Arrow 키 이동, Enter 확정, Esc 닫기\n\n2. **Calendar 컴포넌트 수정** (`src/components/ui/date-time-picker.tsx`)\n   - 헤더의 \"2026년 4월\" 텍스트를 버튼으로 변경\n   - 클릭 시 YearMonthPicker 팝오버 오픈\n   - 선택 완료 → `setView({ y, mo })` 호출\n\n### 6-2: 시간 입력 듀얼 모드 (PRD default: (a))\n1. **Wheel 컴포넌트 위에 input 추가**\n   - 시/분 각각 `<input type=\"number\" />` 추가\n   - 휠 스크롤과 input 값 양방향 동기화\n   - input focus 시 전체 선택 (UX 편의)\n   - 범위 validation: 시 0~23, 분 0~59 (step 단위로 반올림)\n\n2. **휠 감도 보정**\n   - `scroll-snap-type: y mandatory` 이미 적용됨\n   - snap target 높이 증가: ITEM_H 32 → 40\n   - `-webkit-overflow-scrolling: touch` 추가\n\n### 6-3: 시작/소요 시간 시각 강조\n- 마법사 메타 단계 UI 수정 (PracticeCreateWizard Step 2)\n- 시작 시각 + 소요 시간을 2컬럼 그리드 카드로 배치\n- 텍스트: success/accent 톤, font-bold, text-subtitle 사이즈\n- 제목/장소 input은 기존 크기 유지\n\n## 의사 코드\n```tsx\n// YearMonthPicker\nexport function YearMonthPicker({ year, month, onChange, onClose }) {\n  const years = Array.from({ length: 11 }, (_, i) => year - 5 + i);\n  const months = Array.from({ length: 12 }, (_, i) => i + 1);\n  const [selY, setSelY] = useState(year);\n  const [selM, setSelM] = useState(month);\n  \n  return (\n    <div className=\"p-s-3\">\n      <div className=\"grid grid-cols-4 gap-1 mb-s-2\">\n        {years.map(y => <button onClick={() => setSelY(y)} className={selY === y ? 'bg-accent' : ''}>{y}</button>)}\n      </div>\n      <div className=\"grid grid-cols-4 gap-1\">\n        {months.map(m => <button onClick={() => { onChange(selY, m); onClose(); }}>{m}월</button>)}\n      </div>\n    </div>\n  );\n}\n\n// Wheel with input\nfunction Wheel({ label, values, value, onChange }) {\n  return (\n    <div>\n      <input type=\"number\" value={value} onChange={e => onChange(clamp(Number(e.target.value), min, max))} />\n      {/* 기존 휠 렌더링 */}\n    </div>\n  );\n}\n```",
@@ -3485,7 +3486,7 @@
         "updatedAt": "2026-04-26T01:28:29.620Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "마법사 밴드 선택 6개 그리드 + 검색 통합",
         "description": "합주/공연 생성 마법사의 밴드 선택 단계에서 최대 6개 카드 그리드를 표시하고, '전체 보기/검색' 버튼으로 BandPickerModal을 연다.",
         "details": "## 구현 대상\n\n1. **PracticeCreateWizard Step 1 수정**\n   - `useMyBands(6)` 으로 최대 6개만 fetch\n   - 그리드: `grid-cols-2 sm:grid-cols-3` (2×3 레이아웃)\n   - 6개 초과 밴드가 있는 경우 \"전체 보기\" 버튼 표시\n   - 버튼 클릭 → BandPickerModal 오픈 (single 선택 모드)\n   - 모달에서 선택한 밴드 → `setBandId(selected.bandId)`\n   - 선택된 밴드가 6개 그리드에 없으면 별도 \"선택됨\" 카드로 상단 표시\n\n2. **PerformanceCreateWizard Step 1 (Task 2)** 동일 패턴\n   - 다중 선택(multiple) 이므로 조금 다른 UX\n   - 그리드 + \"더 추가\" 버튼 → BandPickerModal multiple\n   - 선택된 밴드들을 칩 형태로 표시\n\n3. **밴드 카드 선택 시각 강조** (Task 8-4와 연계)\n   - 선택된 카드: 좌측 2px accent 보더 + 우상단 ✓ 아이콘 + bg-accent-dim\n\n## 의사 코드\n```tsx\n// PracticeCreateWizard Step 1\nconst myBands = useMyBands(6);\nconst hasMore = myBands.total > 6; // total count from API or hasNext\nconst [pickerOpen, setPickerOpen] = useState(false);\n\nreturn (\n  <section>\n    <h2>합주를 진행할 밴드를 선택하세요</h2>\n    <ul className=\"grid grid-cols-2 sm:grid-cols-3 gap-s-2\">\n      {myBands.data?.slice(0, 6).map(b => (\n        <BandSelectCard key={b.bandId} band={b} selected={b.bandId === bandId} onSelect={() => setBandId(b.bandId)} />\n      ))}\n    </ul>\n    {hasMore && (\n      <Button variant=\"secondary\" onClick={() => setPickerOpen(true)}>전체 보기 / 검색</Button>\n    )}\n    <BandPickerModal\n      open={pickerOpen}\n      onOpenChange={setPickerOpen}\n      multiple={false}\n      onConfirm={([band]) => setBandId(band.bandId)}\n    />\n  </section>\n);\n```",
@@ -3551,7 +3552,7 @@
         "updatedAt": "2026-04-26T01:31:41.179Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "잔존 결함 정리 (카피/시각/무한스크롤/멤버명)",
         "description": "PRD Phase H에 명시된 잔존 결함들을 일괄 수정한다: 안내 카피 제거, 카드 선택 시각 강조, 무한 스크롤 검증, 멤버 이름 표시 분석, \"(자작곡)\" 라벨 제거.",
         "details": "## 구현 대상\n\n### 8-1: 카피 제거\n- `PracticeCreateWizard.client.tsx` line 118\n- 삭제: `<p className=\"text-foreground-muted\">밴드 → 곡 → 일정 순서로 진행합니다.</p>`\n\n### 8-2: 무한 스크롤 검증\n- 검증 대상: 밴드 목록, 합주 목록, 공연 목록, 멤버 목록, 가입 신청 목록\n- 검증 방법:\n  1. 백엔드 pageSize=2 설정 후 5개 이상 데이터 생성\n  2. 스크롤 → IntersectionObserver 트리거 확인\n  3. `fetchNextPage` 호출 → 다음 페이지 로드\n- 결과: `.taskmaster/reports/infinite-scroll-verification-2026-04-26.md` 작성\n\n### 8-3: 멤버 이름 표시 분석\n- 현상: \"멤버 #2718\" 표시 (getMemberDisplayName 폴백)\n- 분석:\n  1. curl로 `/bands/{id}/members` 실제 응답 확인\n  2. `BandMemberInfoResponse.name` 필드 존재 여부\n  3. 빈 문자열인지 undefined인지 확인\n- 조치:\n  - 백엔드 미지원 → API_REQUIRED.md FE-API-012 업데이트\n  - 빈 문자열 케이스 → `getMemberDisplayName` 로직 보강 (이미 `.trim()` 처리됨)\n\n### 8-4: 카드 선택 시각 강조 일관화\n- 대상: 합주곡 검색 카드, 밴드 그리드 카드, EntityPickerModal 결과 카드\n- 적용 스타일 (선택 시):\n  ```css\n  border-l-2 border-accent bg-accent-dim\n  /* 우상단 체크 아이콘 */\n  <Check className=\"absolute top-2 right-2 h-4 w-4 text-accent\" />\n  ```\n- 공통 컴포넌트화: `SelectableCard` wrapper 또는 유틸 클래스\n\n### 8-5: \"(자작곡)\" 라벨 제거\n- `PracticeCreateWizard.client.tsx` line 196\n- 변경: `직접 입력 (자작곡)` → `직접 입력`\n\n## 의사 코드\n```tsx\n// 8-4 SelectableCard\nexport function SelectableCard({ selected, children, ...props }) {\n  return (\n    <div className={cn(\n      'relative border rounded-md p-s-3 transition-colors',\n      selected && 'border-l-2 border-accent bg-accent-dim'\n    )} {...props}>\n      {selected && <Check className=\"absolute top-2 right-2 h-4 w-4 text-accent\" />}\n      {children}\n    </div>\n  );\n}\n```",
@@ -3615,7 +3616,711 @@
       "completedCount": 8,
       "tags": [
         "mvp-1-fix-v4"
-      ]
+      ],
+      "created": "2026-04-26T06:13:35.227Z",
+      "description": "Tasks for mvp-1-fix-v4 context",
+      "updated": "2026-04-26T06:13:35.227Z"
+    }
+  },
+  "mvp-1-fix-v5": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "레이아웃 비율 축소 — CSS 토큰 및 컴포넌트 슬림화",
+        "description": "사이드바와 마스터 패널 너비를 줄여 MBA 13(1280px) 기준 화면의 38% 이하로 축소하고, 폰트 및 패딩 사이즈를 비례 조정한다.",
+        "details": "## 구현 상세\n\n### 1. globals.css 토큰 수정\n```css\n/* src/app/globals.css @theme 블록 내 */\n--sidebar-w: 200px;      /* 240px → 200px */\n--list-pane-w: 280px;    /* 340px → 280px */\n--band-list-pane-w: 280px; /* 360px → 280px */\n```\n합계: 200 + 280 = 480px (1280px 대비 37.5%, 1440px 대비 33.3%)\n\n### 2. sidebar.tsx 슬림화\n- 로고 타일: `h-10 w-10` → `h-8 w-8`, 아이콘 `h-[22px]` → `h-[18px]`\n- 'Bandage' 텍스트: `text-title` → `text-body font-black`\n- Navigation 레이블: `text-micro` 유지\n- NavRow 링크/버튼:\n  - `py-s-3` → `py-s-2`\n  - `px-s-4` → `px-s-3`\n  - `text-body` → `text-caption`\n  - 아이콘 `h-[18px]` → `h-4 w-4`\n- 서브 메뉴: `ml-s-6` → `ml-s-5`, `py-s-2` → `py-1.5`\n- 하단 프로필: 아바타 `md` → `sm`, 텍스트 그대로\n\n### 3. ListPane 컴포넌트 슬림화\n- `BandsListPane.client.tsx`:\n  - 헤더 `text-subtitle` → `text-body font-bold`\n  - 카드 row: `p-s-3` → `p-s-2`, `text-body` → `text-caption`\n- `PracticesListPane.client.tsx`: 동일 패턴 적용\n- `PerformancesListPane.client.tsx`: 동일 패턴 적용\n\n### 4. 영향받지 않는 영역\n- `<main>` 본문 가로 패딩 유지\n- IconTile 'sm' 사이즈 유지\n- 모바일(<960px) 전혀 영향 없음 (BottomNav 사용)",
+        "testStrategy": "1. 브라우저 DevTools에서 1280px 너비 시뮬레이션 → 사이드바+마스터 영역이 480px(약 37.5%) 이하인지 측정\n2. 1440px 너비에서 33.3% 이하 확인\n3. 모바일(360px) 뷰포트에서 사이드바 미표시, BottomNav 정상 동작\n4. 텍스트 잘림 없이 가독성 유지 확인",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "globals.css 레이아웃 너비 토큰 수정",
+            "description": "사이드바와 리스트 패널 너비 CSS 변수를 축소하여 MBA 13(1280px) 기준 38% 이하로 조정한다.",
+            "dependencies": [],
+            "details": "src/app/globals.css 파일의 @theme 블록(59-61번 라인)에서 다음 토큰을 수정한다:\n- `--sidebar-w: 240px` → `--sidebar-w: 200px` (40px 감소)\n- `--list-pane-w: 340px` → `--list-pane-w: 280px` (60px 감소)\n- `--band-list-pane-w: 360px` → `--band-list-pane-w: 280px` (80px 감소)\n\n변경 후 합계: 200 + 280 = 480px (1280px 대비 37.5%, 1440px 대비 33.3%).\n\n이 토큰들은 sidebar.tsx(style={{ width: 'var(--sidebar-w)' }}), BandsListPane(var(--band-list-pane-w)), PracticesListPane/PerformancesListPane(var(--list-pane-w))에서 직접 참조되므로 토큰 수정만으로 전역 반영된다.",
+            "status": "done",
+            "testStrategy": "1. 브라우저 DevTools에서 1280px 너비 시뮬레이션 후 사이드바+마스터 영역이 480px(약 37.5%) 이하인지 측정\n2. 1440px 너비에서 33.3% 이하 확인\n3. 모바일(360px~959px) 뷰포트에서 사이드바 미표시(hidden) 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T06:51:16.458Z"
+          },
+          {
+            "id": 2,
+            "title": "sidebar.tsx 컴포넌트 슬림화",
+            "description": "사이드바 내부 요소(로고, 네비게이션, 프로필)의 폰트 크기와 패딩을 비례 축소한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "src/components/layout/sidebar.tsx 파일에서 다음 요소들을 수정한다:\n\n1. 로고 영역(93-102번 라인):\n   - 로고 타일: `h-10 w-10` → `h-8 w-8`\n   - Guitar 아이콘: `h-[22px] w-[22px]` → `h-[18px] w-[18px]`\n   - 'Bandage' 텍스트: `text-title` → `text-body font-black`\n\n2. NavRow 링크/버튼(163-164, 183-184번 라인):\n   - 패딩: `px-s-4 py-s-3` → `px-s-3 py-s-2`\n   - 폰트: `text-body` → `text-caption`\n   - 아이콘: `h-[18px] w-[18px]`는 유지 (이미 적절한 크기)\n\n3. 서브 메뉴(199번 라인):\n   - 왼쪽 마진: `ml-s-6` → `ml-s-5`\n   - 서브 아이템: `py-s-2` → `py-1.5`\n\n4. 하단 프로필(131번 라인):\n   - Avatar: `size=\"md\"` → `size=\"sm\"`\n   - 텍스트 크기는 현재 text-caption/text-micro로 유지",
+            "status": "done",
+            "testStrategy": "1. 사이드바 내 모든 텍스트가 잘리지 않고 가독성 유지되는지 확인\n2. 네비게이션 항목 클릭 영역이 충분한지 확인 (최소 44px 터치 타겟 권장)\n3. 서브 메뉴 펼침/접힘 동작 정상 확인\n4. 프로필 영역 레이아웃 깨짐 없이 렌더링 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T06:51:21.931Z"
+          },
+          {
+            "id": 3,
+            "title": "ListPane 컴포넌트 헤더 슬림화",
+            "description": "BandsListPane, PracticesListPane, PerformancesListPane의 헤더 영역 폰트와 패딩을 축소한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "세 개의 ListPane 컴포넌트 파일에서 동일한 패턴으로 헤더 영역을 수정한다:\n\n1. src/app/(main)/bands/BandsListPane.client.tsx (106-107번 라인):\n   - 헤더 컨테이너: `px-s-5 py-s-4` → `px-s-4 py-s-3`\n   - 제목 h2: `text-subtitle font-bold` → `text-body font-bold`\n\n2. src/app/(main)/practices/PracticesListPane.client.tsx (83-84번 라인):\n   - 헤더 컨테이너: `px-s-5 py-s-4` → `px-s-4 py-s-3`\n   - 제목 h2: `text-subtitle font-bold` → `text-body font-bold`\n\n3. src/app/(main)/performances/PerformancesListPane.client.tsx (77-78번 라인):\n   - 헤더 컨테이너: `px-s-5 py-s-4` → `px-s-4 py-s-3`\n   - 제목 h2: `text-subtitle font-bold` → `text-body font-bold`\n\n버튼(밴드 만들기, 합주 시작하기, 공연 생성)은 size=\"sm\" 유지.",
+            "status": "done",
+            "testStrategy": "1. 각 ListPane 헤더의 제목과 버튼이 한 줄에 정상 배치되는지 확인\n2. 버튼 텍스트가 잘리지 않는지 확인\n3. 좁아진 너비(280px)에서 레이아웃 깨짐 없이 렌더링되는지 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T06:51:26.542Z"
+          },
+          {
+            "id": 4,
+            "title": "ListPane 컴포넌트 목록 항목 슬림화",
+            "description": "BandsListPane, PracticesListPane, PerformancesListPane의 목록 row 패딩과 폰트를 축소한다.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "목록 항목 스타일을 수정한다:\n\n1. src/lib/list-item-styles.ts (4번 라인):\n   - BASE 상수에서 `p-s-3` → `p-s-2`로 변경\n   - 이 변경으로 BandRow, PracticeRow, PerformanceRow 모두 일괄 적용됨\n\n2. 각 ListPane 내 Row 컴포넌트 텍스트 크기:\n   - BandsListPane.client.tsx BandRow (58번 라인): `text-body` → `text-caption`\n   - PracticesListPane.client.tsx PracticeRow (44번 라인): `text-body` → `text-caption`\n   - PerformancesListPane.client.tsx PerformanceRow (41번 라인): `text-body` → `text-caption`\n\n주의: IconTile size=\"sm\"은 유지하여 아이콘 크기는 그대로 둔다. 보조 텍스트(description, venue, startAt 등)는 이미 text-caption이므로 변경 불필요.",
+            "status": "done",
+            "testStrategy": "1. 목록 항목들이 균등한 간격으로 렌더링되는지 확인\n2. 텍스트 잘림 없이 가독성 유지 확인\n3. 선택된 항목(active) 스타일이 정상 적용되는지 확인\n4. 스크롤 시 목록이 자연스럽게 표시되는지 확인\n5. 모바일(360px~959px)에서 ListPane이 표시되지 않음(hidden) 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-04-26T06:51:30.348Z"
+          }
+        ],
+        "updatedAt": "2026-04-26T06:51:30.348Z"
+      },
+      {
+        "id": 2,
+        "title": "선곡 회의 도메인 골격 — types + Zustand store + mock 시드",
+        "description": "src/domain/setlist-meeting/ 도메인 모듈을 신규 생성하고, 타입 정의/Zustand store/mock 데이터 시드를 구현한다.",
+        "details": "## 폴더 구조\n```\nsrc/domain/setlist-meeting/\n├── types.ts        # Meeting, Song, Session, Applicant, ChatMessage\n├── store/\n│   └── setlistStore.ts\n├── mock/\n│   └── seed.ts     # TOOL TRIBUTE 7곡 + 마그마 1회의\n├── utils.ts        # 세션 상태 헬퍼\n└── components/     # (Phase E~H에서 추가)\n```\n\n## types.ts\n```ts\nexport type SessionDef = {\n  id: string; label: string; short: string; need: number; custom?: boolean;\n};\nexport type Applicant = { userId: string; appliedAt: string; };\nexport type ChatMessage = { userId: string; at: string; msg: string; };\nexport type Song = {\n  id: string; title: string; artist: string; album?: string;\n  proposerId: string; note?: string;\n  sessions: SessionDef[];\n  applicants: Record<string, string[]>;   // sessionId → userId[]\n  confirmed: Record<string, string[]>;\n  chat: ChatMessage[];\n};\nexport type Meeting = {\n  id: string; bandId: string; bandName: string; title: string;\n  managerId: string; createdAt: string; updatedAt: string;\n};\n```\n\n## setlistStore.ts\n```ts\nimport { create } from 'zustand';\nimport { persist, createJSONStorage } from 'zustand/middleware';\nimport { SEED_MEETINGS, SEED_SONGS, SEED_MEMBERS } from '../mock/seed';\n\ntype State = {\n  meetings: Meeting[];\n  songs: Song[]; // 전체 곡 (meetingId별 필터는 클라이언트)\n  members: Member[];\n  selectedMeetingId: string | null;\n  selectedSongId: string | null;\n  focusedSessionId: string | null;\n};\ntype Actions = {\n  setSelectedMeeting: (id: string) => void;\n  setSelectedSong: (id: string) => void;\n  setFocusedSession: (id: string | null) => void;\n  applySession: (songId: string, sessionId: string, userId: string) => void;\n  withdrawSession: (songId: string, sessionId: string, userId: string) => void;\n  confirmSession: (songId: string, sessionId: string, userId: string) => void;\n  unconfirmSession: (songId: string, sessionId: string, userId: string) => void;\n  sendChat: (songId: string, userId: string, msg: string) => void;\n  addSong: (meetingId: string, song: Omit<Song, 'id' | 'chat' | 'applicants' | 'confirmed'>) => void;\n  addCustomSession: (songId: string, session: SessionDef) => void;\n};\n\nexport const useSetlistStore = create<State & Actions>()(\n  persist(\n    (set, get) => ({ ... }),\n    { name: 'bandage-setlist', storage: createJSONStorage(() => sessionStorage) },\n  ),\n);\n```\n\n## mock/seed.ts\n- design/web/setlist_web.jsx의 W_MEETINGS, SL_SONGS_INIT, SL_MEMBERS 변환\n- TOOL TRIBUTE 7곡 + 마그마 1회의\n\n## utils.ts\n```ts\nexport function sessionState(confirmed: string[], need: number): 'full' | 'partial' | 'empty';\nexport function isReady(song: Song): boolean;\nexport function missingCount(song: Song): number;\nexport function totalNeed(song: Song): number;\nexport function confirmedCount(song: Song): number;\n```",
+        "testStrategy": "1. Vitest 단위 테스트: store actions (applySession, withdrawSession 등) 호출 후 상태 변경 검증\n2. utils 헬퍼 함수 단위 테스트 (sessionState, isReady, missingCount)\n3. sessionStorage persist 확인: 브라우저 새로고침 후에도 사용자 액션(지원/채팅) 유지",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "types.ts — 선곡 회의 도메인 타입 정의",
+            "description": "setlist-meeting 도메인의 핵심 타입들(Meeting, Song, SessionDef, Applicant, ChatMessage, Member)을 정의한다.",
+            "dependencies": [],
+            "details": "## 파일 생성 경로\nsrc/domain/setlist-meeting/types.ts\n\n## 구현 상세\n1. SessionDef 타입: id, label, short, need, custom 필드\n2. Applicant 타입: userId, appliedAt 필드\n3. ChatMessage 타입: userId, at, msg 필드 (design/web/setlist_web.jsx의 chat 배열 구조 참고)\n4. Song 타입: id, title, artist, album, proposerId, note, sessions(SessionDef[]), applicants(Record<string, string[]>), confirmed(Record<string, string[]>), chat(ChatMessage[])\n5. Meeting 타입: id, bandId, bandName, title, managerId, createdAt, updatedAt\n6. Member 타입: id, name, role, avatar (SL_MEMBERS 구조 참고)\n\n## 기존 패턴 참고\n- src/global/types/api.ts의 ApiResponse, CursorResponse 래퍼 스타일 준수\n- src/domain/band/types/req.ts, res.ts 분리 패턴 참고\n- 향후 백엔드 DTO와 동기화를 고려한 네이밍 (SongResponse, MeetingResponse 등)",
+            "status": "pending",
+            "testStrategy": "TypeScript 컴파일 검증: pnpm typecheck 통과 확인. 타입 export 정상 여부 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "mock/seed.ts — TOOL TRIBUTE 7곡 + 마그마 1회의 mock 데이터",
+            "description": "design/web/setlist_web.jsx의 W_MEETINGS, SL_SONGS_INIT, SL_MEMBERS 데이터를 TypeScript 타입에 맞게 변환하여 mock 시드 데이터를 생성한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 파일 생성 경로\nsrc/domain/setlist-meeting/mock/seed.ts\n\n## 구현 상세\n1. SEED_MEMBERS: SL_MEMBERS 7명 변환 (정선우, 신선경, 지범준, 안성진, 이동후, 임지수, 최홍석)\n2. SEED_MEETINGS: W_MEETINGS 2건 변환 (mt1: TOOL TRIBUTE '10,000 Days 전곡 합주 프로젝트', mt2: 마그마 '여름 공연 셋리스트')\n3. SEED_SONGS: SL_SONGS_INIT 7곡 변환 (Vicarious, Jambi, Wings for Marie Pt1, 10,000 Days Pt2, The Pot, Right in Two, Rosetta Stoned)\n   - 각 곡의 sessions, applicants, confirmed, chat 구조 유지\n   - SL_TOOL_SESSIONS 기본 4세션(V, G, B, D) + 곡별 커스텀 세션(K, PERC, D2 등)\n4. CURRENT_USER_ID: 'u1' (정선우) 상수 export\n\n## 데이터 구조 주의점\n- applicants[sessionId] = userId[] 형태\n- confirmed[sessionId] = userId[] 형태\n- chat의 uid → userId, at → at(문자열 유지)",
+            "status": "pending",
+            "testStrategy": "타입 검증: SEED_SONGS가 Song[] 타입, SEED_MEETINGS가 Meeting[] 타입으로 올바르게 추론되는지 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "setlistStore.ts — Zustand store 및 액션 구현",
+            "description": "선곡 회의 상태 관리를 위한 Zustand store를 구현하고, 지원/취소/확정/채팅 등의 액션을 정의한다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "## 파일 생성 경로\nsrc/domain/setlist-meeting/store/setlistStore.ts\n\n## State 구조\n- meetings: Meeting[]\n- songs: Song[]\n- members: Member[]\n- selectedMeetingId: string | null\n- selectedSongId: string | null\n- focusedSessionId: string | null\n\n## Actions 구현\n- setSelectedMeeting(id: string): 선택된 회의 변경\n- setSelectedSong(id: string): 선택된 곡 변경\n- setFocusedSession(id: string | null): 포커스된 세션 변경\n- applySession(songId, sessionId, userId): applicants 배열에 userId 추가\n- withdrawSession(songId, sessionId, userId): applicants/confirmed에서 userId 제거\n- confirmSession(songId, sessionId, userId): confirmed 배열에 userId 추가 (need 초과 방지)\n- unconfirmSession(songId, sessionId, userId): confirmed에서 userId 제거\n- sendChat(songId, userId, msg): chat 배열에 메시지 추가\n- addSong(meetingId, song): 새 곡 추가\n- addCustomSession(songId, session): 곡에 커스텀 세션 추가\n\n## persist 설정\n- name: 'bandage-setlist'\n- storage: sessionStorage (authStore.ts 패턴 참고)\n- SSR 안전 처리: typeof window 체크",
+            "status": "pending",
+            "testStrategy": "Vitest 단위 테스트: applySession, withdrawSession, confirmSession, unconfirmSession, sendChat 액션 호출 후 상태 변경 검증. sessionStorage persist 동작 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "utils.ts — 세션 상태 판정 헬퍼 함수",
+            "description": "sessionState, isReady, missingCount, totalNeed, confirmedCount 등 세션 상태 계산 유틸리티 함수를 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 파일 생성 경로\nsrc/domain/setlist-meeting/utils.ts\n\n## 함수 구현 (design/web/setlist_web.jsx 로직 참고)\n1. sessionState(confirmed: string[], need: number): 'full' | 'partial' | 'empty'\n   - confirmed.length >= need → 'full'\n   - confirmed.length > 0 → 'partial'\n   - otherwise → 'empty'\n\n2. isReady(song: Song): boolean\n   - 모든 세션이 'full' 상태인지 체크\n   - song.sessions.every(s => sessionState(song.confirmed[s.id], s.need) === 'full')\n\n3. missingCount(song: Song): number\n   - 부족한 인원 수 합계\n   - sessions.reduce((acc, s) => acc + Math.max(0, s.need - (confirmed[s.id]?.length || 0)), 0)\n\n4. totalNeed(song: Song): number\n   - 필요한 총 인원 수\n   - sessions.reduce((acc, s) => acc + s.need, 0)\n\n5. confirmedCount(song: Song): number\n   - 확정된 총 인원 수\n   - sessions.reduce((acc, s) => acc + (confirmed[s.id]?.length || 0), 0)\n\n## 타입 import\n- types.ts에서 Song, SessionDef 타입 import",
+            "status": "pending",
+            "testStrategy": "Vitest 단위 테스트: sessionState('full'/'partial'/'empty' 케이스), isReady(true/false), missingCount, totalNeed, confirmedCount 각 함수에 대한 edge case 테스트.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T07:29:05.236Z"
+      },
+      {
+        "id": 3,
+        "title": "사이드바 + BottomNav — '선곡 회의' 탭 및 라우팅 추가",
+        "description": "routes.ts에 SETLIST_MEETINGS 경로를 추가하고, Sidebar와 BottomNav에 '선곡 회의' 네비게이션 항목을 삽입한다.",
+        "details": "## 1. routes.ts 수정\n```ts\n// src/global/config/routes.ts\nexport const ROUTES = {\n  // ...existing\n  SETLIST_MEETINGS: '/setlist-meetings',\n  SETLIST_MEETING_DETAIL: (id: string) => `/setlist-meetings/${id}`,\n} as const;\n```\n\n## 2. sidebar.tsx 수정\n- lucide-react에서 `ClipboardList` 아이콘 import\n- mainNav 배열에 '선곡 회의' 항목 삽입 (홈 → 밴드 → **선곡 회의** → 합주 → 공연 → 마이페이지)\n```ts\n{ href: ROUTES.SETLIST_MEETINGS, label: '선곡 회의', icon: ClipboardList },\n```\n- isActive 함수에서 '/setlist-meetings' prefix 매칭\n\n## 3. bottom-nav.tsx 수정\n- tabs 배열에 동일 항목 추가 (5탭 → 6탭)\n- 6탭 레이아웃: 아이콘 사이즈 `h-4 w-4`, 라벨 폰트 `text-[10px]`로 미세 조정하여 공간 확보\n\n## 4. isActive 로직\n- `href === ROUTES.SETLIST_MEETINGS` 또는 `pathname.startsWith('/setlist-meetings/')` 매칭",
+        "testStrategy": "1. 데스크톱(>=960px): 사이드바에 '선곡 회의' 항목 표시, 클릭 시 /setlist-meetings 이동\n2. 모바일(<960px): BottomNav에 6번째 탭 표시, 클릭 시 라우트 이동\n3. /setlist-meetings/mt1 등 하위 경로에서 탭 활성 상태 유지",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "routes.ts에 SETLIST_MEETINGS 경로 상수 추가",
+            "description": "src/global/config/routes.ts에 선곡 회의 관련 경로 상수(SETLIST_MEETINGS, SETLIST_MEETING_DETAIL)를 추가하여 라우팅 시스템의 기반을 마련한다.",
+            "dependencies": [],
+            "details": "routes.ts 파일에 다음 두 경로를 추가:\n- SETLIST_MEETINGS: '/setlist-meetings' (목록 페이지)\n- SETLIST_MEETING_DETAIL: (id: string) => `/setlist-meetings/${id}` (상세 페이지 동적 경로)\n\n기존 PERFORMANCES와 ME 경로 사이에 삽입하여 논리적 순서 유지. AppRoutes 타입은 자동으로 추론되므로 별도 수정 불필요.",
+            "status": "pending",
+            "testStrategy": "TypeScript 컴파일 통과 확인, ROUTES.SETLIST_MEETINGS 및 ROUTES.SETLIST_MEETING_DETAIL('mt1') 호출 시 올바른 문자열 반환 검증",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "sidebar.tsx에 '선곡 회의' 네비게이션 항목 추가",
+            "description": "데스크톱 사이드바의 mainNav 배열에 '선곡 회의' 항목을 삽입하고 ClipboardList 아이콘을 import한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. lucide-react import 문에 ClipboardList 추가\n2. mainNav 배열에서 '밴드' 항목 다음, '합주' 항목 이전에 새 항목 삽입:\n   { href: ROUTES.SETLIST_MEETINGS, label: '선곡 회의', icon: ClipboardList }\n3. isActive 함수는 기존 로직이 '/setlist-meetings' prefix 매칭을 자동 처리하므로 수정 불필요 (href가 ROUTES.HOME이 아닌 경우 pathname.startsWith(`${href}/`) 패턴 사용)",
+            "status": "pending",
+            "testStrategy": "데스크톱(>=960px) 뷰포트에서 사이드바에 '선곡 회의' 항목 표시 확인, 클릭 시 /setlist-meetings 경로 이동, /setlist-meetings/mt1 하위 경로에서 활성 상태 유지 검증",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "bottom-nav.tsx에 '선곡 회의' 탭 추가 및 6탭 레이아웃 조정",
+            "description": "모바일 하단 네비게이션의 tabs 배열에 '선곡 회의' 탭을 추가하고 6탭 레이아웃에 맞게 스타일을 미세 조정한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. lucide-react import 문에 ClipboardList 추가\n2. tabs 배열에서 '밴드' 다음, '합주' 이전에 새 항목 삽입:\n   { href: ROUTES.SETLIST_MEETINGS, icon: ClipboardList, label: '선곡' }\n   (모바일 공간 제약으로 '선곡 회의' 대신 '선곡'으로 축약)\n3. 6탭 공간 확보를 위한 스타일 조정:\n   - 아이콘: className을 'h-5 w-5'에서 'h-4 w-4'로 변경\n   - 라벨: className을 'text-[11px]'에서 'text-[10px]'로 변경\n4. isActive 함수는 기존 로직이 prefix 매칭을 자동 처리",
+            "status": "pending",
+            "testStrategy": "모바일(<960px) 뷰포트에서 BottomNav에 6개 탭 표시 확인, 탭 간격 균등 배치 및 텍스트 잘림 없음 확인, '선곡' 탭 클릭 시 /setlist-meetings 이동, 하위 경로에서 활성 상태 유지",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "lint/typecheck 통과 및 isActive 로직 검증",
+            "description": "변경된 파일들에 대해 lint, typecheck를 실행하고 isActive 로직이 /setlist-meetings 및 하위 경로에서 올바르게 동작하는지 확인한다.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "1. pnpm lint 실행하여 ESLint 규칙 위반 없음 확인\n2. pnpm typecheck 실행하여 TypeScript 컴파일 오류 없음 확인\n3. isActive 로직 검증 포인트:\n   - pathname이 '/setlist-meetings'일 때 해당 탭 활성화\n   - pathname이 '/setlist-meetings/mt1', '/setlist-meetings/mt1/edit' 등 하위 경로일 때도 활성화\n   - 다른 탭 경로에서는 비활성 상태 유지\n4. pnpm format 실행하여 코드 포맷팅 일관성 확보",
+            "status": "pending",
+            "testStrategy": "pnpm lint, pnpm typecheck, pnpm format 모두 에러 없이 통과, 개발 서버(pnpm dev) 실행 후 브라우저에서 데스크톱/모바일 양쪽 뷰포트에서 네비게이션 동작 수동 테스트",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T07:33:30.161Z"
+      },
+      {
+        "id": 4,
+        "title": "회의 목록 마스터 패널 — 라우트 + ListPane 구현",
+        "description": "/setlist-meetings 라우트와 layout, SetlistMeetingsListPane 마스터 패널을 구현한다.",
+        "details": "## 파일 구조\n```\nsrc/app/(main)/setlist-meetings/\n├── page.tsx                        # 첫 회의 자동 선택 → redirect\n├── layout.tsx                      # 마스터 패널 + children\n└── SetlistMeetingsListPane.client.tsx\n```\n\n## page.tsx\n```tsx\nimport { redirect } from 'next/navigation';\nimport { SEED_MEETINGS } from '@/domain/setlist-meeting/mock/seed';\nimport { ROUTES } from '@/global/config/routes';\n\nexport default function SetlistMeetingsPage() {\n  const first = SEED_MEETINGS[0];\n  if (first) redirect(ROUTES.SETLIST_MEETING_DETAIL(first.id));\n  return null; // 빈 상태는 layout에서 처리\n}\n```\n\n## layout.tsx\n```tsx\nexport default function SetlistMeetingsLayout({ children }: { children: ReactNode }) {\n  return (\n    <div className=\"flex flex-1 overflow-hidden\">\n      <SetlistMeetingsListPane />\n      <main className=\"flex-1 overflow-hidden\">{children}</main>\n    </div>\n  );\n}\n```\n\n## SetlistMeetingsListPane.client.tsx\n- 헤더: \"선곡 회의\" 타이틀 + \"N건 참여\" 부제\n- '회의 만들기' 버튼 (BE 미지원 → toast.info 안내)\n- 회의 카드 리스트:\n  - 밴드명 (accent 색상, text-caption)\n  - 회의 제목 (text-body font-bold)\n  - 진행 막대 (ready/total) + 비율 텍스트\n  - updatedAt\n- 선택 시 useRouter().push(ROUTES.SETLIST_MEETING_DETAIL(id))\n- EmptyState: \"참여 중인 선곡 회의가 없습니다\"\n\n## 스타일 (Task 1 축소 적용)\n- width: var(--list-pane-w) = 280px\n- 카드 padding: p-s-2, 제목 text-caption",
+        "testStrategy": "1. /setlist-meetings 접근 시 첫 번째 회의로 자동 redirect\n2. 마스터 패널에 mock 회의 2건 표시\n3. 회의 카드 클릭 시 /setlist-meetings/{id} 이동\n4. '회의 만들기' 버튼 클릭 시 toast 안내 표시",
+        "priority": "high",
+        "dependencies": [
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "routes.ts에 SETLIST_MEETINGS 라우트 상수 추가",
+            "description": "src/global/config/routes.ts에 선곡 회의 관련 라우트 상수(SETLIST_MEETINGS, SETLIST_MEETING_DETAIL)를 추가한다.",
+            "dependencies": [],
+            "details": "## 변경 파일\n- `src/global/config/routes.ts`\n\n## 구현 내용\n```ts\nSETLIST_MEETINGS: '/setlist-meetings',\nSETLIST_MEETING_DETAIL: (id: string) => `/setlist-meetings/${id}`,\n```\n\n기존 ROUTES 객체에 위 두 개의 라우트 상수를 추가한다. PERFORMANCES 다음, ME 이전에 배치한다.\n\n## 참고\n- Task 3(사이드바/BottomNav 탭 추가)에서 이 라우트를 사용할 예정\n- Task 2에서 생성될 mock 데이터(SEED_MEETINGS)와 함께 사용",
+            "status": "pending",
+            "testStrategy": "1. TypeScript 타입체크 통과 확인\n2. ROUTES.SETLIST_MEETINGS, ROUTES.SETLIST_MEETING_DETAIL('mt1') 호출이 정상 동작하는지 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "/setlist-meetings 라우트 page.tsx 구현 (첫 회의 자동 redirect)",
+            "description": "/setlist-meetings 접근 시 첫 번째 회의로 자동 redirect하는 page.tsx를 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 파일 생성\n- `src/app/(main)/setlist-meetings/page.tsx`\n\n## 구현 내용\n```tsx\nimport { redirect } from 'next/navigation';\nimport { SEED_MEETINGS } from '@/domain/setlist-meeting/mock/seed';\nimport { ROUTES } from '@/global/config/routes';\n\nexport const metadata: Metadata = {\n  title: '선곡 회의 | Bandage',\n};\n\nexport default function SetlistMeetingsPage() {\n  const first = SEED_MEETINGS[0];\n  if (first) redirect(ROUTES.SETLIST_MEETING_DETAIL(first.id));\n  return null; // 빈 상태는 layout에서 처리\n}\n```\n\n## 의존성\n- Task 2에서 생성되는 `SEED_MEETINGS` mock 데이터 필요\n- Subtask 1에서 추가한 ROUTES.SETLIST_MEETING_DETAIL 라우트 사용",
+            "status": "pending",
+            "testStrategy": "1. /setlist-meetings 접근 시 첫 번째 회의(SEED_MEETINGS[0].id)로 redirect 되는지 확인\n2. SEED_MEETINGS가 빈 배열일 경우 redirect 없이 null 반환 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "/setlist-meetings layout.tsx 마스터-디테일 레이아웃 구현",
+            "description": "마스터 패널(SetlistMeetingsListPane)과 children을 나란히 배치하는 layout.tsx를 구현한다.",
+            "dependencies": [
+              2
+            ],
+            "details": "## 파일 생성\n- `src/app/(main)/setlist-meetings/layout.tsx`\n\n## 구현 내용\n```tsx\nimport { Suspense, type ReactNode } from 'react';\nimport { SetlistMeetingsListPane } from './SetlistMeetingsListPane.client';\n\nexport default function SetlistMeetingsLayout({ children }: { children: ReactNode }) {\n  return (\n    <div className=\"flex h-full flex-col lg:flex-row\">\n      <Suspense fallback={null}>\n        <SetlistMeetingsListPane />\n      </Suspense>\n      <div className=\"min-w-0 flex-1 lg:overflow-y-auto\">{children}</div>\n    </div>\n  );\n}\n```\n\n## 참고\n- 기존 practices/layout.tsx 패턴을 따름\n- lg 이상에서 좌우 분할, 모바일에서는 세로 스택\n- ListPane은 'use client' 컴포넌트이므로 Suspense로 감싸서 import",
+            "status": "pending",
+            "testStrategy": "1. lg 이상 화면에서 좌측에 ListPane, 우측에 children 렌더링 확인\n2. 모바일 화면에서 세로 스택 레이아웃 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "SetlistMeetingsListPane.client.tsx 마스터 패널 컴포넌트 구현",
+            "description": "회의 목록을 표시하는 마스터 패널 컴포넌트를 구현한다. 헤더, 회의 카드 리스트, 진행 막대, EmptyState를 포함한다.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "## 파일 생성\n- `src/app/(main)/setlist-meetings/SetlistMeetingsListPane.client.tsx`\n\n## 구현 내용\n1. **헤더 영역**\n   - '선곡 회의' 타이틀 (text-subtitle font-bold)\n   - 'N건 참여' 부제 (text-caption text-foreground-muted)\n   - '회의 만들기' 버튼 (BE 미지원 → `useToastStore.getState().add({ type: 'info', message: '회의 만들기 기능은 준비 중입니다.' })`)\n\n2. **회의 카드 리스트**\n   - SEED_MEETINGS에서 목록 로드\n   - 각 카드 구성:\n     - 밴드명 (text-accent text-caption)\n     - 회의 제목 (text-body font-bold)\n     - 진행 막대: `(ready/total)` 비율로 width 계산, bg-success rounded-full h-1.5\n     - 비율 텍스트: `{ready}/{total}곡 준비 완료`\n     - updatedAt (formatInTimeZone으로 Asia/Seoul 포맷)\n   - 선택 시 `router.push(ROUTES.SETLIST_MEETING_DETAIL(id))`\n   - 선택 상태: pathname과 비교하여 listItemClasses(active, 'accent') 적용\n\n3. **EmptyState**\n   - 회의가 없을 때: EmptyState 컴포넌트 사용\n   - title: '참여 중인 선곡 회의가 없습니다'\n\n## 스타일\n- width: `var(--list-pane-w)` (280px, Task 1에서 정의)\n- 카드 padding: `p-s-2`\n- 제목: `text-caption`\n- 기존 PracticesListPane.client.tsx 패턴 참고\n\n## Import\n- `useRouter`, `usePathname` from 'next/navigation'\n- `SEED_MEETINGS` from '@/domain/setlist-meeting/mock/seed'\n- `useToastStore` from '@/global/store/toastStore'\n- `listItemClasses` from '@/lib/list-item-styles'\n- `formatInTimeZone` from 'date-fns-tz'\n- `Button` from '@/components/ui/button'\n- `EmptyState` from '@/components/feedback/empty-state'",
+            "status": "pending",
+            "testStrategy": "1. mock 회의 2건이 리스트에 표시되는지 확인\n2. 각 회의 카드에 밴드명, 제목, 진행 막대, updatedAt 표시 확인\n3. 회의 카드 클릭 시 /setlist-meetings/{id}로 이동하는지 확인\n4. '회의 만들기' 버튼 클릭 시 info toast가 표시되는지 확인\n5. SEED_MEETINGS가 빈 배열일 때 EmptyState 렌더링 확인\n6. 선택된 회의 카드에 active 스타일(bg-accent-dim) 적용 확인",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T07:37:45.496Z"
+      },
+      {
+        "id": 5,
+        "title": "곡 표 (엑셀 형태) + 상단 헤더/필터 구현",
+        "description": "/setlist-meetings/[meetingId] 라우트와 MeetingDetail, SongTable 컴포넌트를 구현하여 엑셀 형태의 곡 목록을 표시한다.",
+        "details": "## 파일 구조\n```\nsrc/app/(main)/setlist-meetings/[meetingId]/\n├── page.tsx\n└── MeetingDetail.client.tsx\n\nsrc/domain/setlist-meeting/components/\n├── SongTable.client.tsx\n└── SessionTrack.tsx\n```\n\n## page.tsx\n```tsx\nimport { MeetingDetail } from './MeetingDetail.client';\nexport default function MeetingDetailPage({ params }: { params: { meetingId: string } }) {\n  return <MeetingDetail meetingId={params.meetingId} />;\n}\n```\n\n## MeetingDetail.client.tsx\n- 상단 헤더:\n  - 밴드명 (accent text-caption)\n  - 회의 제목 (text-title font-bold)\n  - 통계: 전체 N곡 / 합주 가능 N곡 / 모집 중 N곡\n  - '곡 추가' 버튼 → AddSongModal 열기\n- 필터 탭: 전체 | 합주 가능 | 모집 중 | 내 지원\n- 검색 input: 곡명/아티스트 필터\n- SongTable 렌더링\n- 하단 채팅 split (Task 7에서 구현)\n\n## SongTable.client.tsx\n- <table> 형태 (design/web/setlist_web.jsx 참조)\n- 컬럼: # | 곡명 | 아티스트 | 앨범 | 세션 점유 현황 | 추천자 의견 | 진행도\n- 합주 가능 행: 좌측 success 보더 + 배경 톤 + ✓ 배지\n- 행 클릭 → setSelectedSong + 세션 패널 오픈\n- 세션 셀 클릭 → setFocusedSession\n\n## SessionTrack.tsx\n- 인라인 세션 미니 트랙\n- Props: session, applicants, confirmed, active, mine, onClick\n- 색상: full(success), partial(warn), empty(muted), mine(accent)\n- 얇은 채움 막대 (ratio bar)",
+        "testStrategy": "1. /setlist-meetings/mt1 접근 시 TOOL TRIBUTE 7곡 표 렌더링\n2. 필터 탭 전환 시 곡 목록 필터링 동작\n3. 검색 input에 \"Vicarious\" 입력 시 해당 곡만 표시\n4. 합주 가능 곡(Jambi 등)에 success 보더 + ✓ 배지 표시\n5. 세션 셀 클릭 시 focusedSession 상태 변경",
+        "priority": "high",
+        "dependencies": [
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "[meetingId] 라우트 및 page.tsx 구현",
+            "description": "/setlist-meetings/[meetingId] 동적 라우트를 생성하고, MeetingDetail 클라이언트 컴포넌트를 렌더링하는 page.tsx를 구현합니다.",
+            "dependencies": [],
+            "details": "src/app/(main)/setlist-meetings/[meetingId]/ 폴더 구조를 생성합니다.\n\n1. **page.tsx** - 서버 컴포넌트로 동적 라우트 파라미터 처리:\n   - Next.js 15 App Router의 params가 Promise<{meetingId: string}> 타입\n   - async function 내에서 await params로 meetingId 추출\n   - MeetingDetail.client.tsx를 import하여 meetingId props 전달\n   - Metadata export로 '선곡 회의 상세 | Bandage' 타이틀 설정\n\n2. **파일 구조 준수**:\n   - practices/[practiceId]/page.tsx 패턴 참조\n   - RSC 우선 원칙: page.tsx는 서버 컴포넌트로 유지\n   - 클라이언트 로직은 MeetingDetail.client.tsx로 분리\n\n3. **구현 예시**:\n```tsx\nimport type { Metadata } from 'next';\nimport { MeetingDetail } from './MeetingDetail.client';\n\nexport const metadata: Metadata = {\n  title: '선곡 회의 상세 | Bandage',\n};\n\ntype PageProps = {\n  params: Promise<{ meetingId: string }>;\n};\n\nexport default async function MeetingDetailPage({ params }: PageProps) {\n  const { meetingId } = await params;\n  return <MeetingDetail meetingId={meetingId} />;\n}\n```",
+            "status": "pending",
+            "testStrategy": "/setlist-meetings/mt1 접근 시 MeetingDetail 컴포넌트가 meetingId='mt1' props와 함께 렌더링되는지 확인. pnpm typecheck로 라우트 파라미터 타입 검증.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "MeetingDetail.client.tsx — 상단 헤더/필터/검색 구현",
+            "description": "상단 헤더(밴드명, 회의 제목, 통계), 필터 탭(전체/합주 가능/모집 중/내 지원), 검색 input을 포함하는 MeetingDetail 클라이언트 컴포넌트를 구현합니다.",
+            "dependencies": [
+              1
+            ],
+            "details": "src/app/(main)/setlist-meetings/[meetingId]/MeetingDetail.client.tsx 구현:\n\n1. **'use client' 디렉티브 선언**\n\n2. **상태 관리**:\n   - selectedSong: string | null (선택된 곡 ID)\n   - focusedSession: string | null (포커스된 세션 ID)\n   - filter: 'all' | 'ready' | 'pending' | 'mine'\n   - search: string (곡명/아티스트 검색어)\n   - Task 2에서 구현될 setlistStore의 Zustand 훅 사용\n\n3. **상단 헤더 영역**:\n   - 밴드명: text-accent text-caption 스타일\n   - 회의 제목: text-title font-bold\n   - 통계 라인: '전체 N곡 / 합주 가능 N곡 / 모집 중 N곡' (success/warn 색상 적용)\n   - '곡 추가' Button (우측 정렬, Plus 아이콘) → AddSongModal 연결 (Task 6)\n\n4. **필터 탭**:\n   - Tabs 컴포넌트 사용 (src/components/ui/tabs.tsx)\n   - 4개 탭: 전체(all), 합주 가능(ready), 모집 중(pending), 내 지원(mine)\n   - pill variant 스타일, 필터 상태와 연동\n\n5. **검색 Input**:\n   - Input 컴포넌트 (src/components/ui/input.tsx)\n   - placeholder: '곡명, 아티스트로 검색...'\n   - Search 아이콘 (lucide-react)\n   - 입력값으로 songs 배열 필터링\n\n6. **필터링 로직**:\n   - filter 상태 + search 입력 조합으로 visible songs 계산\n   - Task 2의 utils.ts 헬퍼(isReady, sessionState) 활용\n\n7. **SongTable + 채팅 영역 placeholder**:\n   - SongTable 컴포넌트 렌더링 (서브태스크 3)\n   - 하단 채팅 split 영역 예약 (Task 7에서 구현)",
+            "status": "pending",
+            "testStrategy": "필터 탭 전환 시 곡 목록이 필터링되는지 확인. 검색 input에 'Vicarious' 입력 시 해당 곡만 표시되는지 확인. 통계 숫자가 mock 데이터와 일치하는지 검증.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "SongTable.client.tsx — 엑셀 형태 곡 테이블 구현",
+            "description": "HTML <table> 기반의 엑셀 형태 곡 목록 테이블을 구현합니다. 컬럼: # | 곡명 | 아티스트 | 앨범 | 세션 점유 현황 | 추천자 의견 | 진행도",
+            "dependencies": [
+              1
+            ],
+            "details": "src/domain/setlist-meeting/components/SongTable.client.tsx 구현:\n\n1. **Props 인터페이스**:\n```tsx\ninterface SongTableProps {\n  songs: Song[];  // 필터링된 곡 배열\n  selectedSongId: string | null;\n  focusedSessionId: string | null;\n  currentUserId: string;\n  onSelectSong: (songId: string) => void;\n  onFocusSession: (songId: string, sessionId: string) => void;\n}\n```\n\n2. **테이블 구조**:\n   - <table> + <thead> sticky + <tbody>\n   - 컬럼 헤더: # | 곡명 | 아티스트 | 앨범 | 세션 점유 현황 | 추천자 의견 | 진행도\n   - 헤더: text-foreground-muted uppercase letterSpacing\n\n3. **행 스타일링**:\n   - 선택된 행: bg-accent-dim + accent 좌측 보더 3px\n   - 합주 가능(ready) 행: bg-success-dim/7 + success 좌측 보더 3px\n   - 합주 가능 곡: 곡명 앞에 success 배경 원형 체크마크 배지\n   - 행 클릭 시 onSelectSong 호출 + 세션 패널 오픈\n\n4. **컬럼별 구현**:\n   - #: monospace, 2자리 패딩 (01, 02...)\n   - 곡명: font-bold, 합주 가능 시 체크 배지 포함\n   - 아티스트/앨범: text-foreground-sub/muted\n   - 세션 점유 현황: SessionTrack 컴포넌트 inline-flex로 배치\n   - 추천자 의견: 말줄임(...) 처리, 추천자 이름 prefix\n   - 진행도: 프로그레스 바 + N/M 텍스트\n\n5. **세션 셀 클릭 처리**:\n   - e.stopPropagation()으로 행 선택과 분리\n   - onFocusSession(songId, sessionId) 호출\n\n6. **빈 상태**:\n   - songs.length === 0일 때 '조건에 맞는 곡이 없습니다' 메시지",
+            "status": "pending",
+            "testStrategy": "TOOL TRIBUTE 7곡이 테이블에 올바르게 렌더링되는지 확인. 합주 가능 곡(Jambi 등)에 success 보더 + 체크 배지 표시 확인. 세션 셀 클릭 시 focusedSession 상태 변경 확인.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "SessionTrack.tsx — 인라인 세션 미니 트랙 컴포넌트",
+            "description": "테이블 내 세션 점유 현황을 표시하는 인라인 SessionTrack 컴포넌트를 구현합니다. 얇은 채움 막대와 상태별 색상을 지원합니다.",
+            "dependencies": [],
+            "details": "src/domain/setlist-meeting/components/SessionTrack.tsx 구현:\n\n1. **Props 인터페이스**:\n```tsx\ninterface SessionTrackProps {\n  session: SessionDef;  // {id, label, short, need, custom?}\n  applicants: string[];  // 지원자 userId 배열\n  confirmed: string[];   // 확정된 userId 배열\n  active: boolean;       // 현재 포커스 여부\n  mine: boolean;         // 내가 지원했는지\n  onClick: () => void;\n}\n```\n\n2. **세션 상태 판정**:\n   - full: confirmed.length >= need (success 색상)\n   - partial: confirmed.length > 0 (warn 색상)\n   - empty: confirmed.length === 0 (muted 색상)\n   - mine: applicants에 현재 유저 포함 시 (accent 색상)\n\n3. **레이아웃**:\n   - 세로 정렬: 세션 라벨(short) + 채움 막대\n   - 버튼 형태로 클릭 가능\n   - minWidth: 30px, 가로 gap 14px 권장\n\n4. **라벨 스타일**:\n   - text-micro, monospace 폰트\n   - 상태별 색상: success/warn/muted/accent\n   - mine인 경우 underline + bold 강조\n   - custom 세션: amber 색상 * 마커\n\n5. **채움 막대(ratio bar)**:\n   - 높이 2px, 회색 배경(border 색상)\n   - ratio = confirmed.length / need (0~1)\n   - 채움 영역: 상태 색상 적용\n   - transition: width 0.2s\n\n6. **Active 상태**:\n   - active={true}일 때 accent outline 표시\n   - outlineOffset: 4px\n\n7. **접근성**:\n   - title 속성: '${label} 확정 ${confirmed}/${need} · 지원 ${applicants}명'",
+            "status": "pending",
+            "testStrategy": "세션 상태별(full/partial/empty) 색상이 올바르게 적용되는지 확인. 내가 지원한 세션에 accent 색상 + underline 표시 확인. 커스텀 세션에 * 마커 표시 확인. 클릭 시 onClick 핸들러 호출 확인.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T07:42:28.265Z"
+      },
+      {
+        "id": 6,
+        "title": "우측 세션 패널 — 지원/확정 기능 구현",
+        "description": "SessionPanel 컴포넌트를 구현하여 곡별 세션 지원자 목록과 매니저 확정/해제 기능을 제공한다.",
+        "details": "## 파일\n```\nsrc/domain/setlist-meeting/components/SessionPanel.client.tsx\n```\n\n## 두 가지 뷰 모드\n\n### 1. 곡 전체 세션 카드 그리드 (focusedSessionId = null)\n- 헤더: 곡명/아티스트, 매니저 배지(있으면)\n- 추천자 의견 카드 (accent-dim 배경)\n- 세션 카드 그리드:\n  - 라벨 (V/G/B/D 등)\n  - 확정 N/필요\n  - 지원자 N명\n  - 내가 지원함/확정됨 표시\n- 카드 클릭 → setFocusedSession(sessionId)\n\n### 2. 단일 세션 focus (focusedSessionId != null)\n- '← 모든 세션' 버튼 → setFocusedSession(null)\n- 세션 라벨 + 확정 칩 + 지원자 N / 필요 N\n- 지원자 리스트:\n  - 아바타/이름/역할\n  - 확정된 사람: ✓ 배지\n  - 매니저면 [확정]/[해제] 버튼\n- 액션 버튼:\n  - 미지원 → '이 세션 지원하기' (applySession)\n  - 지원 + 미확정 → '지원 취소' (withdrawSession)\n  - 확정 + 비매니저 → 취소 불가 안내\n\n## 스타일\n- 패널 너비: 380px (디테일 영역 우측 고정)\n- border-left로 구분\n- overflow-y-auto",
+        "testStrategy": "1. 곡 행 클릭 시 우측 패널에 해당 곡 세션 정보 표시\n2. '이 세션 지원하기' 클릭 → store.applySession 호출 → 지원자 목록 반영\n3. 매니저 계정에서 [확정] 클릭 → store.confirmSession → 확정 상태 반영\n4. 확정된 상태에서 비매니저는 취소 불가 안내 표시",
+        "priority": "high",
+        "dependencies": [
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "SessionPanel.client.tsx 기본 구조 및 곡 전체 세션 카드 그리드 뷰 구현",
+            "description": "SessionPanel 컴포넌트의 기본 구조를 설정하고, focusedSessionId가 null일 때 표시되는 곡 전체 세션 카드 그리드 뷰를 구현한다.",
+            "dependencies": [],
+            "details": "src/domain/setlist-meeting/components/SessionPanel.client.tsx 파일 생성.\n\n1. Props 타입 정의:\n   - songId: string (선택된 곡 ID)\n   - onClose?: () => void\n\n2. useSetlistStore에서 필요한 상태/액션 가져오기:\n   - songs, meetings, focusedSessionId, setFocusedSession\n   - currentUserId (현재 사용자 판별용)\n\n3. 헤더 영역 구현:\n   - 곡명/아티스트 표시 (text-title + text-foreground-sub)\n   - 매니저 배지 (song.recommenderId === meeting.managerId일 때 Badge 표시)\n\n4. 추천자 의견 카드:\n   - accent-dim 배경의 Card 컴포넌트 사용\n   - song.recommenderComment 표시 (없으면 미표시)\n\n5. 세션 카드 그리드:\n   - 2열 그리드 (grid grid-cols-2 gap-s-3)\n   - 각 세션 카드에:\n     - 라벨 (V/G/B/D 등) - Chip 컴포넌트 재사용\n     - 확정 N / 필요 N 표시 (utils의 confirmedCount, totalNeed 활용)\n     - 지원자 N명 표시\n     - 내가 지원함/확정됨 표시 (본인 userId와 대조)\n   - 카드 클릭 → setFocusedSession(sessionId)\n\n6. 스타일:\n   - 패널 너비: w-[380px] 또는 min-w-[380px]\n   - border-left: border-l border-border\n   - overflow-y-auto\n   - data-slot=\"session-panel\" 부여",
+            "status": "pending",
+            "testStrategy": "1. songId prop 전달 시 해당 곡의 정보(제목/아티스트)가 헤더에 표시되는지 확인\n2. 추천자 의견이 있는 곡은 accent-dim 카드로 의견 표시, 없으면 미표시 확인\n3. 세션 카드 그리드가 2열로 정상 렌더링되는지 확인\n4. 각 세션 카드에 라벨/확정 수/지원자 수가 올바르게 표시되는지 확인\n5. 세션 카드 클릭 시 focusedSessionId 상태 변경 확인\n6. pnpm typecheck && pnpm lint 통과",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "단일 세션 focus 뷰 — 지원자 리스트 및 지원/취소 액션 구현",
+            "description": "focusedSessionId가 설정되었을 때 표시되는 단일 세션 상세 뷰를 구현한다. 지원자 리스트와 본인의 지원/취소 액션 버튼을 포함한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "SessionPanel.client.tsx 내 focusedSessionId !== null 분기 구현.\n\n1. 뒤로가기 버튼:\n   - '← 모든 세션' 텍스트 버튼\n   - onClick={() => setFocusedSession(null)}\n\n2. 세션 헤더:\n   - 세션 라벨 (Chip 컴포넌트)\n   - 확정 칩: 확정 N / 필요 N 형식의 Badge\n   - 지원자 N명 표시\n\n3. 지원자 리스트:\n   - ApplicantRow 서브컴포넌트 또는 인라인 구현\n   - 각 지원자에:\n     - Avatar (size=\"md\", fallback={name})\n     - 이름 표시 (getMemberDisplayName 활용)\n     - 역할 표시 (text-foreground-sub text-xs)\n     - 확정된 사람: 체크마크 Badge ('확정됨')\n   - 빈 지원자 목록일 때 EmptyState 또는 간단한 안내 문구\n\n4. 본인 액션 버튼 (하단 고정 영역):\n   - 미지원 상태: '이 세션 지원하기' 버튼 (variant=\"primary\")\n     - onClick → store.applySession(songId, sessionId, currentUserId)\n   - 지원 + 미확정 상태: '지원 취소' 버튼 (variant=\"ghost\")\n     - onClick → store.withdrawSession(songId, sessionId, currentUserId)\n   - 확정 + 비매니저 상태: '확정된 세션은 취소할 수 없습니다' 안내 텍스트\n\n5. 본인 지원 여부 판별 로직:\n   - session.applicants.find(a => a.userId === currentUserId)\n   - confirmedUserIds.includes(currentUserId)",
+            "status": "pending",
+            "testStrategy": "1. '← 모든 세션' 버튼 클릭 시 focusedSessionId가 null로 변경되어 그리드 뷰로 전환 확인\n2. 지원자 리스트에 Avatar, 이름, 역할이 정상 표시되는지 확인\n3. 확정된 지원자에 체크마크 배지 표시 확인\n4. 미지원 상태에서 '이 세션 지원하기' 버튼 클릭 시 store.applySession 호출 확인\n5. 지원 상태에서 '지원 취소' 버튼 클릭 시 store.withdrawSession 호출 확인\n6. 확정된 비매니저 상태에서 취소 불가 안내 표시 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "매니저 확정/해제 기능 — RoleGuard 기반 조건부 렌더링",
+            "description": "매니저 권한을 가진 사용자에게만 지원자 확정/해제 버튼을 표시하고, store의 confirmSession/unconfirmSession 액션과 연동한다.",
+            "dependencies": [
+              2
+            ],
+            "details": "SessionPanel.client.tsx 내 매니저 권한 로직 추가.\n\n1. 매니저 판별:\n   - const meeting = meetings.find(m => m.id === selectedMeetingId)\n   - const isManager = meeting?.managerId === currentUserId\n\n2. 지원자 리스트 내 매니저 전용 버튼:\n   - isManager === true일 때만 각 지원자 행에 버튼 표시\n   - 미확정 지원자: [확정] 버튼 (variant=\"secondary\" size=\"sm\")\n     - onClick → store.confirmSession(songId, sessionId, applicantUserId)\n   - 확정된 지원자: [해제] 버튼 (variant=\"ghost\" size=\"sm\")\n     - onClick → store.unconfirmSession(songId, sessionId, applicantUserId)\n\n3. 확정/해제 다이얼로그 (선택적):\n   - Dialog 컴포넌트 사용\n   - '정말 {이름}을(를) 확정하시겠습니까?' 확인\n   - 또는 즉시 실행 (PRD에 명시 없으므로 즉시 실행 우선)\n\n4. 버튼 로딩 상태:\n   - Zustand store에서 pending 상태 관리 또는\n   - 로컬 useState로 isConfirming/isUnconfirming 관리\n   - Button의 loading prop 활용\n\n5. Toast 피드백:\n   - useToast 훅 사용\n   - 확정 성공: toast.success('세션이 확정되었습니다.')\n   - 해제 성공: toast.success('확정이 해제되었습니다.')\n   - 에러 시: toast.error(err.message)",
+            "status": "pending",
+            "testStrategy": "1. 매니저 계정 로그인 시 각 지원자 행에 [확정]/[해제] 버튼 표시 확인\n2. 비매니저 계정에서는 [확정]/[해제] 버튼 미표시 확인\n3. [확정] 버튼 클릭 시 store.confirmSession 호출 및 UI 반영 확인\n4. [해제] 버튼 클릭 시 store.unconfirmSession 호출 및 UI 반영 확인\n5. 확정/해제 후 지원자 리스트의 배지 상태 변경 확인\n6. Toast 알림이 정상 표시되는지 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "MeetingDetail과 SessionPanel 통합 및 반응형 레이아웃 연동",
+            "description": "MeetingDetail 컴포넌트와 SessionPanel을 연동하고, 곡 행/세션 셀 클릭 시 패널이 열리도록 구현한다. 패널 너비와 border 스타일을 적용한다.",
+            "dependencies": [
+              3
+            ],
+            "details": "MeetingDetail.client.tsx 수정 및 SessionPanel 연동.\n\n1. MeetingDetail 레이아웃 수정:\n   - 기존 구조: 헤더 + SongTable + ChatBox\n   - 변경: flex 레이아웃으로 좌측(테이블+채팅) + 우측(SessionPanel) 분리\n   - 우측 패널: selectedSongId가 있을 때만 렌더링\n\n2. 상태 관리:\n   - const [selectedSongId, setSelectedSongId] = useState<string | null>(null)\n   - 또는 useSetlistStore의 selectedSongId 활용\n\n3. SongTable 연동:\n   - 곡 행 클릭 핸들러: onSongClick={(songId) => setSelectedSongId(songId)}\n   - 세션 셀 클릭 핸들러: onSessionClick={(songId, sessionId) => { setSelectedSongId(songId); setFocusedSession(sessionId); }}\n\n4. SessionPanel 렌더링:\n   - {selectedSongId && (<SessionPanel songId={selectedSongId} onClose={() => setSelectedSongId(null)} />)}\n\n5. 스타일 조정:\n   - 메인 컨텐츠 영역: flex-1 min-w-0\n   - SessionPanel: w-[380px] shrink-0 border-l border-border\n   - 전체 컨테이너: flex h-full\n\n6. 패널 닫기:\n   - SessionPanel 상단에 X 버튼 또는\n   - 테이블 영역 클릭 시 패널 닫기 (선택적)\n\n7. data-slot 속성:\n   - 컨테이너: data-slot=\"meeting-detail-layout\"\n   - 패널: data-slot=\"session-panel\"",
+            "status": "pending",
+            "testStrategy": "1. SongTable에서 곡 행 클릭 시 우측에 SessionPanel 표시 확인\n2. 세션 셀 클릭 시 SessionPanel이 해당 세션 focus 상태로 열리는지 확인\n3. SessionPanel 너비가 380px로 고정되는지 확인\n4. border-left 스타일이 정상 적용되는지 확인\n5. 패널 닫기 동작 확인\n6. 1280px 뷰포트에서 테이블+패널 레이아웃이 깨지지 않는지 확인\n7. pnpm typecheck && pnpm lint && pnpm build 통과",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T07:47:14.918Z"
+      },
+      {
+        "id": 7,
+        "title": "곡별 채팅 분할 패널 구현",
+        "description": "MeetingChatBox 컴포넌트를 구현하여 디테일 영역 하단에 곡별 채팅 기능을 제공한다.",
+        "details": "## 파일\n```\nsrc/domain/setlist-meeting/components/MeetingChatBox.client.tsx\n```\n\n## MeetingDetail에 통합\n- 디테일 영역 하단의 split 패널\n- 고정 높이 280px (v5는 드래그 리사이즈 미지원)\n- border-top으로 곡 표와 구분\n\n## MeetingChatBox.client.tsx\n```tsx\ntype Props = {\n  messages: ChatMessage[];\n  currentUserId: string;\n  songTitle: string;\n  onSend: (msg: string) => void;\n};\n```\n\n- 헤더: 채팅 아이콘 + 곡명 + \"의견 N개\"\n- 메시지 목록:\n  - 본인 메시지: 우측 정렬 + accent-dim 버블\n  - 타인 메시지: 좌측 정렬 + card 배경\n  - 아바타 + 이름 + 시간\n- 입력 영역:\n  - input + 전송 버튼\n  - Enter 전송, Shift+Enter 줄바꿈\n- 전송 → store.sendChat 호출\n- 자동 스크롤: 새 메시지 시 scrollTop = scrollHeight\n\n## 모바일 처리 (v5)\n- lg 미만에서는 placeholder 표시: \"선곡 회의는 데스크톱에서 이용해 주세요\"",
+        "testStrategy": "1. 곡 선택 시 해당 곡의 채팅 메시지 표시\n2. 메시지 입력 후 Enter → store.sendChat 호출 → 목록에 새 메시지 추가\n3. 새 메시지 추가 시 자동 스크롤\n4. 모바일 뷰포트에서 placeholder 표시",
+        "priority": "medium",
+        "dependencies": [
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "ChatMessage 타입 정의 및 Zustand store에 채팅 액션 추가",
+            "description": "domain/setlist-meeting/types.ts에 ChatMessage 타입을 정의하고, setlistStore에 sendChat 액션과 메시지 상태 관리 로직을 추가한다.",
+            "dependencies": [],
+            "details": "## types.ts ChatMessage 타입\n```ts\nexport type ChatMessage = {\n  id: string;\n  userId: string;\n  userName: string;\n  userAvatar?: string;\n  content: string;\n  createdAt: string; // yyyy-MM-dd HH:mm\n};\n```\n\n## setlistStore 채팅 관련 상태/액션\n- messages: Record<songId, ChatMessage[]> 형태로 곡별 메시지 관리\n- sendChat(songId: string, content: string): 현재 사용자로 새 메시지 추가\n- getMessagesForSong(songId: string): ChatMessage[] 반환\n- persist 미들웨어로 sessionStorage에 저장하여 새로고침 후에도 유지",
+            "status": "pending",
+            "testStrategy": "1. Vitest 단위 테스트: sendChat 호출 후 해당 곡의 messages 배열에 새 메시지 추가 검증\n2. getMessagesForSong이 올바른 곡의 메시지만 반환하는지 확인\n3. sessionStorage persist 동작 검증",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "MeetingChatBox 컴포넌트 기본 구조 및 메시지 목록 UI 구현",
+            "description": "MeetingChatBox.client.tsx 파일을 생성하고, 헤더(채팅 아이콘 + 곡명 + 의견 N개)와 메시지 목록 렌더링 UI를 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 파일 위치\nsrc/domain/setlist-meeting/components/MeetingChatBox.client.tsx\n\n## Props 인터페이스\n```tsx\ntype Props = {\n  messages: ChatMessage[];\n  currentUserId: string;\n  songTitle: string;\n  onSend: (msg: string) => void;\n};\n```\n\n## 컴포넌트 구조\n- 컨테이너: h-[280px] 고정 높이, border-t로 상단 구분, flex flex-col\n- 헤더: MessageCircle 아이콘(lucide-react) + songTitle + '의견 N개' 배지\n- 메시지 목록: flex-1 overflow-y-auto, ref로 스크롤 컨테이너 참조\n  - 본인 메시지: justify-end, bg-accent-dim 버블, rounded-lg\n  - 타인 메시지: justify-start, bg-card 버블\n  - 각 메시지: Avatar(sm) + 이름(text-micro) + 내용 + 시간(text-foreground-muted text-micro)\n\n## 스타일 토큰\n- globals.css의 기존 토큰 활용: bg-card, bg-accent-dim, text-foreground-sub, text-micro 등",
+            "status": "pending",
+            "testStrategy": "1. messages prop에 따른 메시지 목록 렌더링 확인\n2. currentUserId와 일치하는 메시지는 우측 정렬, 불일치는 좌측 정렬 검증\n3. 의견 N개 카운트가 messages.length와 일치하는지 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "채팅 입력 영역 및 전송 기능 구현 (Enter/Shift+Enter 처리)",
+            "description": "MeetingChatBox에 텍스트 입력 영역과 전송 버튼을 추가하고, Enter 키 전송 및 Shift+Enter 줄바꿈 동작을 구현한다.",
+            "dependencies": [
+              2
+            ],
+            "details": "## 입력 영역 구조\n- 컨테이너: border-t border-border px-s-3 py-s-2 flex items-end gap-s-2\n- textarea 또는 input: 기존 Input 컴포넌트 스타일 참고, flex-1, min-h-[40px] max-h-[80px] resize-none\n- 전송 버튼: Button variant='primary' size='sm', Send 아이콘(lucide-react)\n\n## 키보드 이벤트 처리\n```tsx\nconst handleKeyDown = (e: KeyboardEvent) => {\n  if (e.key === 'Enter' && !e.shiftKey) {\n    e.preventDefault();\n    handleSend();\n  }\n  // Shift+Enter는 기본 동작(줄바꿈) 허용\n};\n```\n\n## 전송 로직\n- 빈 문자열/공백만 있으면 전송 방지\n- onSend(msg.trim()) 호출 후 입력 필드 초기화\n- 전송 버튼도 빈 입력 시 disabled 처리\n\n## 자동 스크롤\n- useEffect로 messages 변경 감지\n- scrollRef.current.scrollTop = scrollRef.current.scrollHeight로 최하단 스크롤",
+            "status": "pending",
+            "testStrategy": "1. 입력 후 Enter 키 → onSend 콜백 호출 + 입력 필드 초기화 검증\n2. Shift+Enter → 줄바꿈 동작 (onSend 호출 안 됨) 확인\n3. 빈 입력 시 전송 버튼 비활성화 및 Enter 키 무시\n4. 새 메시지 추가 시 스크롤이 최하단으로 이동하는지 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "모바일 반응형 처리 및 MeetingDetail 통합",
+            "description": "lg 미만 뷰포트에서 placeholder 메시지를 표시하고, MeetingDetail 컴포넌트에 MeetingChatBox를 split 패널로 통합한다.",
+            "dependencies": [
+              3
+            ],
+            "details": "## 모바일 반응형 처리\n- useIsDesktop() 훅(src/hooks/use-media-query.ts) 활용\n- lg 미만(960px 미만)일 때:\n  ```tsx\n  if (!isDesktop) {\n    return (\n      <div className=\"h-[280px] border-t border-border flex items-center justify-center text-foreground-muted text-body text-center px-s-4\">\n        선곡 회의는 데스크톱에서 이용해 주세요\n      </div>\n    );\n  }\n  ```\n\n## MeetingDetail 통합\n- MeetingDetail 컴포넌트의 하단에 MeetingChatBox 배치\n- 곡 테이블과 border-t로 구분\n- 선택된 곡(selectedSongId)의 메시지와 곡 제목을 props로 전달\n- onSend는 store.sendChat(selectedSongId, msg) 호출\n\n## 통합 구조\n```tsx\n// MeetingDetail 내부\n<div className=\"flex flex-col h-full\">\n  <div className=\"flex-1 overflow-auto\">{/* 곡 테이블 */}</div>\n  <MeetingChatBox\n    messages={store.getMessagesForSong(selectedSongId)}\n    currentUserId={currentUser.id}\n    songTitle={selectedSong?.title ?? ''}\n    onSend={(msg) => store.sendChat(selectedSongId, msg)}\n  />\n</div>\n```",
+            "status": "pending",
+            "testStrategy": "1. 뷰포트 960px 미만에서 placeholder 메시지 표시 확인\n2. 뷰포트 960px 이상에서 정상 채팅 UI 표시 확인\n3. 곡 선택 변경 시 해당 곡의 채팅 메시지로 전환 확인\n4. 메시지 전송 후 store에 반영 + 목록에 새 메시지 표시 + 자동 스크롤 동작 검증",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T07:50:52.563Z"
+      },
+      {
+        "id": 8,
+        "title": "회의 만들기 / 곡 추가 모달 + 매니저 권한 처리",
+        "description": "AddSongModal과 MeetingCreateModal을 구현하고, 매니저 권한에 따른 액션 제어를 적용한다.",
+        "details": "## 파일\n```\nsrc/domain/setlist-meeting/components/AddSongModal.client.tsx\nsrc/domain/setlist-meeting/components/MeetingCreateModal.client.tsx\n```\n\n## AddSongModal.client.tsx\n- ResponsiveSheet 기반\n- 폼 필드:\n  - 곡명 * (required)\n  - 아티스트 * (required)\n  - 앨범 (optional)\n  - 추천자 의견 (textarea)\n- 커스텀 세션 추가 영역:\n  - input + '추가' 버튼\n  - 추가된 세션 칩 리스트 (X 버튼으로 삭제)\n- 확인 → store.addSong 호출\n- DirtyFormGuard 적용 (dirty 시 이탈 경고)\n\n## MeetingCreateModal.client.tsx\n- ResponsiveSheet 기반\n- 폼 필드:\n  - 회의 제목 *\n  - 연결 밴드 (BandPickerModal 재사용, single 모드)\n- 매니저: 현재 사용자 자동 설정\n- BE 미지원 → 확인 시 toast.info(\"FE-API-024 후 활성화\")\n\n## 매니저 권한 처리\n- meeting.managerId === currentUserId → isManager\n- 세션 확정/해제: isManager만 가능\n- 비매니저: 지원/취소만 가능\n- UI에서 버튼 비활성화 또는 hidden 처리",
+        "testStrategy": "1. '곡 추가' 버튼 클릭 → 모달 열림\n2. 필수 필드 미입력 시 확인 버튼 비활성화\n3. 커스텀 세션 추가/삭제 동작\n4. 확인 → store.addSong → 곡 표에 새 행 추가\n5. 비매니저 계정에서 확정/해제 버튼 미표시 또는 비활성화",
+        "priority": "medium",
+        "dependencies": [
+          "6"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "AddSongModal 폼 스키마 및 기본 구조 구현",
+            "description": "곡 추가 모달의 zod 스키마 정의 및 ResponsiveSheet 기반의 폼 레이아웃을 구현한다.",
+            "dependencies": [],
+            "details": "## 파일 생성\n- `src/domain/setlist-meeting/types/schema.ts` — addSongSchema 정의\n- `src/domain/setlist-meeting/components/AddSongModal.client.tsx` — 모달 컴포넌트\n\n## addSongSchema 정의\n```ts\nimport { z } from 'zod';\nexport const addSongSchema = z.object({\n  title: z.string().min(1, '곡명을 입력해 주세요.').max(100, '곡명은 100자 이하로 입력해 주세요.'),\n  artist: z.string().min(1, '아티스트를 입력해 주세요.').max(100),\n  album: z.string().max(100).optional().or(z.literal('').transform(() => undefined)),\n  recommenderComment: z.string().max(500).optional().or(z.literal('').transform(() => undefined)),\n});\nexport type AddSongSchema = z.infer<typeof addSongSchema>;\n```\n\n## AddSongModal.client.tsx 구조\n- ResponsiveSheet, ResponsiveSheetContent, ResponsiveSheetHeader, ResponsiveSheetBody, ResponsiveSheetFooter 사용 (BandCreateModal.client.tsx 패턴 참고)\n- useForm<AddSongSchema> + zodResolver 적용\n- 폼 필드: 곡명(Input, required), 아티스트(Input, required), 앨범(Input, optional), 추천자 의견(Textarea, optional)\n- Props: open, onOpenChange, meetingId(또는 store에서 selectedMeetingId 사용)\n- data-slot=\"add-song-modal\" 속성 부여",
+            "status": "pending",
+            "testStrategy": "1. 모달 open 시 폼이 렌더링되는지 확인\n2. 필수 필드(곡명, 아티스트) 미입력 시 유효성 검증 에러 메시지 표시 확인\n3. 선택 필드(앨범, 추천자 의견) 비워도 제출 가능 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "AddSongModal 커스텀 세션 추가 영역 + DirtyFormGuard 적용",
+            "description": "곡 추가 모달에 커스텀 세션 입력/칩 리스트 UI와 DirtyFormGuard를 적용한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 커스텀 세션 추가 영역 구현\n- 별도 상태로 관리: `const [customSessions, setCustomSessions] = useState<string[]>([])`\n- Input + '추가' Button 조합\n- 추가 버튼 클릭 또는 Enter 시 customSessions 배열에 추가 (중복/빈값 방지)\n- 추가된 세션은 Chip 컴포넌트로 렌더링 (X 버튼으로 삭제)\n- Chip에 onClick 핸들러로 해당 세션 제거\n\n## DirtyFormGuard 적용\n- useRegisterDirtyForm 훅 사용 (src/global/navigation/dirty-form-context.tsx 참고)\n- scope: 'add-song-modal'\n- dirty 조건: formState.isDirty || customSessions.length > 0\n- 모달 닫기 전 dirty 상태면 이탈 경고 (beforeunload 포함)\n\n## 확인 버튼 동작\n- form.handleSubmit으로 유효성 검사 후 store.addSong 호출 준비 (store 연동은 Task 2 의존)\n- customSessions 배열도 함께 전달\n- 성공 시 form.reset(), setCustomSessions([]), onOpenChange(false)",
+            "status": "pending",
+            "testStrategy": "1. 커스텀 세션 input에 값 입력 후 '추가' 버튼 클릭 시 칩 생성 확인\n2. 칩의 X 버튼 클릭 시 해당 세션 삭제 확인\n3. 중복 세션명 입력 시 추가 방지 확인\n4. 폼에 값이 있는 상태에서 모달 닫기 시도 시 경고 표시 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "MeetingCreateModal 구현 및 BandPickerModal 연동",
+            "description": "회의 만들기 모달을 ResponsiveSheet 기반으로 구현하고 BandPickerModal을 single 모드로 재사용한다.",
+            "dependencies": [],
+            "details": "## 파일 생성\n- `src/domain/setlist-meeting/components/MeetingCreateModal.client.tsx`\n\n## createMeetingSchema 정의 (types/schema.ts에 추가)\n```ts\nexport const createMeetingSchema = z.object({\n  title: z.string().min(1, '회의 제목을 입력해 주세요.').max(100),\n  bandId: z.string().min(1, '연결 밴드를 선택해 주세요.'),\n});\nexport type CreateMeetingSchema = z.infer<typeof createMeetingSchema>;\n```\n\n## MeetingCreateModal.client.tsx 구조\n- Props: open, onOpenChange, trigger?(선택)\n- ResponsiveSheet 기반 (BandCreateModal.client.tsx 패턴 참고)\n- 폼 필드: 회의 제목(Input, required)\n- 연결 밴드: Button 클릭 시 BandPickerModal 열기 (single 모드, multiple=false)\n- BandPickerModal onConfirm에서 선택된 밴드 표시 (선택된 밴드명 + 변경 버튼)\n- form.setValue('bandId', selectedBand.bandId) 연동\n- 매니저: '현재 로그인 사용자로 자동 설정됩니다' 안내 텍스트 (별도 입력 없음)\n- 확인 버튼: BE 미지원이므로 toast.info('FE-API-024 후 활성화') 호출 후 모달 닫기\n- data-slot=\"meeting-create-modal\" 속성 부여",
+            "status": "pending",
+            "testStrategy": "1. 모달 열기/닫기 동작 확인\n2. 회의 제목 필수 입력 유효성 검증 확인\n3. '밴드 선택' 버튼 클릭 시 BandPickerModal 열림 확인\n4. 밴드 선택 후 선택된 밴드명 표시 확인\n5. 확인 버튼 클릭 시 'FE-API-024 후 활성화' toast.info 표시 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "매니저 권한 처리 훅 및 UI 가드 로직 구현",
+            "description": "isManager 판정 훅을 구현하고 세션 확정/해제 버튼의 권한 기반 비활성화/숨김 처리를 적용한다.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "## 권한 판정 유틸/훅 생성\n- `src/domain/setlist-meeting/hooks/useIsManager.ts`\n```ts\nimport { useAuthStore } from '@/global/store/authStore';\nimport { useSetlistStore } from '../store/setlistStore';\n\nexport function useIsManager(meetingId?: string) {\n  // 참고: authStore에는 accessToken만 있음. 현재 사용자 ID는 별도 member/me API 또는 토큰 디코딩 필요\n  // v5에서는 mock으로 현재 사용자 ID를 store에 하드코딩하거나 seed 데이터 기준으로 판정\n  const meeting = useSetlistStore(s => s.meetings.find(m => m.id === meetingId));\n  const currentUserId = 'mock-user-id'; // TODO: 실제 사용자 ID 연동 시 교체\n  return meeting?.managerId === currentUserId;\n}\n```\n\n## 권한 기반 UI 처리\n- SessionPanel.client.tsx (Task 6에서 구현)에서 useIsManager 훅 사용\n- isManager=true: 확정/해제 버튼 활성화 (Button disabled={false})\n- isManager=false: 확정/해제 버튼 hidden 또는 disabled={true} + 툴팁 '매니저만 가능합니다'\n- 비매니저는 지원/취소 버튼만 표시\n- Button variant 또는 className으로 시각적 구분\n\n## 권한 가드 컴포넌트 (선택적)\n```tsx\nexport function ManagerOnly({ meetingId, children, fallback }: { meetingId: string; children: ReactNode; fallback?: ReactNode }) {\n  const isManager = useIsManager(meetingId);\n  return isManager ? <>{children}</> : (fallback ?? null);\n}\n```\n\n## 적용 대상\n- SessionPanel의 [확정]/[해제] 버튼\n- 곡 삭제 버튼(매니저만 가능)\n- 회의 설정/삭제 액션(매니저만)",
+            "status": "pending",
+            "testStrategy": "1. mock managerId와 currentUserId 일치 시 확정/해제 버튼 활성화 확인\n2. 불일치 시 확정/해제 버튼 비활성화 또는 숨김 확인\n3. 비매니저 계정에서 지원/취소 버튼만 표시 확인\n4. ManagerOnly 래퍼 컴포넌트 사용 시 children 조건부 렌더링 확인",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T07:56:17.369Z"
+      },
+      {
+        "id": 9,
+        "title": "API_REQUIRED.md 선곡 회의 항목 등록 및 산출물 정리",
+        "description": "API_REQUIRED.md에 FE-API-024~030 선곡 회의 관련 백엔드 요청 항목을 등록하고, 구현 산출물을 정리한다.",
+        "details": "## API_REQUIRED.md 추가 항목\n\n### FE-API-024 회의 CRUD\n```http\nPOST /api/v1/setlist-meetings\nGET /api/v1/setlist-meetings/me\nGET /api/v1/setlist-meetings/{id}\nDELETE /api/v1/setlist-meetings/{id}\n```\n- 요청/응답 DTO 명세\n- 권한: 생성자=매니저, 삭제=매니저만\n\n### FE-API-025 곡 CRUD\n```http\nPOST /api/v1/setlist-meetings/{id}/songs\nDELETE /api/v1/setlist-meetings/{meetingId}/songs/{songId}\n```\n\n### FE-API-026 세션 정의\n```http\nPATCH /api/v1/setlist-meetings/{id}/songs/{songId}/sessions\n```\n- 커스텀 세션 추가/삭제\n\n### FE-API-027 세션 지원\n```http\nPOST /api/v1/setlist-meetings/.../sessions/{sessionId}/applicants\nDELETE /api/v1/setlist-meetings/.../sessions/{sessionId}/applicants/{userId}\n```\n\n### FE-API-028 세션 확정/해제\n```http\nPATCH /api/v1/setlist-meetings/.../sessions/{sessionId}/confirmations\n```\n- 매니저만\n\n### FE-API-029 채팅\n```http\nGET /api/v1/setlist-meetings/{id}/songs/{songId}/chat\nPOST /api/v1/setlist-meetings/{id}/songs/{songId}/chat\n```\n\n### FE-API-030 회의 → 합주 변환\n```http\nPOST /api/v1/setlist-meetings/{id}/convert-to-practices\n```\n\n## 산출물 정리\n- ROUTES.md에 /setlist-meetings 라우트 문서화\n- 신규 파일 목록 + 역할 코멘트",
+        "testStrategy": "1. API_REQUIRED.md 문서 형식 일관성 검증 (마크다운 lint)\n2. 모든 FE-API-024~030 항목에 엔드포인트, 요청 body, 응답 예시, 권한 명시 확인\n3. 각 toast.info 메시지가 올바른 FE-API 번호 참조 확인",
+        "priority": "low",
+        "dependencies": [
+          "8"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "API_REQUIRED.md에 FE-API-024~030 선곡 회의 API 항목 등록",
+            "description": "API_REQUIRED.md 파일에 선곡 회의(setlist-meeting) 관련 7개 API 엔드포인트 요청 사항을 기존 문서 형식에 맞춰 추가한다.",
+            "dependencies": [],
+            "details": "## 추가 섹션 위치\n기존 `## 도메인 스키마 확장 (P1)` 섹션 아래 또는 신규 섹션 `## 신규 기능 — 선곡 회의 (Setlist Meeting)` 생성\n\n## FE-API-024 회의 CRUD\n```http\nPOST /api/v1/setlist-meetings\nGET /api/v1/setlist-meetings/me\nGET /api/v1/setlist-meetings/{id}\nDELETE /api/v1/setlist-meetings/{id}\n```\n- 요청 body: `{ title, bandId, deadline? }`\n- 응답: `SetlistMeetingResponse` / `SetlistMeetingDetailResponse`\n- 권한: 생성=밴드 매니저, 삭제=생성자(매니저)만\n\n## FE-API-025 곡 CRUD\n```http\nPOST /api/v1/setlist-meetings/{id}/songs\nDELETE /api/v1/setlist-meetings/{meetingId}/songs/{songId}\n```\n- 요청 body: `{ title, artist, album?, comment?, customSessions? }`\n- 권한: 밴드 멤버\n\n## FE-API-026 세션 정의\n```http\nPATCH /api/v1/setlist-meetings/{id}/songs/{songId}/sessions\n```\n- 요청 body: `{ sessions: [{ label, short, need }] }`\n- 커스텀 세션 추가/삭제\n\n## FE-API-027 세션 지원\n```http\nPOST /api/v1/setlist-meetings/{meetingId}/songs/{songId}/sessions/{sessionId}/applicants\nDELETE /api/v1/setlist-meetings/{meetingId}/songs/{songId}/sessions/{sessionId}/applicants/{userId}\n```\n\n## FE-API-028 세션 확정/해제\n```http\nPATCH /api/v1/setlist-meetings/{meetingId}/songs/{songId}/sessions/{sessionId}/confirmations\n```\n- 요청 body: `{ confirmedUserIds: string[] }`\n- 권한: 매니저만\n\n## FE-API-029 채팅\n```http\nGET /api/v1/setlist-meetings/{id}/songs/{songId}/chat\nPOST /api/v1/setlist-meetings/{id}/songs/{songId}/chat\n```\n- 요청 body (POST): `{ content }`\n- 응답: `ChatMessageResponse[]`\n\n## FE-API-030 회의 → 합주 변환\n```http\nPOST /api/v1/setlist-meetings/{id}/convert-to-practices\n```\n- 응답: 생성된 Practice ID 목록\n- 권한: 매니저만",
+            "status": "pending",
+            "testStrategy": "1. 마크다운 lint 통과 (문법 오류 없음)\n2. 기존 API_REQUIRED.md 섹션 구조와 일관성 유지 (표 형식, 코드 블록 형식 등)\n3. FE-API-024~030 각 항목에 엔드포인트, 요청 body, 응답 예시, 권한 명시 여부 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "ROUTES.md에 /setlist-meetings 라우트 문서화",
+            "description": "ROUTES.md 파일에 선곡 회의 관련 라우트 정보를 기존 테이블 형식에 맞춰 추가한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "## 추가 위치\n`## (main) 탭 레이아웃` 테이블에 신규 행 추가\n\n## 추가할 라우트\n| 경로 | 설명 | 구현 Task |\n| `/setlist-meetings` | 선곡 회의 목록 (마스터 패널) | Task 4 |\n| `/setlist-meetings/{id}` | 선곡 회의 상세 (디테일 패널) | Task 5 |\n\n## global/config/routes.ts 업데이트 필요 사항 명시\n```ts\nSETLIST_MEETINGS: '/setlist-meetings',\nSETLIST_MEETING_DETAIL: (id: string) => `/setlist-meetings/${id}`,\n```\n\n## 백엔드 의존 섹션 업데이트\n- 선곡 회의 API가 백엔드에 구현되기 전까지 mock/Zustand store로 동작\n- FE-API-024~030 구현 후 실제 API 연결",
+            "status": "pending",
+            "testStrategy": "1. ROUTES.md 테이블 마크다운 문법 정상 렌더링\n2. 기존 라우트 테이블 형식과 일관성 (경로/설명/구현 Task 컬럼)\n3. routes.ts에 추가해야 할 상수 명시 여부 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "신규 파일 목록 및 역할 코멘트 정리",
+            "description": "선곡 회의 도메인 구현으로 생성된 모든 신규 파일의 목록과 각 파일의 역할을 문서화한다.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "## 문서화 위치\nAPI_REQUIRED.md 하단 또는 별도 섹션 `## 선곡 회의 구현 산출물`\n\n## 신규 파일 목록 (Task 2~8 구현 기준)\n\n### 도메인 모듈 (src/domain/setlist-meeting/)\n- `types.ts` — Meeting, Song, Session, Applicant, ChatMessage 타입 정의\n- `store/setlistStore.ts` — Zustand 상태 관리 (회의/곡/세션/채팅)\n- `mock/seed.ts` — 개발용 mock 데이터 (TOOL TRIBUTE 7곡 + 마그마 회의)\n- `utils.ts` — 세션 상태 헬퍼 (sessionState, isReady, missingCount)\n\n### 컴포넌트 (src/domain/setlist-meeting/components/)\n- `SetlistMeetingsListPane.client.tsx` — 회의 목록 마스터 패널\n- `MeetingCard.tsx` — 회의 카드 컴포넌트\n- `MeetingDetail.client.tsx` — 회의 상세 디테일 영역\n- `SongSessionTable.client.tsx` — 곡별 세션 테이블\n- `SessionCell.client.tsx` — 세션 셀 (지원/확정 UI)\n- `MeetingChatBox.client.tsx` — 곡별 채팅 분할 패널\n- `AddSongModal.client.tsx` — 곡 추가 모달\n- `MeetingCreateModal.client.tsx` — 회의 생성 모달\n\n### 라우트 (src/app/(main)/setlist-meetings/)\n- `page.tsx` — 첫 회의 자동 선택 redirect\n- `layout.tsx` — 마스터/디테일 레이아웃\n- `[id]/page.tsx` — 동적 라우트 상세 페이지",
+            "status": "pending",
+            "testStrategy": "1. 나열된 모든 파일 경로가 실제 구현 계획과 일치\n2. 각 파일의 역할 설명이 명확하고 간결한지 확인\n3. 도메인 모듈 구조가 CLAUDE.md의 Domain Module Structure 패턴과 일치",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "프론트 mock/우회 현황 테이블 업데이트",
+            "description": "API_REQUIRED.md의 '프론트 mock / 우회 현황' 테이블에 선곡 회의 도메인의 mock 상태를 추가한다.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "## 업데이트 위치\n`## 참고 — 프론트 mock / 우회 현황` 테이블\n\n## 추가할 행\n| 영역 | 우회 방법 |\n| 선곡 회의 CRUD | Zustand store + sessionStorage persist (FE-API-024 대기) |\n| 곡 추가/삭제 | store.addSong/removeSong mock 액션 (FE-API-025 대기) |\n| 세션 지원/철회 | store.applySession/withdrawSession mock (FE-API-027 대기) |\n| 세션 확정/해제 | store.confirmSession mock, 매니저 권한 체크 로컬 (FE-API-028 대기) |\n| 곡별 채팅 | store.sendChat + 로컬 메시지 배열 (FE-API-029 대기) |\n| 회의→합주 변환 | toast.info 안내만 (FE-API-030 대기) |\n\n## 활성화 절차 섹션 업데이트\n- 선곡 회의 관련 fetcher 교체 지점 명시\n- `domain/setlist-meeting/api/` 폴더 생성 후 각 API 함수 구현 예정 안내",
+            "status": "pending",
+            "testStrategy": "1. 기존 테이블 형식과 일관성 유지 (영역/우회 방법 컬럼)\n2. 각 FE-API 번호가 올바르게 참조되는지 확인\n3. 향후 백엔드 연동 시 교체 지점이 명확히 명시되었는지 확인",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-04-26T07:59:14.701Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-04-26T07:59:14.710Z",
+      "taskCount": 9,
+      "completedCount": 9,
+      "tags": [
+        "mvp-1-fix-v5"
+      ],
+      "created": "2026-04-26T12:35:30.344Z",
+      "description": "Tasks for mvp-1-fix-v5 context",
+      "updated": "2026-04-26T12:35:30.344Z"
+    }
+  },
+  "setlist-phase2": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "라우트 및 사이드바 서브탭 설정",
+        "description": "'/setlist-meetings/new' 마법사 라우트와 사이드바에 '회의 만들기' / '나의 선곡 회의' 서브탭을 추가하고, '?listOpen=1' 쿼리 파라미터로 마스터 패널 자동 펼침 기능 구현",
+        "details": "1. `src/global/config/routes.ts` 수정:\n   - `SETLIST_MEETING_NEW: '/setlist-meetings/new'` 상수 추가\n\n2. `src/components/layout/sidebar.tsx` 수정:\n   - SETLIST_MEETINGS NavItem에 subs 배열 추가:\n     ```ts\n     {\n       href: ROUTES.SETLIST_MEETINGS,\n       label: '선곡 회의',\n       icon: ListMusic,\n       subs: [\n         { href: ROUTES.SETLIST_MEETING_NEW, label: '회의 만들기' },\n         { href: `${ROUTES.SETLIST_MEETINGS}?listOpen=1`, label: '나의 선곡 회의' },\n       ],\n     }\n     ```\n   - isSubActive 함수에서 SETLIST_MEETINGS 경로 처리 추가\n\n3. `src/app/(main)/setlist-meetings/SetlistMeetingsShell.client.tsx` 수정:\n   - `useSearchParams()` 훅으로 'listOpen' 쿼리 파라미터 감지\n   - 초기 렌더 시 `listOpen=1`이면 `setListOpen(true)` 호출\n   - `useEffect` 의존성에 searchParams 추가\n\n4. `src/app/(main)/setlist-meetings/new/page.tsx` 생성:\n   - 기본 라우트 셸, metadata 정의\n   - MeetingCreateWizard 클라이언트 컴포넌트 임포트 및 렌더링\n\n5. `src/app/(main)/setlist-meetings/new/layout.tsx` 생성 (선택적):\n   - SetlistMeetingsShell을 사용하지 않도록 독립 레이아웃 구성 (마법사는 풀페이지이므로)",
+        "testStrategy": "1. '/setlist-meetings/new' 접속 시 마법사 페이지 렌더 확인\n2. 사이드바에서 '선곡 회의' 클릭 시 서브탭 펼침 확인\n3. '나의 선곡 회의' 클릭 시 '/setlist-meetings?listOpen=1'로 이동하고 마스터 패널 자동 펼침 확인\n4. '회의 만들기' 클릭 시 '/setlist-meetings/new'로 이동 확인",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "마법사 셸 및 상태 컨텍스트 구현",
+        "description": "MeetingCreateWizard 컴포넌트 기본 구조 구현: StepIndicator, 좌우 네비게이션 버튼, 4단계 상태 관리 컨텍스트",
+        "details": "1. `src/app/(main)/setlist-meetings/new/MeetingCreateWizard.client.tsx` 생성:\n   - PracticeCreateWizard 패턴을 그대로 따름\n   - 4단계 정의: `const STEPS = ['목적 선택', '참여 인원', '회의 정보', '확인'] as const`\n   - Step 타입: `type Step = 0 | 1 | 2 | 3`\n\n2. 마법사 상태 정의:\n   ```ts\n   type MeetingPurpose = 'performance' | 'general';\n   \n   // Step 1 상태\n   const [purpose, setPurpose] = useState<MeetingPurpose>('performance');\n   const [performanceId, setPerformanceId] = useState<string | null>(null);\n   \n   // Step 2 상태\n   const [participantUserIds, setParticipantUserIds] = useState<string[]>([]);\n   \n   // Step 3 상태\n   const [title, setTitle] = useState('');\n   const [managerId, setManagerId] = useState<string | null>(null);\n   ```\n\n3. Navigation Guard 등록:\n   - `useRegisterDirtyForm` 훅 사용\n   - dirty 조건: step > 0 || !!performanceId || participantUserIds.length > 0 || title.length > 0\n\n4. StepIndicator 컴포넌트 렌더링:\n   - `<StepIndicator steps={STEPS} current={step} />`\n\n5. 좌우 네비게이션 버튼:\n   - '이전' 버튼: step === 0 이면 disabled\n   - '다음' / '회의 만들기' 버튼: canNext / canSubmit 조건에 따라 활성화\n   - 마지막 단계에서는 '회의 만들기' 버튼으로 변경\n\n6. 레이아웃 CSS:\n   - `px-s-5 py-s-6 lg:px-s-8 lg:py-s-8 mx-auto max-w-3xl` 클래스 적용\n   - data-slot=\"meeting-create-wizard\" 속성 추가",
+        "testStrategy": "1. StepIndicator가 4단계 모두 표시되는지 확인\n2. '다음' 버튼 클릭 시 단계 전환 확인\n3. '이전' 버튼 클릭 시 이전 단계로 이동 확인\n4. Navigation Guard 동작 확인 (입력 후 페이지 이탈 시 경고)",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Step 1: 목적 선택 UI 구현",
+        "description": "공연 선곡 회의 / 일반 합주 회의 선택 UI와 공연 선택 모달 구현",
+        "details": "1. Step 1 섹션 구현 (step === 0 일 때):\n   - `<Tabs variant=\"underline\">` 컴포넌트 사용\n   - 두 가지 옵션:\n     - '공연 선곡 회의' — \"공연 셋리스트를 생성합니다\"\n     - '일반 합주 회의' — \"합주곡 목록을 생성합니다\"\n\n2. 공연 모드 선택 시 공연 검색 UI:\n   ```tsx\n   {purpose === 'performance' && (\n     <div className=\"space-y-s-4\">\n       <div className=\"bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border\">\n         <Search className=\"text-foreground-muted h-4 w-4\" />\n         <input\n           type=\"search\"\n           placeholder=\"공연명으로 검색…\"\n           value={performanceQuery}\n           onChange={(e) => setPerformanceQuery(e.target.value)}\n         />\n       </div>\n       {/* 공연 검색 결과 리스트 */}\n       <ul className=\"gap-s-2 flex flex-col\">\n         {performanceResults.map((p) => (\n           <li key={p.performanceId}>\n             {/* 제목, 장소, 일시 표시 */}\n           </li>\n         ))}\n       </ul>\n       {/* 공연 즉시 생성 CTA */}\n       <Button variant=\"secondary\" onClick={() => router.push(ROUTES.PERFORMANCE_NEW)}>\n         <Plus /> 공연 즉시 생성\n       </Button>\n     </div>\n   )}\n   ```\n\n3. 공연 검색 mock 연동:\n   - `src/domain/setlist-meeting/mock/performanceSearchMock.ts` 사용 (Task 7에서 생성)\n   - useDebounce 훅으로 검색어 디바운싱\n\n4. canNext 조건:\n   - purpose === 'general' → true\n   - purpose === 'performance' → !!performanceId (공연 선택 필수)",
+        "testStrategy": "1. 언더라인 탭으로 목적 전환 시 UI 변경 확인\n2. 공연 모드에서 검색어 입력 시 결과 표시 확인\n3. 공연 선택 시 선택 상태 표시(체크마크, 테두리 강조) 확인\n4. '공연 즉시 생성' 클릭 시 '/performances/new'로 리다이렉트 확인\n5. 공연 미선택 시 '다음' 버튼 비활성화 확인",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Step 2: 참여 인원 선택 UI 구현",
+        "description": "공연 모드와 일반 모드에 따른 참여 인원 선택 UI 구현 (멤버 풀 체크박스, 밴드/멤버 검색 탭)",
+        "details": "1. 공연 모드 (purpose === 'performance'):\n   - 공연에 참여한 모든 밴드의 멤버를 평면화하여 기본 전체 체크\n   - 체크박스 리스트로 개별 토글 가능\n   ```tsx\n   <ul className=\"gap-s-2 flex flex-col max-h-96 overflow-y-auto\">\n     {performanceMembers.map((m) => (\n       <li key={m.id} className=\"flex items-center gap-s-3\">\n         <input\n           type=\"checkbox\"\n           checked={participantUserIds.includes(m.id)}\n           onChange={() => toggleMember(m.id)}\n         />\n         <MemberSearchRow member={m} />\n       </li>\n     ))}\n   </ul>\n   ```\n\n2. 일반 모드 (purpose === 'general'):\n   - `<Tabs variant=\"underline\">` 두 탭: '밴드 검색' / '멤버 검색'\n   - 밴드 검색 탭:\n     - 밴드 검색 input + 결과 리스트\n     - 밴드 선택 시 해당 밴드 멤버 전체를 participantUserIds에 추가\n   - 멤버 검색 탭:\n     - 이메일/이름 검색 input\n     - `MemberSearchRow` 컴포넌트로 결과 표시 (Avatar + 이름 + 이메일)\n     - 클릭 시 개별 멤버 추가\n\n3. `MemberSearchRow` 컴포넌트 생성 (`src/domain/setlist-meeting/components/MemberSearchRow.tsx`):\n   ```tsx\n   export function MemberSearchRow({ member }: { member: Member }) {\n     return (\n       <div className=\"flex items-center gap-s-3\">\n         <Avatar src={member.profileImg} fallback={member.name} />\n         <div className=\"min-w-0 flex-1\">\n           <div className=\"text-body truncate font-semibold\">{member.name}</div>\n           <div className=\"text-foreground-muted text-caption truncate\">{member.email}</div>\n         </div>\n       </div>\n     );\n   }\n   ```\n\n4. 선택된 멤버 칩 표시:\n   - 상단에 선택된 멤버 수 표시\n   - 선택된 멤버 Chip 컴포넌트로 나열 (X 버튼으로 제거 가능)\n\n5. canNext 조건: participantUserIds.length > 0",
+        "testStrategy": "1. 공연 모드에서 멤버 풀이 자동으로 체크되어 표시되는지 확인\n2. 체크박스 토글로 멤버 제외/포함 동작 확인\n3. 일반 모드에서 밴드 검색 시 결과 표시 및 선택 확인\n4. 일반 모드에서 멤버 검색 시 결과 표시 및 개별 추가 확인\n5. 참여 인원 0명일 때 '다음' 버튼 비활성화 확인",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Step 3: 회의 정보 입력 UI 구현",
+        "description": "회의 제목 입력 필드와 매니저 선택 라디오 리스트 구현",
+        "details": "1. Step 3 섹션 구현 (step === 2 일 때):\n   ```tsx\n   <section className=\"space-y-s-4\">\n     <Input\n       label=\"회의 제목\"\n       required\n       placeholder=\"예: 여름 공연 셋리스트 회의\"\n       value={title}\n       onChange={(e) => setTitle(e.target.value)}\n     />\n     \n     <div className=\"space-y-s-3\">\n       <label className=\"text-caption font-semibold\">매니저 지정 <span className=\"text-danger\">*</span></label>\n       <p className=\"text-foreground-muted text-micro\">\n         매니저는 선곡 확정/재개 권한을 가집니다.\n       </p>\n       <ul className=\"gap-s-2 flex flex-col max-h-80 overflow-y-auto\">\n         {participantUserIds.map((userId) => {\n           const member = members.find((m) => m.id === userId);\n           if (!member) return null;\n           return (\n             <li key={userId}>\n               <label className=\"flex items-center gap-s-3 cursor-pointer\">\n                 <input\n                   type=\"radio\"\n                   name=\"manager\"\n                   checked={managerId === userId}\n                   onChange={() => setManagerId(userId)}\n                 />\n                 <MemberSearchRow member={member} />\n               </label>\n             </li>\n           );\n         })}\n       </ul>\n     </div>\n   </section>\n   ```\n\n2. 라디오 버튼 스타일링:\n   - 선택된 항목은 `border-accent bg-accent-dim` 배경\n   - 커스텀 라디오 서클 또는 Radix RadioGroup 사용 고려\n\n3. canNext 조건:\n   - title.trim().length > 0 && managerId !== null",
+        "testStrategy": "1. 회의 제목 입력 필드 동작 확인\n2. Step 2에서 선택한 참여 인원만 매니저 후보로 표시되는지 확인\n3. 라디오 버튼으로 매니저 단일 선택 동작 확인\n4. 제목 미입력 또는 매니저 미선택 시 '다음' 버튼 비활성화 확인",
+        "priority": "medium",
+        "dependencies": [
+          4
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Step 4: 확인 및 회의 생성 처리",
+        "description": "모든 정보 요약 표시, 회의 생성 로직(store.addMeeting 확장), 디테일 페이지 리다이렉트",
+        "details": "1. Step 4 확인 섹션 (step === 3 일 때):\n   - WizardSummaryCard 컴포넌트 재사용\n   ```tsx\n   <WizardSummaryCard\n     sections={[\n       {\n         label: '목적',\n         value: purpose === 'performance' ? `공연 선곡 회의 — ${selectedPerformance?.title}` : '일반 합주 회의',\n         onEdit: () => setStep(0),\n       },\n       {\n         label: '참여 인원',\n         value: `${participantUserIds.length}명`,\n         onEdit: () => setStep(1),\n       },\n       {\n         label: '회의 제목',\n         value: title,\n         onEdit: () => setStep(2),\n       },\n       {\n         label: '매니저',\n         value: managerMember?.name ?? '—',\n         onEdit: () => setStep(2),\n       },\n     ]}\n   />\n   ```\n\n2. setlistStore.addMeeting 시그니처 확장 (`src/domain/setlist-meeting/store/setlistStore.ts`):\n   ```ts\n   addMeeting: (\n     meeting: Omit<Meeting, 'id' | 'createdAt' | 'updatedAt'>\n   ) => string;\n   ```\n   - Meeting 타입에 purpose, performanceId, participantUserIds 필드 추가됨 (Task 7)\n\n3. submit 함수 구현:\n   ```ts\n   function submit() {\n     const band = /* 공연 모드면 공연의 밴드, 일반 모드면 첫 번째 밴드 or 사용자 지정 */;\n     const meetingId = addMeeting({\n       title,\n       bandId: band.bandId,\n       bandName: band.bandName,\n       managerId: managerId!,\n       purpose,\n       performanceId: purpose === 'performance' ? performanceId : null,\n       participantUserIds,\n     });\n     toast.success('회의가 생성되었습니다.');\n     router.replace(ROUTES.SETLIST_MEETING_DETAIL(meetingId));\n   }\n   ```\n\n4. 로딩 상태 처리:\n   - '회의 만들기' 버튼에 loading prop 추가 (실제 BE 연동 시 mutation.isPending 사용)",
+        "testStrategy": "1. 확인 단계에서 모든 입력 정보가 올바르게 요약 표시되는지 확인\n2. '수정' 버튼 클릭 시 해당 단계로 이동 확인\n3. '회의 만들기' 클릭 시 store에 회의 추가 확인\n4. 회의 생성 후 디테일 페이지로 리다이렉트 확인\n5. 토스트 메시지 표시 확인",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "도메인 모델 및 Mock 확장",
+        "description": "types.ts에 MeetingPurpose, Member 확장 필드 추가, store 확장, memberSearchMock/performanceSearchMock 생성",
+        "details": "1. `src/domain/setlist-meeting/types.ts` 수정:\n   ```ts\n   export type MeetingPurpose = 'performance' | 'general';\n   \n   export type Meeting = {\n     id: string;\n     bandId: string;\n     bandName: string;\n     title: string;\n     managerId: string;\n     createdAt: string;\n     updatedAt: string;\n     lockedAt?: string | null;\n     // Phase 2 추가 필드\n     purpose: MeetingPurpose;\n     performanceId?: string | null;\n     participantUserIds: string[];\n     /** 매니저 확정 시 BE 연동을 위한 매핑. songId(회의) → practiceSongId(BE 응답). */\n     practiceSongMap?: Record<string, string>;\n   };\n   \n   export type Member = {\n     id: string;\n     name: string;\n     role: string;\n     avatar: string;\n     // Phase 2 추가 필드\n     email?: string;\n     profileImg?: string;\n   };\n   ```\n\n2. `src/domain/setlist-meeting/mock/seed.ts` 수정:\n   - SEED_MEMBERS에 email, profileImg 필드 추가\n   - SEED_MEETINGS에 purpose, participantUserIds 필드 추가 (기본값 'general', 빈 배열)\n\n3. `src/domain/setlist-meeting/mock/memberSearchMock.ts` 생성:\n   ```ts\n   export interface MemberSearchResult {\n     memberId: string;\n     name: string;\n     email: string;\n     profileImg?: string;\n   }\n   \n   export const MOCK_MEMBER_DB: MemberSearchResult[] = [...];\n   \n   export function searchMockMembers(query: string, limit = 20): MemberSearchResult[] {...}\n   ```\n\n4. `src/domain/setlist-meeting/mock/performanceSearchMock.ts` 생성:\n   ```ts\n   export interface PerformanceSearchResult {\n     performanceId: string;\n     title: string;\n     venue: string;\n     startAt: string;\n     bands: Array<{ bandId: string; bandName: string }>;\n   }\n   \n   export const MOCK_PERFORMANCE_DB: PerformanceSearchResult[] = [...];\n   \n   export function searchMockPerformances(query: string, limit = 20): PerformanceSearchResult[] {...}\n   ```\n\n5. setlistStore 확장 (`src/domain/setlist-meeting/store/setlistStore.ts`):\n   - addMeeting 액션에서 새 필드 처리\n   - lockSnapshot 상태 추가 (Task 8에서 사용)\n   ```ts\n   type State = {\n     // 기존 필드...\n     lockSnapshots: Record<string, Song[]>; // meetingId → 확정 시점 곡 스냅샷\n   };\n   ```",
+        "testStrategy": "1. 타입 정의가 올바르게 확장되었는지 TypeScript 컴파일 확인\n2. SEED_MEMBERS에 email, profileImg 필드가 추가되었는지 확인\n3. memberSearchMock 함수가 검색어에 따라 올바른 결과 반환 확인\n4. performanceSearchMock 함수가 검색어에 따라 올바른 결과 반환 확인\n5. 기존 기능(회의 목록, 디테일)이 정상 동작하는지 회귀 테스트",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "선곡 확정 시 합주곡 벌크 매핑 구현",
+        "description": "lockMeeting 시 lockSnapshot 저장, commitConfirmDiff 액션으로 변경분 diff 계산 및 practiceSongMap 갱신 (mock 우선)",
+        "details": "1. setlistStore 확장 (`src/domain/setlist-meeting/store/setlistStore.ts`):\n   ```ts\n   type Actions = {\n     // 기존 액션들...\n     /** 매니저 확정 시 BE API 호출 mock + practiceSongMap 갱신. */\n     commitConfirmDiff: (meetingId: string) => Promise<void>;\n   };\n   ```\n\n2. lockMeeting 액션 수정:\n   - 확정 시점의 곡 목록을 lockSnapshots에 저장\n   ```ts\n   lockMeeting: (meetingId) =>\n     set((state) => {\n       const songsSnapshot = state.songs\n         .filter((s) => s.meetingId === meetingId)\n         .map((s) => ({ ...s })); // deep copy\n       return {\n         meetings: state.meetings.map((m) =>\n           m.id === meetingId ? { ...m, lockedAt: new Date().toISOString() } : m\n         ),\n         lockSnapshots: { ...state.lockSnapshots, [meetingId]: songsSnapshot },\n       };\n     }),\n   ```\n\n3. unlockMeeting 액션:\n   - lockSnapshot은 유지 (다음 확정에서 diff 비교용)\n   - lockedAt만 null로 변경\n\n4. commitConfirmDiff 액션 구현:\n   ```ts\n   commitConfirmDiff: async (meetingId) => {\n     const state = get();\n     const currentSongs = state.songs.filter((s) => s.meetingId === meetingId);\n     const snapshot = state.lockSnapshots[meetingId] ?? [];\n     \n     // diff 계산\n     const snapshotIds = new Set(snapshot.map((s) => s.id));\n     const currentIds = new Set(currentSongs.map((s) => s.id));\n     \n     const added = currentSongs.filter((s) => !snapshotIds.has(s.id));\n     const removed = snapshot.filter((s) => !currentIds.has(s.id));\n     const updated = currentSongs.filter((s) => {\n       const old = snapshot.find((o) => o.id === s.id);\n       return old && (old.title !== s.title || old.artist !== s.artist || ...);\n     });\n     \n     // Mock BE 호출 시뮬레이션\n     const mockResponse = {\n       practiceSongs: added.map((s, i) => ({\n         meetingSongId: s.id,\n         practiceSongId: `ps_${Date.now()}_${i}`,\n       })),\n     };\n     \n     // practiceSongMap 갱신\n     set((state) => ({\n       meetings: state.meetings.map((m) =>\n         m.id === meetingId\n           ? {\n               ...m,\n               practiceSongMap: {\n                 ...(m.practiceSongMap ?? {}),\n                 ...Object.fromEntries(\n                   mockResponse.practiceSongs.map((p) => [p.meetingSongId, p.practiceSongId])\n                 ),\n               },\n             }\n           : m\n       ),\n     }));\n   },\n   ```\n\n5. MeetingDetail.client.tsx 수정:\n   - lockMeeting 호출 후 commitConfirmDiff 호출 추가\n   ```ts\n   if (pendingLockAction === 'lock') {\n     lockMeeting(meetingId);\n     await commitConfirmDiff(meetingId);\n     toast.success('선곡이 확정되었습니다.');\n   }\n   ```",
+        "testStrategy": "1. 선곡 확정 시 lockSnapshots에 곡 목록 저장 확인\n2. 회의 재개 → 곡 추가/삭제 → 재확정 시 diff가 올바르게 계산되는지 확인\n3. practiceSongMap에 새로 매핑된 항목 추가 확인\n4. 기존 lockMeeting/unlockMeeting 동작 회귀 테스트",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "API_REQUIRED.md 등록 및 산출물 정리",
+        "description": "FE-API-031~036 명세를 API_REQUIRED 문서에 등록하고, 구현 결과물 최종 점검",
+        "details": "1. API_REQUIRED 문서 갱신 (위치: 프로젝트 문서 폴더 또는 CLAUDE.md 참조):\n   ```markdown\n   ### FE-API-031 회의 생성 (확장)\n   POST /api/v1/setlist-meetings\n   Body: { title, bandId, purpose: 'PERFORMANCE'|'GENERAL', performanceId?, managerId, participantUserIds }\n   \n   ### FE-API-032 멤버 검색 (글로벌)\n   GET /api/v1/members/search?q=&limit=20\n   Response: [{ memberId, name, email, profileImg? }]\n   \n   ### FE-API-033 공연 검색 (셋리스트 회의용)\n   GET /api/v1/performances/search?q=&limit=20\n   Response: [{ performanceId, title, venue, startAt, bands: [...] }]\n   \n   ### FE-API-034 회의 확정 → 합주곡 벌크 생성/연결\n   POST /api/v1/setlist-meetings/{id}/lock\n   Body: { songs: [{ meetingSongId, title, artist, album?, duration?, sessions: [...] }] }\n   Response: { lockedAt: ISO, practiceSongs: [{ meetingSongId, practiceSongId }] }\n   \n   ### FE-API-035 회의 잠금 해제\n   POST /api/v1/setlist-meetings/{id}/unlock\n   \n   ### FE-API-036 회의 변경분 벌크 수정 (재확정 시)\n   PATCH /api/v1/setlist-meetings/{id}/songs/bulk\n   Body: { add: [...], remove: [meetingSongId], update: [...] }\n   Response: { practiceSongs: [{ meetingSongId, practiceSongId }] }\n   ```\n\n2. 코드 품질 점검:\n   - `pnpm lint` 실행 및 오류 수정\n   - `pnpm typecheck` 실행 및 타입 오류 수정\n   - `pnpm format` 실행\n\n3. 산출물 체크리스트:\n   - [ ] 라우트 '/setlist-meetings/new' 동작 확인\n   - [ ] 사이드바 서브탭 동작 확인\n   - [ ] 마법사 4단계 플로우 완전 동작 확인\n   - [ ] 회의 생성 후 디테일 페이지 리다이렉트 확인\n   - [ ] 선곡 확정/재개 동작 확인\n   - [ ] lockSnapshot 및 practiceSongMap 동작 확인\n\n4. 테스트 실행:\n   - `pnpm test` 단위 테스트 실행\n   - setlistStore 관련 테스트 케이스 추가 고려",
+        "testStrategy": "1. API_REQUIRED 문서에 모든 엔드포인트가 정확하게 기록되었는지 확인\n2. lint, typecheck, format 모두 통과 확인\n3. 전체 플로우 E2E 수동 테스트:\n   - 사이드바 > 회의 만들기 클릭\n   - 목적 선택 (공연/일반)\n   - 참여 인원 선택\n   - 회의 정보 입력\n   - 확인 및 생성\n   - 디테일 페이지에서 선곡 확정/재개",
+        "priority": "low",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-04-26T12:37:04.749Z",
+      "updated": "2026-04-26T12:40:48.963Z",
+      "description": "Tasks for setlist-phase2 context"
     }
   }
 }
