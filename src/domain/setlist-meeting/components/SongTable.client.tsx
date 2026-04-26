@@ -4,13 +4,14 @@ import { Check } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 
-import type { Song } from '../types';
+import type { Member, Song } from '../types';
 import { confirmedCount, isReady, totalNeed } from '../utils';
 
 import { SessionTrack } from './SessionTrack';
 
 export interface SongTableProps {
   songs: Song[];
+  members: Member[];
   selectedSongId: string | null;
   focusedSessionId: string | null;
   currentUserId: string;
@@ -18,8 +19,13 @@ export interface SongTableProps {
   onFocusSession: (songId: string, sessionId: string) => void;
 }
 
+function memberName(members: Member[], id: string): string {
+  return members.find((m) => m.id === id)?.name ?? '?';
+}
+
 export function SongTable({
   songs,
+  members,
   selectedSongId,
   focusedSessionId,
   currentUserId,
@@ -49,6 +55,9 @@ export function SongTable({
             </th>
             <th className="px-s-2 py-s-2 font-semibold tracking-wider">세션</th>
             <th className="px-s-2 py-s-2 w-28 text-right font-semibold tracking-wider">진행도</th>
+            <th className="px-s-2 py-s-2 hidden font-semibold tracking-wider lg:table-cell">
+              추천자 의견
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -123,6 +132,18 @@ export function SongTable({
                       {done}/{total}
                     </span>
                   </div>
+                </td>
+                <td className="px-s-2 py-s-2 text-foreground-muted text-caption hidden max-w-[280px] lg:table-cell">
+                  {song.note ? (
+                    <span className="block truncate" title={song.note}>
+                      <span className="text-foreground-sub font-semibold">
+                        {memberName(members, song.proposerId)} ·{' '}
+                      </span>
+                      {song.note}
+                    </span>
+                  ) : (
+                    <span className="text-foreground-muted">-</span>
+                  )}
                 </td>
               </tr>
             );

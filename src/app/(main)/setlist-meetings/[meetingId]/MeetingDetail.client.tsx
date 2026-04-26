@@ -53,6 +53,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
     () => songs.filter((song) => song.meetingId === meetingId),
     [songs, meetingId],
   );
+  const members = useSetlistStore((s) => s.members);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
   const selectedSongId = useSetlistStore((s) => s.selectedSongId);
   const focusedSessionId = useSetlistStore((s) => s.focusedSessionId);
@@ -148,6 +149,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
         <div className="flex-1 overflow-y-auto">
           <SongTable
             songs={visible}
+            members={members}
             selectedSongId={selectedSongId}
             focusedSessionId={focusedSessionId}
             currentUserId={currentUserId}
