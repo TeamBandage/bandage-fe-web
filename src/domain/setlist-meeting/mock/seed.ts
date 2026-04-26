@@ -22,6 +22,9 @@ export const SEED_MEETINGS: Meeting[] = [
     managerId: 'u1',
     createdAt: '2026-04-20',
     updatedAt: '2026-04-25',
+    purpose: 'general',
+    participantUserIds: ['u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7'],
+    practiceWindow: { from: '2026-04-26', to: '2026-05-17' },
   },
   {
     id: 'mt2',
