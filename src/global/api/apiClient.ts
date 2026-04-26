@@ -75,6 +75,11 @@ function toApiError(payload: unknown, status: number, fallbackMessage: string): 
 
 let refreshPromise: Promise<string> | null = null;
 
+/** AuthBootstrapper 가 마운트 시 호출 — refreshToken 쿠키로 accessToken 부트스트랩. */
+export async function bootstrapAccessToken(): Promise<string> {
+  return refreshAccessToken();
+}
+
 async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
