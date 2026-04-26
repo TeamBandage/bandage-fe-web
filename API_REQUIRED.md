@@ -135,6 +135,15 @@ mvp-1-fix-v3 Task 5 의 BandPickerModal 결과를 적용할 백엔드 엔드포�
 
 - **프론트 사용처**: `PracticeCreateWizard.submit` (현재 임시로 `<title> — <artist>` 텍스트 식별자 전송)
 
+### 8-8. 밴드 정보 수정 / 삭제 (FE-API-022, FE-API-023)
+
+밴드 설정 모달이 도입됐지만 백엔드에 엔드포인트가 없음. 본 라운드는 UI 만 완성, 동작 시 toast 안내.
+
+- **PATCH `/api/v1/bands/{bandId}`** (FE-API-022) — 리더만, body: `{ name?, description? }`. Partial update.
+- **DELETE `/api/v1/bands/{bandId}`** (FE-API-023) — 리더만. 응답 204. 멤버·합주·공연 연결 cascade 정리 정책 결정 필요.
+- **POST `/api/v1/bands/{bandId}/profile-image`** (FE-API-009 — P2 항목 활성화) — 멀티파트 업로드 또는 사전서명 URL.
+- 프론트 사용처: `BandSettingsModal` (정보/사진/삭제 탭)
+
 ### 8-7. 홈 피드 우선순위 정렬 (FE-API-019)
 
 홈 화면 '내 밴드 / 다가오는 합주 / 다가오는 공연' 섹션은 현재 클라이언트 측 `lib/home-feed.ts` 의 `pickUpcoming` 으로 startAt 오름차순 + 미래 필터링 + 상위 3건. 향후 백엔드가 활동성/우선순위 알고리즘을 적용한 별도 엔드포인트를 제공하면 클라이언트 정렬 제거 가능.
