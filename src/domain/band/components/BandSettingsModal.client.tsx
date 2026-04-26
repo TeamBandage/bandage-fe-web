@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,9 @@ import {
 } from '@/components/ui/responsive-sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { useDeleteBand } from '@/domain/band/hooks/useDeleteBand';
+import { useUpdateBand } from '@/domain/band/hooks/useUpdateBand';
+import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 
 interface Props {
@@ -28,6 +32,7 @@ interface Props {
  * 본 라운드는 UI 완성 + toast 안내, 백엔드 도입 시 mutation 만 교체.
  */
 export function BandSettingsModal({ open, onOpenChange, band }: Props) {
+  const router = useRouter();
   const toast = useToast();
   const [tab, setTab] = useState<'info' | 'image' | 'delete'>('info');
 
@@ -41,14 +46,32 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
   // 삭제
   const [confirmText, setConfirmText] = useState('');
 
+  const updateMutation = useUpdateBand(band.bandId, {
+    onSuccess: () => {
+      toast.success('밴드 정보를 저장했습니다.');
+      onOpenChange(false);
+    },
+    onError: (err) =>
+      toast.error(err.message || '저장에 실패했습니다 (FE-API-022 백엔드 도입 대기 중).'),
+  });
+
+  const deleteMutation = useDeleteBand(band.bandId, {
+    onSuccess: () => {
+      toast.success('밴드를 삭제했습니다.');
+      onOpenChange(false);
+      router.replace(ROUTES.BANDS);
+    },
+    onError: (err) =>
+      toast.error(err.message || '삭제에 실패했습니다 (FE-API-023 백엔드 도입 대기 중).'),
+  });
+
   function handleSaveInfo() {
-    toast.info('정보 수정 API 가 백엔드에 추가되면 자동 반영됩니다 (FE-API-022).');
-    onOpenChange(false);
+    updateMutation.mutate({ name: name.trim(), description: description.trim() || undefined });
   }
 
   function handleSaveImage() {
-    toast.info('프로필 이미지 업로드 API 가 백엔드에 추가되면 자동 반영됩니다 (FE-API-009).');
-    onOpenChange(false);
+    // FE-API-009 업로드 엔드포인트 도입 전까지는 URL 만 PATCH 로 함께 전송 (BE 가 profileImg 필드 받을 경우).
+    updateMutation.mutate({ profileImg: profileImg.trim() || null });
   }
 
   function handleDelete() {
@@ -56,8 +79,7 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
       toast.error('밴드 이름을 정확히 입력해 주세요.');
       return;
     }
-    toast.info('밴드 삭제 API 가 백엔드에 추가되면 자동 반영됩니다 (FE-API-023).');
-    onOpenChange(false);
+    deleteMutation.mutate();
   }
 
   return (
@@ -124,13 +146,22 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             취소
           </Button>
-          {tab === 'info' && <Button onClick={handleSaveInfo}>저장</Button>}
-          {tab === 'image' && <Button onClick={handleSaveImage}>저장</Button>}
+          {tab === 'info' && (
+            <Button onClick={handleSaveInfo} loading={updateMutation.isPending}>
+              저장
+            </Button>
+          )}
+          {tab === 'image' && (
+            <Button onClick={handleSaveImage} loading={updateMutation.isPending}>
+              저장
+            </Button>
+          )}
           {tab === 'delete' && (
             <Button
               variant="danger"
               onClick={handleDelete}
               disabled={confirmText !== band.bandName}
+              loading={deleteMutation.isPending}
             >
               삭제
             </Button>
