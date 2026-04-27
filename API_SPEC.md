@@ -1029,3 +1029,297 @@ Base URL: `/api/v1`
 - **인증 필요** (PerformanceManager)
 - **Path Variables**: `performanceId` (UUID), `bandId` (UUID)
 - **비고**: 공연에서 특정 참여 밴드 매핑을 제거 (밴드 자체는 삭제되지 않음).
+
+---
+
+## 7. 선곡 회의 (Setlist Meeting)
+
+> Base path: `/api/v1/setlist-meetings`. 모든 엔드포인트 인증 필요.
+>
+> 권한 모델
+> - **참여 멤버**: `SetlistMeetingMember` 에 등록된 사용자 또는 매니저
+> - **매니저**: `SetlistMeeting.managerId` 와 일치하는 사용자
+> - **잠금 상태(`lockedAt != null`) 제약**: 곡 생성/수정/삭제는 차단 (`SETLIST_MEETING_LOCKED`).
+>
+> 공통 응답 스키마
+>
+> `SetlistMeetingResponse`
+> ```json
+> {
+>   "meetingId": "uuid",
+>   "bandId": "uuid",
+>   "title": "여름 페스티벌 셋리스트 회의",
+>   "purpose": "PERFORMANCE",         // PERFORMANCE | GENERAL
+>   "performanceId": "uuid|null",
+>   "managerId": 1,
+>   "lockedAt": "2026-04-26T12:30:45|null",
+>   "createdAt": "...",
+>   "updatedAt": "..."
+> }
+> ```
+>
+> `SetlistItemResponse`
+> ```json
+> {
+>   "setlistItemId": "uuid",
+>   "meetingId": "uuid",
+>   "title": "Vicarious",
+>   "artist": "Tool",
+>   "album": "10,000 Days",
+>   "duration": "07:06",
+>   "proposerId": 1,
+>   "note": "폴리리듬 도입부…",
+>   "practiceSongId": "uuid|null",     // 매니저 잠금 시 매핑되는 합주곡 ID (cross-domain TODO)
+>   "sessions": [
+>     {
+>       "sessionId": "G",
+>       "label": "기타",
+>       "short": "G",
+>       "need": 1,
+>       "custom": false,
+>       "applicants": [2, 3],
+>       "confirmed": [2]
+>     }
+>   ],
+>   "createdAt": "...",
+>   "updatedAt": "..."
+> }
+> ```
+
+---
+
+### 7-1. 선곡 회의 생성
+- **POST** `/api/v1/setlist-meetings`
+- **인증 필요**
+- **Request Body**
+  ```json
+  {
+    "title": "여름 페스티벌 셋리스트 회의",
+    "purpose": "PERFORMANCE",
+    "performanceId": "550e8400-e29b-41d4-a716-446655440000",
+    "bandId": "550e8400-e29b-41d4-a716-446655440001",
+    "managerId": 1,
+    "participantUserIds": [1, 2, 3]
+  }
+  ```
+  - `title`, `purpose`, `bandId`, `managerId` 필수
+  - `purpose=PERFORMANCE` 일 때 `performanceId` 필수
+  - `managerId` 는 `participantUserIds` 또는 호출자 본인에 포함되어야 함 (자동 추가됨)
+- **Response**: `SetlistMeetingResponse`
+- **검증**
+  - `purpose=PERFORMANCE` + 동일 `performanceId` 활성 회의(`lockedAt=null`) 존재 → 409 `SETLIST_PERFORMANCE_HAS_ACTIVE_MEETING`
+  - 매니저 미참여 → 400 `SETLIST_MANAGER_NOT_PARTICIPANT`
+  - PERFORMANCE 인데 `performanceId` 누락 → 400 `SETLIST_PERFORMANCE_REQUIRED`
+
+---
+
+### 7-2. 내 선곡 회의 목록 조회 (커서 페이징)
+- **GET** `/api/v1/setlist-meetings/me?lastId=&pageSize=20`
+- **인증 필요**
+- **Query Parameters**
+  - `lastId` (UUID, optional): 직전 페이지 마지막 회의 ID
+  - `pageSize` (Int, default `20`, 1~100)
+- **Response**: `CursorResponse<SetlistMeetingResponse, UUID>`
+- **비고**: 본인이 참여(`SetlistMeetingMember`) 중인 회의만 조회.
+
+---
+
+### 7-3. 선곡 회의 단건 조회
+- **GET** `/api/v1/setlist-meetings/{meetingId}`
+- **인증 필요** (참여 멤버 또는 매니저)
+- **Response**: `SetlistMeetingDetailResponse`
+  ```json
+  {
+    "meetingId": "uuid",
+    "bandId": "uuid",
+    "title": "...",
+    "purpose": "GENERAL",
+    "performanceId": null,
+    "managerId": 1,
+    "participantUserIds": [1, 2, 3],
+    "lockedAt": null,
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
+  ```
+- **에러**: 404 `SETLIST_MEETING_NOT_FOUND`, 403 `SETLIST_MEETING_FORBIDDEN`
+
+---
+
+### 7-4. 선곡 회의 수정
+- **PATCH** `/api/v1/setlist-meetings/{meetingId}`
+- **인증 필요** (Manager)
+- **Request Body**
+  ```json
+  {
+    "title": "...",
+    "managerId": 2
+  }
+  ```
+  - 모든 필드 nullable. `managerId` 변경 시 새 매니저는 참여자에 포함되어야 함.
+- **Response**: `SetlistMeetingResponse`
+- **에러**: 403 `SETLIST_MEETING_NOT_MANAGER`, 400 `SETLIST_MANAGER_NOT_PARTICIPANT`
+
+---
+
+### 7-5. 선곡 회의 삭제
+- **DELETE** `/api/v1/setlist-meetings/{meetingId}`
+- **인증 필요** (Manager)
+- **Response**: 204 (`ApiResponse.success()`, data=null)
+- **비고**: soft-delete (`deleted_at` 세팅).
+
+---
+
+### 7-6. 선곡 항목 목록 조회 (커서 페이징)
+- **GET** `/api/v1/setlist-meetings/{meetingId}/items?lastId=&pageSize=50`
+- **인증 필요** (참여 멤버)
+- **Query Parameters**: `lastId` (UUID), `pageSize` (1~200, default 50)
+- **Response**: `CursorResponse<SetlistItemResponse, UUID>` — 응답 항목에 sessions/applicants/confirmed 포함.
+
+---
+
+### 7-7. 선곡 항목 단건 조회
+- **GET** `/api/v1/setlist-meetings/{meetingId}/items/{itemId}`
+- **인증 필요** (참여 멤버)
+- **Response**: `SetlistItemResponse`
+
+---
+
+### 7-8. 선곡 항목 생성
+- **POST** `/api/v1/setlist-meetings/{meetingId}/items`
+- **인증 필요** (참여 멤버, 회의 진행 중)
+- **Request Body**
+  ```json
+  {
+    "title": "Vicarious",
+    "artist": "Tool",
+    "album": "10,000 Days",
+    "duration": "07:06",
+    "note": "폴리리듬 도입부…",
+    "sessions": [
+      { "sessionId": "V", "label": "보컬", "short": "V", "need": 1, "custom": false },
+      { "sessionId": "G", "label": "기타", "short": "G", "need": 2, "custom": false }
+    ]
+  }
+  ```
+- **Response**: 생성된 `SetlistItemResponse` (applicants/confirmed 빈 버킷)
+- **에러**: 409 `SETLIST_MEETING_LOCKED` (잠금 상태에서는 생성 불가)
+- **비고**: `proposerId` 는 토큰의 사용자 ID로 자동 매핑.
+
+---
+
+### 7-9. 선곡 항목 부분 수정
+- **PATCH** `/api/v1/setlist-meetings/{meetingId}/items/{itemId}`
+- **인증 필요** (곡 제안자 또는 매니저)
+- **Request Body**
+  ```json
+  {
+    "title": "...",
+    "artist": "...",
+    "album": "...",
+    "duration": "...",
+    "note": "...",
+    "sessions": [ /* 제공 시 새 세션 list 그대로 교체 */ ]
+  }
+  ```
+- **Response**: 갱신된 `SetlistItemResponse`
+- **비고**: `sessions` 변경 시 제거된 세션의 applicants/confirmed 는 cascade 정리.
+- **에러**: 409 `SETLIST_MEETING_LOCKED`, 403 `SETLIST_ITEM_FORBIDDEN`
+
+---
+
+### 7-10. 선곡 항목 삭제
+- **DELETE** `/api/v1/setlist-meetings/{meetingId}/items/{itemId}`
+- **인증 필요** (곡 제안자 또는 매니저)
+- **에러**: 409 `SETLIST_MEETING_LOCKED`, 403 `SETLIST_ITEM_FORBIDDEN`
+
+---
+
+### 7-11. 세션 지원
+- **POST** `/api/v1/setlist-meetings/{meetingId}/items/{itemId}/sessions/{sessionId}/applicants`
+- **인증 필요** (참여 멤버 본인)
+- **비고**: 본인을 해당 세션 지원자로 등록. 중복 지원은 멱등 200.
+- **에러**: 404 `SETLIST_ITEM_SESSION_NOT_FOUND`
+
+---
+
+### 7-12. 세션 지원 철회
+- **DELETE** `/api/v1/setlist-meetings/{meetingId}/items/{itemId}/sessions/{sessionId}/applicants/{userId}`
+- **인증 필요** (본인 — `userId` 가 토큰 사용자와 일치해야 함)
+- **비고**: cascade — 본인이 해당 세션 confirmed 에 있으면 함께 제거.
+- **에러**: 403 `SETLIST_ITEM_FORBIDDEN` (본인 외 철회 시도)
+
+---
+
+### 7-13. 세션 확정 / 해제 (매니저)
+- **PATCH** `/api/v1/setlist-meetings/{meetingId}/items/{itemId}/sessions/{sessionId}/confirmations`
+- **인증 필요** (Manager)
+- **Request Body**
+  ```json
+  {
+    "confirm":   [2, 3],
+    "unconfirm": [4]
+  }
+  ```
+- **Response**: 갱신된 `SetlistItemResponse`
+- **에러**: 400 `SETLIST_ITEM_SESSION_FULL` (정원 `need` 초과), 404 `SETLIST_ITEM_SESSION_NOT_FOUND`, 403 `SETLIST_MEETING_NOT_MANAGER`
+
+---
+
+### 7-14. 곡별 채팅 조회 (커서 페이징)
+- **GET** `/api/v1/setlist-meetings/{meetingId}/items/{itemId}/chat?lastId=&pageSize=50`
+- **인증 필요** (참여 멤버)
+- **Query Parameters**: `lastId` (UUID), `pageSize` (1~200, default 50)
+- **Response**: `CursorResponse<SetlistChatMessageResponse, UUID>` — 최신순.
+  ```json
+  {
+    "content": [
+      {
+        "messageId": "uuid",
+        "setlistItemId": "uuid",
+        "memberId": 1,
+        "message": "보컬 음역대 빡셈",
+        "createdAt": "..."
+      }
+    ],
+    "nextCursor": "uuid|null",
+    "hasNext": true
+  }
+  ```
+
+---
+
+### 7-15. 곡별 채팅 작성
+- **POST** `/api/v1/setlist-meetings/{meetingId}/items/{itemId}/chat`
+- **인증 필요** (참여 멤버)
+- **Request Body**
+  ```json
+  { "message": "보컬 음역대 빡셈" }
+  ```
+  - `message`: 1~500자
+- **Response**: 생성된 `SetlistChatMessageResponse`
+
+---
+
+### 7-16. 선곡 회의 잠금
+- **POST** `/api/v1/setlist-meetings/{meetingId}/lock`
+- **인증 필요** (Manager)
+- **Response**: `SetlistLockResponse`
+  ```json
+  {
+    "lockedAt": "2026-04-26T12:30:45",
+    "songs": [
+      { "setlistItemId": "uuid", "practiceSongId": "uuid|null" }
+    ]
+  }
+  ```
+- **에러**: 409 `SETLIST_MEETING_LOCKED` (이미 잠금 상태), 403 `SETLIST_MEETING_NOT_MANAGER`
+- **비고**: 합주곡 벌크 생성 + Performance.setlist 자동 등록은 cross-domain 후속(TODO) — 현재는 잠금 상태 전이만 수행하며 `practiceSongId` 는 매핑 전이면 null.
+
+---
+
+### 7-17. 선곡 회의 잠금 해제
+- **POST** `/api/v1/setlist-meetings/{meetingId}/unlock`
+- **인증 필요** (Manager)
+- **Response**: `SetlistMeetingResponse` (`lockedAt=null`)
+- **에러**: 409 `SETLIST_MEETING_NOT_LOCKED`, 403 `SETLIST_MEETING_NOT_MANAGER`
