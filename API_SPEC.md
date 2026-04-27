@@ -41,9 +41,17 @@ Base URL: `/api/v1`
 | 12 | 입력 검증 메시지 정제 (T3, T6) | API_ISSUE_REPORT §4-3 | ✅ 해소 | `HttpMessageNotReadableException` 핸들러가 `KotlinInvalidNullException`/`InvalidFormatException` 을 한국어 메시지 + `fieldErrors` 로 매핑 |
 | 13 | 과거 시각 startAt 검증 (T17) | API_ISSUE_REPORT §4-4 | ✅ 해소 | Practice/Performance 생성·수정·합주 일정 변경 DTO 의 `startAt` 에 `@Future` 적용 (4-1/4-8/6-1/6-4 참조) |
 
-### 미해소 / 프론트 책임
+### 추가 반영 (2026-04-27)
 
-- **`MemberInfoResponse.memberId` vs 프론트 기대 `id`** (MVP 통합 §3): 백엔드는 도메인 prefix 컨벤션(`bandId`, `practiceId`, `songId`, `bandMemberId`...)을 따르므로 `memberId` 유지. 프론트 타입을 `memberId`로 갱신 필요.
+| # | 이슈 | 출처 | 상태 | 비고 |
+|---|---|---|---|---|
+| 14 | `MemberInfoResponse.id` alias / `profileImg` 노출 | MVP 통합 §3 | ✅ 해소 | `id` 와 `memberId` 동시 노출 (alias), `profileImg` 필드 추가 (2-2 참조) |
+| 15 | `BandMemberInfoResponse` 에 회원 이름/프로필 이미지 포함 | FE-API-012 | ✅ 해소 | `name`, `profileImg` 추가 (3-4/3-5 참조) |
+| 16 | `BandApplicationInfoResponse` 에 신청자 정보 포함 | FE-API-013 | ✅ 해소 | `applicantName`, `applicantProfileImg`, `appliedAt` 추가 (3-7 참조) |
+| 17 | 회원 메트릭 (밴드 수 / 다가오는 합주·공연 수 / 세션 수) | FE-API-014 | ✅ 해소 | `GET /members/me/metrics` 신규 (2-5 참조). 네이밍은 Stat → Metrics 로 통일 |
+| 18 | 회원 검색 (이름/이메일 부분 일치) | FE-API-032 | ✅ 해소 | `GET /members/search?q=` 신규, 본인 제외, 최대 20건 (2-6 참조) |
+| 19 | 밴드 정보 수정 / 삭제 / 멤버 강퇴 / 역할 변경 | FE-API-022/023, §8-2 | ✅ 해소 | 3-12 ~ 3-15 참조 |
+| 20 | 공연 참여 밴드 일괄 추가/단건 제거 | FE-API-017 | ✅ 해소 | 6-9 / 6-10 참조 |
 
 ---
 
@@ -131,7 +139,18 @@ Base URL: `/api/v1`
 ### 2-2. 내 정보 조회
 - **GET** `/api/v1/members/me`
 - **인증 필요**
-- **Response**: (구현 예정 — 현재 `Unit` 반환)
+- **Response**: `MemberInfoResponse`
+  ```json
+  {
+    "id": 1,
+    "memberId": 1,
+    "email": "member@google.com",
+    "name": "홍길동",
+    "contact": "010-1234-5678",
+    "profileImg": "https://cdn/...jpg"
+  }
+  ```
+- **비고**: `id` 는 `memberId` 의 프론트 호환 alias 필드. `profileImg` 는 미설정 시 `null`.
 
 ---
 
@@ -153,6 +172,44 @@ Base URL: `/api/v1`
 - **DELETE** `/api/v1/members/me`
 - **인증 필요**
 - **비고**: 회원 정보 삭제(soft delete) 및 로그아웃 처리 (쿠키 만료)
+
+---
+
+### 2-5. 내 메트릭 조회
+- **GET** `/api/v1/members/me/metrics`
+- **인증 필요**
+- **Response**: `MemberMetricsResponse`
+  ```json
+  {
+    "bandCount": 3,
+    "upcomingPracticeCount": 2,
+    "upcomingPerformanceCount": 1,
+    "sessionCount": 5
+  }
+  ```
+- **비고**: 본인이 소속된 밴드 수, 본인이 참여한 다가오는 합주 수(`startAt > now`), 본인 소속 밴드의 다가오는 공연 수(`startAt > now`), 본인이 참여 중인 합주 세션 수. 도메인 간 의존(`Band`/`Practice`/`Performance`)이 있어 `MemberMetricsFacade` 에서 집계.
+
+---
+
+### 2-6. 회원 검색
+- **GET** `/api/v1/members/search`
+- **인증 필요**
+- **Query Parameters**
+  | 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+  |---------|------|------|--------|------|
+  | `q` | String | N | `""` | 검색 키워드 (이름 또는 이메일) |
+- **Response**: `List<MemberSearchItemResponse>`
+  ```json
+  [
+    {
+      "memberId": 1,
+      "name": "홍길동",
+      "email": "user@bandage.test",
+      "profileImg": "https://cdn/...jpg"
+    }
+  ]
+  ```
+- **비고**: 이름/이메일 부분 일치 (대소문자 구분 X). 본인은 결과에서 제외. 최대 20건.
 
 ---
 
@@ -255,15 +312,17 @@ Base URL: `/api/v1`
 - **GET** `/api/v1/bands/{bandId}/members/{bandMemberId}`
 - **인증 필요**
 - **Path Variables**: `bandId` (UUID), `bandMemberId` (UUID)
-- **Response**
+- **Response**: `BandMemberInfoResponse`
   ```json
   {
     "bandMemberId": "550e8400-e29b-41d4-a716-446655440000",
     "memberId": 1,
-    "role": "MEMBER"
+    "role": "MEMBER",
+    "name": "홍길동",
+    "profileImg": "https://cdn/...jpg"
   }
   ```
-- **비고**: `role` enum — `LEADER` | `ADMIN` | `MEMBER`
+- **비고**: `role` enum — `LEADER` | `ADMIN` | `MEMBER`. `name`/`profileImg` 는 회원 조회 후 매핑 (FE-API-012).
 
 ---
 
@@ -299,9 +358,13 @@ Base URL: `/api/v1`
   {
     "bandApplicationId": "550e8400-...",
     "memberId": 1,
-    "status": "PENDING"
+    "status": "PENDING",
+    "applicantName": "홍길동",
+    "applicantProfileImg": "https://cdn/...jpg",
+    "appliedAt": "2026-04-26T12:34:56"
   }
   ```
+- **비고**: `applicantName`/`applicantProfileImg` 는 신청자 회원 조회 후 매핑 (FE-API-013). `appliedAt` 은 신청 생성 시각.
 
 ---
 
@@ -321,11 +384,20 @@ Base URL: `/api/v1`
 
 ---
 
-### 3-10. 밴드 리더 권한 위임
+### 3-10. 밴드 멤버 역할 변경 / 리더 위임
 - **PATCH** `/api/v1/bands/{bandId}/members/{bandMemberId}/role`
 - **인증 필요** (리더)
 - **Path Variables**: `bandId` (UUID), `bandMemberId` (UUID)
-- **비고**: 현재 리더 권한을 지정 멤버에게 양도
+- **Request Body** (optional)
+  ```json
+  {
+    "role": "ADMIN"
+  }
+  ```
+  - `role` enum — `LEADER` | `ADMIN` | `MEMBER`
+- **비고**:
+  - body 미제공 또는 `role=LEADER` 면 **리더 권한 위임** 동작 (현재 리더가 지정 멤버에게 권한 양도)
+  - `role=ADMIN` / `role=MEMBER` 면 해당 역할로 변경
 
 ---
 
@@ -333,6 +405,44 @@ Base URL: `/api/v1`
 - **DELETE** `/api/v1/bands/{bandId}/members/me`
 - **인증 필요**
 - **Path Variable**: `bandId` (UUID)
+
+---
+
+### 3-12. 밴드 정보 수정
+- **PATCH** `/api/v1/bands/{bandId}`
+- **인증 필요** (리더)
+- **Path Variable**: `bandId` (UUID)
+- **Request Body** (모든 필드 optional, 전달된 필드만 갱신)
+  ```json
+  {
+    "name": "TuNA",
+    "description": "성균관대학교 락밴드입니다.",
+    "profileImg": "https://cdn/...jpg"
+  }
+  ```
+- **Response**: `BandResponse`
+  ```json
+  {
+    "bandId": "550e8400-e29b-41d4-a716-446655440000",
+    "bandName": "TuNA"
+  }
+  ```
+
+---
+
+### 3-13. 밴드 삭제
+- **DELETE** `/api/v1/bands/{bandId}`
+- **인증 필요** (리더)
+- **Path Variable**: `bandId` (UUID)
+- **비고**: 밴드 및 소속 멤버를 cascade soft-delete.
+
+---
+
+### 3-14. 밴드 멤버 강퇴
+- **DELETE** `/api/v1/bands/{bandId}/members/{bandMemberId}`
+- **인증 필요** (리더)
+- **Path Variables**: `bandId` (UUID), `bandMemberId` (UUID)
+- **비고**: 리더 자신은 강퇴 불가.
 
 ---
 
@@ -884,3 +994,38 @@ Base URL: `/api/v1`
 - **인증 필요** (PerformanceManager)
 - **Path Variable**: `performanceId` (UUID)
 - **비고**: 연관된 합주도 함께 삭제
+
+---
+
+### 6-9. 공연 참여 밴드 일괄 추가
+- **POST** `/api/v1/performances/{performanceId}/bands/batch`
+- **인증 필요** (PerformanceManager)
+- **Path Variable**: `performanceId` (UUID)
+- **Request Body**
+  ```json
+  {
+    "bandIds": [
+      "550e8400-e29b-41d4-a716-446655440000",
+      "550e8400-e29b-41d4-a716-446655440001"
+    ]
+  }
+  ```
+  - `bandIds`: not empty
+- **Response**: `List<PerformanceBandResponse>`
+  ```json
+  [
+    {
+      "performanceBandId": "550e8400-e29b-41d4-a716-446655440010",
+      "bandId": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  ]
+  ```
+- **비고**: append 시맨틱. 이미 등록된 밴드는 무시하고 응답에서도 제외.
+
+---
+
+### 6-10. 공연 참여 밴드 단건 제거
+- **DELETE** `/api/v1/performances/{performanceId}/bands/{bandId}`
+- **인증 필요** (PerformanceManager)
+- **Path Variables**: `performanceId` (UUID), `bandId` (UUID)
+- **비고**: 공연에서 특정 참여 밴드 매핑을 제거 (밴드 자체는 삭제되지 않음).

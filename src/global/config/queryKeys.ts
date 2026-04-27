@@ -4,6 +4,8 @@ export const queryKeys = {
   },
   member: {
     me: ['member', 'me'] as const,
+    myMetrics: ['member', 'me', 'metrics'] as const,
+    search: (q: string) => ['member', 'search', q] as const,
   },
   band: {
     all: ['band'] as const,
