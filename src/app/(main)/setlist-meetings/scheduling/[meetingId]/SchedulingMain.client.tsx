@@ -170,9 +170,33 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
             )}
           >
             {isConfirmedTimetable
-              ? '시간표 확정됨'
-              : `일정 입력 ${completedCount}/${participants.length}`}
+              ? `시간표 확정 — ${completedCount}/${participants.length} 참여`
+              : `${completedCount}/${participants.length} 명 일정 입력 완료`}
           </span>
+        </div>
+        <div
+          className="bg-card border-border mt-s-3 h-2 w-full max-w-md overflow-hidden rounded-full border"
+          role="progressbar"
+          aria-valuenow={
+            participants.length === 0 ? 0 : Math.round((completedCount / participants.length) * 100)
+          }
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="일정 입력 진행도"
+        >
+          <div
+            className={cn(
+              'h-full transition-all',
+              isConfirmedTimetable ? 'bg-success' : 'bg-accent',
+            )}
+            style={{
+              width: `${
+                participants.length === 0
+                  ? 0
+                  : Math.round((completedCount / participants.length) * 100)
+              }%`,
+            }}
+          />
         </div>
         <div className="mt-s-3 gap-s-2 flex flex-wrap items-center">
           <Button size="sm" variant="primary" onClick={() => setScheduleOpen(true)}>

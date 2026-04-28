@@ -4842,7 +4842,7 @@
         "id": "9",
         "title": "나의 스케줄 입력 모달 v2",
         "description": "PRD §5-B 기반 전면 개선: 4단계 플로우 재배열 + PointerEvent 기반 드래그 페인트 + 시간 프리셋 칩 + Copy & Repeat(전주/모든주/요일) + 24h/9-22 토글 + 실시간 요약 푸터 + Smart Defaults. input-mode 탭 제거, 외부 캘린더/AI 채우기 비범위.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "7"
         ],
@@ -4938,7 +4938,8 @@
             "testStrategy": "1. 첫 진입 시 Smart Default 자동 적용 확인\n2. 평일에는 저녁(19-22)만, 주말에는 종일(09-22) 적용 확인\n3. '비우고 시작' 클릭 시 blocks 초기화 확인\n4. dismissed 후 재진입 시 Smart Default 미적용 확인\n5. localStorage 플래그 저장 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T22:05:53.433Z"
       },
       {
         "id": "10",
@@ -5187,9 +5188,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T22:01:41.618Z",
+      "lastModified": "2026-04-28T22:05:53.436Z",
       "taskCount": 13,
-      "completedCount": 8,
+      "completedCount": 9,
       "tags": [
         "schedule-v2"
       ]
