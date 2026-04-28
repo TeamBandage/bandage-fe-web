@@ -4417,7 +4417,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4465,7 +4465,8 @@
             "testStrategy": "1. rightPanel이 null일 때 빈 상태 UI 렌더링 확인\n2. 멤버 선택 시 MemberSchedulePanel 렌더링 확인\n3. 곡 선택 시 SongMatrixPanel 렌더링 확인\n4. 닫기 버튼 클릭 시 빈 상태로 복귀 확인\n5. 패널 제목이 kind에 따라 변경되는지 확인\n6. 반응형 레이아웃에서 시각화 영역 최소 높이 보장 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T15:11:36.310Z"
       },
       {
         "id": "3",
@@ -5180,9 +5181,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T15:06:21.676Z",
+      "lastModified": "2026-04-28T15:11:36.315Z",
       "taskCount": 13,
-      "completedCount": 1,
+      "completedCount": 2,
       "tags": [
         "schedule-v2"
       ]

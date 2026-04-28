@@ -6,12 +6,15 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { UnderlineTabs } from '@/components/ui/underline-tabs';
+import { ViewUnitToggle } from '@/domain/schedule-coordination/components/ViewUnitToggle.client';
+import { useScheduleViewUnit } from '@/domain/schedule-coordination/hooks/useScheduleViewUnit';
 import { useScheduleStore } from '@/domain/schedule-coordination/store/scheduleStore';
 import { useTimetableStore } from '@/domain/schedule-coordination/store/timetableStore';
 import {
   aggregateAvailability,
   enumerateDays,
   slotToTime,
+  type ViewUnit,
 } from '@/domain/schedule-coordination/utils';
 import { MemberAvatar } from '@/domain/setlist-meeting/components/MemberAvatar';
 import { GLOBAL_MEMBER_POOL } from '@/domain/setlist-meeting/mock/memberSearchMock';
@@ -82,6 +85,23 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
 
   const window = meeting?.practiceWindow;
   const allDays = useMemo(() => (window ? enumerateDays(window.from, window.to) : []), [window]);
+  const view = useScheduleViewUnit({
+    from: window?.from ?? '',
+    to: window?.to ?? '',
+  });
+  const visibleDays = useMemo(() => {
+    if (!window || allDays.length === 0) return allDays;
+    if (view.unit === 'day') {
+      return allDays.slice(0, 14);
+    }
+    if (view.unit === 'week') {
+      const idx = allDays.indexOf(view.anchor);
+      const start = idx === -1 ? 0 : idx;
+      return allDays.slice(start, start + 7);
+    }
+    const ym = view.anchor.slice(0, 7);
+    return allDays.filter((d) => d.startsWith(ym));
+  }, [allDays, view.unit, view.anchor, window]);
 
   const bestSlot = useMemo(() => {
     if (!window || memberSchedules.length === 0) return null;
@@ -197,9 +217,10 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
             panel={rightPanel}
             onClose={() => setRightPanel(null)}
             meetingId={meetingId}
-            allDays={allDays}
+            visibleDays={visibleDays}
             participants={participants}
             memberSchedules={memberSchedules}
+            view={view}
           />
         </section>
       </div>
@@ -371,16 +392,18 @@ function RightVisualization({
   panel,
   onClose,
   meetingId,
-  allDays,
+  visibleDays,
   participants,
   memberSchedules,
+  view,
 }: {
   panel: RightPanel;
   onClose: () => void;
   meetingId: string;
-  allDays: string[];
+  visibleDays: string[];
   participants: Member[];
   memberSchedules: ReturnType<typeof useScheduleStore.getState>['schedules'][string][];
+  view: ReturnType<typeof useScheduleViewUnit>;
 }) {
   if (!panel) {
     return (
@@ -420,14 +443,25 @@ function RightVisualization({
           <X className="h-4 w-4" />
         </button>
       </header>
+      <div className="px-s-5 py-s-3 border-border border-b">
+        <ViewUnitToggle
+          unit={view.unit}
+          recommended={view.recommended}
+          onChange={view.setUnit}
+          onPrev={view.prev}
+          onNext={view.next}
+          onToday={view.today}
+          anchorLabel={anchorLabelOf(view.unit, view.anchor)}
+        />
+      </div>
       <div className="px-s-5 py-s-4 flex-1 overflow-y-auto">
         {panel.kind === 'member' ? (
-          <MemberSchedulePanel member={panel.member} meetingId={meetingId} allDays={allDays} />
+          <MemberSchedulePanel member={panel.member} meetingId={meetingId} allDays={visibleDays} />
         ) : panel.kind === 'song' ? (
           <SongMatrixPanel
             memberSchedules={memberSchedules}
             participants={participants}
-            allDays={allDays}
+            allDays={visibleDays}
           />
         ) : (
           <p className="text-foreground-muted text-caption">
@@ -575,4 +609,10 @@ function SongMatrixPanel({
       </div>
     </div>
   );
+}
+
+function anchorLabelOf(unit: ViewUnit, anchor: string): string {
+  if (unit === 'month') return anchor.slice(0, 7);
+  if (unit === 'week') return `~${anchor}`;
+  return anchor;
 }

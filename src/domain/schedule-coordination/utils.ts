@@ -102,6 +102,42 @@ export function aggregateAvailability(
   return out;
 }
 
+export type ViewUnit = 'day' | 'week' | 'month';
+
+/** Task 3 — 합주 기간 길이에 따른 자동 시각화 단위 추천. */
+export function getViewUnit(from: string, to: string): ViewUnit {
+  const days = enumerateDays(from, to).length;
+  if (days <= 14) return 'day';
+  if (days <= 60) return 'week';
+  return 'month';
+}
+
+/** 주(월요일 시작) 시작일 목록. inclusive — 'from' 이 속한 주부터 'to' 이전까지. */
+export function enumerateWeeks(from: string, to: string): string[] {
+  if (!from || !to || from > to) return [];
+  const out: string[] = [];
+  let cursor = startOfWeek(from);
+  while (cursor <= to) {
+    out.push(cursor);
+    cursor = addDays(cursor, 7);
+  }
+  return out;
+}
+
+/** 월 시작일(YYYY-MM-01) 목록. inclusive. */
+export function enumerateMonths(from: string, to: string): string[] {
+  if (!from || !to || from > to) return [];
+  const out: string[] = [];
+  const start = safeDate(from);
+  start.setDate(1);
+  const end = safeDate(to);
+  while (start <= end) {
+    out.push(start.toISOString().slice(0, 10));
+    start.setMonth(start.getMonth() + 1);
+  }
+  return out;
+}
+
 /** SlotMask 에서 (start, end) min 범위 추출 — 가장 긴 연속 가능 구간. */
 export function longestContiguousRange(mask: SlotMask): {
   startSlot: number;
