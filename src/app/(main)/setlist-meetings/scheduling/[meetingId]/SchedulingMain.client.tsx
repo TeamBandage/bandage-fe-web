@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { UnderlineTabs } from '@/components/ui/underline-tabs';
+import { ScheduleBoardList } from '@/domain/schedule-coordination/components/ScheduleBoardList.client';
 import { ViewUnitToggle } from '@/domain/schedule-coordination/components/ViewUnitToggle.client';
 import { useScheduleViewUnit } from '@/domain/schedule-coordination/hooks/useScheduleViewUnit';
 import { useScheduleStore } from '@/domain/schedule-coordination/store/scheduleStore';
@@ -204,9 +205,10 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               />
             )}
             {leftTab === 'board' && isManager && (
-              <ScheduleBoardListPane
+              <ScheduleBoardList
                 meetingId={meetingId}
-                onPick={(boardId) => setRightPanel({ kind: 'board', boardId })}
+                selectedBoardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
+                onSelect={(boardId) => setRightPanel({ kind: 'board', boardId })}
               />
             )}
           </div>
@@ -364,26 +366,6 @@ function SongListPane({
           ))
         )}
       </ul>
-    </div>
-  );
-}
-
-/** 매니저 전용 — '합주 시간표 생성' 탭. Task 4 에서 board CRUD 도입. 현재는 빈 상태 placeholder. */
-function ScheduleBoardListPane({
-  meetingId: _meetingId,
-  onPick: _onPick,
-}: {
-  meetingId: string;
-  onPick: (id: string) => void;
-}) {
-  return (
-    <div className="px-s-4 py-s-6">
-      <p className="text-foreground-muted text-caption">
-        시간표 시안을 만들어 멤버 가용 시간 위에 합주 블록을 배치할 수 있습니다.
-      </p>
-      <p className="text-foreground-muted text-micro mt-s-2">
-        (Task 4 — 시간표 생성 기본 구조에서 5개 시안 카드 + 추가 버튼 도입 예정)
-      </p>
     </div>
   );
 }

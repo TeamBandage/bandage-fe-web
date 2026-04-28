@@ -29,3 +29,31 @@ export interface AggregateSlot {
   /** 이 슬롯에 가능한 멤버 userId 목록. */
   availableUserIds: string[];
 }
+
+/** Task 4 — 매니저가 만드는 합주 시간표 시안. 한 회의당 최대 5개. */
+export interface ScheduleBoard {
+  boardId: string;
+  meetingId: string;
+  name: string;
+  blocks: ScheduleBlock[];
+  /** 잠금된 blockId 목록 — Task 13 자동 재배치 시 이동 금지. */
+  pinned: string[];
+  /** 컬러 팔레트 시드 — 자동 생성 안마다 다른 톤. */
+  paletteSeed: number;
+  confirmed: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 시간표 안에 배치되는 합주 블록. blockId 는 board 내 unique. */
+export interface ScheduleBlock {
+  blockId: string;
+  songId: string;
+  date: string; // YYYY-MM-DD
+  startSlot: number; // 0~47
+  durationSlots: number;
+  songTitleOverride?: string;
+  note?: string;
+  pinned: boolean;
+  paletteIndex: number;
+}

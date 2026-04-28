@@ -4478,7 +4478,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4526,7 +4526,8 @@
             "testStrategy": "1. ChevronLeft/Right 버튼 클릭 시 onPrev/onNext 콜백 호출 확인\n2. '오늘' 버튼 클릭 시 onToday 콜백 호출 확인\n3. canGoPrev=false 시 왼쪽 버튼 disabled 스타일 적용 확인\n4. SchedulingMain에서 ViewUnitToggle 변경 시 activeUnit 상태 변경 확인\n5. 네비게이션 조작 시 viewportStart 변경 및 라벨 업데이트 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T15:14:50.605Z"
       },
       {
         "id": "4",
@@ -5181,9 +5182,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T15:11:36.315Z",
+      "lastModified": "2026-04-28T15:14:50.610Z",
       "taskCount": 13,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "schedule-v2"
       ]
