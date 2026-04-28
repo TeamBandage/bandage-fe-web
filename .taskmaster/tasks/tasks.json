@@ -5015,7 +5015,7 @@
         "dependencies": [
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5063,7 +5063,8 @@
             "testStrategy": "1. 수동 E2E 테스트 - Export 버튼 클릭 후 다운로드 확인\n2. 다운로드된 이미지 열어서 내용 확인\n3. 파일명 패턴 검증\n4. 로딩 스피너 표시/숨김 타이밍 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T22:08:38.455Z"
       },
       {
         "id": "12",
@@ -5189,9 +5190,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T22:06:48.226Z",
+      "lastModified": "2026-04-28T22:08:38.458Z",
       "taskCount": 13,
-      "completedCount": 10,
+      "completedCount": 11,
       "tags": [
         "schedule-v2"
       ]

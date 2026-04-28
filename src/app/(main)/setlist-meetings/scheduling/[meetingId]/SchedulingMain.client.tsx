@@ -10,6 +10,8 @@ import { ScheduleBoardEditor } from '@/domain/schedule-coordination/components/S
 import { ScheduleBoardList } from '@/domain/schedule-coordination/components/ScheduleBoardList.client';
 import { ViewUnitToggle } from '@/domain/schedule-coordination/components/ViewUnitToggle.client';
 import { useBoardStore } from '@/domain/schedule-coordination/store/boardStore';
+import type { ScheduleBlock } from '@/domain/schedule-coordination/types';
+import { suggestScheduleBoards } from '@/domain/schedule-coordination/utils/autoSuggest';
 import { useScheduleViewUnit } from '@/domain/schedule-coordination/hooks/useScheduleViewUnit';
 import { useScheduleStore } from '@/domain/schedule-coordination/store/scheduleStore';
 import { useTimetableStore } from '@/domain/schedule-coordination/store/timetableStore';
@@ -244,6 +246,21 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                 meetingId={meetingId}
                 selectedBoardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
                 onSelect={(boardId) => setRightPanel({ kind: 'board', boardId })}
+                generateRecommendations={() => {
+                  const variants = suggestScheduleBoards({
+                    schedules: memberSchedules,
+                    dates: allDays,
+                    songs: editorSongPool,
+                    variantCount: 3,
+                  });
+                  return variants.map((v, idx) =>
+                    v.blocks.map<ScheduleBlock>((b, i) => ({
+                      ...b,
+                      pinned: false,
+                      paletteIndex: idx * 100 + i,
+                    })),
+                  );
+                }}
               />
             )}
           </div>

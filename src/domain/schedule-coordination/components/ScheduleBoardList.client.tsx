@@ -15,15 +15,15 @@ interface Props {
   meetingId: string;
   selectedBoardId: string | null;
   onSelect: (boardId: string) => void;
-  /** 자동 추천에 쓸 후보 슬롯 — Task 12 에서 본격 알고리즘 적용. 현재는 mock. */
-  generateRecommendation?: () => ScheduleBlock[];
+  /** Task 12 — 자동 추천 시안 변형 목록 (3개 권장). 빈 배열이면 빈 시안만 추가. */
+  generateRecommendations?: () => ScheduleBlock[][];
 }
 
 export function ScheduleBoardList({
   meetingId,
   selectedBoardId,
   onSelect,
-  generateRecommendation,
+  generateRecommendations,
 }: Props) {
   const boards = useBoardStore((s) => s.getBoardsByMeeting(meetingId));
   const createBoard = useBoardStore((s) => s.createBoard);
@@ -44,13 +44,14 @@ export function ScheduleBoardList({
       toast.error(`시간표는 최대 ${SCHEDULE_BOARD_LIMIT}개까지 만들 수 있습니다.`);
       return;
     }
-    const recommendedCount = Math.min(3, remaining);
+    const variants = generateRecommendations?.() ?? [];
+    const recommendedCount = Math.min(3, remaining, variants.length || 3);
     const blankCount = Math.min(2, remaining - recommendedCount);
     for (let i = 0; i < recommendedCount; i++) {
       createBoard({
         meetingId,
         name: `추천 안 ${boards.length + i + 1}`,
-        blocks: generateRecommendation?.() ?? [],
+        blocks: variants[i] ?? [],
         paletteSeed: boards.length + i,
       });
     }
