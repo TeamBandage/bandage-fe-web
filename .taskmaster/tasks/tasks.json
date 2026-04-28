@@ -4662,7 +4662,7 @@
         "dependencies": [
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4710,7 +4710,8 @@
             "testStrategy": "블록 클릭 시 패널 열림 확인, 동일 songId 블록들이 같은 색상인지 확인, 패널에서 곡명 수정 후 블록에 반영, 삭제 후 그리드에서 블록 제거 확인, Esc/외부 클릭 시 패널 닫힘",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T22:01:35.884Z"
       },
       {
         "id": "7",
@@ -4722,7 +4723,7 @@
         "dependencies": [
           "5"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4772,7 +4773,8 @@
             "testStrategy": "1. SongMatrixPanel에 토글 버튼 표시 확인\n2. 24h 모드에서 00:00~24:00 전체 슬롯 매트릭스 표시\n3. 가로 스크롤 동작 확인\n4. 9-22 복귀 시 기존 범위로 돌아감\n5. 동시 가능 인원 수 계산이 전체 슬롯에 대해 정확한지 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T22:01:38.877Z"
       },
       {
         "id": "8",
@@ -4784,7 +4786,7 @@
         "dependencies": [
           "6"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4833,7 +4835,8 @@
             "testStrategy": "1. 확정되지 않은 board 수정 시 경고 없이 진행 확인\n2. 확정된 board 수정 시도 시 경고 모달 표시 확인\n3. 취소 클릭 시 수정 취소 및 confirmed 상태 유지 확인\n4. 확인 클릭 시 confirmed=false 전환 후 수정 진행 확인\n5. 수정 후 toast 알림 '확정 해제' 메시지 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T22:01:41.617Z"
       },
       {
         "id": "9",
@@ -5184,9 +5187,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T20:45:21.912Z",
+      "lastModified": "2026-04-28T22:01:41.618Z",
       "taskCount": 13,
-      "completedCount": 5,
+      "completedCount": 8,
       "tags": [
         "schedule-v2"
       ]
