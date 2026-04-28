@@ -1,13 +1,15 @@
 'use client';
 
-import { CheckCircle2, GripVertical, Lock, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Download, GripVertical, Lock, RotateCcw } from 'lucide-react';
 import { useMemo, useRef, useState, type DragEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
+import { useScheduleExport } from '../hooks/useScheduleExport';
 import { useBoardStore } from '../store/boardStore';
 import { useTimetableStore } from '../store/timetableStore';
 import type { ScheduleBlock } from '../types';
@@ -61,6 +63,7 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
   const [hoverSlot, setHoverSlot] = useState<{ date: string; slot: number } | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [rangePreset, setRangePreset] = useState<RangePreset>('9-22');
+  const exportApi = useScheduleExport<HTMLDivElement>();
   const slotStart = RANGE_PRESETS[rangePreset].start;
   const slotEnd = RANGE_PRESETS[rangePreset].end;
 
@@ -146,6 +149,18 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
   return (
     <div className="gap-s-3 flex h-full flex-col">
       <div className="gap-s-2 flex flex-wrap items-center justify-between">
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={exportApi.exporting || board.blocks.length === 0}
+          onClick={() => {
+            const stamp = new Date().toISOString().slice(0, 10);
+            exportApi.exportJpeg(`${board.name}_${stamp}`);
+          }}
+        >
+          {exportApi.exporting ? <Spinner /> : <Download className="h-4 w-4" />}
+          JPEG 저장
+        </Button>
         {board.confirmed ? (
           <Button
             size="sm"
@@ -231,7 +246,10 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
         </div>
       </div>
 
-      <div className="border-border bg-card flex-1 overflow-auto rounded-md border">
+      <div
+        ref={exportApi.ref}
+        className="border-border bg-card flex-1 overflow-auto rounded-md border"
+      >
         <table
           className="text-micro border-collapse"
           style={{

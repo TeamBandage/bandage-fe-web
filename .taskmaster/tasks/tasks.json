@@ -4952,7 +4952,7 @@
           "1",
           "8"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5002,7 +5002,8 @@
             "testStrategy": "1. 게이지 퍼센트가 실제 완료/전체 비율과 일치하는지 확인\n2. 확정 전 파랑(bg-accent), 확정 후 초록(bg-success) 색상 전환\n3. 텍스트 내용이 상태에 따라 올바르게 분기\n4. 버튼 클릭으로 스케줄 입력 완료 시 실시간 진행도 갱신\n5. 합주 일정 확정 버튼 클릭 후 색상 및 텍스트 변경",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T22:06:48.222Z"
       },
       {
         "id": "11",
@@ -5188,9 +5189,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T22:05:53.436Z",
+      "lastModified": "2026-04-28T22:06:48.226Z",
       "taskCount": 13,
-      "completedCount": 9,
+      "completedCount": 10,
       "tags": [
         "schedule-v2"
       ]
