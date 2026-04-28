@@ -6,8 +6,10 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { UnderlineTabs } from '@/components/ui/underline-tabs';
+import { ScheduleBoardEditor } from '@/domain/schedule-coordination/components/ScheduleBoardEditor.client';
 import { ScheduleBoardList } from '@/domain/schedule-coordination/components/ScheduleBoardList.client';
 import { ViewUnitToggle } from '@/domain/schedule-coordination/components/ViewUnitToggle.client';
+import { useBoardStore } from '@/domain/schedule-coordination/store/boardStore';
 import { useScheduleViewUnit } from '@/domain/schedule-coordination/hooks/useScheduleViewUnit';
 import { useScheduleStore } from '@/domain/schedule-coordination/store/scheduleStore';
 import { useTimetableStore } from '@/domain/schedule-coordination/store/timetableStore';
@@ -83,6 +85,15 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
         Object.values(s.confirmed).some((list) => list.includes(currentUserId)),
     );
   }, [allSongs, songFilter, currentUserId]);
+
+  /** 시간표 에디터 블록 풀 — 확정 곡만. */
+  const editorSongPool = useMemo(
+    () =>
+      allSongs
+        .filter((s) => isReady(s))
+        .map((s) => ({ id: s.id, title: s.title, artist: s.artist })),
+    [allSongs],
+  );
 
   const window = meeting?.practiceWindow;
   const allDays = useMemo(() => (window ? enumerateDays(window.from, window.to) : []), [window]);
@@ -223,6 +234,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
             participants={participants}
             memberSchedules={memberSchedules}
             view={view}
+            songPool={editorSongPool}
           />
         </section>
       </div>
@@ -378,6 +390,7 @@ function RightVisualization({
   participants,
   memberSchedules,
   view,
+  songPool,
 }: {
   panel: RightPanel;
   onClose: () => void;
@@ -386,7 +399,9 @@ function RightVisualization({
   participants: Member[];
   memberSchedules: ReturnType<typeof useScheduleStore.getState>['schedules'][string][];
   view: ReturnType<typeof useScheduleViewUnit>;
+  songPool: { id: string; title: string; artist?: string | null }[];
 }) {
+  const board = useBoardStore((s) => (panel?.kind === 'board' ? s.boards[panel.boardId] : null));
   if (!panel) {
     return (
       <div className="text-foreground-muted px-s-6 py-s-8 m-auto max-w-md text-center">
@@ -413,7 +428,7 @@ function RightVisualization({
               ? panel.member.name
               : panel.kind === 'song'
                 ? panel.song.title
-                : `시안 ${panel.boardId}`}
+                : (board?.name ?? '시안')}
           </div>
         </div>
         <button
@@ -445,10 +460,16 @@ function RightVisualization({
             participants={participants}
             allDays={visibleDays}
           />
+        ) : board ? (
+          <ScheduleBoardEditor
+            boardId={board.boardId}
+            days={visibleDays}
+            songPool={songPool}
+            slotStart={18}
+            slotEnd={44}
+          />
         ) : (
-          <p className="text-foreground-muted text-caption">
-            시간표 에디터는 Task 4 ~ 5 에서 도입됩니다.
-          </p>
+          <p className="text-foreground-muted text-caption">시안을 선택해주세요.</p>
         )}
       </div>
     </>

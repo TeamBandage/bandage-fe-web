@@ -4539,7 +4539,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4587,7 +4587,8 @@
             "testStrategy": "시간표 생성 버튼 클릭 시 3+2 카드 생성 확인, 기존 수정분 있을 때 경고 다이얼로그 표시, 확인 시 기존 보드 삭제 후 새로 생성, 비매니저는 버튼 비표시 또는 disabled 확인.",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T20:40:59.482Z"
       },
       {
         "id": "5",
@@ -5182,9 +5183,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T15:14:50.610Z",
+      "lastModified": "2026-04-28T20:40:59.487Z",
       "taskCount": 13,
-      "completedCount": 3,
+      "completedCount": 4,
       "tags": [
         "schedule-v2"
       ]
