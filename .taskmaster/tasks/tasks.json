@@ -4600,7 +4600,7 @@
         "dependencies": [
           "4"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4649,7 +4649,8 @@
             "testStrategy": "1. 블록 풀에서 그리드 셀로 드래그-드롭 시 블록 배치 확인\n2. 드롭 후 해당 셀 + 연속 셀에 블록 색상 표시 확인\n3. 30분 슬롯 스냅 정확도: 드롭 위치와 무관하게 정확한 슬롯에 배치\n4. 같은 곡 블록 중복 배치 가능 확인 (여러 시간대에 동일 곡)\n5. 블록 클릭 후 선택 상태 시각적 표시 확인\n6. 주차 이동 시 해당 주의 블록만 표시되는지 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T20:45:21.907Z"
       },
       {
         "id": "6",
@@ -5183,9 +5184,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T20:40:59.487Z",
+      "lastModified": "2026-04-28T20:45:21.912Z",
       "taskCount": 13,
-      "completedCount": 4,
+      "completedCount": 5,
       "tags": [
         "schedule-v2"
       ]

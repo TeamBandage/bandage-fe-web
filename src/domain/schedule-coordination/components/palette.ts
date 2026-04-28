@@ -16,3 +16,20 @@ export function paletteToneOf(seed: number, index: number): PaletteTone {
   const i = (seed + index) % PALETTE_TONES.length;
   return PALETTE_TONES[i] ?? PALETTE_TONES[0]!;
 }
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+/**
+ * 곡 단위로 안정된 색상 매핑.
+ * 같은 board 안에서 같은 songId 는 항상 같은 색. 시안(paletteSeed) 마다 회전.
+ */
+export function songTone(songId: string, paletteSeed: number): PaletteTone {
+  const i = (hashString(songId) + paletteSeed) % PALETTE_TONES.length;
+  return PALETTE_TONES[i] ?? PALETTE_TONES[0]!;
+}

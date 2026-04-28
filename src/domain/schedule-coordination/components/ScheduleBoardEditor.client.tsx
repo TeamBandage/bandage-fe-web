@@ -1,6 +1,6 @@
 'use client';
 
-import { GripVertical, Lock, Trash2, Unlock } from 'lucide-react';
+import { GripVertical, Lock } from 'lucide-react';
 import { useMemo, useRef, useState, type DragEvent } from 'react';
 
 import { cn } from '@/lib/cn';
@@ -9,7 +9,8 @@ import { useBoardStore } from '../store/boardStore';
 import type { ScheduleBlock } from '../types';
 import { slotToTime } from '../utils';
 
-import { paletteToneOf } from './palette';
+import { songTone } from './palette';
+import { ScheduleBlockPanel } from './ScheduleBlockPanel.client';
 
 const DRAG_MIME = 'application/x-bandage-block';
 
@@ -50,11 +51,10 @@ export function ScheduleBoardEditor({
 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
   const upsertBlock = useBoardStore((s) => s.upsertBlock);
-  const removeBlock = useBoardStore((s) => s.removeBlock);
-  const togglePin = useBoardStore((s) => s.togglePin);
 
   const dragRef = useRef<DragData | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ date: string; slot: number } | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   const blocksByDate = useMemo(() => {
     const m: Record<string, ScheduleBlock[]> = {};
@@ -145,8 +145,8 @@ export function ScheduleBoardEditor({
           {songPool.length === 0 ? (
             <p className="text-foreground-muted text-micro">확정된 곡이 없습니다.</p>
           ) : (
-            songPool.map((song, i) => {
-              const tone = paletteToneOf(board.paletteSeed, i);
+            songPool.map((song) => {
+              const tone = songTone(song.id, board.paletteSeed);
               return (
                 <button
                   key={song.id}
@@ -205,7 +205,7 @@ export function ScheduleBoardEditor({
                   {slots.map((s) => {
                     const occ = occupiedBy[s];
                     const isStart = occ && occ.startSlot === s;
-                    const tone = occ ? paletteToneOf(board.paletteSeed, occ.paletteIndex) : null;
+                    const tone = occ ? songTone(occ.songId, board.paletteSeed) : null;
                     const isHover =
                       hoverSlot && hoverSlot.date === d && hoverSlot.slot === s && !occ;
                     return (
@@ -221,9 +221,11 @@ export function ScheduleBoardEditor({
                         )}
                       >
                         {isStart && occ && tone && (
-                          <div
+                          <button
+                            type="button"
                             draggable={!occ.pinned}
                             onDragStart={onBlockDragStart(occ)}
+                            onClick={() => setSelectedBlockId(occ.blockId)}
                             className={cn(
                               'h-full cursor-grab rounded border-2 px-1 py-0.5 text-left',
                               tone.dim,
@@ -232,33 +234,18 @@ export function ScheduleBoardEditor({
                             style={{ width: `calc(${occ.durationSlots * 100}% - 1px)` }}
                             title={`${songMap.get(occ.songId)?.title ?? occ.songId} ${slotToTime(occ.startSlot)}~${slotToTime(occ.startSlot + occ.durationSlots)}`}
                           >
-                            <div className={cn('text-micro gap-s-1 flex items-center', tone.text)}>
-                              {occ.pinned ? (
-                                <Lock className="h-3 w-3" />
-                              ) : (
-                                <Unlock className="h-3 w-3 opacity-30" />
+                            <div
+                              className={cn(
+                                'text-micro gap-s-1 flex items-center font-bold',
+                                tone.text,
                               )}
-                              <span className="truncate font-bold">
+                            >
+                              {occ.pinned && <Lock className="h-3 w-3" />}
+                              <span className="truncate">
                                 {occ.songTitleOverride ?? songMap.get(occ.songId)?.title ?? '곡'}
                               </span>
-                              <button
-                                type="button"
-                                aria-label="잠금 토글"
-                                onClick={() => togglePin(boardId, occ.blockId)}
-                                className="ml-auto opacity-60 hover:opacity-100"
-                              >
-                                <Lock className="h-3 w-3" />
-                              </button>
-                              <button
-                                type="button"
-                                aria-label="블록 삭제"
-                                onClick={() => removeBlock(boardId, occ.blockId)}
-                                className="opacity-60 hover:opacity-100"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
                             </div>
-                          </div>
+                          </button>
                         )}
                       </td>
                     );
@@ -269,6 +256,21 @@ export function ScheduleBoardEditor({
           </tbody>
         </table>
       </div>
+
+      {selectedBlockId &&
+        (() => {
+          const sel = board.blocks.find((b) => b.blockId === selectedBlockId);
+          if (!sel) return null;
+          return (
+            <ScheduleBlockPanel
+              boardId={boardId}
+              block={sel}
+              songTitle={songMap.get(sel.songId)?.title ?? '곡'}
+              paletteSeed={board.paletteSeed}
+              onClose={() => setSelectedBlockId(null)}
+            />
+          );
+        })()}
     </div>
   );
 }
