@@ -78,7 +78,10 @@ export function useScheduleViewUnit({
 
   const resetUnit = useCallback(() => setOverrideUnit(null), []);
 
-  const step = unit === 'day' ? 1 : unit === 'week' ? 7 : 30;
+  // 모든 unit 의 좌/우 이동을 1주(7일) 단위로 통일.
+  // day = 단일 컬럼이지만 prev/next 시 1주씩 점프해 같은 요일 이동.
+  // month = 1주씩 페이지네이션 (이전/다음 버튼으로 월 내부 이동).
+  const step = unit === 'day' ? 1 : 7;
 
   const prev = useCallback(() => {
     setAnchorRaw((a) => clampToRange(addDays(a, -step), from, to));

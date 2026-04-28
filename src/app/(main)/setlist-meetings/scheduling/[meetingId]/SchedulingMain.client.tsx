@@ -16,9 +16,11 @@ import { useScheduleViewUnit } from '@/domain/schedule-coordination/hooks/useSch
 import { useScheduleStore } from '@/domain/schedule-coordination/store/scheduleStore';
 import { useTimetableStore } from '@/domain/schedule-coordination/store/timetableStore';
 import {
+  addDays,
   aggregateAvailability,
   enumerateDays,
   slotToTime,
+  startOfWeek,
   type ViewUnit,
 } from '@/domain/schedule-coordination/utils';
 import { MemberAvatar } from '@/domain/setlist-meeting/components/MemberAvatar';
@@ -103,18 +105,12 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
     from: window?.from ?? '',
     to: window?.to ?? '',
   });
+  // 모든 unit 통일: Mon-Sun 7일 컬럼. day 의 경우만 anchor 단일 컬럼.
   const visibleDays = useMemo(() => {
     if (!window || allDays.length === 0) return allDays;
-    if (view.unit === 'day') {
-      return allDays.slice(0, 14);
-    }
-    if (view.unit === 'week') {
-      const idx = allDays.indexOf(view.anchor);
-      const start = idx === -1 ? 0 : idx;
-      return allDays.slice(start, start + 7);
-    }
-    const ym = view.anchor.slice(0, 7);
-    return allDays.filter((d) => d.startsWith(ym));
+    if (view.unit === 'day') return [view.anchor];
+    const weekStart = startOfWeek(view.anchor);
+    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   }, [allDays, view.unit, view.anchor, window]);
 
   const bestSlot = useMemo(() => {
@@ -217,68 +213,115 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
         </div>
       </header>
 
-      {/* Main split — 좌측 40% / 우측 60%. md 이하는 세로 스택. */}
-      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-        <section className="border-border flex flex-col md:w-2/5 md:border-r">
-          <div className="px-s-4 pt-s-3 border-border border-b">
-            <UnderlineTabs value={leftTab} onChange={setLeftTab} items={tabItems} width="equal" />
-          </div>
-          <div className="flex-1 overflow-y-auto" id={`tabpanel-${leftTab}`} role="tabpanel">
-            {leftTab === 'member' && (
-              <MemberListPane
-                participants={participants}
-                meetingId={meetingId}
-                currentUserId={currentUserId}
-                schedulesAll={schedulesAll}
-                onPick={(m) => setRightPanel({ kind: 'member', member: m })}
-              />
-            )}
-            {leftTab === 'song' && (
-              <SongListPane
-                songs={visibleSongs}
-                filter={songFilter}
-                onFilterChange={setSongFilter}
-                onPick={(song) => setRightPanel({ kind: 'song', song })}
-              />
-            )}
-            {leftTab === 'board' && isManager && (
-              <ScheduleBoardList
-                meetingId={meetingId}
-                selectedBoardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
-                onSelect={(boardId) => setRightPanel({ kind: 'board', boardId })}
-                generateRecommendations={() => {
-                  const variants = suggestScheduleBoards({
-                    schedules: memberSchedules,
-                    dates: allDays,
-                    songs: editorSongPool,
-                    variantCount: 3,
-                  });
-                  return variants.map((v, idx) =>
-                    v.blocks.map<ScheduleBlock>((b, i) => ({
-                      ...b,
-                      pinned: false,
-                      paletteIndex: idx * 100 + i,
-                    })),
-                  );
-                }}
-              />
-            )}
-          </div>
-        </section>
-
-        <section className="bg-bg flex flex-1 flex-col overflow-hidden md:w-3/5">
-          <RightVisualization
-            panel={rightPanel}
-            onClose={() => setRightPanel(null)}
-            meetingId={meetingId}
-            visibleDays={visibleDays}
-            participants={participants}
-            memberSchedules={memberSchedules}
-            view={view}
-            songPool={editorSongPool}
-          />
-        </section>
+      {/* 탭 영역 — 화면 전체 폭 사용. board 탭은 아래 영역 전체 활용. */}
+      <div className="px-s-4 pt-s-3 border-border bg-surface border-b">
+        <UnderlineTabs
+          value={leftTab}
+          onChange={(t) => {
+            setLeftTab(t);
+            // 탭 전환 시 좌측 선택 종류와 우측 패널이 어긋나지 않도록 정리.
+            setRightPanel((cur) => {
+              if (!cur) return cur;
+              if (t === 'member' && cur.kind !== 'member') return null;
+              if (t === 'song' && cur.kind !== 'song') return null;
+              if (t === 'board' && cur.kind !== 'board') return null;
+              return cur;
+            });
+          }}
+          items={tabItems}
+        />
       </div>
+
+      {leftTab === 'board' && isManager ? (
+        <div className="bg-bg flex flex-1 overflow-hidden p-3">
+          {/* 좌측: 시안 카드 리스트 — 축소 */}
+          <aside className="w-56 shrink-0 overflow-y-auto pr-3">
+            <ScheduleBoardList
+              meetingId={meetingId}
+              selectedBoardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
+              onSelect={(boardId) => setRightPanel({ kind: 'board', boardId })}
+              generateRecommendations={() => {
+                const variants = suggestScheduleBoards({
+                  schedules: memberSchedules,
+                  dates: allDays,
+                  songs: editorSongPool,
+                  variantCount: 3,
+                });
+                return variants.map((v, idx) =>
+                  v.blocks.map<ScheduleBlock>((b, i) => ({
+                    ...b,
+                    pinned: false,
+                    paletteIndex: idx * 100 + i,
+                  })),
+                );
+              }}
+            />
+          </aside>
+          {/* 중앙+우측: 시간표 에디터(블록 풀 우측 사이드바 내장) — 화면 약 절반. */}
+          <div className="min-w-0 flex-1">
+            <div className="px-s-3 pb-s-3">
+              <ViewUnitToggle
+                unit={view.unit}
+                recommended={view.recommended}
+                onChange={view.setUnit}
+                onPrev={view.prev}
+                onNext={view.next}
+                onToday={view.today}
+                anchorLabel={anchorLabelOf(view.unit, view.anchor)}
+              />
+            </div>
+            {rightPanel?.kind === 'board' ? (
+              <div className="h-[calc(100%-3rem)]">
+                <ScheduleBoardEditor
+                  boardId={rightPanel.boardId}
+                  days={visibleDays}
+                  songPool={editorSongPool}
+                />
+              </div>
+            ) : (
+              <p className="text-foreground-muted px-s-4 py-s-6 text-caption text-center">
+                좌측에서 시안을 선택하거나 ‘시간표 생성’으로 추천 안을 만들어 보세요.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+          <section className="border-border flex flex-col md:w-2/5 md:border-r">
+            <div className="flex-1 overflow-y-auto" id={`tabpanel-${leftTab}`} role="tabpanel">
+              {leftTab === 'member' && (
+                <MemberListPane
+                  participants={participants}
+                  meetingId={meetingId}
+                  currentUserId={currentUserId}
+                  schedulesAll={schedulesAll}
+                  onPick={(m) => setRightPanel({ kind: 'member', member: m })}
+                />
+              )}
+              {leftTab === 'song' && (
+                <SongListPane
+                  songs={visibleSongs}
+                  filter={songFilter}
+                  onFilterChange={setSongFilter}
+                  onPick={(song) => setRightPanel({ kind: 'song', song })}
+                />
+              )}
+            </div>
+          </section>
+          <section className="bg-bg flex flex-1 flex-col overflow-hidden md:w-3/5">
+            <RightVisualization
+              panel={rightPanel}
+              onClose={() => setRightPanel(null)}
+              meetingId={meetingId}
+              visibleDays={visibleDays}
+              participants={participants}
+              memberSchedules={memberSchedules}
+              view={view}
+              songPool={editorSongPool}
+            />
+          </section>
+        </div>
+      )}
 
       {scheduleOpen && (
         <ScheduleInputModal

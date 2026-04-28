@@ -15,7 +15,7 @@ import { useTimetableStore } from '../store/timetableStore';
 import type { ScheduleBlock } from '../types';
 import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
 import { autoRescheduleAfterMove } from '../utils/autoReschedule';
-import { slotToTime } from '../utils';
+import { dayOfWeek, slotToTime } from '../utils';
 
 import { songTone } from './palette';
 import { ScheduleBlockPanel } from './ScheduleBlockPanel.client';
@@ -31,9 +31,9 @@ interface SongLite {
 
 interface Props {
   boardId: string;
-  /** 시안 위에 띄울 일자 목록. ViewUnit 으로 슬라이스된 visibleDays 사용. */
+  /** Mon~Sun 7일 또는 단일 일자(day unit). */
   days: string[];
-  /** 합주 블록 풀 — 확정 곡 (Task 4 자동 추천 / Task 12 mock). */
+  /** 합주 블록 풀 — 확정 곡. */
   songPool: SongLite[];
   /** 기본 블록 길이 (슬롯 단위). 30분 단위 스냅. */
   defaultDurationSlots?: number;
@@ -49,9 +49,12 @@ interface DragData {
   kind: 'pool' | 'block';
   songId: string;
   blockId?: string;
-  paletteIndex?: number;
   durationSlots?: number;
 }
+
+const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+const SLOT_HEIGHT = 22; // px — 단위 반 시간 셀 높이.
+const TIME_COL_WIDTH = 56;
 
 export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSlots = 4 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
@@ -62,11 +65,11 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
   const setTimetableConfirmed = useTimetableStore((s) => s.setConfirmed);
   const toast = useToast();
   const [confirmDialog, setConfirmDialog] = useState<'confirm' | 'unconfirm' | null>(null);
-  /** 변경 직전 스냅샷 — Undo 토스트용. */
   const [undoSnapshot, setUndoSnapshot] = useState<ScheduleBlock[] | null>(null);
 
   const dragRef = useRef<DragData | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ date: string; slot: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [rangePreset, setRangePreset] = useState<RangePreset>('9-22');
   const exportApi = useScheduleExport<HTMLDivElement>();
@@ -104,6 +107,7 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
     dragRef.current = data;
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(data));
     e.dataTransfer.effectAllowed = 'copy';
+    setDragging(true);
   };
 
   const onBlockDragStart = (block: ScheduleBlock) => (e: DragEvent) => {
@@ -111,12 +115,18 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
       kind: 'block',
       songId: block.songId,
       blockId: block.blockId,
-      paletteIndex: block.paletteIndex,
       durationSlots: block.durationSlots,
     };
     dragRef.current = data;
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(data));
     e.dataTransfer.effectAllowed = 'move';
+    setDragging(true);
+  };
+
+  const onDragEnd = () => {
+    dragRef.current = null;
+    setHoverSlot(null);
+    setDragging(false);
   };
 
   const onCellDragOver = (date: string, slot: number) => (e: DragEvent) => {
@@ -132,6 +142,7 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
     const data: DragData | null = raw ? JSON.parse(raw) : dragRef.current;
     dragRef.current = null;
     setHoverSlot(null);
+    setDragging(false);
     if (!data) return;
     if (data.kind === 'block' && data.blockId) {
       const cur = board.blocks.find((b) => b.blockId === data.blockId);
@@ -168,107 +179,236 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
     upsertBlock(boardId, newBlock);
   };
 
+  // 그리드 컬럼 너비 — 셀 단위 동일 비율.
+  const gridStyle = {
+    gridTemplateColumns: `${TIME_COL_WIDTH}px repeat(${days.length}, minmax(80px, 1fr))`,
+    gridTemplateRows: `36px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
+  } as const;
+
   return (
-    <div className="gap-s-3 flex h-full flex-col">
-      <div className="gap-s-2 flex flex-wrap items-center justify-between">
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={exportApi.exporting || board.blocks.length === 0}
-          onClick={() => {
-            const stamp = new Date().toISOString().slice(0, 10);
-            exportApi.exportJpeg(`${board.name}_${stamp}`);
-          }}
-        >
-          {exportApi.exporting ? <Spinner /> : <Download className="h-4 w-4" />}
-          JPEG 저장
-        </Button>
-        {board.confirmed ? (
+    <div className="gap-s-3 flex h-full overflow-hidden">
+      <div className="gap-s-3 flex h-full min-w-0 flex-1 flex-col">
+        <div className="gap-s-2 flex flex-wrap items-center justify-between">
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setConfirmDialog('unconfirm')}
-            className="text-success"
+            disabled={exportApi.exporting || board.blocks.length === 0}
+            onClick={() => {
+              const stamp = new Date().toISOString().slice(0, 10);
+              exportApi.exportJpeg(`${board.name}_${stamp}`);
+            }}
           >
-            <RotateCcw className="h-4 w-4" /> 확정 해제
+            {exportApi.exporting ? <Spinner /> : <Download className="h-4 w-4" />}
+            JPEG 저장
           </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() => setConfirmDialog('confirm')}
-            disabled={board.blocks.length === 0}
-            className="bg-success hover:bg-success/90 text-white"
+          {board.confirmed ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setConfirmDialog('unconfirm')}
+              className="text-success"
+            >
+              <RotateCcw className="h-4 w-4" /> 확정 해제
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setConfirmDialog('confirm')}
+              disabled={board.blocks.length === 0}
+              className="bg-success hover:bg-success/90 text-white"
+            >
+              <CheckCircle2 className="h-4 w-4" /> 이 시안으로 확정
+            </Button>
+          )}
+          <div
+            role="radiogroup"
+            aria-label="시간 범위"
+            className="bg-card border-border inline-flex rounded-md border p-0.5"
           >
-            <CheckCircle2 className="h-4 w-4" /> 이 시안으로 확정
-          </Button>
+            {(Object.keys(RANGE_PRESETS) as RangePreset[]).map((p) => {
+              const active = p === rangePreset;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setRangePreset(p)}
+                  className={cn(
+                    'text-micro px-s-2 rounded py-1 font-bold transition-colors',
+                    active
+                      ? 'bg-accent text-bg shadow-sm'
+                      : 'text-foreground-muted hover:text-foreground',
+                  )}
+                >
+                  {RANGE_PRESETS[p].label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <WorkingHoursPanel boardId={boardId} />
+
+        {undoSnapshot && (
+          <div className="bg-warn-dim border-warn px-s-3 py-s-2 gap-s-2 flex items-center rounded-md border">
+            <span className="text-caption text-warn flex-1 font-bold">
+              자동 재배치가 적용되었습니다.
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                if (undoSnapshot) {
+                  replaceBlocks(boardId, undoSnapshot);
+                  setUndoSnapshot(null);
+                  toast.success('변경을 되돌렸습니다.');
+                }
+              }}
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> 되돌리기
+            </Button>
+            <button
+              type="button"
+              onClick={() => setUndoSnapshot(null)}
+              className="text-foreground-muted hover:text-foreground text-micro"
+              aria-label="알림 닫기"
+            >
+              닫기
+            </button>
+          </div>
         )}
+
         <div
-          role="radiogroup"
-          aria-label="시간 범위"
-          className="bg-card border-border inline-flex rounded-md border p-0.5"
+          ref={exportApi.ref}
+          className="border-border bg-card flex-1 overflow-auto rounded-md border"
         >
-          {(Object.keys(RANGE_PRESETS) as RangePreset[]).map((p) => {
-            const active = p === rangePreset;
-            return (
-              <button
-                key={p}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setRangePreset(p)}
+          <div className="grid min-w-fit" style={gridStyle}>
+            {/* 좌상단 코너 */}
+            <div
+              className="bg-surface border-border sticky top-0 left-0 z-30 border-r border-b"
+              style={{ gridRow: 1, gridColumn: 1 }}
+            />
+
+            {/* 날짜 헤더 (col=2..) */}
+            {days.map((d, i) => {
+              const dow = dayOfWeek(d);
+              const isWeekend = dow === 0 || dow === 6;
+              return (
+                <div
+                  key={`h-${d}`}
+                  className={cn(
+                    'bg-surface border-border sticky top-0 z-20 border-b px-2 py-1 text-center font-mono',
+                    isWeekend && 'text-amber',
+                  )}
+                  style={{ gridRow: 1, gridColumn: i + 2 }}
+                >
+                  <div className="text-micro font-bold">{DOW_LABELS[dow]}</div>
+                  <div className="text-caption font-bold">{d.slice(5)}</div>
+                </div>
+              );
+            })}
+
+            {/* 시간 라벨 (row=2.., col=1) — 짝수 슬롯(정시) 만 라벨. */}
+            {slots.map((s, idx) => (
+              <div
+                key={`tl-${s}`}
                 className={cn(
-                  'text-micro px-s-2 rounded py-1 font-bold transition-colors',
-                  active
-                    ? 'bg-accent text-bg shadow-sm'
-                    : 'text-foreground-muted hover:text-foreground',
+                  'bg-surface border-border sticky left-0 z-10 border-r px-1 text-right font-mono',
+                  idx === 0 && 'border-t-0',
                 )}
+                style={{
+                  gridRow: idx + 2,
+                  gridColumn: 1,
+                  lineHeight: `${SLOT_HEIGHT}px`,
+                }}
               >
-                {RANGE_PRESETS[p].label}
-              </button>
-            );
-          })}
+                {s % 2 === 0 ? (
+                  <span className="text-foreground-muted text-micro">{slotToTime(s)}</span>
+                ) : null}
+              </div>
+            ))}
+
+            {/* 드롭 셀들 (row=2.., col=2..) */}
+            {slots.map((s, sIdx) =>
+              days.map((d, dIdx) => {
+                const isHover = hoverSlot && hoverSlot.date === d && hoverSlot.slot === s;
+                const isHourBoundary = s % 2 === 0;
+                return (
+                  <div
+                    key={`c-${d}-${s}`}
+                    onDragOver={onCellDragOver(d, s)}
+                    onDragLeave={() => setHoverSlot(null)}
+                    onDrop={onCellDrop(d, s)}
+                    className={cn(
+                      'border-border border-r transition-colors',
+                      isHourBoundary && 'border-t',
+                      dragging && 'bg-accent-soft',
+                      isHover && 'bg-accent-dim ring-accent ring-1',
+                    )}
+                    style={{ gridRow: sIdx + 2, gridColumn: dIdx + 2 }}
+                  />
+                );
+              }),
+            )}
+
+            {/* 블록 — 그리드 row span 으로 배치. */}
+            {days.map((d, dIdx) => {
+              const blocks = blocksByDate[d] ?? [];
+              return blocks
+                .filter((b) => b.startSlot >= slotStart && b.startSlot < slotEnd)
+                .map((b) => {
+                  const tone = songTone(b.songId, board.paletteSeed);
+                  const rowStart = b.startSlot - slotStart + 2;
+                  const rowSpan = Math.min(b.durationSlots, slotEnd - b.startSlot);
+                  return (
+                    <button
+                      key={b.blockId}
+                      type="button"
+                      draggable={!b.pinned}
+                      onDragStart={onBlockDragStart(b)}
+                      onDragEnd={onDragEnd}
+                      onClick={() => setSelectedBlockId(b.blockId)}
+                      className={cn(
+                        'm-0.5 cursor-grab overflow-hidden rounded px-1 py-0.5 text-left text-white shadow-sm transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98] active:cursor-grabbing',
+                        tone.bg,
+                      )}
+                      style={{
+                        gridRow: `${rowStart} / span ${rowSpan}`,
+                        gridColumn: dIdx + 2,
+                      }}
+                      title={`${songMap.get(b.songId)?.title ?? b.songId} ${slotToTime(b.startSlot)}~${slotToTime(b.startSlot + b.durationSlots)}`}
+                    >
+                      <div className="text-micro flex items-center gap-1 font-bold">
+                        {b.pinned && <Lock className="h-3 w-3 shrink-0" />}
+                        <span className="truncate">
+                          {b.songTitleOverride ?? songMap.get(b.songId)?.title ?? '곡'}
+                        </span>
+                      </div>
+                      {rowSpan >= 3 && (
+                        <div className="text-micro mt-0.5 font-mono opacity-80">
+                          {slotToTime(b.startSlot)}~{slotToTime(b.startSlot + b.durationSlots)}
+                        </div>
+                      )}
+                    </button>
+                  );
+                });
+            })}
+          </div>
         </div>
       </div>
 
-      <WorkingHoursPanel boardId={boardId} />
-
-      {undoSnapshot && (
-        <div className="bg-warn-dim border-warn px-s-3 py-s-2 gap-s-2 flex items-center rounded-md border">
-          <span className="text-caption text-warn flex-1 font-bold">
-            자동 재배치가 적용되었습니다.
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              if (undoSnapshot) {
-                replaceBlocks(boardId, undoSnapshot);
-                setUndoSnapshot(null);
-                toast.success('변경을 되돌렸습니다.');
-              }
-            }}
-          >
-            <RotateCcw className="h-3.5 w-3.5" /> 되돌리기
-          </Button>
-          <button
-            type="button"
-            onClick={() => setUndoSnapshot(null)}
-            className="text-foreground-muted hover:text-foreground text-micro"
-            aria-label="알림 닫기"
-          >
-            닫기
-          </button>
+      {/* 우측 사이드 — 합주 블록 풀. 시간표 시안 카드와 동일 비중. */}
+      <aside className="bg-card border-border flex w-56 shrink-0 flex-col rounded-md border">
+        <div className="border-border px-s-3 py-s-2 border-b">
+          <div className="text-foreground-muted text-micro font-bold uppercase">
+            합주 블록 풀 ({songPool.length})
+          </div>
         </div>
-      )}
-
-      <div className="border-border bg-card px-s-3 py-s-2 rounded-md border">
-        <div className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">
-          합주 블록 풀
-        </div>
-        <div className="gap-s-2 flex flex-wrap">
+        <div className="px-s-2 py-s-2 gap-s-1 flex flex-1 flex-col overflow-y-auto">
           {songPool.length === 0 ? (
-            <p className="text-foreground-muted text-micro">확정된 곡이 없습니다.</p>
+            <p className="text-foreground-muted text-micro p-2">확정된 곡이 없습니다.</p>
           ) : (
             songPool.map((song) => {
               const tone = songTone(song.id, board.paletteSeed);
@@ -277,19 +417,17 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
                   key={song.id}
                   draggable
                   onDragStart={onPoolDragStart(song)}
+                  onDragEnd={onDragEnd}
                   className={cn(
-                    'gap-s-1 flex items-center rounded-md border-2 px-2 py-1 text-left',
-                    tone.dim,
-                    tone.border,
+                    'gap-s-2 flex items-center rounded-md px-2 py-1.5 text-left text-white shadow-sm transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]',
+                    tone.bg,
                   )}
                 >
-                  <GripVertical className={cn('h-3 w-3', tone.text)} />
+                  <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-70" />
                   <div className="min-w-0">
-                    <div className={cn('text-micro truncate font-bold', tone.text)}>
-                      {song.title}
-                    </div>
+                    <div className="text-micro truncate font-bold">{song.title}</div>
                     {song.artist && (
-                      <div className="text-foreground-muted text-micro truncate">{song.artist}</div>
+                      <div className="text-micro truncate opacity-75">{song.artist}</div>
                     )}
                   </div>
                 </button>
@@ -297,99 +435,7 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
             })
           )}
         </div>
-      </div>
-
-      <div
-        ref={exportApi.ref}
-        className="border-border bg-card flex-1 overflow-auto rounded-md border"
-      >
-        <table
-          className="text-micro border-collapse"
-          style={{
-            width: rangePreset === '24h' ? `${80 + (slotEnd - slotStart) * 32}px` : '100%',
-            tableLayout: 'fixed',
-          }}
-        >
-          <thead className="bg-surface sticky top-0 z-10">
-            <tr>
-              <th className="border-border bg-surface sticky left-0 z-20 w-20 border-r border-b px-1 py-1 text-left font-mono">
-                일자
-              </th>
-              {slots.map((s) => (
-                <th key={s} className="border-border w-8 border-b px-0 py-1 text-center font-mono">
-                  {s % 2 === 0 ? slotToTime(s) : ''}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {days.map((d) => {
-              const blocks = blocksByDate[d] ?? [];
-              const occupiedBy: Record<number, ScheduleBlock | undefined> = {};
-              for (const b of blocks) {
-                for (let i = 0; i < b.durationSlots; i++) {
-                  occupiedBy[b.startSlot + i] = b;
-                }
-              }
-              return (
-                <tr key={d} className="border-border border-t">
-                  <td className="border-border bg-surface sticky left-0 z-10 border-r px-1 py-1 font-mono">
-                    {d.slice(5)}
-                  </td>
-                  {slots.map((s) => {
-                    const occ = occupiedBy[s];
-                    const isStart = occ && occ.startSlot === s;
-                    const tone = occ ? songTone(occ.songId, board.paletteSeed) : null;
-                    const isHover =
-                      hoverSlot && hoverSlot.date === d && hoverSlot.slot === s && !occ;
-                    return (
-                      <td
-                        key={s}
-                        onDragOver={onCellDragOver(d, s)}
-                        onDragLeave={() => setHoverSlot(null)}
-                        onDrop={onCellDrop(d, s)}
-                        className={cn(
-                          'border-border h-7 border-r p-0 align-top',
-                          !occ && 'hover:bg-bg/40',
-                          isHover && 'bg-accent-dim',
-                        )}
-                      >
-                        {isStart && occ && tone && (
-                          <button
-                            type="button"
-                            draggable={!occ.pinned}
-                            onDragStart={onBlockDragStart(occ)}
-                            onClick={() => setSelectedBlockId(occ.blockId)}
-                            className={cn(
-                              'h-full cursor-grab rounded border-2 px-1 py-0.5 text-left',
-                              tone.dim,
-                              tone.border,
-                            )}
-                            style={{ width: `calc(${occ.durationSlots * 100}% - 1px)` }}
-                            title={`${songMap.get(occ.songId)?.title ?? occ.songId} ${slotToTime(occ.startSlot)}~${slotToTime(occ.startSlot + occ.durationSlots)}`}
-                          >
-                            <div
-                              className={cn(
-                                'text-micro gap-s-1 flex items-center font-bold',
-                                tone.text,
-                              )}
-                            >
-                              {occ.pinned && <Lock className="h-3 w-3" />}
-                              <span className="truncate">
-                                {occ.songTitleOverride ?? songMap.get(occ.songId)?.title ?? '곡'}
-                              </span>
-                            </div>
-                          </button>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      </aside>
 
       <ConfirmDialog
         open={confirmDialog === 'confirm'}
