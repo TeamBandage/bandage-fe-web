@@ -1,11 +1,15 @@
 'use client';
 
-import { GripVertical, Lock } from 'lucide-react';
+import { CheckCircle2, GripVertical, Lock, RotateCcw } from 'lucide-react';
 import { useMemo, useRef, useState, type DragEvent } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
 import { useBoardStore } from '../store/boardStore';
+import { useTimetableStore } from '../store/timetableStore';
 import type { ScheduleBlock } from '../types';
 import { slotToTime } from '../utils';
 
@@ -47,6 +51,11 @@ interface DragData {
 export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSlots = 4 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
   const upsertBlock = useBoardStore((s) => s.upsertBlock);
+  const confirmBoard = useBoardStore((s) => s.confirmBoard);
+  const unconfirmAll = useBoardStore((s) => s.unconfirmAll);
+  const setTimetableConfirmed = useTimetableStore((s) => s.setConfirmed);
+  const toast = useToast();
+  const [confirmDialog, setConfirmDialog] = useState<'confirm' | 'unconfirm' | null>(null);
 
   const dragRef = useRef<DragData | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ date: string; slot: number } | null>(null);
@@ -136,7 +145,27 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
 
   return (
     <div className="gap-s-3 flex h-full flex-col">
-      <div className="gap-s-2 flex items-center justify-end">
+      <div className="gap-s-2 flex flex-wrap items-center justify-between">
+        {board.confirmed ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setConfirmDialog('unconfirm')}
+            className="text-success"
+          >
+            <RotateCcw className="h-4 w-4" /> 확정 해제
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => setConfirmDialog('confirm')}
+            disabled={board.blocks.length === 0}
+            className="bg-success hover:bg-success/90 text-white"
+          >
+            <CheckCircle2 className="h-4 w-4" /> 이 시안으로 확정
+          </Button>
+        )}
         <div
           role="radiogroup"
           aria-label="시간 범위"
@@ -290,6 +319,34 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={confirmDialog === 'confirm'}
+        onOpenChange={(o) => !o && setConfirmDialog(null)}
+        title="시간표 확정"
+        description="이 시안을 최종 합주 시간표로 확정합니다. 같은 회의의 다른 시안 확정은 자동 해제됩니다."
+        confirmLabel="확정"
+        onConfirm={() => {
+          confirmBoard(boardId);
+          setTimetableConfirmed(board.meetingId, true);
+          setConfirmDialog(null);
+          toast.success('시간표가 확정되었습니다.');
+        }}
+      />
+      <ConfirmDialog
+        open={confirmDialog === 'unconfirm'}
+        onOpenChange={(o) => !o && setConfirmDialog(null)}
+        title="확정 해제"
+        description="확정을 해제하면 회의 진행도 게이지가 입력 단계로 돌아갑니다."
+        confirmLabel="확정 해제"
+        tone="danger"
+        onConfirm={() => {
+          unconfirmAll(board.meetingId);
+          setTimetableConfirmed(board.meetingId, false);
+          setConfirmDialog(null);
+          toast.success('확정이 해제되었습니다.');
+        }}
+      />
 
       {selectedBlockId &&
         (() => {
