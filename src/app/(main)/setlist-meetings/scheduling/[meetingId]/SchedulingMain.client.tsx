@@ -461,13 +461,7 @@ function RightVisualization({
             allDays={visibleDays}
           />
         ) : board ? (
-          <ScheduleBoardEditor
-            boardId={board.boardId}
-            days={visibleDays}
-            songPool={songPool}
-            slotStart={18}
-            slotEnd={44}
-          />
+          <ScheduleBoardEditor boardId={board.boardId} days={visibleDays} songPool={songPool} />
         ) : (
           <p className="text-foreground-muted text-caption">시안을 선택해주세요.</p>
         )}

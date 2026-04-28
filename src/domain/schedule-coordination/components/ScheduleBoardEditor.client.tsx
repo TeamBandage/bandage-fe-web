@@ -26,12 +26,15 @@ interface Props {
   days: string[];
   /** 합주 블록 풀 — 확정 곡 (Task 4 자동 추천 / Task 12 mock). */
   songPool: SongLite[];
-  /** 슬롯 시작 / 끝 (24h=0~48 / 9-22=18~44). Task 7 토글이 결정. */
-  slotStart: number;
-  slotEnd: number;
   /** 기본 블록 길이 (슬롯 단위). 30분 단위 스냅. */
   defaultDurationSlots?: number;
 }
+
+const RANGE_PRESETS = {
+  '9-22': { start: 18, end: 44, label: '09-22' },
+  '24h': { start: 0, end: 48, label: '24h' },
+} as const;
+type RangePreset = keyof typeof RANGE_PRESETS;
 
 interface DragData {
   kind: 'pool' | 'block';
@@ -41,20 +44,16 @@ interface DragData {
   durationSlots?: number;
 }
 
-export function ScheduleBoardEditor({
-  boardId,
-  days,
-  songPool,
-  slotStart,
-  slotEnd,
-  defaultDurationSlots = 4,
-}: Props) {
+export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSlots = 4 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
   const upsertBlock = useBoardStore((s) => s.upsertBlock);
 
   const dragRef = useRef<DragData | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ date: string; slot: number } | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [rangePreset, setRangePreset] = useState<RangePreset>('9-22');
+  const slotStart = RANGE_PRESETS[rangePreset].start;
+  const slotEnd = RANGE_PRESETS[rangePreset].end;
 
   const blocksByDate = useMemo(() => {
     const m: Record<string, ScheduleBlock[]> = {};
@@ -137,6 +136,35 @@ export function ScheduleBoardEditor({
 
   return (
     <div className="gap-s-3 flex h-full flex-col">
+      <div className="gap-s-2 flex items-center justify-end">
+        <div
+          role="radiogroup"
+          aria-label="시간 범위"
+          className="bg-card border-border inline-flex rounded-md border p-0.5"
+        >
+          {(Object.keys(RANGE_PRESETS) as RangePreset[]).map((p) => {
+            const active = p === rangePreset;
+            return (
+              <button
+                key={p}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setRangePreset(p)}
+                className={cn(
+                  'text-micro px-s-2 rounded py-1 font-bold transition-colors',
+                  active
+                    ? 'bg-accent text-bg shadow-sm'
+                    : 'text-foreground-muted hover:text-foreground',
+                )}
+              >
+                {RANGE_PRESETS[p].label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="border-border bg-card px-s-3 py-s-2 rounded-md border">
         <div className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">
           합주 블록 풀
@@ -175,10 +203,16 @@ export function ScheduleBoardEditor({
       </div>
 
       <div className="border-border bg-card flex-1 overflow-auto rounded-md border">
-        <table className="text-micro w-full table-fixed border-collapse">
+        <table
+          className="text-micro border-collapse"
+          style={{
+            width: rangePreset === '24h' ? `${80 + (slotEnd - slotStart) * 32}px` : '100%',
+            tableLayout: 'fixed',
+          }}
+        >
           <thead className="bg-surface sticky top-0 z-10">
             <tr>
-              <th className="border-border w-20 border-r border-b px-1 py-1 text-left font-mono">
+              <th className="border-border bg-surface sticky left-0 z-20 w-20 border-r border-b px-1 py-1 text-left font-mono">
                 일자
               </th>
               {slots.map((s) => (
@@ -199,7 +233,7 @@ export function ScheduleBoardEditor({
               }
               return (
                 <tr key={d} className="border-border border-t">
-                  <td className="border-border bg-surface border-r px-1 py-1 font-mono">
+                  <td className="border-border bg-surface sticky left-0 z-10 border-r px-1 py-1 font-mono">
                     {d.slice(5)}
                   </td>
                   {slots.map((s) => {
