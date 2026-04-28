@@ -13,10 +13,13 @@ import { useScheduleExport } from '../hooks/useScheduleExport';
 import { useBoardStore } from '../store/boardStore';
 import { useTimetableStore } from '../store/timetableStore';
 import type { ScheduleBlock } from '../types';
+import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
+import { autoRescheduleAfterMove } from '../utils/autoReschedule';
 import { slotToTime } from '../utils';
 
 import { songTone } from './palette';
 import { ScheduleBlockPanel } from './ScheduleBlockPanel.client';
+import { WorkingHoursPanel } from './WorkingHoursPanel.client';
 
 const DRAG_MIME = 'application/x-bandage-block';
 
@@ -53,11 +56,14 @@ interface DragData {
 export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSlots = 4 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
   const upsertBlock = useBoardStore((s) => s.upsertBlock);
+  const replaceBlocks = useBoardStore((s) => s.replaceBlocks);
   const confirmBoard = useBoardStore((s) => s.confirmBoard);
   const unconfirmAll = useBoardStore((s) => s.unconfirmAll);
   const setTimetableConfirmed = useTimetableStore((s) => s.setConfirmed);
   const toast = useToast();
   const [confirmDialog, setConfirmDialog] = useState<'confirm' | 'unconfirm' | null>(null);
+  /** 변경 직전 스냅샷 — Undo 토스트용. */
+  const [undoSnapshot, setUndoSnapshot] = useState<ScheduleBlock[] | null>(null);
 
   const dragRef = useRef<DragData | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ date: string; slot: number } | null>(null);
@@ -131,7 +137,23 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
       const cur = board.blocks.find((b) => b.blockId === data.blockId);
       if (!cur) return;
       if (cur.pinned) return;
-      upsertBlock(boardId, { ...cur, date, startSlot: slot });
+      const nextBlocks = board.blocks.map((b) =>
+        b.blockId === data.blockId ? { ...b, date, startSlot: slot } : b,
+      );
+      const constraints = board.constraints ?? DEFAULT_BOARD_CONSTRAINTS;
+      const datesPool = Array.from(new Set(board.blocks.map((b) => b.date).concat(date))).sort();
+      const reflowed = autoRescheduleAfterMove({
+        blocks: nextBlocks,
+        anchorBlockId: data.blockId,
+        constraints,
+        availableDates: datesPool,
+      });
+      if (!reflowed) {
+        toast.error('Working Hours 또는 잠금 충돌로 재배치 불가.');
+        return;
+      }
+      setUndoSnapshot(board.blocks);
+      replaceBlocks(boardId, reflowed);
       return;
     }
     const newBlock: ScheduleBlock = {
@@ -208,6 +230,37 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
           })}
         </div>
       </div>
+
+      <WorkingHoursPanel boardId={boardId} />
+
+      {undoSnapshot && (
+        <div className="bg-warn-dim border-warn px-s-3 py-s-2 gap-s-2 flex items-center rounded-md border">
+          <span className="text-caption text-warn flex-1 font-bold">
+            자동 재배치가 적용되었습니다.
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              if (undoSnapshot) {
+                replaceBlocks(boardId, undoSnapshot);
+                setUndoSnapshot(null);
+                toast.success('변경을 되돌렸습니다.');
+              }
+            }}
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> 되돌리기
+          </Button>
+          <button
+            type="button"
+            onClick={() => setUndoSnapshot(null)}
+            className="text-foreground-muted hover:text-foreground text-micro"
+            aria-label="알림 닫기"
+          >
+            닫기
+          </button>
+        </div>
+      )}
 
       <div className="border-border bg-card px-s-3 py-s-2 rounded-md border">
         <div className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">

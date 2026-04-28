@@ -41,9 +41,30 @@ export interface ScheduleBoard {
   /** 컬러 팔레트 시드 — 자동 생성 안마다 다른 톤. */
   paletteSeed: number;
   confirmed: boolean;
+  /** Task 13 — Working Hours / 심야 배제 등 제약. 미설정 시 DEFAULT_BOARD_CONSTRAINTS. */
+  constraints?: ScheduleBoardConstraints;
   createdAt: string;
   updatedAt: string;
 }
+
+/** Task 13 — 시간표 제약 조건. board 단위로 저장. */
+export interface ScheduleBoardConstraints {
+  /** Working Hours 시작 슬롯 (0~47). default 18 = 09:00. */
+  workingHoursStart: number;
+  /** Working Hours 끝 슬롯 (0~48). default 44 = 22:00. */
+  workingHoursEnd: number;
+  /** 심야 배제 토글 — true 면 24:00 이후 배치 금지. */
+  excludeLateNight: boolean;
+  /** 최대 연속 합주 분(min). 초과 시 자동 휴식. default 240(4시간). */
+  maxConsecutiveMinutes: number;
+}
+
+export const DEFAULT_BOARD_CONSTRAINTS: ScheduleBoardConstraints = {
+  workingHoursStart: 18,
+  workingHoursEnd: 44,
+  excludeLateNight: true,
+  maxConsecutiveMinutes: 240,
+};
 
 /** 시간표 안에 배치되는 합주 블록. blockId 는 board 내 unique. */
 export interface ScheduleBlock {

@@ -5076,7 +5076,7 @@
         "dependencies": [
           "4"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5125,7 +5125,8 @@
             "testStrategy": "1. mock 스케줄 데이터로 suggestScheduleBoards 호출 시 3개 보드 반환\n2. 추천 슬롯이 실제 가용 인원이 많은 시간대인지 검증\n3. 곡 간 겹침 없음 확인 (같은 날짜 내 startSlot~endSlot 범위 중복 없음)\n4. 빈 카드 2개 추가 생성 확인\n5. parseDurationToSlots('7:06') === 15 (올림) 확인",
             "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2026-04-28T22:10:40.142Z"
       },
       {
         "id": "13",
@@ -5190,9 +5191,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T22:08:38.458Z",
+      "lastModified": "2026-04-28T22:10:40.146Z",
       "taskCount": 13,
-      "completedCount": 11,
+      "completedCount": 12,
       "tags": [
         "schedule-v2"
       ]

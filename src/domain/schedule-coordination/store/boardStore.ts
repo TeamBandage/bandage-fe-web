@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { ScheduleBlock, ScheduleBoard } from '../types';
+import type { ScheduleBlock, ScheduleBoard, ScheduleBoardConstraints } from '../types';
 
 const noopStorage = {
   getItem: () => null,
@@ -36,6 +36,10 @@ interface BoardActions {
   removeBlock: (boardId: string, blockId: string) => void;
   /** Task 13 — 잠금 토글. */
   togglePin: (boardId: string, blockId: string) => void;
+  /** Task 13 — Working Hours 등 board 제약 갱신. */
+  setConstraints: (boardId: string, c: ScheduleBoardConstraints) => void;
+  /** Task 13 — 블록 일괄 교체 (auto-reschedule 결과 적용). */
+  replaceBlocks: (boardId: string, blocks: ScheduleBlock[]) => void;
   /** Task 8 — 시안 확정 (다른 시안의 confirmed 는 false 로). */
   confirmBoard: (boardId: string) => void;
   unconfirmAll: (meetingId: string) => void;
@@ -153,6 +157,30 @@ export const useBoardStore = create<BoardState & BoardActions>()(
             boards: {
               ...s.boards,
               [boardId]: { ...cur, pinned, blocks, updatedAt: new Date().toISOString() },
+            },
+          };
+        }),
+
+      setConstraints: (boardId, c) =>
+        set((s) => {
+          const cur = s.boards[boardId];
+          if (!cur) return s;
+          return {
+            boards: {
+              ...s.boards,
+              [boardId]: { ...cur, constraints: c, updatedAt: new Date().toISOString() },
+            },
+          };
+        }),
+
+      replaceBlocks: (boardId, blocks) =>
+        set((s) => {
+          const cur = s.boards[boardId];
+          if (!cur) return s;
+          return {
+            boards: {
+              ...s.boards,
+              [boardId]: { ...cur, blocks, updatedAt: new Date().toISOString() },
             },
           };
         }),
