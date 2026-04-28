@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, Lock, MoreVertical, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -25,7 +25,15 @@ export function ScheduleBoardList({
   onSelect,
   generateRecommendations,
 }: Props) {
-  const boards = useBoardStore((s) => s.getBoardsByMeeting(meetingId));
+  // s.boards 는 stable record. getBoardsByMeeting 직접 호출 시 매번 새 배열 → infinite loop.
+  const allBoards = useBoardStore((s) => s.boards);
+  const boards = useMemo(
+    () =>
+      Object.values(allBoards)
+        .filter((b) => b.meetingId === meetingId)
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [allBoards, meetingId],
+  );
   const createBoard = useBoardStore((s) => s.createBoard);
   const renameBoard = useBoardStore((s) => s.renameBoard);
   const deleteBoard = useBoardStore((s) => s.deleteBoard);
