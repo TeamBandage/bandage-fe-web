@@ -66,7 +66,7 @@ export function HoveredAvailabilityPanel({
         <div className="text-caption mt-0.5 font-mono">
           {cell
             ? `${cell.date} (${DOW[dayOfWeek(cell.date)]}) · ${slotToTime(cell.slot)}`
-            : '셀 위에 마우스를 올려 시간을 선택'}
+            : '셀을 클릭하여 시간을 선택'}
         </div>
         {scopeUserIds !== 'ALL' && (
           <div className="text-foreground-muted text-micro mt-0.5">

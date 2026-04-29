@@ -207,7 +207,6 @@ export function MatrixView({
 
   const onCellMouseEnter = (date: string, slot: number) => () => {
     setHover({ date, slot });
-    setHoveredCell(meetingId, { date, slot });
     if (drag && drag.date === date) {
       const startSlot = Math.min(drag.startSlot, slot);
       const endSlot = Math.max(drag.startSlot + 1, slot + 1);
@@ -550,41 +549,46 @@ export function MatrixView({
                         drag !== null && drag.date === d && s >= drag.startSlot && s < drag.endSlot;
                       const lock = lockAt(d, s);
                       const isLockStart = lock && lock.date === d && lock.startSlot === s;
+                      // lock 의 시작 셀이 아니면 colSpan 에 흡수되므로 td 렌더 자체 skip.
+                      if (lock && !isLockStart) return null;
                       const isPinned = pinned?.date === d && pinned?.slot === s;
                       const isHover = !pinned && hover?.date === d && hover?.slot === s && !lock;
                       const count = availability.get(`${d}__${s}`)?.size ?? 0;
                       const songTitle = lock?.songId
                         ? (songMap.get(lock.songId)?.title ?? '곡')
                         : null;
+                      const dur = lock ? lock.endSlot - lock.startSlot : 1;
                       return (
                         <td
                           key={s}
+                          colSpan={dur}
                           onMouseDown={onCellMouseDown(d, s)}
                           onMouseEnter={onCellMouseEnter(d, s)}
                           onDragOver={onCellDragOver(d, s)}
                           onDragLeave={() => setPoolDropHover(null)}
                           onDrop={onCellDrop(d, s)}
-                          onClick={lock ? () => setEditLockId(lock.id) : undefined}
+                          onClick={() => {
+                            if (lock) setEditLockId(lock.id);
+                            else setHoveredCell(meetingId, { date: d, slot: s });
+                          }}
                           title={
                             lock
                               ? `${songTitle ?? '확정 슬롯'} ${slotToTime(lock.startSlot)}~${slotToTime(lock.endSlot)}`
                               : `${d} ${slotToTime(s)} — ${count}/${totalMembers}명 가능`
                           }
                           className={cn(
-                            'border-border/50 h-7 border-r border-b transition-colors',
+                            'border-border/50 h-7 border-r border-b p-0 transition-colors',
                             isWeekFirst && 'border-t-border border-t-2',
-                            cellBg(d, s, dragHit),
-                            isLockStart && 'relative overflow-visible',
+                            !lock && cellBg(d, s, dragHit),
+                            lock && 'bg-bg',
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
                             isHover && 'outline-foreground/50 outline outline-1 -outline-offset-1',
-                            lock && 'cursor-pointer',
-                            !lock && 'cursor-pointer',
+                            'cursor-pointer',
                           )}
                         >
-                          {isLockStart && lock && (
+                          {lock && (
                             <LockBlockCard
                               lock={lock}
-                              durationSlots={lock.endSlot - lock.startSlot}
                               title={lock.songTitleOverride ?? songTitle ?? '확정 슬롯'}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -726,37 +730,34 @@ export function MatrixView({
  * 매트릭스 lock 시각화 — 셀 단순 채색 대신 '셀 위에 떠 있는 카드' 로 표시.
  * 시작 셀에서 absolute 로 height = duration * 28px 만큼 차지. 곡 색상 / 제목 / 길이 노출.
  */
+/**
+ * 매트릭스 lock 카드 — colSpan=duration 으로 합쳐진 셀 안을 가득 채워 렌더.
+ * 행=일자, 열=슬롯 구조에서 lock 은 가로로 펼쳐지므로 width 가 자연히 colSpan 만큼 커짐.
+ */
 function LockBlockCard({
   lock,
-  durationSlots,
   title,
   onClick,
 }: {
   lock: LockedSlot;
-  durationSlots: number;
   title: string;
   onClick: (e: React.MouseEvent) => void;
 }) {
   const tone = lock.songId ? songTone(lock.songId, 0) : null;
-  const heightPx = durationSlots * 28; // h-7 셀 = 28px
+  const dur = lock.endSlot - lock.startSlot;
   return (
     <div
       onClick={onClick}
       role="button"
       title={`${title} ${slotToTime(lock.startSlot)}~${slotToTime(lock.endSlot)}`}
       className={cn(
-        'absolute inset-x-0.5 top-0 z-10 cursor-pointer overflow-hidden rounded-md border border-white/30 px-1.5 py-1 text-left text-white shadow-md transition-shadow hover:shadow-lg hover:ring-2 hover:ring-white/50',
+        'mx-0.5 my-px flex h-[26px] cursor-pointer items-center gap-1 overflow-hidden rounded border border-white/30 px-1.5 text-left text-white shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-white/60 hover:ring-inset',
         tone?.bg ?? 'bg-success',
       )}
-      style={{ height: heightPx - 2 }}
     >
-      <div className="flex h-full flex-col">
-        <div className="text-micro flex items-center gap-1 leading-tight font-bold">
-          <Lock className="h-2.5 w-2.5 shrink-0 opacity-80" aria-hidden="true" />
-          <span className="truncate">{title}</span>
-        </div>
-        <div className="text-micro mt-auto opacity-80">{durationSlots * 30}분</div>
-      </div>
+      <Lock className="h-2.5 w-2.5 shrink-0 opacity-80" aria-hidden="true" />
+      <span className="text-micro min-w-0 truncate leading-none font-bold">{title}</span>
+      <span className="text-micro ml-auto shrink-0 opacity-80">{dur * 30}분</span>
     </div>
   );
 }

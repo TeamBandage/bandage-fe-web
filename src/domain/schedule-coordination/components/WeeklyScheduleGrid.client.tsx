@@ -29,10 +29,8 @@ export interface WeeklyScheduleGridProps {
   onCellDragOver?: (date: string, slot: number) => (e: DragEvent) => void;
   onCellDragLeave?: () => void;
   onCellDrop?: (date: string, slot: number) => (e: DragEvent) => void;
-  /** 셀 클릭 핸들러 — 입력 모달 등 read+write 그리드용. */
+  /** 셀 클릭 핸들러 — 입력 모달 / 가능·불가능 인원 패널 갱신 등. */
   onCellClick?: (date: string, slot: number) => void;
-  /** 셀 hover (pointer enter) — 가능/불가능 인원 패널 갱신 등 (Task 23). */
-  onCellHover?: (date: string, slot: number) => void;
   /**
    * 드래그 페인트 핸들러 (when2meet/Sling 스타일).
    * onPaintStart: pointerdown 한 셀에서 호출 — 의도(추가/제거) 결정 시점.
@@ -60,7 +58,6 @@ export function WeeklyScheduleGrid({
   onCellDragLeave,
   onCellDrop,
   onCellClick,
-  onCellHover,
   onPaintStart,
   onPaintEnter,
   cellClassName,
@@ -178,7 +175,6 @@ export function WeeklyScheduleGrid({
                 onDragOver={inWindow ? onCellDragOver?.(d, s) : undefined}
                 onDragLeave={inWindow ? onCellDragLeave : undefined}
                 onDrop={inWindow ? onCellDrop?.(d, s) : undefined}
-                onMouseEnter={inWindow && onCellHover ? () => onCellHover(d, s) : undefined}
                 onClick={
                   inWindow && onCellClick && !onPaintStart ? () => onCellClick(d, s) : undefined
                 }

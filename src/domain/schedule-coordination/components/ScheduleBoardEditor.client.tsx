@@ -472,7 +472,7 @@ export function ScheduleBoardEditor({
           onCellDragOver={onCellDragOver}
           onCellDragLeave={() => setHoverSlot(null)}
           onCellDrop={onCellDrop}
-          onCellHover={(date, slot) => {
+          onCellClick={(date, slot) => {
             if (!meetingIdForRange) return;
             setHoveredCellGlobal(meetingIdForRange, { date, slot });
           }}
