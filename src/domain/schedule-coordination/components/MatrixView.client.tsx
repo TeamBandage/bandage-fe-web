@@ -98,6 +98,7 @@ export function MatrixView({
   const enterRepeatMode = useScheduleViewStore((s) => s.enterRepeatMode);
   const exitRepeatMode = useScheduleViewStore((s) => s.exitRepeatMode);
   const toggleRepeatTarget = useScheduleViewStore((s) => s.toggleRepeatTarget);
+  const setHoveredCell = useScheduleViewStore((s) => s.setHoveredCell);
 
   const locksByMeeting = useMatrixLockStore((s) => s.locksByMeeting);
   const locks = useMemo(() => locksByMeeting[meetingId] ?? [], [locksByMeeting, meetingId]);
@@ -197,6 +198,7 @@ export function MatrixView({
 
   const onCellMouseEnter = (date: string, slot: number) => () => {
     setHover({ date, slot });
+    setHoveredCell(meetingId, { date, slot });
     if (drag && drag.date === date) {
       const startSlot = Math.min(drag.startSlot, slot);
       const endSlot = Math.max(drag.startSlot + 1, slot + 1);

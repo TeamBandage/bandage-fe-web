@@ -108,6 +108,7 @@ export function ScheduleBoardEditor({
     (s) => s.focusedSongIdByMeeting[meetingIdForRange] ?? null,
   );
   const toggleFocusedSongId = useScheduleViewStore((s) => s.toggleFocusedSongId);
+  const setHoveredCellGlobal = useScheduleViewStore((s) => s.setHoveredCell);
 
   /** 곡별 가용시간 모드 — 모든 멤버 일정. focusedSongId 있을 때만 계산. */
   const allMemberSchedules = useScheduleStore((s) => s.schedules);
@@ -471,6 +472,10 @@ export function ScheduleBoardEditor({
           onCellDragOver={onCellDragOver}
           onCellDragLeave={() => setHoverSlot(null)}
           onCellDrop={onCellDrop}
+          onCellHover={(date, slot) => {
+            if (!meetingIdForRange) return;
+            setHoveredCellGlobal(meetingIdForRange, { date, slot });
+          }}
           cellClassName={cellClassName}
           gridRef={exportApi.ref}
           overlay={overlay}

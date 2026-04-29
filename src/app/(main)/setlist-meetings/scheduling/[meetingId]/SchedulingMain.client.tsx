@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { UnderlineTabs } from '@/components/ui/underline-tabs';
+import { HoveredAvailabilityPanel } from '@/domain/schedule-coordination/components/HoveredAvailabilityPanel.client';
 import { MatrixView } from '@/domain/schedule-coordination/components/MatrixView.client';
 import { ScheduleBoardEditor } from '@/domain/schedule-coordination/components/ScheduleBoardEditor.client';
 import { ScheduleBoardList } from '@/domain/schedule-coordination/components/ScheduleBoardList.client';
@@ -287,7 +288,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                     }}
                   />
                 </aside>
-                {/* 중앙+우측: 시간표 에디터(블록 풀 내장). */}
+                {/* 중앙: 시간표 에디터(블록 풀 내장). */}
                 <div className="min-w-0 flex-1">
                   {rightPanel?.kind === 'board' ? (
                     <ScheduleBoardEditor
@@ -310,6 +311,15 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                     </p>
                   )}
                 </div>
+                {/* 우측: 호버 기반 가능/불가능 인원 패널 (Task 23). */}
+                <aside className="ml-3 w-64 shrink-0">
+                  <HoveredAvailabilityPanel
+                    meetingId={meetingId}
+                    participants={participants}
+                    memberSchedules={memberSchedules}
+                    className="h-full"
+                  />
+                </aside>
               </>
             )}
           </div>
