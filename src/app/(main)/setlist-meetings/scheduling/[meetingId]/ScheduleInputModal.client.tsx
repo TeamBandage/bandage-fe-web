@@ -96,18 +96,6 @@ export function ScheduleInputModal({
   const next = () => setStep((s) => (s < 3 ? ((s + 1) as Step) : s));
   const back = () => setStep((s) => (s > 0 ? ((s - 1) as Step) : s));
 
-  // 9-E 실시간 요약 — 입력 즉시 갱신.
-  const summary = useMemo(() => {
-    const dayCount = availableDates.length;
-    const totalMinutes = Object.values(blocks).reduce(
-      (acc, mask) => acc + mask.filter(Boolean).length * 30,
-      0,
-    );
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-    return `선택: ${dayCount}일 / 합 ${hours}시간 ${mins ? `${mins}분` : ''}`.trim();
-  }, [availableDates, blocks]);
-
   const submit = () => {
     setCompleted(meetingId, userId, true);
     toast.success('나의 스케줄이 저장되었습니다.');
@@ -143,9 +131,6 @@ export function ScheduleInputModal({
               <Step4Review availableDates={availableDates} blocks={blocks} note={note} />
             )}
           </div>
-          <p className="text-foreground-muted text-micro mt-s-3 font-mono tabular-nums">
-            {summary}
-          </p>
         </ResponsiveSheetBody>
         <ResponsiveSheetFooter>
           <Button type="button" variant="ghost" onClick={back} disabled={step === 0}>
@@ -324,6 +309,7 @@ function Step2Blocks({
   blocks: Record<string, SlotMask>;
   setBlocks: (next: Record<string, SlotMask>) => void;
 }) {
+  const toast = useToast();
   const sortedAvail = useMemo(() => [...availableDates].sort(), [availableDates]);
   /** compact: 가용 일자가 모두 같은 ISO 주(월~일) 내에 있으면 페이지네이션 숨김. */
   const compact = useMemo(() => {
@@ -423,22 +409,26 @@ function Step2Blocks({
   };
 
   // 9-C 전 주 복사 — week 모드 한정.
+  // 가용 외 일자도 포함해서 복사 (전 주 같은 요일에 무엇이든 입력돼 있으면 가져옴 → 사용자에게 즉각 피드백).
   const copyPrevWeek = () => {
     if (compact) return;
-    const targets = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-    const prev = targets.map((d) => addDays(d, -7));
     const upd: Record<string, SlotMask> = { ...blocks };
-    let changed = false;
-    for (let i = 0; i < targets.length; i++) {
-      const target = targets[i]!;
-      const source = prev[i]!;
+    let copied = 0;
+    for (let i = 0; i < 7; i++) {
+      const target = addDays(weekStart, i);
+      const source = addDays(target, -7);
       if (!availSet.has(target)) continue;
-      const sourceMask = blocks[source];
-      if (!sourceMask) continue;
-      upd[target] = sourceMask.slice();
-      changed = true;
+      const srcMask = blocks[source];
+      if (!srcMask) continue;
+      upd[target] = srcMask.slice();
+      copied++;
     }
-    if (changed) setBlocks(upd);
+    if (copied > 0) {
+      setBlocks(upd);
+      toast.success(`전 주와 동일하게 ${copied}일 복사`);
+    } else {
+      toast.error('전 주의 같은 요일에 입력된 시간이 없습니다.');
+    }
   };
 
   // 9-F Smart Default — 평일 저녁 + 주말 종일.

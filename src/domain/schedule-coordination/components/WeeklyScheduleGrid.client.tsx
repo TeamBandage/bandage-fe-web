@@ -201,12 +201,12 @@ export function WeeklyScheduleGrid({
                     : undefined
                 }
                 className={cn(
-                  'border-border border-r transition-colors',
+                  'border-border rounded-none border-r transition-colors',
                   isHourBoundary && 'border-t',
                   !inWindow && 'bg-surface/40',
                   (onCellClick || onPaintStart) &&
                     inWindow &&
-                    'hover:bg-accent-soft hover:ring-accent/40 cursor-pointer touch-none select-none hover:ring-1 hover:ring-inset',
+                    'hover:bg-accent/40 hover:ring-accent cursor-pointer touch-none select-none hover:ring-2 hover:ring-inset',
                   extraClass,
                 )}
                 style={{ gridRow: sIdx + 2, gridColumn: dIdx + 2 }}

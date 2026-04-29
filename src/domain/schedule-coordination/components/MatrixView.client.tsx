@@ -131,12 +131,13 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
       return clean ? 'bg-accent-soft' : 'bg-warn/15';
     }
     const r = ratio(date, slot);
+    // 단색계열(success 초록) 5단계 — 옅은→진한 으로 가용 비율 표현.
     if (r === 0) return 'bg-card';
-    if (r < 0.25) return 'bg-danger/30';
-    if (r < 0.5) return 'bg-warn/45';
-    if (r < 0.8) return 'bg-accent/60';
-    if (r < 1) return 'bg-success/55';
-    return 'bg-success/85';
+    if (r < 0.25) return 'bg-success/15';
+    if (r < 0.5) return 'bg-success/35';
+    if (r < 0.8) return 'bg-success/55';
+    if (r < 1) return 'bg-success/75';
+    return 'bg-success';
   };
 
   const onCellMouseDown =
@@ -410,10 +411,10 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
 
 function Legend() {
   const items = [
-    { label: '전원', tone: 'bg-success/85' },
-    { label: '80%↑', tone: 'bg-success/55' },
-    { label: '50%↑', tone: 'bg-accent/60' },
-    { label: '소수', tone: 'bg-warn/45' },
+    { label: '전원', tone: 'bg-success' },
+    { label: '80%↑', tone: 'bg-success/75' },
+    { label: '50%↑', tone: 'bg-success/55' },
+    { label: '소수', tone: 'bg-success/35' },
   ] as const;
   return (
     <ul className="gap-s-3 flex flex-wrap items-center">
