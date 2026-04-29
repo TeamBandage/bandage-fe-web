@@ -51,6 +51,8 @@ interface Props {
   memberSchedules: MemberSchedule[];
   /** 합주 블록 풀 — 확정 곡. 우측 슬레이브 패널의 드래그 소스. */
   songPool: SongLite[];
+  /** songId → 참여 멤버 userId 배열. 곡별 가용시간 모드(Task 18) 셀렉터. */
+  songParticipantsMap?: Record<string, string[]>;
   /** 주차 라벨 클릭 시 → 주차별 UI 로 전환 + 해당 주로 jump (Task 17). */
   onWeekJump?: (weekStart: string) => void;
 }
@@ -61,6 +63,7 @@ export function MatrixView({
   participants,
   memberSchedules,
   songPool,
+  songParticipantsMap,
   onWeekJump,
 }: Props) {
   const [hover, setHover] = useState<CellRef | null>(null);
@@ -78,6 +81,10 @@ export function MatrixView({
   const SLOT_FROM = RANGE_PRESETS[rangePreset].start;
   const SLOT_TO = RANGE_PRESETS[rangePreset].end;
 
+  /** 곡별 가용시간 모드 — null = 전체 멤버. */
+  const focusedSongId = useScheduleViewStore((s) => s.focusedSongIdByMeeting[meetingId] ?? null);
+  const toggleFocusedSongId = useScheduleViewStore((s) => s.toggleFocusedSongId);
+
   const locksByMeeting = useMatrixLockStore((s) => s.locksByMeeting);
   const locks = useMemo(() => locksByMeeting[meetingId] ?? [], [locksByMeeting, meetingId]);
   const addLock = useMatrixLockStore((s) => s.addLock);
@@ -90,7 +97,15 @@ export function MatrixView({
     return m;
   }, [songPool]);
 
-  /** date+slot → 가능한 userId set. (전체 멤버 — Task 18 에서 곡별 scope 분기 추가) */
+  /**
+   * date+slot → 가능한 userId set.
+   * focusedSongId 가 있고 그 곡의 참여 멤버를 알 수 있으면 그 부분집합으로 제한.
+   */
+  const scopeUserIds = useMemo<'ALL' | string[]>(() => {
+    if (!focusedSongId) return 'ALL';
+    return songParticipantsMap?.[focusedSongId] ?? [];
+  }, [focusedSongId, songParticipantsMap]);
+
   const availability = useMemo(
     () =>
       buildCoverageHeatmap({
@@ -98,14 +113,20 @@ export function MatrixView({
         allDays,
         slotFrom: SLOT_FROM,
         slotTo: SLOT_TO,
-        scope: 'ALL',
+        scope: scopeUserIds,
       }),
-    [allDays, memberSchedules],
+    [allDays, memberSchedules, SLOT_FROM, SLOT_TO, scopeUserIds],
   );
 
+  /** ratio 분모 — 전체 모드면 전체 멤버, 곡 모드면 곡 참여 멤버 수. */
+  const denomMembers = focusedSongId
+    ? scopeUserIds === 'ALL'
+      ? participants.length
+      : scopeUserIds.length
+    : participants.length;
   const totalMembers = participants.length;
   const ratio = (date: string, slot: number) =>
-    coverageRatio(availability, date, slot, totalMembers);
+    coverageRatio(availability, date, slot, denomMembers);
 
   const isLocked = (date: string, slot: number) =>
     locks.some((l) => l.date === date && slot >= l.startSlot && slot < l.endSlot);
@@ -304,8 +325,15 @@ export function MatrixView({
       <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
         <div className="text-foreground-muted text-caption px-s-1 gap-s-3 flex items-center justify-between">
           <span>
-            셀 <strong className="text-foreground">드래그</strong>로 합주 시간 그리기 · 클릭으로
-            정보 고정 · 우측 풀에서 곡을 드래그해 배치
+            현재 모드:{' '}
+            <strong className="text-foreground">
+              {focusedSongId
+                ? `${songMap.get(focusedSongId)?.title ?? '곡'} 참여 멤버`
+                : `전체 멤버 (${totalMembers})`}
+            </strong>
+            {focusedSongId && scopeUserIds !== 'ALL' && (
+              <span className="text-foreground-muted ml-1">({scopeUserIds.length}명)</span>
+            )}
           </span>
           <Legend />
         </div>
@@ -476,6 +504,8 @@ export function MatrixView({
           songPool={songPool}
           onDragStart={onPoolDragStart}
           onDragEnd={onPoolDragEnd}
+          focusedSongId={focusedSongId}
+          onSongClick={(songId) => toggleFocusedSongId(meetingId, songId)}
         />
       </aside>
     </div>
@@ -751,10 +781,14 @@ function BlockPoolPanel({
   songPool,
   onDragStart,
   onDragEnd,
+  focusedSongId,
+  onSongClick,
 }: {
   songPool: SongLite[];
   onDragStart: (song: SongLite) => (e: DragEvent) => void;
   onDragEnd: () => void;
+  focusedSongId: string | null;
+  onSongClick: (songId: string) => void;
 }) {
   return (
     <div className="bg-card border-border flex max-h-[40%] flex-col overflow-hidden rounded-md border">
@@ -763,7 +797,7 @@ function BlockPoolPanel({
           합주 블록 풀 ({songPool.length})
         </div>
         <div className="text-foreground-muted text-micro mt-0.5">
-          드래그하여 매트릭스 셀에 1시간 단위로 배치
+          드래그=배치 / 클릭=곡 참여 멤버 가용시간 모드
         </div>
       </div>
       <div className="px-s-2 py-s-2 gap-s-1 flex flex-1 flex-col overflow-y-auto">
@@ -772,15 +806,20 @@ function BlockPoolPanel({
         ) : (
           songPool.map((song) => {
             const tone = songTone(song.id, 0);
+            const focused = focusedSongId === song.id;
             return (
               <button
                 key={song.id}
                 draggable
                 onDragStart={onDragStart(song)}
                 onDragEnd={onDragEnd}
+                onClick={() => onSongClick(song.id)}
+                aria-pressed={focused}
+                title={focused ? '클릭하여 전체 멤버 모드로' : '클릭하여 이 곡 참여 멤버 모드로'}
                 className={cn(
                   'gap-s-2 flex items-center rounded-md px-2 py-1.5 text-left text-white shadow-sm transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]',
                   tone.bg,
+                  focused && 'ring-accent ring-offset-card ring-2 ring-offset-2',
                 )}
               >
                 <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-70" />

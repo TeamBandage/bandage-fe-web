@@ -18,8 +18,10 @@ import { cn } from '@/lib/cn';
 
 import { useScheduleExport } from '../hooks/useScheduleExport';
 import { useBoardStore } from '../store/boardStore';
+import { useScheduleStore } from '../store/scheduleStore';
 import { useScheduleViewStore } from '../store/scheduleViewStore';
 import { useTimetableStore } from '../store/timetableStore';
+import { buildCoverageHeatmap } from '../utils/coverageHeatmap';
 import type { ScheduleBlock } from '../types';
 import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
 import { autoRescheduleAfterMove, computeValidDropSlots } from '../utils/autoReschedule';
@@ -55,6 +57,8 @@ interface Props {
   canNext?: boolean;
   /** 합주 블록 풀 — 확정 곡. */
   songPool: SongLite[];
+  /** songId → 참여 멤버 userId. 곡별 가용시간 모드용 (Task 18). */
+  songParticipantsMap?: Record<string, string[]>;
   defaultDurationSlots?: number;
 }
 
@@ -77,6 +81,7 @@ export function ScheduleBoardEditor({
   canPrev,
   canNext,
   songPool,
+  songParticipantsMap,
   defaultDurationSlots = 2,
 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
@@ -99,6 +104,37 @@ export function ScheduleBoardEditor({
     (s) => s.rangePresetByMeeting[meetingIdForRange] ?? DEFAULT_RANGE_PRESET,
   );
   const setRangePreset = useScheduleViewStore((s) => s.setRangePreset);
+  const focusedSongId = useScheduleViewStore(
+    (s) => s.focusedSongIdByMeeting[meetingIdForRange] ?? null,
+  );
+  const toggleFocusedSongId = useScheduleViewStore((s) => s.toggleFocusedSongId);
+
+  /** 곡별 가용시간 모드 — 모든 멤버 일정. focusedSongId 있을 때만 계산. */
+  const allMemberSchedules = useScheduleStore((s) => s.schedules);
+  const availabilityHeat = useMemo(() => {
+    if (!focusedSongId || !meetingIdForRange) return null;
+    const userIds = songParticipantsMap?.[focusedSongId];
+    if (!userIds || userIds.length === 0) return null;
+    const list = userIds
+      .map((uid) => allMemberSchedules[`${meetingIdForRange}__${uid}`])
+      .filter((x): x is NonNullable<typeof x> => Boolean(x));
+    if (list.length === 0) return null;
+    return buildCoverageHeatmap({
+      memberSchedules: list,
+      allDays: days,
+      slotFrom: RANGE_PRESETS[rangePreset].start,
+      slotTo: RANGE_PRESETS[rangePreset].end,
+      scope: 'ALL',
+    });
+  }, [
+    focusedSongId,
+    meetingIdForRange,
+    songParticipantsMap,
+    allMemberSchedules,
+    days,
+    rangePreset,
+  ]);
+  const heatTotal = focusedSongId ? (songParticipantsMap?.[focusedSongId]?.length ?? 0) : 0;
   const exportApi = useScheduleExport<HTMLDivElement>();
   const slotStart = RANGE_PRESETS[rangePreset].start;
   const slotEnd = RANGE_PRESETS[rangePreset].end;
@@ -264,6 +300,16 @@ export function ScheduleBoardEditor({
     if (isHover) return 'bg-accent-dim ring-accent ring-1';
     // 드래그 중에는 실제 배치 가능한 셀만 옅게 강조.
     if (dragging && validDropSet.has(`${date}__${slot}`)) return 'bg-accent-soft';
+    // 곡별 가용시간 모드 — 해당 곡 참여 멤버의 가용 비율로 옅은 초록 히트맵.
+    if (availabilityHeat && heatTotal > 0) {
+      const c = availabilityHeat.get(`${date}__${slot}`)?.size ?? 0;
+      const r = c / heatTotal;
+      if (r === 0) return undefined;
+      if (r < 0.34) return 'bg-success/15';
+      if (r < 0.67) return 'bg-success/30';
+      if (r < 1) return 'bg-success/50';
+      return 'bg-success/70';
+    }
     return undefined;
   };
 
@@ -444,15 +490,22 @@ export function ScheduleBoardEditor({
           ) : (
             songPool.map((song) => {
               const tone = songTone(song.id, board.paletteSeed);
+              const focused = focusedSongId === song.id;
               return (
                 <button
                   key={song.id}
                   draggable
                   onDragStart={onPoolDragStart(song)}
                   onDragEnd={onDragEnd}
+                  onClick={() => toggleFocusedSongId(meetingIdForRange, song.id)}
+                  aria-pressed={focused}
+                  title={
+                    focused ? '클릭하여 일반 모드로' : '클릭하여 이 곡 참여 멤버 가용시간 보기'
+                  }
                   className={cn(
                     'gap-s-2 flex items-center rounded-md px-2 py-1.5 text-left text-white shadow-sm transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]',
                     tone.bg,
+                    focused && 'ring-accent ring-offset-card ring-2 ring-offset-2',
                   )}
                 >
                   <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-70" />

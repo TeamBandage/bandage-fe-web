@@ -94,6 +94,17 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
     [allSongs],
   );
 
+  /** 곡별 참여 멤버 매핑 — Task 18 곡별 가용시간 모드용. confirmed sessions 의 userId 합집합. */
+  const songParticipantsMap = useMemo(() => {
+    const m: Record<string, string[]> = {};
+    for (const song of allSongs) {
+      const set = new Set<string>();
+      for (const list of Object.values(song.confirmed)) for (const id of list) set.add(id);
+      m[song.id] = Array.from(set);
+    }
+    return m;
+  }, [allSongs]);
+
   const window = meeting?.practiceWindow;
   const view = useScheduleView({
     from: window?.from ?? '',
@@ -241,6 +252,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                 participants={participants}
                 memberSchedules={memberSchedules}
                 songPool={editorSongPool}
+                songParticipantsMap={songParticipantsMap}
                 onWeekJump={(ws) => {
                   setViewMode(meetingId, 'weekly');
                   view.goToDate(ws);
@@ -286,6 +298,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                       canPrev={view.canPrev}
                       canNext={view.canNext}
                       songPool={editorSongPool}
+                      songParticipantsMap={songParticipantsMap}
                     />
                   ) : (
                     <p className="text-foreground-muted px-s-4 py-s-6 text-caption text-center">

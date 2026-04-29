@@ -15,6 +15,8 @@ export interface ScheduleViewState {
   selectedWeekStartByMeeting: Record<string, string>;
   /** 회의 → 곡별 가용시간 모드용 lock id. null = 전체 멤버 모드. */
   focusedLockIdByMeeting: Record<string, string | null>;
+  /** 회의 → 곡별 가용시간 모드용 songId (블럭 풀 클릭). null = 전체 멤버 모드. */
+  focusedSongIdByMeeting: Record<string, string | null>;
   /** 회의 → 호버 중인 셀(인원 패널 갱신용). */
   hoveredCellByMeeting: Record<string, { date: string; slot: number } | null>;
   /** 회의 → 주별 복제: 복제 대상으로 선택된 주차 시작일들. 빈 배열 = 선택 모드 미진입. */
@@ -31,6 +33,9 @@ interface ScheduleViewActions {
   setFocusedLockId: (meetingId: string, lockId: string | null) => void;
   /** 같은 lockId 면 토글, 다른 lockId 면 교체. */
   toggleFocusedLockId: (meetingId: string, lockId: string) => void;
+  setFocusedSongId: (meetingId: string, songId: string | null) => void;
+  /** 같은 songId 면 토글(off), 다른 songId 면 교체. */
+  toggleFocusedSongId: (meetingId: string, songId: string) => void;
   setHoveredCell: (meetingId: string, cell: { date: string; slot: number } | null) => void;
   enterRepeatMode: (meetingId: string) => void;
   exitRepeatMode: (meetingId: string) => void;
@@ -44,6 +49,7 @@ export const useScheduleViewStore = create<ScheduleViewState & ScheduleViewActio
   modeByMeeting: {},
   selectedWeekStartByMeeting: {},
   focusedLockIdByMeeting: {},
+  focusedSongIdByMeeting: {},
   hoveredCellByMeeting: {},
   repeatTargetsByMeeting: {},
   repeatActiveByMeeting: {},
@@ -68,6 +74,20 @@ export const useScheduleViewStore = create<ScheduleViewState & ScheduleViewActio
       const next = cur === lockId ? null : lockId;
       return {
         focusedLockIdByMeeting: { ...s.focusedLockIdByMeeting, [meetingId]: next },
+      };
+    }),
+
+  setFocusedSongId: (meetingId, songId) =>
+    set((s) => ({
+      focusedSongIdByMeeting: { ...s.focusedSongIdByMeeting, [meetingId]: songId },
+    })),
+
+  toggleFocusedSongId: (meetingId, songId) =>
+    set((s) => {
+      const cur = s.focusedSongIdByMeeting[meetingId] ?? null;
+      const next = cur === songId ? null : songId;
+      return {
+        focusedSongIdByMeeting: { ...s.focusedSongIdByMeeting, [meetingId]: next },
       };
     }),
 
@@ -106,6 +126,7 @@ export const useScheduleViewStore = create<ScheduleViewState & ScheduleViewActio
       modeByMeeting: {},
       selectedWeekStartByMeeting: {},
       focusedLockIdByMeeting: {},
+      focusedSongIdByMeeting: {},
       hoveredCellByMeeting: {},
       repeatTargetsByMeeting: {},
       repeatActiveByMeeting: {},
