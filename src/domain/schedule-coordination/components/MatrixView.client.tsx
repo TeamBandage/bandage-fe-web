@@ -12,6 +12,7 @@ import { useScheduleViewStore } from '../store/scheduleViewStore';
 import type { MemberSchedule } from '../types';
 import { dayOfWeek, isHoliday, slotToTime, startOfWeek } from '../utils';
 import { buildCoverageHeatmap, coverageRatio } from '../utils/coverageHeatmap';
+import { copyWeekLocks } from '../utils/copyWeekLocks';
 import { reflowMatrixLocks } from '../utils/reflowMatrixLocks';
 
 import type { Member } from '@/domain/setlist-meeting/types';
@@ -86,6 +87,17 @@ export function MatrixView({
   /** 곡별 가용시간 모드 — null = 전체 멤버. */
   const focusedSongId = useScheduleViewStore((s) => s.focusedSongIdByMeeting[meetingId] ?? null);
   const toggleFocusedSongId = useScheduleViewStore((s) => s.toggleFocusedSongId);
+
+  /** 주별 반복/복제 모드 상태. (Task 21) */
+  const baseWeekStart = useScheduleViewStore(
+    (s) => s.selectedWeekStartByMeeting[meetingId] ?? null,
+  );
+  const setBaseWeek = useScheduleViewStore((s) => s.setSelectedWeekStart);
+  const repeatActive = useScheduleViewStore((s) => s.repeatActiveByMeeting[meetingId] ?? false);
+  const repeatTargets = useScheduleViewStore((s) => s.repeatTargetsByMeeting[meetingId] ?? []);
+  const enterRepeatMode = useScheduleViewStore((s) => s.enterRepeatMode);
+  const exitRepeatMode = useScheduleViewStore((s) => s.exitRepeatMode);
+  const toggleRepeatTarget = useScheduleViewStore((s) => s.toggleRepeatTarget);
 
   const locksByMeeting = useMatrixLockStore((s) => s.locksByMeeting);
   const locks = useMemo(() => locksByMeeting[meetingId] ?? [], [locksByMeeting, meetingId]);
@@ -342,6 +354,98 @@ export function MatrixView({
           <Legend />
         </div>
 
+        {/* Task 21 — 주별 반복/복제 액션바. */}
+        <div className="bg-card border-border px-s-3 py-s-2 gap-s-2 flex flex-wrap items-center rounded-md border">
+          <span className="text-foreground-muted text-micro">기준 주:</span>
+          <strong className="text-foreground text-caption font-mono">
+            {baseWeekStart
+              ? `W${weekIndexMap.get(baseWeekStart) ?? '?'} (${baseWeekStart.slice(5)})`
+              : '미선택 — 주차 라벨을 클릭'}
+          </strong>
+          <div className="gap-s-2 ml-auto flex items-center">
+            {!repeatActive ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!baseWeekStart || weekRows.length < 2}
+                  onClick={() => {
+                    if (!baseWeekStart) return;
+                    const targets = weekRows.map(([ws]) => ws).filter((ws) => ws !== baseWeekStart);
+                    if (targets.length === 0) return;
+                    const result = copyWeekLocks({
+                      locks,
+                      meetingId,
+                      srcWeekStart: baseWeekStart,
+                      targetWeekStarts: targets,
+                      slotFrom: SLOT_FROM,
+                      slotTo: SLOT_TO,
+                      availableDates: allDays,
+                      newId: () =>
+                        `lock_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
+                      nowIso: () => new Date().toISOString(),
+                    });
+                    if (!result) {
+                      toast.error('자리 부족 — 일부 lock 을 정리한 뒤 다시 시도하세요.');
+                      return;
+                    }
+                    replaceLocks(meetingId, result);
+                    toast.success(`${targets.length}개 주차에 동일하게 복제`);
+                  }}
+                >
+                  모든 주차에 적용
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!baseWeekStart || weekRows.length < 2}
+                  onClick={() => enterRepeatMode(meetingId)}
+                >
+                  주별 일정 반복
+                </Button>
+              </>
+            ) : (
+              <>
+                <span className="text-warn text-micro font-bold">
+                  대상 주차 {repeatTargets.length}개 선택됨
+                </span>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  disabled={repeatTargets.length === 0 || !baseWeekStart}
+                  onClick={() => {
+                    if (!baseWeekStart) return;
+                    const result = copyWeekLocks({
+                      locks,
+                      meetingId,
+                      srcWeekStart: baseWeekStart,
+                      targetWeekStarts: repeatTargets,
+                      slotFrom: SLOT_FROM,
+                      slotTo: SLOT_TO,
+                      availableDates: allDays,
+                      newId: () =>
+                        `lock_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
+                      nowIso: () => new Date().toISOString(),
+                    });
+                    if (!result) {
+                      toast.error('자리 부족 — 충돌 정리 후 재시도');
+                      return;
+                    }
+                    replaceLocks(meetingId, result);
+                    toast.success(`${repeatTargets.length}개 주차에 복제`);
+                    exitRepeatMode(meetingId);
+                  }}
+                >
+                  copy & paste
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => exitRepeatMode(meetingId)}>
+                  취소
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
         <div className="border-border bg-card flex-1 overflow-auto rounded-md border">
           <table className="w-full border-collapse select-none" style={{ tableLayout: 'fixed' }}>
             <colgroup>
@@ -385,17 +489,33 @@ export function MatrixView({
                         rowSpan={weekSpan}
                         className={cn(
                           'bg-surface border-border sticky left-0 z-20 border-r-2 border-b-2 p-0 align-middle',
+                          baseWeekStart === ws && 'bg-accent-dim',
+                          repeatActive && repeatTargets.includes(ws) && 'bg-warn-dim',
                         )}
                       >
                         <button
                           type="button"
-                          onClick={() => onWeekJump?.(ws)}
-                          disabled={!onWeekJump}
+                          onClick={() => {
+                            if (repeatActive) {
+                              if (ws !== baseWeekStart) toggleRepeatTarget(meetingId, ws);
+                            } else {
+                              setBaseWeek(meetingId, ws);
+                            }
+                          }}
+                          onDoubleClick={() => {
+                            if (!repeatActive) onWeekJump?.(ws);
+                          }}
                           className={cn(
                             'h-full w-full px-1 py-2 text-center transition-colors',
-                            onWeekJump ? 'hover:bg-accent-dim cursor-pointer' : 'cursor-default',
+                            'hover:bg-accent-dim cursor-pointer',
                           )}
-                          title={onWeekJump ? `${ws} 주차별 UI 로 이동` : `${ws} 시작 주`}
+                          title={
+                            repeatActive
+                              ? ws === baseWeekStart
+                                ? '기준 주'
+                                : '클릭하여 복사 대상 토글'
+                              : `클릭=기준 주 지정 / 더블클릭=주차별 UI 로 이동`
+                          }
                         >
                           <div className="text-foreground-muted text-micro font-bold tracking-wider">
                             W{weekIdx}
@@ -403,6 +523,12 @@ export function MatrixView({
                           <div className="text-foreground text-micro mt-0.5 font-mono">
                             {ws.slice(5)}
                           </div>
+                          {baseWeekStart === ws && (
+                            <div className="text-accent text-micro mt-0.5 font-bold">기준</div>
+                          )}
+                          {repeatActive && repeatTargets.includes(ws) && (
+                            <div className="text-warn text-micro mt-0.5 font-bold">대상</div>
+                          )}
                         </button>
                       </td>
                     )}

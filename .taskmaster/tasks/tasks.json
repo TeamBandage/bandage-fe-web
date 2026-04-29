@@ -5298,8 +5298,9 @@
           "14",
           "17"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-29T14:19:57.431Z"
       },
       {
         "id": "22",
@@ -5372,9 +5373,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-29T14:18:05.582Z",
+      "lastModified": "2026-04-29T14:19:57.436Z",
       "taskCount": 26,
-      "completedCount": 22,
+      "completedCount": 23,
       "tags": [
         "schedule-v2"
       ]
