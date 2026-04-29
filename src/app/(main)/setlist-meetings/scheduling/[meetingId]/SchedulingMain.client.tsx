@@ -1,7 +1,7 @@
 'use client';
 
 import { CalendarDays, Clock3, Crown, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { UnderlineTabs } from '@/components/ui/underline-tabs';
@@ -10,6 +10,7 @@ import { ScheduleBoardList } from '@/domain/schedule-coordination/components/Sch
 import { DateRangeNav } from '@/domain/schedule-coordination/components/ViewUnitToggle.client';
 import { WeeklyScheduleGrid } from '@/domain/schedule-coordination/components/WeeklyScheduleGrid.client';
 import { useScheduleView } from '@/domain/schedule-coordination/hooks/useScheduleViewUnit';
+import { useBoardStore } from '@/domain/schedule-coordination/store/boardStore';
 import { useScheduleStore } from '@/domain/schedule-coordination/store/scheduleStore';
 import { useTimetableStore } from '@/domain/schedule-coordination/store/timetableStore';
 import type { ScheduleBlock } from '@/domain/schedule-coordination/types';
@@ -94,6 +95,23 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   });
   const { allDays, visibleDays, isInWindow, rangeLabel, compact } = view;
 
+  // 보드 선택 시 첫 블록의 주차로 자동 점프 — 빈 주차에 갇혀 길을 잃지 않도록.
+  const selectedBoard = useBoardStore((s) =>
+    rightPanel?.kind === 'board' ? s.boards[rightPanel.boardId] : null,
+  );
+  const selectedBoardId = rightPanel?.kind === 'board' ? rightPanel.boardId : null;
+  useEffect(() => {
+    if (!selectedBoard || selectedBoard.blocks.length === 0) return;
+    const earliest = selectedBoard.blocks.reduce(
+      (acc, b) =>
+        !acc || b.date < acc.date || (b.date === acc.date && b.startSlot < acc.startSlot) ? b : acc,
+      selectedBoard.blocks[0],
+    );
+    if (earliest) view.goToDate(earliest.date);
+    // 의도적으로 boardId 변경 시에만 실행 (블록 편집 시 매번 점프하면 사용자 네비를 덮어씀).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBoardId]);
+
   if (!meeting) {
     return (
       <div className="px-s-5 py-s-6">
@@ -115,8 +133,21 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
       <header className="border-border px-s-5 py-s-4 border-b">
-        <div className="text-accent text-caption font-semibold">{meeting.bandName}</div>
-        <h1 className="text-title-lg mt-s-1 font-bold">{meeting.title}</h1>
+        <div className="gap-s-3 flex items-start justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="text-accent text-caption font-semibold">{meeting.bandName}</div>
+            <h1 className="text-title-lg mt-s-1 truncate font-bold">{meeting.title}</h1>
+          </div>
+          {/* '나의 스케줄 입력' — 모든 탭에서 항상 같은 자리에 표시 → 헤더 높이 고정. */}
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => setScheduleOpen(true)}
+            className="shrink-0"
+          >
+            <Clock3 className="h-4 w-4" /> 나의 스케줄 입력
+          </Button>
+        </div>
         <div className="text-foreground-muted text-caption gap-s-3 mt-s-2 flex flex-wrap items-center">
           {window && (
             <span className="gap-s-1 inline-flex items-center">
@@ -163,13 +194,6 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
             }}
           />
         </div>
-        {leftTab === 'member' && (
-          <div className="mt-s-3 gap-s-2 flex flex-wrap items-center">
-            <Button size="sm" variant="primary" onClick={() => setScheduleOpen(true)}>
-              <Clock3 className="h-4 w-4" /> 나의 스케줄 입력
-            </Button>
-          </div>
-        )}
       </header>
 
       {/* 탭 영역 — 화면 전체 폭 사용. board 탭은 아래 영역 전체 활용. */}

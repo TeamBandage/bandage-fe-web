@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-import { addDays, enumerateDays, startOfWeek } from '../utils';
+import { addDays, enumerateDays, startOfWeek, toLocalISODate } from '../utils';
 
 interface UseScheduleViewOptions {
   from: string;
@@ -10,21 +10,16 @@ interface UseScheduleViewOptions {
 }
 
 export interface ScheduleViewState {
-  /** 회의 전체 가용 일자 (from~to inclusive). */
   allDays: string[];
-  /** compact=true: 1주 이내 → 모든 일자 단일 컬럼. compact=false: 1주 초과 → Mon-Sun 페이지네이션. */
   compact: boolean;
-  /** 현재 보이는 일자 컬럼들 (compact 시 allDays, week 시 7일). */
   visibleDays: string[];
-  /** 회의 가용 범위 안에 있는지 — UI 에서 disabled 처리. */
   isInWindow: (date: string) => boolean;
-  /** 현재 주차의 라벨 — 'YYYY-MM-DD (요일) ~ MM-DD (요일)' */
   rangeLabel: string;
-  /** week 모드에서만 활성. */
   prev: () => void;
   next: () => void;
   today: () => void;
-  /** week 모드의 anchor (현재 보이는 주의 월요일). */
+  /** 임의 일자가 속한 주차로 점프 (월요일로 스냅, 가용 범위 밖이면 클램프). */
+  goToDate: (date: string) => void;
   anchor: string;
   canPrev: boolean;
   canNext: boolean;
@@ -46,7 +41,7 @@ export function useScheduleView({ from, to }: UseScheduleViewOptions): ScheduleV
   }, [allDays]);
 
   const initialAnchor = useMemo(() => {
-    if (allDays.length === 0) return from || new Date().toISOString().slice(0, 10);
+    if (allDays.length === 0) return from || toLocalISODate(new Date());
     return startOfWeek(allDays[0]!);
   }, [allDays, from]);
   const [anchor, setAnchor] = useState(initialAnchor);
@@ -96,13 +91,25 @@ export function useScheduleView({ from, to }: UseScheduleViewOptions): ScheduleV
 
   const today = useCallback(() => {
     if (compact || allDays.length === 0) return;
-    const t = new Date().toISOString().slice(0, 10);
+    const t = toLocalISODate(new Date());
     if (allDaysSet.has(t)) {
       setAnchor(startOfWeek(t));
     } else {
       setAnchor(firstWeekStart);
     }
   }, [compact, allDays, allDaysSet, firstWeekStart]);
+
+  const goToDate = useCallback(
+    (date: string) => {
+      if (allDays.length === 0 || !date) return;
+      const target = startOfWeek(date);
+      // 가용 범위 밖이면 가까운 경계 주차로 클램프.
+      if (target < firstWeekStart) setAnchor(firstWeekStart);
+      else if (target > lastWeekStart) setAnchor(lastWeekStart);
+      else setAnchor(target);
+    },
+    [allDays, firstWeekStart, lastWeekStart],
+  );
 
   return {
     allDays,
@@ -113,6 +120,7 @@ export function useScheduleView({ from, to }: UseScheduleViewOptions): ScheduleV
     prev,
     next,
     today,
+    goToDate,
     anchor,
     canPrev: !compact && anchor > firstWeekStart,
     canNext: !compact && anchor < lastWeekStart,

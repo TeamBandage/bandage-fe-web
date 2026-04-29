@@ -1,6 +1,14 @@
 'use client';
 
-import { CheckCircle2, Download, GripVertical, Lock, RotateCcw } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronDown,
+  GripVertical,
+  Image as ImageIcon,
+  Info,
+  Lock,
+  RotateCcw,
+} from 'lucide-react';
 import { useMemo, useRef, useState, type DragEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -15,7 +23,7 @@ import { useTimetableStore } from '../store/timetableStore';
 import type { ScheduleBlock } from '../types';
 import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
 import { autoRescheduleAfterMove, computeValidDropSlots } from '../utils/autoReschedule';
-import { slotToTime } from '../utils';
+import { slotToTime, toLocalISODate } from '../utils';
 
 import { songTone } from './palette';
 import { ScheduleBlockPanel } from './ScheduleBlockPanel.client';
@@ -130,6 +138,26 @@ export function ScheduleBoardEditor({
     setValidDropSet(set);
   };
 
+  const setBlockDragImage = (e: DragEvent) => {
+    // 기본 drag image 는 element 의 absolute/grid 위치 + 형제 stacking 까지 포함되어
+    // "다른 블록 텍스트가 함께 따라옴" 현상을 유발. 현재 타깃만 clone 해서 드래그 이미지로 사용.
+    const el = e.currentTarget as HTMLElement;
+    const rect = el.getBoundingClientRect();
+    const ghost = el.cloneNode(true) as HTMLElement;
+    ghost.style.position = 'fixed';
+    ghost.style.top = '-9999px';
+    ghost.style.left = '-9999px';
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.height = `${rect.height}px`;
+    ghost.style.pointerEvents = 'none';
+    ghost.style.opacity = '0.9';
+    ghost.style.transform = 'none';
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, rect.width / 2, rect.height / 2);
+    // dragend 후 정리.
+    setTimeout(() => ghost.remove(), 0);
+  };
+
   const onPoolDragStart = (song: SongLite) => (e: DragEvent) => {
     const data: DragData = {
       kind: 'pool',
@@ -138,6 +166,7 @@ export function ScheduleBoardEditor({
     };
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(data));
     e.dataTransfer.effectAllowed = 'copy';
+    setBlockDragImage(e);
     startDragWith(data);
   };
 
@@ -150,6 +179,7 @@ export function ScheduleBoardEditor({
     };
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(data));
     e.dataTransfer.effectAllowed = 'move';
+    setBlockDragImage(e);
     startDragWith(data);
   };
 
@@ -312,18 +342,15 @@ export function ScheduleBoardEditor({
                 );
               })}
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={exportApi.exporting || board.blocks.length === 0}
-              onClick={() => {
-                const stamp = new Date().toISOString().slice(0, 10);
-                exportApi.exportJpeg(`${board.name}_${stamp}`);
+            <ExportMenu
+              boardName={board.name}
+              disabled={board.blocks.length === 0}
+              exporting={exportApi.exporting}
+              onExport={(fmt) => {
+                const stamp = toLocalISODate(new Date());
+                exportApi.exportImage(`${board.name}_${stamp}`, fmt);
               }}
-              aria-label="JPEG 저장"
-            >
-              {exportApi.exporting ? <Spinner /> : <Download className="h-4 w-4" />}
-            </Button>
+            />
             {board.confirmed ? (
               <Button
                 size="sm"
@@ -350,10 +377,17 @@ export function ScheduleBoardEditor({
         <WorkingHoursPanel boardId={boardId} />
 
         {undoSnapshot && (
-          <div className="bg-warn-dim border-warn px-s-3 py-s-2 gap-s-2 flex items-center rounded-md border">
-            <span className="text-caption text-warn flex-1 font-bold">
-              자동 재배치가 적용되었습니다.
-            </span>
+          <div className="bg-warn-dim border-warn px-s-3 py-s-2 gap-s-2 flex items-start rounded-md border">
+            <Info className="text-warn mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex-1">
+              <div className="text-caption text-warn font-bold">자동 재배치가 적용되었습니다</div>
+              <div className="text-foreground-sub text-micro mt-0.5 leading-relaxed">
+                옮긴 블록과 겹치는 다른 블록을 가까운 빈 시간대로 자동 이동시켰습니다.
+                <br />
+                · 이동 우선순위: 같은 날의 더 늦은 시간 → 다음 날 → (없으면) 이전 날
+                <br />· Working Hours 범위 밖, 잠금된 블록은 이동 대상에서 제외됩니다.
+              </div>
+            </div>
             <Button
               size="sm"
               variant="ghost"
@@ -472,6 +506,63 @@ export function ScheduleBoardEditor({
             />
           );
         })()}
+    </div>
+  );
+}
+
+function ExportMenu({
+  boardName,
+  disabled,
+  exporting,
+  onExport,
+}: {
+  boardName: string;
+  disabled: boolean;
+  exporting: boolean;
+  onExport: (fmt: 'png' | 'jpeg') => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={disabled || exporting}
+        onClick={() => setOpen((v) => !v)}
+        aria-label={`${boardName} 이미지 저장`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {exporting ? <Spinner /> : <ImageIcon className="h-4 w-4" />}
+        <ChevronDown className="h-3 w-3" />
+      </Button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="bg-surface border-border absolute right-0 z-40 mt-1 w-40 rounded-md border shadow-xl">
+            <button
+              type="button"
+              onClick={() => {
+                onExport('png');
+                setOpen(false);
+              }}
+              className="text-caption hover:bg-card px-s-3 py-s-2 flex w-full items-center gap-2 font-bold"
+            >
+              PNG (무손실)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onExport('jpeg');
+                setOpen(false);
+              }}
+              className="text-caption text-foreground-muted hover:bg-card px-s-3 py-s-2 flex w-full items-center gap-2"
+            >
+              JPEG (저용량)
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
