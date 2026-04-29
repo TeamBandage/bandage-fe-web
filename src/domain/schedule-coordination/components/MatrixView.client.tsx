@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
 import { useMatrixLockStore, type LockedSlot } from '../store/matrixLockStore';
+import { useScheduleViewStore } from '../store/scheduleViewStore';
 import type { MemberSchedule } from '../types';
 import { dayOfWeek, isHoliday, slotToTime, startOfWeek } from '../utils';
 import { buildCoverageHeatmap, coverageRatio } from '../utils/coverageHeatmap';
@@ -16,10 +17,7 @@ import { reflowMatrixLocks } from '../utils/reflowMatrixLocks';
 import type { Member } from '@/domain/setlist-meeting/types';
 
 import { songTone } from './palette';
-
-/** 09:00 ~ 23:00 — 28 슬롯 */
-const SLOT_FROM = 18;
-const SLOT_TO = 46;
+import { RANGE_PRESETS, DEFAULT_RANGE_PRESET } from './rangePresets';
 const DEFAULT_BLOCK_SLOTS = 2; // 1h
 const DOW_LABEL = ['일', '월', '화', '수', '목', '금', '토'] as const;
 const DRAG_MIME = 'application/x-bandage-block';
@@ -72,6 +70,13 @@ export function MatrixView({
   const [poolDrag, setPoolDrag] = useState<DragData | null>(null);
   const [poolDropHover, setPoolDropHover] = useState<CellRef | null>(null);
   const toast = useToast();
+
+  /** 표출 시간 프리셋 — 주차별 UI 와 공유. 변경 시 즉시 반영. */
+  const rangePreset = useScheduleViewStore(
+    (s) => s.rangePresetByMeeting[meetingId] ?? DEFAULT_RANGE_PRESET,
+  );
+  const SLOT_FROM = RANGE_PRESETS[rangePreset].start;
+  const SLOT_TO = RANGE_PRESETS[rangePreset].end;
 
   const locksByMeeting = useMatrixLockStore((s) => s.locksByMeeting);
   const locks = useMemo(() => locksByMeeting[meetingId] ?? [], [locksByMeeting, meetingId]);
@@ -138,11 +143,10 @@ export function MatrixView({
       return clean ? 'bg-accent-soft' : 'bg-warn/15';
     }
     const r = ratio(date, slot);
-    // 단색계열(success 초록) 5단계 — 옅은→진한 으로 가용 비율 표현.
+    // 단색(success 초록) 4단계 + 0/full — 명도 격차를 키워 한눈에 비교 가능.
     if (r === 0) return 'bg-card';
-    if (r < 0.25) return 'bg-success/15';
-    if (r < 0.5) return 'bg-success/35';
-    if (r < 0.8) return 'bg-success/55';
+    if (r < 0.34) return 'bg-success/20';
+    if (r < 0.67) return 'bg-success/45';
     if (r < 1) return 'bg-success/75';
     return 'bg-success';
   };
@@ -481,9 +485,9 @@ export function MatrixView({
 function Legend() {
   const items = [
     { label: '전원', tone: 'bg-success' },
-    { label: '80%↑', tone: 'bg-success/75' },
-    { label: '50%↑', tone: 'bg-success/55' },
-    { label: '소수', tone: 'bg-success/35' },
+    { label: '67%↑', tone: 'bg-success/75' },
+    { label: '34%↑', tone: 'bg-success/45' },
+    { label: '소수', tone: 'bg-success/20' },
   ] as const;
   return (
     <ul className="gap-s-3 flex flex-wrap items-center">

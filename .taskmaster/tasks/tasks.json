@@ -5281,8 +5281,9 @@
         "dependencies": [
           "15"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-29T14:07:21.291Z"
       },
       {
         "id": "21",
@@ -5336,8 +5337,9 @@
         "dependencies": [
           "16"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-29T14:07:27.165Z"
       },
       {
         "id": "25",
@@ -5367,9 +5369,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-29T14:03:01.136Z",
+      "lastModified": "2026-04-29T14:07:27.171Z",
       "taskCount": 26,
-      "completedCount": 17,
+      "completedCount": 19,
       "tags": [
         "schedule-v2"
       ]

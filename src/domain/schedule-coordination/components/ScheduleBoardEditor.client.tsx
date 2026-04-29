@@ -18,6 +18,7 @@ import { cn } from '@/lib/cn';
 
 import { useScheduleExport } from '../hooks/useScheduleExport';
 import { useBoardStore } from '../store/boardStore';
+import { useScheduleViewStore } from '../store/scheduleViewStore';
 import { useTimetableStore } from '../store/timetableStore';
 import type { ScheduleBlock } from '../types';
 import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
@@ -25,6 +26,7 @@ import { autoRescheduleAfterMove, computeValidDropSlots } from '../utils/autoRes
 import { slotToTime, toLocalISODate } from '../utils';
 
 import { songTone } from './palette';
+import { RANGE_PRESETS, type RangePreset, DEFAULT_RANGE_PRESET } from './rangePresets';
 import { ScheduleBlockPanel } from './ScheduleBlockPanel.client';
 import { DateRangeNav } from './ViewUnitToggle.client';
 import { WeeklyScheduleGrid } from './WeeklyScheduleGrid.client';
@@ -55,12 +57,6 @@ interface Props {
   songPool: SongLite[];
   defaultDurationSlots?: number;
 }
-
-const RANGE_PRESETS = {
-  '9-22': { start: 18, end: 44, label: '09-22' },
-  '24h': { start: 0, end: 48, label: '24h' },
-} as const;
-type RangePreset = keyof typeof RANGE_PRESETS;
 
 interface DragData {
   kind: 'pool' | 'block';
@@ -98,7 +94,11 @@ export function ScheduleBoardEditor({
   const [dragging, setDragging] = useState(false);
   const [validDropSet, setValidDropSet] = useState<Set<string>>(() => new Set());
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [rangePreset, setRangePreset] = useState<RangePreset>('9-22');
+  const meetingIdForRange = board?.meetingId ?? '';
+  const rangePreset = useScheduleViewStore(
+    (s) => s.rangePresetByMeeting[meetingIdForRange] ?? DEFAULT_RANGE_PRESET,
+  );
+  const setRangePreset = useScheduleViewStore((s) => s.setRangePreset);
   const exportApi = useScheduleExport<HTMLDivElement>();
   const slotStart = RANGE_PRESETS[rangePreset].start;
   const slotEnd = RANGE_PRESETS[rangePreset].end;
@@ -341,7 +341,7 @@ export function ScheduleBoardEditor({
                     type="button"
                     role="radio"
                     aria-checked={active}
-                    onClick={() => setRangePreset(p)}
+                    onClick={() => setRangePreset(meetingIdForRange, p)}
                     className={cn(
                       'text-micro px-s-2 rounded py-1 font-bold transition-colors',
                       active

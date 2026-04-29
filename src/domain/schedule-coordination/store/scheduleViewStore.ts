@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import type { RangePreset } from '../components/rangePresets';
+
 /**
  * 합주 일정 조율 v3 — 주차별 UI / 매트릭스가 공유하는 뷰 상태.
  * 회의 단위로 키잉. 의도적으로 persist 하지 않음 — 페이지 진입 시 초기화.
@@ -19,6 +21,8 @@ export interface ScheduleViewState {
   repeatTargetsByMeeting: Record<string, string[]>;
   /** 회의 → 주별 복제 모드 진입 여부. */
   repeatActiveByMeeting: Record<string, boolean>;
+  /** 회의 → 표출 시간 프리셋 ('9-22' | '24h'). 주차별/매트릭스 공유. */
+  rangePresetByMeeting: Record<string, RangePreset>;
 }
 
 interface ScheduleViewActions {
@@ -32,6 +36,7 @@ interface ScheduleViewActions {
   exitRepeatMode: (meetingId: string) => void;
   toggleRepeatTarget: (meetingId: string, weekStart: string) => void;
   clearRepeatTargets: (meetingId: string) => void;
+  setRangePreset: (meetingId: string, preset: RangePreset) => void;
   reset: () => void;
 }
 
@@ -42,6 +47,7 @@ export const useScheduleViewStore = create<ScheduleViewState & ScheduleViewActio
   hoveredCellByMeeting: {},
   repeatTargetsByMeeting: {},
   repeatActiveByMeeting: {},
+  rangePresetByMeeting: {},
 
   setMode: (meetingId, mode) =>
     set((s) => ({ modeByMeeting: { ...s.modeByMeeting, [meetingId]: mode } })),
@@ -92,6 +98,9 @@ export const useScheduleViewStore = create<ScheduleViewState & ScheduleViewActio
   clearRepeatTargets: (meetingId) =>
     set((s) => ({ repeatTargetsByMeeting: { ...s.repeatTargetsByMeeting, [meetingId]: [] } })),
 
+  setRangePreset: (meetingId, preset) =>
+    set((s) => ({ rangePresetByMeeting: { ...s.rangePresetByMeeting, [meetingId]: preset } })),
+
   reset: () =>
     set({
       modeByMeeting: {},
@@ -100,5 +109,6 @@ export const useScheduleViewStore = create<ScheduleViewState & ScheduleViewActio
       hoveredCellByMeeting: {},
       repeatTargetsByMeeting: {},
       repeatActiveByMeeting: {},
+      rangePresetByMeeting: {},
     }),
 }));
