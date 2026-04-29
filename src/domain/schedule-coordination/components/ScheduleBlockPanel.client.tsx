@@ -19,11 +19,19 @@ interface Props {
   block: ScheduleBlock;
   songTitle: string;
   paletteSeed: number;
+  /** 저장 — Editor 에서 auto-reschedule + undo snapshot 처리 후 store 갱신. */
+  onSave: (updated: ScheduleBlock) => void;
   onClose: () => void;
 }
 
-export function ScheduleBlockPanel({ boardId, block, songTitle, paletteSeed, onClose }: Props) {
-  const upsertBlock = useBoardStore((s) => s.upsertBlock);
+export function ScheduleBlockPanel({
+  boardId,
+  block,
+  songTitle,
+  paletteSeed,
+  onSave,
+  onClose,
+}: Props) {
   const removeBlock = useBoardStore((s) => s.removeBlock);
   const togglePin = useBoardStore((s) => s.togglePin);
 
@@ -41,7 +49,7 @@ export function ScheduleBlockPanel({ boardId, block, songTitle, paletteSeed, onC
   const tone = songTone(block.songId, paletteSeed);
 
   const save = () => {
-    upsertBlock(boardId, {
+    onSave({
       ...block,
       songTitleOverride: titleOverride.trim() || undefined,
       note: note.trim() || undefined,

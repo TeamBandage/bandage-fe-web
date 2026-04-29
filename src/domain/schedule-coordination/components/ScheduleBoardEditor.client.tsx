@@ -5,7 +5,6 @@ import {
   ChevronDown,
   GripVertical,
   Image as ImageIcon,
-  Info,
   Lock,
   RotateCcw,
 } from 'lucide-react';
@@ -183,6 +182,35 @@ export function ScheduleBoardEditor({
     startDragWith(data);
   };
 
+  /** 블록 변경(이동/길이/메모 등) 적용 — auto-reschedule + undo snapshot 처리. */
+  const applyBlockUpdate = (updated: ScheduleBlock) => {
+    const cur = board.blocks.find((b) => b.blockId === updated.blockId);
+    if (!cur) return;
+    const nextBlocks = board.blocks.map((b) => (b.blockId === updated.blockId ? updated : b));
+    const constraints = board.constraints ?? DEFAULT_BOARD_CONSTRAINTS;
+    const datesPool = Array.from(
+      new Set(board.blocks.map((b) => b.date).concat(updated.date)),
+    ).sort();
+    const reflowed = autoRescheduleAfterMove({
+      blocks: nextBlocks,
+      anchorBlockId: updated.blockId,
+      constraints,
+      availableDates: datesPool,
+    });
+    if (!reflowed) {
+      toast.error('Working Hours 또는 잠금 충돌로 재배치 불가.');
+      return;
+    }
+    // 변경 전후 동일하면(메모만 수정 등) 스냅샷 생략.
+    const movedSomeOther = reflowed.some((r) => {
+      if (r.blockId === updated.blockId) return false;
+      const before = board.blocks.find((b) => b.blockId === r.blockId);
+      return !before || before.date !== r.date || before.startSlot !== r.startSlot;
+    });
+    if (movedSomeOther) setUndoSnapshot(board.blocks);
+    replaceBlocks(boardId, reflowed);
+  };
+
   const onDragEnd = () => {
     dragRef.current = null;
     setHoverSlot(null);
@@ -215,23 +243,7 @@ export function ScheduleBoardEditor({
       const cur = board.blocks.find((b) => b.blockId === data.blockId);
       if (!cur) return;
       if (cur.pinned) return;
-      const nextBlocks = board.blocks.map((b) =>
-        b.blockId === data.blockId ? { ...b, date, startSlot: slot } : b,
-      );
-      const constraints = board.constraints ?? DEFAULT_BOARD_CONSTRAINTS;
-      const datesPool = Array.from(new Set(board.blocks.map((b) => b.date).concat(date))).sort();
-      const reflowed = autoRescheduleAfterMove({
-        blocks: nextBlocks,
-        anchorBlockId: data.blockId,
-        constraints,
-        availableDates: datesPool,
-      });
-      if (!reflowed) {
-        toast.error('Working Hours 또는 잠금 충돌로 재배치 불가.');
-        return;
-      }
-      setUndoSnapshot(board.blocks);
-      replaceBlocks(boardId, reflowed);
+      applyBlockUpdate({ ...cur, date, startSlot: slot });
       return;
     }
     const newBlock: ScheduleBlock = {
@@ -377,17 +389,10 @@ export function ScheduleBoardEditor({
         <WorkingHoursPanel boardId={boardId} />
 
         {undoSnapshot && (
-          <div className="bg-warn-dim border-warn px-s-3 py-s-2 gap-s-2 flex items-start rounded-md border">
-            <Info className="text-warn mt-0.5 h-4 w-4 shrink-0" />
-            <div className="flex-1">
-              <div className="text-caption text-warn font-bold">자동 재배치가 적용되었습니다</div>
-              <div className="text-foreground-sub text-micro mt-0.5 leading-relaxed">
-                옮긴 블록과 겹치는 다른 블록을 가까운 빈 시간대로 자동 이동시켰습니다.
-                <br />
-                · 이동 우선순위: 같은 날의 더 늦은 시간 → 다음 날 → (없으면) 이전 날
-                <br />· Working Hours 범위 밖, 잠금된 블록은 이동 대상에서 제외됩니다.
-              </div>
-            </div>
+          <div className="bg-warn-dim border-warn px-s-3 py-s-2 gap-s-2 flex items-center rounded-md border">
+            <span className="text-caption text-warn flex-1 font-bold">
+              자동 재배치가 적용되었습니다.
+            </span>
             <Button
               size="sm"
               variant="ghost"
@@ -502,6 +507,7 @@ export function ScheduleBoardEditor({
               block={sel}
               songTitle={songMap.get(sel.songId)?.title ?? '곡'}
               paletteSeed={board.paletteSeed}
+              onSave={applyBlockUpdate}
               onClose={() => setSelectedBlockId(null)}
             />
           );
