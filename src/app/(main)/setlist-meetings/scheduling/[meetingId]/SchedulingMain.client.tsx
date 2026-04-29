@@ -118,6 +118,24 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
     rightPanel?.kind === 'board' ? s.boards[rightPanel.boardId] : null,
   );
   const selectedBoardId = rightPanel?.kind === 'board' ? rightPanel.boardId : null;
+
+  // 회의 선택 시 추천 시간표가 하나라도 있으면 항상 한 개는 선택 상태로 유지.
+  // 무한 루프 방지: boards dict 를 stable ref 로 select 하고 useMemo 로 파생.
+  const allBoards = useBoardStore((s) => s.boards);
+  const meetingBoards = useMemo(
+    () => Object.values(allBoards).filter((b) => b.meetingId === meetingId),
+    [allBoards, meetingId],
+  );
+  useEffect(() => {
+    if (!isManager) return;
+    if (meetingBoards.length === 0) return;
+    // 이미 이 회의의 보드가 선택돼 있다면 유지.
+    if (rightPanel?.kind === 'board' && meetingBoards.some((b) => b.boardId === rightPanel.boardId))
+      return;
+    // 그 외 (선택 없음 / 다른 회의 보드 / 다른 종류) → 첫 보드 자동 선택.
+    const first = meetingBoards[0]!;
+    setRightPanel({ kind: 'board', boardId: first.boardId });
+  }, [isManager, meetingBoards, rightPanel]);
   useEffect(() => {
     if (!selectedBoard || selectedBoard.blocks.length === 0) return;
     const earliest = selectedBoard.blocks.reduce(
