@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { UnderlineTabs } from '@/components/ui/underline-tabs';
+import { MatrixView } from '@/domain/schedule-coordination/components/MatrixView.client';
 import { ScheduleBoardEditor } from '@/domain/schedule-coordination/components/ScheduleBoardEditor.client';
 import { ScheduleBoardList } from '@/domain/schedule-coordination/components/ScheduleBoardList.client';
 import { DateRangeNav } from '@/domain/schedule-coordination/components/ViewUnitToggle.client';
@@ -25,7 +26,7 @@ import { cn } from '@/lib/cn';
 
 import { ScheduleInputModal } from './ScheduleInputModal.client';
 
-type LeftTab = 'member' | 'song' | 'board';
+type LeftTab = 'matrix' | 'member' | 'song' | 'board';
 type SongFilter = 'mine' | 'all';
 type RightPanel =
   | { kind: 'member'; member: Member }
@@ -63,6 +64,9 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   );
 
   const [leftTab, setLeftTab] = useState<LeftTab>('member');
+  // 매니저 권한이 사라진 경우 매트릭스/board 탭은 멤버 시간표로 대체.
+  const safeLeftTab: LeftTab =
+    !isManager && (leftTab === 'matrix' || leftTab === 'board') ? 'member' : leftTab;
   const [songFilter, setSongFilter] = useState<SongFilter>('mine');
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [rightPanel, setRightPanel] = useState<RightPanel>(null);
@@ -125,6 +129,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   ).length;
 
   const tabItems = [
+    ...(isManager ? [{ id: 'matrix' as const, label: '매트릭스' }] : []),
     { id: 'member' as const, label: '멤버 시간표', badge: participants.length },
     { id: 'song' as const, label: '합주곡 시간표', badge: visibleSongs.length },
     ...(isManager ? [{ id: 'board' as const, label: '합주 시간표 생성' }] : []),
@@ -199,7 +204,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
       {/* 탭 영역 — 화면 전체 폭 사용. board 탭은 아래 영역 전체 활용. */}
       <div className="px-s-4 pt-s-3 border-border bg-surface border-b">
         <UnderlineTabs
-          value={leftTab}
+          value={safeLeftTab}
           onChange={(t) => {
             setLeftTab(t);
             // 탭 전환 시 좌측 선택 종류와 우측 패널이 어긋나지 않도록 정리.
@@ -208,6 +213,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               if (t === 'member' && cur.kind !== 'member') return null;
               if (t === 'song' && cur.kind !== 'song') return null;
               if (t === 'board' && cur.kind !== 'board') return null;
+              if (t === 'matrix') return null;
               return cur;
             });
           }}
@@ -215,7 +221,16 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
         />
       </div>
 
-      {leftTab === 'board' && isManager ? (
+      {safeLeftTab === 'matrix' && isManager ? (
+        <div className="bg-bg flex flex-1 overflow-hidden p-3">
+          <MatrixView
+            meetingId={meetingId}
+            allDays={allDays}
+            participants={participants}
+            memberSchedules={memberSchedules}
+          />
+        </div>
+      ) : safeLeftTab === 'board' && isManager ? (
         <div className="bg-bg flex flex-1 overflow-hidden p-3">
           {/* 좌측: 시안 카드 리스트 — 축소 */}
           <aside className="w-56 shrink-0 overflow-y-auto pr-3">
@@ -267,7 +282,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
           <section className="border-border flex flex-col md:w-2/5 md:border-r">
             <div className="flex-1 overflow-y-auto" id={`tabpanel-${leftTab}`} role="tabpanel">
-              {leftTab === 'member' && (
+              {safeLeftTab === 'member' && (
                 <MemberListPane
                   participants={participants}
                   meetingId={meetingId}
@@ -276,7 +291,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                   onPick={(m) => setRightPanel({ kind: 'member', member: m })}
                 />
               )}
-              {leftTab === 'song' && (
+              {safeLeftTab === 'song' && (
                 <SongListPane
                   songs={visibleSongs}
                   filter={songFilter}
