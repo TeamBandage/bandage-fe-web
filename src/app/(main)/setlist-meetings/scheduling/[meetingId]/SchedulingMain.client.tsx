@@ -247,18 +247,45 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
 
           <div className="flex flex-1 overflow-hidden p-3">
             {viewMode === 'matrix' ? (
-              <MatrixView
-                meetingId={meetingId}
-                allDays={allDays}
-                participants={participants}
-                memberSchedules={memberSchedules}
-                songPool={editorSongPool}
-                songParticipantsMap={songParticipantsMap}
-                onWeekJump={(ws) => {
-                  setViewMode(meetingId, 'weekly');
-                  view.goToDate(ws);
-                }}
-              />
+              <>
+                {/* 좌측: 시안 카드 리스트 — 두 뷰 공통 고정 (PRD G2). */}
+                <aside className="w-56 shrink-0 overflow-y-auto pr-3">
+                  <ScheduleBoardList
+                    meetingId={meetingId}
+                    selectedBoardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
+                    onSelect={(boardId) => setRightPanel({ kind: 'board', boardId })}
+                    generateRecommendations={() => {
+                      const weekDays = visibleDays.filter((d) => isInWindow(d));
+                      const scopeDates = weekDays.length > 0 ? weekDays : allDays;
+                      const variants = suggestScheduleBoards({
+                        schedules: memberSchedules,
+                        dates: scopeDates,
+                        songs: editorSongPool,
+                        variantCount: 3,
+                      });
+                      return variants.map((v, idx) =>
+                        v.blocks.map<ScheduleBlock>((b, i) => ({
+                          ...b,
+                          pinned: false,
+                          paletteIndex: idx * 100 + i,
+                        })),
+                      );
+                    }}
+                  />
+                </aside>
+                <MatrixView
+                  meetingId={meetingId}
+                  allDays={allDays}
+                  participants={participants}
+                  memberSchedules={memberSchedules}
+                  songPool={editorSongPool}
+                  songParticipantsMap={songParticipantsMap}
+                  onWeekJump={(ws) => {
+                    setViewMode(meetingId, 'weekly');
+                    view.goToDate(ws);
+                  }}
+                />
+              </>
             ) : (
               <>
                 {/* 좌측: 시안 카드 리스트 — 축소 */}

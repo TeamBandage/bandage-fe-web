@@ -4,6 +4,7 @@ import { Check, GripVertical, Info, Lock, Pin, Unlock, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type DragEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
@@ -75,6 +76,8 @@ export function MatrixView({
   const [poolDrag, setPoolDrag] = useState<DragData | null>(null);
   const [poolDropHover, setPoolDropHover] = useState<CellRef | null>(null);
   const [editLockId, setEditLockId] = useState<string | null>(null);
+  const [pendingDeleteLockId, setPendingDeleteLockId] = useState<string | null>(null);
+  const [pendingApplyAll, setPendingApplyAll] = useState(false);
   const toast = useToast();
 
   /** 표출 시간 프리셋 — 주차별 UI 와 공유. 변경 시 즉시 반영. */
@@ -371,29 +374,7 @@ export function MatrixView({
                   size="sm"
                   variant="secondary"
                   disabled={!baseWeekStart || weekRows.length < 2}
-                  onClick={() => {
-                    if (!baseWeekStart) return;
-                    const targets = weekRows.map(([ws]) => ws).filter((ws) => ws !== baseWeekStart);
-                    if (targets.length === 0) return;
-                    const result = copyWeekLocks({
-                      locks,
-                      meetingId,
-                      srcWeekStart: baseWeekStart,
-                      targetWeekStarts: targets,
-                      slotFrom: SLOT_FROM,
-                      slotTo: SLOT_TO,
-                      availableDates: allDays,
-                      newId: () =>
-                        `lock_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
-                      nowIso: () => new Date().toISOString(),
-                    });
-                    if (!result) {
-                      toast.error('자리 부족 — 일부 lock 을 정리한 뒤 다시 시도하세요.');
-                      return;
-                    }
-                    replaceLocks(meetingId, result);
-                    toast.success(`${targets.length}개 주차에 동일하게 복제`);
-                  }}
+                  onClick={() => setPendingApplyAll(true)}
                 >
                   모든 주차에 적용
                 </Button>
@@ -678,16 +659,59 @@ export function MatrixView({
                 replaceLocks(meetingId, reflowed);
                 toast.success('길이 변경 완료');
               }}
-              onDelete={() => {
-                removeLock(meetingId, editLock.id);
-                setEditLockId(null);
-                toast.success('합주 슬롯 삭제');
-              }}
+              onDelete={() => setPendingDeleteLockId(editLock.id)}
               onClose={() => setEditLockId(null)}
             />
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDeleteLockId !== null}
+        onOpenChange={(o) => !o && setPendingDeleteLockId(null)}
+        title="합주 슬롯 삭제"
+        description="이 슬롯을 삭제하시겠습니까? 되돌릴 수 없습니다."
+        confirmLabel="삭제"
+        tone="danger"
+        onConfirm={() => {
+          if (!pendingDeleteLockId) return;
+          removeLock(meetingId, pendingDeleteLockId);
+          setEditLockId(null);
+          setPendingDeleteLockId(null);
+          toast.success('합주 슬롯 삭제');
+        }}
+      />
+
+      <ConfirmDialog
+        open={pendingApplyAll}
+        onOpenChange={(o) => !o && setPendingApplyAll(false)}
+        title="모든 주차에 적용"
+        description="기준 주의 일정을 다른 모든 주차에 동일 위치로 복제합니다. 기존 일정은 자동 재배치(reflow)될 수 있습니다."
+        confirmLabel="적용"
+        onConfirm={() => {
+          if (!baseWeekStart) return;
+          const targets = weekRows.map(([ws]) => ws).filter((ws) => ws !== baseWeekStart);
+          if (targets.length === 0) return;
+          const result = copyWeekLocks({
+            locks,
+            meetingId,
+            srcWeekStart: baseWeekStart,
+            targetWeekStarts: targets,
+            slotFrom: SLOT_FROM,
+            slotTo: SLOT_TO,
+            availableDates: allDays,
+            newId: () =>
+              `lock_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
+            nowIso: () => new Date().toISOString(),
+          });
+          if (!result) {
+            toast.error('자리 부족 — 일부 lock 을 정리한 뒤 다시 시도하세요.');
+            return;
+          }
+          replaceLocks(meetingId, result);
+          toast.success(`${targets.length}개 주차에 동일하게 복제`);
+        }}
+      />
     </div>
   );
 }
