@@ -15,10 +15,12 @@ import { useTimetableStore } from '../store/timetableStore';
 import type { ScheduleBlock } from '../types';
 import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
 import { autoRescheduleAfterMove } from '../utils/autoReschedule';
-import { dayOfWeek, slotToTime } from '../utils';
+import { slotToTime } from '../utils';
 
 import { songTone } from './palette';
 import { ScheduleBlockPanel } from './ScheduleBlockPanel.client';
+import { DateRangeNav } from './ViewUnitToggle.client';
+import { WeeklyScheduleGrid } from './WeeklyScheduleGrid.client';
 import { WorkingHoursPanel } from './WorkingHoursPanel.client';
 
 const DRAG_MIME = 'application/x-bandage-block';
@@ -31,11 +33,19 @@ interface SongLite {
 
 interface Props {
   boardId: string;
-  /** Mon~Sun 7일 또는 단일 일자(day unit). */
+  /** 보이는 일자 컬럼들. */
   days: string[];
+  /** 회의 가용 일자에 속하는지. */
+  isInWindow?: (date: string) => boolean;
+  rangeLabel: string;
+  compact: boolean;
+  onPrev?: () => void;
+  onNext?: () => void;
+  onToday?: () => void;
+  canPrev?: boolean;
+  canNext?: boolean;
   /** 합주 블록 풀 — 확정 곡. */
   songPool: SongLite[];
-  /** 기본 블록 길이 (슬롯 단위). 30분 단위 스냅. */
   defaultDurationSlots?: number;
 }
 
@@ -52,11 +62,20 @@ interface DragData {
   durationSlots?: number;
 }
 
-const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
-const SLOT_HEIGHT = 22; // px — 단위 반 시간 셀 높이.
-const TIME_COL_WIDTH = 56;
-
-export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSlots = 4 }: Props) {
+export function ScheduleBoardEditor({
+  boardId,
+  days,
+  isInWindow,
+  rangeLabel,
+  compact,
+  onPrev,
+  onNext,
+  onToday,
+  canPrev,
+  canNext,
+  songPool,
+  defaultDurationSlots = 4,
+}: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
   const upsertBlock = useBoardStore((s) => s.upsertBlock);
   const replaceBlocks = useBoardStore((s) => s.replaceBlocks);
@@ -94,9 +113,6 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
   if (!board) {
     return <p className="text-foreground-muted text-caption">시안을 찾을 수 없습니다.</p>;
   }
-
-  const slotCount = slotEnd - slotStart;
-  const slots = Array.from({ length: slotCount }, (_, i) => slotStart + i);
 
   const onPoolDragStart = (song: SongLite) => (e: DragEvent) => {
     const data: DragData = {
@@ -179,73 +195,133 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
     upsertBlock(boardId, newBlock);
   };
 
-  // 그리드 컬럼 너비 — 셀 단위 동일 비율.
-  const gridStyle = {
-    gridTemplateColumns: `${TIME_COL_WIDTH}px repeat(${days.length}, minmax(80px, 1fr))`,
-    gridTemplateRows: `36px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
-  } as const;
+  const cellClassName = (date: string, slot: number, inWindow: boolean) => {
+    if (!inWindow) return undefined;
+    const isHover = hoverSlot && hoverSlot.date === date && hoverSlot.slot === slot;
+    if (isHover) return 'bg-accent-dim ring-accent ring-1';
+    if (dragging) return 'bg-accent-soft';
+    return undefined;
+  };
+
+  const overlay = (
+    <>
+      {days.map((d, dIdx) => {
+        const blocks = blocksByDate[d] ?? [];
+        return blocks
+          .filter((b) => b.startSlot >= slotStart && b.startSlot < slotEnd)
+          .map((b) => {
+            const tone = songTone(b.songId, board.paletteSeed);
+            const rowStart = b.startSlot - slotStart + 2;
+            const rowSpan = Math.min(b.durationSlots, slotEnd - b.startSlot);
+            return (
+              <button
+                key={b.blockId}
+                type="button"
+                draggable={!b.pinned}
+                onDragStart={onBlockDragStart(b)}
+                onDragEnd={onDragEnd}
+                onClick={() => setSelectedBlockId(b.blockId)}
+                className={cn(
+                  'm-0.5 cursor-grab overflow-hidden rounded px-1 py-0.5 text-left text-white shadow-sm transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98] active:cursor-grabbing',
+                  tone.bg,
+                )}
+                style={{
+                  gridRow: `${rowStart} / span ${rowSpan}`,
+                  gridColumn: dIdx + 2,
+                }}
+                title={`${songMap.get(b.songId)?.title ?? b.songId} ${slotToTime(b.startSlot)}~${slotToTime(b.startSlot + b.durationSlots)}`}
+              >
+                <div className="text-micro flex items-center gap-1 font-bold">
+                  {b.pinned && <Lock className="h-3 w-3 shrink-0" />}
+                  <span className="truncate">
+                    {b.songTitleOverride ?? songMap.get(b.songId)?.title ?? '곡'}
+                  </span>
+                </div>
+                {rowSpan >= 3 && (
+                  <div className="text-micro mt-0.5 font-mono opacity-80">
+                    {slotToTime(b.startSlot)}~{slotToTime(b.startSlot + b.durationSlots)}
+                  </div>
+                )}
+              </button>
+            );
+          });
+      })}
+    </>
+  );
 
   return (
     <div className="gap-s-3 flex h-full overflow-hidden">
       <div className="gap-s-3 flex h-full min-w-0 flex-1 flex-col">
-        <div className="gap-s-2 flex flex-wrap items-center justify-between">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={exportApi.exporting || board.blocks.length === 0}
-            onClick={() => {
-              const stamp = new Date().toISOString().slice(0, 10);
-              exportApi.exportJpeg(`${board.name}_${stamp}`);
-            }}
-          >
-            {exportApi.exporting ? <Spinner /> : <Download className="h-4 w-4" />}
-            JPEG 저장
-          </Button>
-          {board.confirmed ? (
+        {/* 상단: 현재 주차 라벨 (메인) + 보조 액션. */}
+        <div className="gap-s-3 flex flex-wrap items-center justify-between">
+          <DateRangeNav
+            rangeLabel={rangeLabel}
+            compact={compact}
+            onPrev={onPrev}
+            onNext={onNext}
+            onToday={onToday}
+            canPrev={canPrev}
+            canNext={canNext}
+          />
+          <div className="gap-s-2 flex items-center">
+            <div
+              role="radiogroup"
+              aria-label="시간 범위"
+              className="bg-card border-border inline-flex rounded-md border p-0.5"
+            >
+              {(Object.keys(RANGE_PRESETS) as RangePreset[]).map((p) => {
+                const active = p === rangePreset;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setRangePreset(p)}
+                    className={cn(
+                      'text-micro px-s-2 rounded py-1 font-bold transition-colors',
+                      active
+                        ? 'bg-accent text-bg shadow-sm'
+                        : 'text-foreground-muted hover:text-foreground',
+                    )}
+                  >
+                    {RANGE_PRESETS[p].label}
+                  </button>
+                );
+              })}
+            </div>
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setConfirmDialog('unconfirm')}
-              className="text-success"
+              disabled={exportApi.exporting || board.blocks.length === 0}
+              onClick={() => {
+                const stamp = new Date().toISOString().slice(0, 10);
+                exportApi.exportJpeg(`${board.name}_${stamp}`);
+              }}
+              aria-label="JPEG 저장"
             >
-              <RotateCcw className="h-4 w-4" /> 확정 해제
+              {exportApi.exporting ? <Spinner /> : <Download className="h-4 w-4" />}
             </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => setConfirmDialog('confirm')}
-              disabled={board.blocks.length === 0}
-              className="bg-success hover:bg-success/90 text-white"
-            >
-              <CheckCircle2 className="h-4 w-4" /> 이 시안으로 확정
-            </Button>
-          )}
-          <div
-            role="radiogroup"
-            aria-label="시간 범위"
-            className="bg-card border-border inline-flex rounded-md border p-0.5"
-          >
-            {(Object.keys(RANGE_PRESETS) as RangePreset[]).map((p) => {
-              const active = p === rangePreset;
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => setRangePreset(p)}
-                  className={cn(
-                    'text-micro px-s-2 rounded py-1 font-bold transition-colors',
-                    active
-                      ? 'bg-accent text-bg shadow-sm'
-                      : 'text-foreground-muted hover:text-foreground',
-                  )}
-                >
-                  {RANGE_PRESETS[p].label}
-                </button>
-              );
-            })}
+            {board.confirmed ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setConfirmDialog('unconfirm')}
+                className="text-success"
+              >
+                <RotateCcw className="h-4 w-4" /> 해제
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => setConfirmDialog('confirm')}
+                disabled={board.blocks.length === 0}
+                className="bg-success hover:bg-success/90 text-white"
+              >
+                <CheckCircle2 className="h-4 w-4" /> 확정
+              </Button>
+            )}
           </div>
         </div>
 
@@ -280,126 +356,21 @@ export function ScheduleBoardEditor({ boardId, days, songPool, defaultDurationSl
           </div>
         )}
 
-        <div
-          ref={exportApi.ref}
-          className="border-border bg-card flex-1 overflow-auto rounded-md border"
-        >
-          <div className="grid min-w-fit" style={gridStyle}>
-            {/* 좌상단 코너 */}
-            <div
-              className="bg-surface border-border sticky top-0 left-0 z-30 border-r border-b"
-              style={{ gridRow: 1, gridColumn: 1 }}
-            />
-
-            {/* 날짜 헤더 (col=2..) */}
-            {days.map((d, i) => {
-              const dow = dayOfWeek(d);
-              const isWeekend = dow === 0 || dow === 6;
-              return (
-                <div
-                  key={`h-${d}`}
-                  className={cn(
-                    'bg-surface border-border sticky top-0 z-20 border-b px-2 py-1 text-center font-mono',
-                    isWeekend && 'text-amber',
-                  )}
-                  style={{ gridRow: 1, gridColumn: i + 2 }}
-                >
-                  <div className="text-micro font-bold">{DOW_LABELS[dow]}</div>
-                  <div className="text-caption font-bold">{d.slice(5)}</div>
-                </div>
-              );
-            })}
-
-            {/* 시간 라벨 (row=2.., col=1) — 짝수 슬롯(정시) 만 라벨. */}
-            {slots.map((s, idx) => (
-              <div
-                key={`tl-${s}`}
-                className={cn(
-                  'bg-surface border-border sticky left-0 z-10 border-r px-1 text-right font-mono',
-                  idx === 0 && 'border-t-0',
-                )}
-                style={{
-                  gridRow: idx + 2,
-                  gridColumn: 1,
-                  lineHeight: `${SLOT_HEIGHT}px`,
-                }}
-              >
-                {s % 2 === 0 ? (
-                  <span className="text-foreground-muted text-micro">{slotToTime(s)}</span>
-                ) : null}
-              </div>
-            ))}
-
-            {/* 드롭 셀들 (row=2.., col=2..) */}
-            {slots.map((s, sIdx) =>
-              days.map((d, dIdx) => {
-                const isHover = hoverSlot && hoverSlot.date === d && hoverSlot.slot === s;
-                const isHourBoundary = s % 2 === 0;
-                return (
-                  <div
-                    key={`c-${d}-${s}`}
-                    onDragOver={onCellDragOver(d, s)}
-                    onDragLeave={() => setHoverSlot(null)}
-                    onDrop={onCellDrop(d, s)}
-                    className={cn(
-                      'border-border border-r transition-colors',
-                      isHourBoundary && 'border-t',
-                      dragging && 'bg-accent-soft',
-                      isHover && 'bg-accent-dim ring-accent ring-1',
-                    )}
-                    style={{ gridRow: sIdx + 2, gridColumn: dIdx + 2 }}
-                  />
-                );
-              }),
-            )}
-
-            {/* 블록 — 그리드 row span 으로 배치. */}
-            {days.map((d, dIdx) => {
-              const blocks = blocksByDate[d] ?? [];
-              return blocks
-                .filter((b) => b.startSlot >= slotStart && b.startSlot < slotEnd)
-                .map((b) => {
-                  const tone = songTone(b.songId, board.paletteSeed);
-                  const rowStart = b.startSlot - slotStart + 2;
-                  const rowSpan = Math.min(b.durationSlots, slotEnd - b.startSlot);
-                  return (
-                    <button
-                      key={b.blockId}
-                      type="button"
-                      draggable={!b.pinned}
-                      onDragStart={onBlockDragStart(b)}
-                      onDragEnd={onDragEnd}
-                      onClick={() => setSelectedBlockId(b.blockId)}
-                      className={cn(
-                        'm-0.5 cursor-grab overflow-hidden rounded px-1 py-0.5 text-left text-white shadow-sm transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98] active:cursor-grabbing',
-                        tone.bg,
-                      )}
-                      style={{
-                        gridRow: `${rowStart} / span ${rowSpan}`,
-                        gridColumn: dIdx + 2,
-                      }}
-                      title={`${songMap.get(b.songId)?.title ?? b.songId} ${slotToTime(b.startSlot)}~${slotToTime(b.startSlot + b.durationSlots)}`}
-                    >
-                      <div className="text-micro flex items-center gap-1 font-bold">
-                        {b.pinned && <Lock className="h-3 w-3 shrink-0" />}
-                        <span className="truncate">
-                          {b.songTitleOverride ?? songMap.get(b.songId)?.title ?? '곡'}
-                        </span>
-                      </div>
-                      {rowSpan >= 3 && (
-                        <div className="text-micro mt-0.5 font-mono opacity-80">
-                          {slotToTime(b.startSlot)}~{slotToTime(b.startSlot + b.durationSlots)}
-                        </div>
-                      )}
-                    </button>
-                  );
-                });
-            })}
-          </div>
-        </div>
+        <WeeklyScheduleGrid
+          days={days}
+          slotStart={slotStart}
+          slotEnd={slotEnd}
+          isInWindow={isInWindow}
+          onCellDragOver={onCellDragOver}
+          onCellDragLeave={() => setHoverSlot(null)}
+          onCellDrop={onCellDrop}
+          cellClassName={cellClassName}
+          gridRef={exportApi.ref}
+          overlay={overlay}
+        />
       </div>
 
-      {/* 우측 사이드 — 합주 블록 풀. 시간표 시안 카드와 동일 비중. */}
+      {/* 우측 사이드 — 합주 블록 풀. */}
       <aside className="bg-card border-border flex w-56 shrink-0 flex-col rounded-md border">
         <div className="border-border px-s-3 py-s-2 border-b">
           <div className="text-foreground-muted text-micro font-bold uppercase">

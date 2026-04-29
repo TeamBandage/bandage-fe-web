@@ -5,88 +5,63 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
 
-import type { ViewUnit } from '../utils';
-
-const UNIT_LABELS: Record<ViewUnit, string> = {
-  day: '일',
-  week: '주',
-  month: '월',
-};
-
-interface ViewUnitToggleProps {
-  unit: ViewUnit;
-  recommended?: ViewUnit;
-  onChange: (u: ViewUnit) => void;
+interface DateRangeNavProps {
+  rangeLabel: string;
+  compact: boolean;
   onPrev?: () => void;
   onNext?: () => void;
   onToday?: () => void;
-  /** 현재 뷰포트 라벨 — 'YYYY-MM-DD' 또는 'YYYY-MM' 등. */
-  anchorLabel?: string;
+  canPrev?: boolean;
+  canNext?: boolean;
   className?: string;
 }
 
 /**
- * Task 3 — 일/주/월 단위 토글 + 좌우 이동 + '오늘로' 단축.
- * 추천 단위와 다르면 'auto' 표시.
+ * 시간표 상단 — 현재 표시 일자/주차 라벨 + 좌/우/오늘 네비게이션.
+ * compact (≤ 7일) 일 때는 페이지네이션 버튼 숨김 — 전체 일자가 한 화면에 표시됨.
  */
-export function ViewUnitToggle({
-  unit,
-  recommended,
-  onChange,
+export function DateRangeNav({
+  rangeLabel,
+  compact,
   onPrev,
   onNext,
   onToday,
-  anchorLabel,
+  canPrev = true,
+  canNext = true,
   className,
-}: ViewUnitToggleProps) {
-  const units: ViewUnit[] = ['day', 'week', 'month'];
+}: DateRangeNavProps) {
   return (
-    <div className={cn('gap-s-2 flex flex-wrap items-center', className)}>
-      <div
-        role="radiogroup"
-        aria-label="시각화 단위"
-        className="bg-card border-border inline-flex rounded-md border p-0.5"
-      >
-        {units.map((u) => {
-          const active = u === unit;
-          return (
-            <button
-              key={u}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onChange(u)}
-              className={cn(
-                'text-micro px-s-2 rounded py-1 font-bold transition-colors',
-                active
-                  ? 'bg-accent text-bg shadow-sm'
-                  : 'text-foreground-muted hover:text-foreground',
-              )}
-            >
-              {UNIT_LABELS[u]}
-            </button>
-          );
-        })}
-      </div>
-      {recommended && recommended !== unit && (
-        <span className="text-foreground-muted text-micro">추천 {UNIT_LABELS[recommended]}</span>
-      )}
-      <div className="gap-s-1 flex items-center">
-        <Button size="sm" variant="ghost" onClick={onPrev} aria-label="이전">
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        {anchorLabel && (
-          <span className="text-foreground text-caption px-s-2 font-mono font-bold">
-            {anchorLabel}
-          </span>
+    <div className={cn('gap-s-3 flex flex-wrap items-center', className)}>
+      <div className="text-foreground gap-s-2 flex items-center text-base font-bold tabular-nums">
+        {!compact && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onPrev}
+            disabled={!canPrev}
+            aria-label="이전 주차"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
         )}
-        <Button size="sm" variant="ghost" onClick={onNext} aria-label="다음">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        <span className="text-foreground">{rangeLabel}</span>
+        {!compact && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onNext}
+            disabled={!canNext}
+            aria-label="다음 주차"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      {!compact && (
         <Button size="sm" variant="ghost" onClick={onToday}>
           오늘
         </Button>
-      </div>
+      )}
     </div>
   );
 }

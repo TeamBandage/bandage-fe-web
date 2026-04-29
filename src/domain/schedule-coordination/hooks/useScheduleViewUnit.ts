@@ -2,109 +2,118 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-import { addDays, getViewUnit, startOfWeek, type ViewUnit } from '../utils';
+import { addDays, enumerateDays, startOfWeek } from '../utils';
 
-interface UseScheduleViewUnitOptions {
+interface UseScheduleViewOptions {
   from: string;
   to: string;
-  /** 사용자 오버라이드 시 자동 추천 무시. */
-  initialUnit?: ViewUnit;
-  /** 기준 날짜 (default: 오늘). */
-  initialAnchor?: string;
 }
 
-export interface ScheduleViewUnitState {
-  /** 자동 추천 단위 — 기간 길이 기반. */
-  recommended: ViewUnit;
-  /** 현재 적용 단위 (사용자 오버라이드 우선). */
-  unit: ViewUnit;
-  /** 사용자가 강제 변경했는지 — 기간이 바뀌어도 유지. */
-  overridden: boolean;
-  setUnit: (u: ViewUnit) => void;
-  resetUnit: () => void;
-  /** 현재 뷰포트 시작일 (단위에 따라 day/week/month 시작점). */
-  anchor: string;
-  setAnchor: (d: string) => void;
-  /** 좌/우 이동 (단위만큼). */
+export interface ScheduleViewState {
+  /** 회의 전체 가용 일자 (from~to inclusive). */
+  allDays: string[];
+  /** compact=true: 1주 이내 → 모든 일자 단일 컬럼. compact=false: 1주 초과 → Mon-Sun 페이지네이션. */
+  compact: boolean;
+  /** 현재 보이는 일자 컬럼들 (compact 시 allDays, week 시 7일). */
+  visibleDays: string[];
+  /** 회의 가용 범위 안에 있는지 — UI 에서 disabled 처리. */
+  isInWindow: (date: string) => boolean;
+  /** 현재 주차의 라벨 — 'YYYY-MM-DD (요일) ~ MM-DD (요일)' */
+  rangeLabel: string;
+  /** week 모드에서만 활성. */
   prev: () => void;
   next: () => void;
-  /** '오늘로' 점프. */
   today: () => void;
+  /** week 모드의 anchor (현재 보이는 주의 월요일). */
+  anchor: string;
+  canPrev: boolean;
+  canNext: boolean;
 }
 
-function todayString(): string {
-  return new Date().toISOString().slice(0, 10);
+const DOW = ['일', '월', '화', '수', '목', '금', '토'] as const;
+function fmt(d: string): string {
+  const dow = new Date(`${d}T00:00:00`).getDay();
+  return `${d.slice(5)} (${DOW[dow]})`;
 }
 
-function clampToRange(date: string, from: string, to: string): string {
-  if (date < from) return from;
-  if (date > to) return to;
-  return date;
-}
+export function useScheduleView({ from, to }: UseScheduleViewOptions): ScheduleViewState {
+  const allDays = useMemo(() => enumerateDays(from, to), [from, to]);
+  const compact = allDays.length > 0 && allDays.length <= 7;
 
-function snapToUnit(date: string, unit: ViewUnit): string {
-  if (unit === 'week') return startOfWeek(date);
-  if (unit === 'month') return `${date.slice(0, 7)}-01`;
-  return date;
-}
+  const initialAnchor = useMemo(() => {
+    if (allDays.length === 0) return from || new Date().toISOString().slice(0, 10);
+    if (compact) return allDays[0]!;
+    return startOfWeek(allDays[0]!);
+  }, [allDays, compact, from]);
+  const [anchor, setAnchor] = useState(initialAnchor);
 
-export function useScheduleViewUnit({
-  from,
-  to,
-  initialUnit,
-  initialAnchor,
-}: UseScheduleViewUnitOptions): ScheduleViewUnitState {
-  const recommended = useMemo<ViewUnit>(() => getViewUnit(from, to), [from, to]);
-  const [overrideUnit, setOverrideUnit] = useState<ViewUnit | null>(initialUnit ?? null);
-  const unit = overrideUnit ?? recommended;
+  const visibleDays = useMemo(() => {
+    if (compact) return allDays;
+    if (allDays.length === 0) return [];
+    return Array.from({ length: 7 }, (_, i) => addDays(anchor, i));
+  }, [compact, allDays, anchor]);
 
-  const [anchor, setAnchorRaw] = useState<string>(() => {
-    const base = initialAnchor ?? todayString();
-    return snapToUnit(clampToRange(base, from, to), unit);
-  });
+  const allDaysSet = useMemo(() => new Set(allDays), [allDays]);
+  const isInWindow = useCallback((d: string) => allDaysSet.has(d), [allDaysSet]);
 
-  const setAnchor = useCallback(
-    (d: string) => setAnchorRaw(snapToUnit(clampToRange(d, from, to), unit)),
-    [from, to, unit],
-  );
+  const rangeLabel = useMemo(() => {
+    if (visibleDays.length === 0) return '';
+    if (compact) {
+      return visibleDays.map(fmt).join(', ');
+    }
+    const first = visibleDays[0]!;
+    const last = visibleDays[visibleDays.length - 1]!;
+    const ym = first.slice(0, 4);
+    return `${ym}-${fmt(first)} ~ ${fmt(last)}`;
+  }, [visibleDays, compact]);
 
-  const setUnit = useCallback(
-    (u: ViewUnit) => {
-      setOverrideUnit(u);
-      setAnchorRaw((a) => snapToUnit(clampToRange(a, from, to), u));
-    },
-    [from, to],
-  );
+  const lastWeekStart = useMemo(() => {
+    if (compact || allDays.length === 0) return anchor;
+    return startOfWeek(allDays[allDays.length - 1]!);
+  }, [compact, allDays, anchor]);
 
-  const resetUnit = useCallback(() => setOverrideUnit(null), []);
-
-  // 모든 unit 의 좌/우 이동을 1주(7일) 단위로 통일.
-  // day = 단일 컬럼이지만 prev/next 시 1주씩 점프해 같은 요일 이동.
-  // month = 1주씩 페이지네이션 (이전/다음 버튼으로 월 내부 이동).
-  const step = unit === 'day' ? 1 : 7;
+  const firstWeekStart = useMemo(() => {
+    if (compact || allDays.length === 0) return anchor;
+    return startOfWeek(allDays[0]!);
+  }, [compact, allDays, anchor]);
 
   const prev = useCallback(() => {
-    setAnchorRaw((a) => clampToRange(addDays(a, -step), from, to));
-  }, [from, to, step]);
+    if (compact) return;
+    setAnchor((a) => {
+      const next = addDays(a, -7);
+      return next < firstWeekStart ? a : next;
+    });
+  }, [compact, firstWeekStart]);
 
   const next = useCallback(() => {
-    setAnchorRaw((a) => clampToRange(addDays(a, step), from, to));
-  }, [from, to, step]);
+    if (compact) return;
+    setAnchor((a) => {
+      const next = addDays(a, 7);
+      return next > lastWeekStart ? a : next;
+    });
+  }, [compact, lastWeekStart]);
 
   const today = useCallback(() => {
-    setAnchorRaw(snapToUnit(clampToRange(todayString(), from, to), unit));
-  }, [from, to, unit]);
+    if (compact || allDays.length === 0) return;
+    const t = new Date().toISOString().slice(0, 10);
+    if (allDaysSet.has(t)) {
+      setAnchor(startOfWeek(t));
+    } else {
+      setAnchor(firstWeekStart);
+    }
+  }, [compact, allDays, allDaysSet, firstWeekStart]);
 
   return {
-    recommended,
-    unit,
-    overridden: overrideUnit !== null,
-    setUnit,
-    resetUnit,
-    anchor,
-    setAnchor,
+    allDays,
+    compact,
+    visibleDays,
+    isInWindow,
+    rangeLabel,
     prev,
     next,
     today,
+    anchor,
+    canPrev: !compact && anchor > firstWeekStart,
+    canNext: !compact && anchor < lastWeekStart,
   };
 }

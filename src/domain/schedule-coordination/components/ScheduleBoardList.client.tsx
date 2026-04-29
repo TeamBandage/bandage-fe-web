@@ -1,6 +1,18 @@
 'use client';
 
-import { CheckCircle2, Lock, MoreVertical, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { CheckCircle2, Lock, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
+import type { SVGProps } from 'react';
+
+/** 속이 꽉 찬 Sparkles 아이콘 — lucide 의 outline 버전 대체. */
+function SparklesFilled(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M12 2.5l1.5 4.5 4.5 1.5-4.5 1.5L12 14.5 10.5 10 6 8.5l4.5-1.5L12 2.5z" />
+      <path d="M19 13l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" />
+      <path d="M5 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7L5 16z" />
+    </svg>
+  );
+}
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -75,25 +87,27 @@ export function ScheduleBoardList({
 
   return (
     <div className="px-s-3 py-s-3 gap-s-2 flex flex-col">
-      <div className="gap-s-2 flex items-center justify-between">
-        <div className="text-foreground-muted text-micro font-bold uppercase">
-          시간표 시안 ({boards.length}/{SCHEDULE_BOARD_LIMIT})
-        </div>
-        <Button
-          size="sm"
-          variant="primary"
-          disabled={atLimit}
-          onClick={() => {
-            if (hasUserEdits) {
-              setRecommendWarn(true);
-              return;
-            }
-            performRecommendation();
-          }}
-        >
-          <Sparkles className="h-4 w-4" /> 시간표 생성
-        </Button>
+      <div className="text-foreground-muted text-micro flex items-center justify-between font-bold uppercase">
+        <span>시간표 시안</span>
+        <span className="tabular-nums">
+          {boards.length}/{SCHEDULE_BOARD_LIMIT}
+        </span>
       </div>
+      <Button
+        size="sm"
+        variant="primary"
+        className="w-full"
+        disabled={atLimit}
+        onClick={() => {
+          if (hasUserEdits) {
+            setRecommendWarn(true);
+            return;
+          }
+          performRecommendation();
+        }}
+      >
+        <SparklesFilled className="h-4 w-4" /> 시간표 생성
+      </Button>
 
       {boards.length === 0 ? (
         <div className="border-border bg-card px-s-4 py-s-6 rounded-md border border-dashed text-center">

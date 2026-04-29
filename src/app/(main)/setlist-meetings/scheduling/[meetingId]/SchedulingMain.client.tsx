@@ -1,34 +1,25 @@
 'use client';
 
-import { CalendarDays, CheckCircle2, Clock3, Crown, X } from 'lucide-react';
+import { CalendarDays, Clock3, Crown, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { UnderlineTabs } from '@/components/ui/underline-tabs';
 import { ScheduleBoardEditor } from '@/domain/schedule-coordination/components/ScheduleBoardEditor.client';
 import { ScheduleBoardList } from '@/domain/schedule-coordination/components/ScheduleBoardList.client';
-import { ViewUnitToggle } from '@/domain/schedule-coordination/components/ViewUnitToggle.client';
-import { useBoardStore } from '@/domain/schedule-coordination/store/boardStore';
-import type { ScheduleBlock } from '@/domain/schedule-coordination/types';
-import { suggestScheduleBoards } from '@/domain/schedule-coordination/utils/autoSuggest';
-import { useScheduleViewUnit } from '@/domain/schedule-coordination/hooks/useScheduleViewUnit';
+import { DateRangeNav } from '@/domain/schedule-coordination/components/ViewUnitToggle.client';
+import { WeeklyScheduleGrid } from '@/domain/schedule-coordination/components/WeeklyScheduleGrid.client';
+import { useScheduleView } from '@/domain/schedule-coordination/hooks/useScheduleViewUnit';
 import { useScheduleStore } from '@/domain/schedule-coordination/store/scheduleStore';
 import { useTimetableStore } from '@/domain/schedule-coordination/store/timetableStore';
-import {
-  addDays,
-  aggregateAvailability,
-  enumerateDays,
-  slotToTime,
-  startOfWeek,
-  type ViewUnit,
-} from '@/domain/schedule-coordination/utils';
+import type { ScheduleBlock } from '@/domain/schedule-coordination/types';
+import { suggestScheduleBoards } from '@/domain/schedule-coordination/utils/autoSuggest';
+import { aggregateAvailability } from '@/domain/schedule-coordination/utils';
 import { MemberAvatar } from '@/domain/setlist-meeting/components/MemberAvatar';
 import { GLOBAL_MEMBER_POOL } from '@/domain/setlist-meeting/mock/memberSearchMock';
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
 import type { Member, Song } from '@/domain/setlist-meeting/types';
 import { isReady } from '@/domain/setlist-meeting/utils';
-import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
 import { ScheduleInputModal } from './ScheduleInputModal.client';
@@ -74,9 +65,6 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   const [songFilter, setSongFilter] = useState<SongFilter>('mine');
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [rightPanel, setRightPanel] = useState<RightPanel>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const toast = useToast();
-  const lockMeeting = useSetlistStore((s) => s.lockMeeting);
   const isConfirmedTimetable = useTimetableStore((s) => Boolean(s.confirmedByMeetingId[meetingId]));
 
   const visibleSongs = useMemo<Song[]>(() => {
@@ -100,32 +88,11 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   );
 
   const window = meeting?.practiceWindow;
-  const allDays = useMemo(() => (window ? enumerateDays(window.from, window.to) : []), [window]);
-  const view = useScheduleViewUnit({
+  const view = useScheduleView({
     from: window?.from ?? '',
     to: window?.to ?? '',
   });
-  // 모든 unit 통일: Mon-Sun 7일 컬럼. day 의 경우만 anchor 단일 컬럼.
-  const visibleDays = useMemo(() => {
-    if (!window || allDays.length === 0) return allDays;
-    if (view.unit === 'day') return [view.anchor];
-    const weekStart = startOfWeek(view.anchor);
-    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  }, [allDays, view.unit, view.anchor, window]);
-
-  const bestSlot = useMemo(() => {
-    if (!window || memberSchedules.length === 0) return null;
-    const aggregate = aggregateAvailability(memberSchedules, allDays);
-    let best: { date: string; slot: number; count: number } | null = null;
-    for (const date of allDays) {
-      const counts = aggregate[date] ?? [];
-      for (let i = 0; i < counts.length; i++) {
-        const c = counts[i] ?? 0;
-        if (c > 0 && (!best || c > best.count)) best = { date, slot: i, count: c };
-      }
-    }
-    return best;
-  }, [allDays, memberSchedules, window]);
+  const { allDays, visibleDays, isInWindow, rangeLabel, compact } = view;
 
   if (!meeting) {
     return (
@@ -196,21 +163,13 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
             }}
           />
         </div>
-        <div className="mt-s-3 gap-s-2 flex flex-wrap items-center">
-          <Button size="sm" variant="primary" onClick={() => setScheduleOpen(true)}>
-            <Clock3 className="h-4 w-4" /> 나의 스케줄 입력
-          </Button>
-          {isManager && memberSchedules.length > 0 && bestSlot && (
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => setConfirmOpen(true)}
-              className="bg-success hover:bg-success/90 text-white"
-            >
-              <CheckCircle2 className="h-4 w-4" /> 합주 일정 확정
+        {leftTab === 'member' && (
+          <div className="mt-s-3 gap-s-2 flex flex-wrap items-center">
+            <Button size="sm" variant="primary" onClick={() => setScheduleOpen(true)}>
+              <Clock3 className="h-4 w-4" /> 나의 스케줄 입력
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </header>
 
       {/* 탭 영역 — 화면 전체 폭 사용. board 탭은 아래 영역 전체 활용. */}
@@ -257,27 +216,22 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               }}
             />
           </aside>
-          {/* 중앙+우측: 시간표 에디터(블록 풀 우측 사이드바 내장) — 화면 약 절반. */}
+          {/* 중앙+우측: 시간표 에디터(블록 풀 내장). */}
           <div className="min-w-0 flex-1">
-            <div className="px-s-3 pb-s-3">
-              <ViewUnitToggle
-                unit={view.unit}
-                recommended={view.recommended}
-                onChange={view.setUnit}
+            {rightPanel?.kind === 'board' ? (
+              <ScheduleBoardEditor
+                boardId={rightPanel.boardId}
+                days={visibleDays}
+                isInWindow={isInWindow}
+                rangeLabel={rangeLabel}
+                compact={compact}
                 onPrev={view.prev}
                 onNext={view.next}
                 onToday={view.today}
-                anchorLabel={anchorLabelOf(view.unit, view.anchor)}
+                canPrev={view.canPrev}
+                canNext={view.canNext}
+                songPool={editorSongPool}
               />
-            </div>
-            {rightPanel?.kind === 'board' ? (
-              <div className="h-[calc(100%-3rem)]">
-                <ScheduleBoardEditor
-                  boardId={rightPanel.boardId}
-                  days={visibleDays}
-                  songPool={editorSongPool}
-                />
-              </div>
             ) : (
               <p className="text-foreground-muted px-s-4 py-s-6 text-caption text-center">
                 좌측에서 시안을 선택하거나 ‘시간표 생성’으로 추천 안을 만들어 보세요.
@@ -317,7 +271,6 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               participants={participants}
               memberSchedules={memberSchedules}
               view={view}
-              songPool={editorSongPool}
             />
           </section>
         </div>
@@ -332,23 +285,6 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
           onOpenChange={setScheduleOpen}
         />
       )}
-
-      <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="합주 일정 확정"
-        description={
-          bestSlot
-            ? `가장 많은 멤버가 가능한 ${bestSlot.date} ${slotToTime(bestSlot.slot)} (${bestSlot.count}명) 슬롯으로 확정하시겠습니까?`
-            : '확정 가능한 슬롯이 없습니다.'
-        }
-        confirmLabel="확정"
-        onConfirm={() => {
-          if (!bestSlot) return;
-          lockMeeting(meetingId);
-          toast.success(`${bestSlot.date} ${slotToTime(bestSlot.slot)} 로 확정되었습니다.`);
-        }}
-      />
     </div>
   );
 }
@@ -474,7 +410,6 @@ function RightVisualization({
   participants,
   memberSchedules,
   view,
-  songPool,
 }: {
   panel: RightPanel;
   onClose: () => void;
@@ -482,37 +417,31 @@ function RightVisualization({
   visibleDays: string[];
   participants: Member[];
   memberSchedules: ReturnType<typeof useScheduleStore.getState>['schedules'][string][];
-  view: ReturnType<typeof useScheduleViewUnit>;
-  songPool: { id: string; title: string; artist?: string | null }[];
+  view: ReturnType<typeof useScheduleView>;
 }) {
-  const board = useBoardStore((s) => (panel?.kind === 'board' ? s.boards[panel.boardId] : null));
   if (!panel) {
     return (
       <div className="text-foreground-muted px-s-6 py-s-8 m-auto max-w-md text-center">
         <p className="text-body font-bold">좌측에서 항목을 선택하세요</p>
         <p className="text-caption mt-s-2">
-          멤버 · 합주곡 · 시간표 시안을 선택하면 우측에 시각화가 표시됩니다.
+          멤버 또는 합주곡을 선택하면 우측에 시각화가 표시됩니다.
         </p>
       </div>
     );
   }
   return (
-    <>
+    <div className="flex h-full flex-col">
       <header className="border-border px-s-5 py-s-3 gap-s-3 flex items-start justify-between border-b">
         <div className="min-w-0">
           <div className="text-foreground-muted text-micro font-bold uppercase">
-            {panel.kind === 'member'
-              ? '멤버 일정'
-              : panel.kind === 'song'
-                ? '곡 합주 가능 매트릭스'
-                : '시간표 에디터'}
+            {panel.kind === 'member' ? '멤버 일정' : '곡 합주 가능 매트릭스'}
           </div>
           <div className="text-subtitle mt-s-1 truncate font-bold">
             {panel.kind === 'member'
               ? panel.member.name
               : panel.kind === 'song'
                 ? panel.song.title
-                : (board?.name ?? '시안')}
+                : ''}
           </div>
         </div>
         <button
@@ -525,104 +454,84 @@ function RightVisualization({
         </button>
       </header>
       <div className="px-s-5 py-s-3 border-border border-b">
-        <ViewUnitToggle
-          unit={view.unit}
-          recommended={view.recommended}
-          onChange={view.setUnit}
+        <DateRangeNav
+          rangeLabel={view.rangeLabel}
+          compact={view.compact}
           onPrev={view.prev}
           onNext={view.next}
           onToday={view.today}
-          anchorLabel={anchorLabelOf(view.unit, view.anchor)}
+          canPrev={view.canPrev}
+          canNext={view.canNext}
         />
       </div>
-      <div className="px-s-5 py-s-4 flex-1 overflow-y-auto">
+      <div className="px-s-3 py-s-3 flex-1 overflow-hidden">
         {panel.kind === 'member' ? (
-          <MemberSchedulePanel member={panel.member} meetingId={meetingId} allDays={visibleDays} />
-        ) : panel.kind === 'song' ? (
+          <MemberSchedulePanel
+            member={panel.member}
+            meetingId={meetingId}
+            visibleDays={visibleDays}
+            isInWindow={view.isInWindow}
+          />
+        ) : (
           <SongMatrixPanel
             memberSchedules={memberSchedules}
             participants={participants}
-            allDays={visibleDays}
+            visibleDays={visibleDays}
+            isInWindow={view.isInWindow}
           />
-        ) : board ? (
-          <ScheduleBoardEditor boardId={board.boardId} days={visibleDays} songPool={songPool} />
-        ) : (
-          <p className="text-foreground-muted text-caption">시안을 선택해주세요.</p>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
 function MemberSchedulePanel({
   member,
   meetingId,
-  allDays,
+  visibleDays,
+  isInWindow,
 }: {
   member: Member;
   meetingId: string;
-  allDays: string[];
+  visibleDays: string[];
+  isInWindow: (date: string) => boolean;
 }) {
   const sched = useScheduleStore((s) => s.schedules[`${meetingId}__${member.id}`]);
-  if (!sched) {
-    return (
-      <p className="text-foreground-muted text-caption">
-        {member.name}님은 아직 일정을 입력하지 않았습니다.
-      </p>
-    );
-  }
   return (
-    <div className="gap-s-4 flex flex-col">
-      <div>
-        <div className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">
-          가능 일자 ({sched.availableDates.length}/{allDays.length})
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {allDays.map((d) => {
-            const ratio = (() => {
-              const m = sched.blocks[d];
-              if (!m || !sched.availableDates.includes(d)) return 0;
-              const onCount = m.filter(Boolean).length;
-              return onCount / 48;
-            })();
-            const tone = !sched.availableDates.includes(d)
-              ? 'bg-card text-foreground-muted/40'
-              : ratio === 0
-                ? 'bg-card text-foreground-muted'
-                : ratio < 0.3
-                  ? 'bg-warn-dim text-warn'
-                  : ratio < 0.7
-                    ? 'bg-accent-dim text-accent'
-                    : 'bg-success-dim text-success';
-            return (
-              <span
-                key={d}
-                title={`${d} — 가능 시간 ${Math.round(ratio * 100)}%`}
-                className={cn(
-                  'text-micro rounded-md px-1 py-1 text-center font-mono font-bold',
-                  tone,
-                )}
-              >
-                {d.slice(8)}
-              </span>
-            );
-          })}
-        </div>
-      </div>
-      {sched.note && (
-        <div>
-          <div className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">
-            특이사항
-          </div>
+    <div className="flex h-full flex-col gap-3">
+      {sched ? (
+        <WeeklyScheduleGrid
+          days={visibleDays}
+          slotStart={18}
+          slotEnd={44}
+          isInWindow={isInWindow}
+          cellClassName={(d, s, inWindow) => {
+            if (!inWindow) return undefined;
+            if (!sched.availableDates.includes(d)) return undefined;
+            const mask = sched.blocks[d];
+            if (mask?.[s]) return 'bg-accent/70';
+            return undefined;
+          }}
+        />
+      ) : (
+        <p className="text-foreground-muted text-caption px-s-3">
+          {member.name}님은 아직 일정을 입력하지 않았습니다.
+        </p>
+      )}
+      {sched?.note && (
+        <div className="bg-card border-border px-s-3 py-s-2 rounded-md border">
+          <div className="text-foreground-muted text-micro mb-1 font-bold uppercase">특이사항</div>
           <p className="text-foreground text-caption leading-relaxed whitespace-pre-wrap">
             {sched.note}
           </p>
         </div>
       )}
-      <div className="text-foreground-muted text-micro">
-        {sched.completed ? '입력 완료' : '입력 중'} · 갱신{' '}
-        {sched.updatedAt.slice(0, 16).replace('T', ' ')}
-      </div>
+      {sched && (
+        <div className="text-foreground-muted text-micro px-s-1">
+          {sched.completed ? '입력 완료' : '입력 중'} · 갱신{' '}
+          {sched.updatedAt.slice(0, 16).replace('T', ' ')}
+        </div>
+      )}
     </div>
   );
 }
@@ -630,70 +539,43 @@ function MemberSchedulePanel({
 function SongMatrixPanel({
   memberSchedules,
   participants,
-  allDays,
+  visibleDays,
+  isInWindow,
 }: {
   memberSchedules: ReturnType<typeof useScheduleStore.getState>['schedules'][string][];
   participants: Member[];
-  allDays: string[];
+  visibleDays: string[];
+  isInWindow: (date: string) => boolean;
 }) {
   const aggregate = useMemo(
-    () => aggregateAvailability(memberSchedules, allDays),
-    [memberSchedules, allDays],
+    () => aggregateAvailability(memberSchedules, visibleDays),
+    [memberSchedules, visibleDays],
   );
-  const totalParticipants = participants.length;
+  const total = participants.length;
+  const colorOf = (count: number): string | undefined => {
+    if (count === 0) return undefined;
+    const ratio = total === 0 ? 0 : count / total;
+    if (ratio < 0.3) return 'bg-warn/40';
+    if (ratio < 0.6) return 'bg-warn/70';
+    if (ratio < 0.9) return 'bg-accent/70';
+    return 'bg-success';
+  };
   return (
-    <div className="gap-s-4 flex flex-col">
-      <p className="text-foreground-muted text-caption">
-        참여 {totalParticipants}명 기준 동시 가능한 시간 (셀이 진할수록 가능 인원이 많음).
+    <div className="flex h-full flex-col gap-3">
+      <p className="text-foreground-muted text-caption px-s-1">
+        참여 {total}명 기준 동시 가능 시간 — 진할수록 가능 인원 많음.
       </p>
-      <div className="overflow-x-auto">
-        <table className="text-micro w-full text-left">
-          <thead className="text-foreground-muted">
-            <tr>
-              <th className="px-1 py-1">일자</th>
-              {[18, 22, 26, 30, 34, 38, 42].map((s) => (
-                <th key={s} className="px-1 py-1 text-center">
-                  {slotToTime(s)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {allDays.slice(0, 14).map((d) => (
-              <tr key={d} className="border-border border-t">
-                <td className="px-1 py-1 font-mono">{d.slice(5)}</td>
-                {[18, 22, 26, 30, 34, 38, 42].map((s) => {
-                  const c = aggregate[d]?.[s] ?? 0;
-                  const ratio = totalParticipants === 0 ? 0 : c / totalParticipants;
-                  const tone =
-                    ratio === 0
-                      ? 'bg-card text-foreground-muted/30'
-                      : ratio < 0.5
-                        ? 'bg-warn-dim text-warn'
-                        : ratio < 1
-                          ? 'bg-accent-dim text-accent'
-                          : 'bg-success-dim text-success';
-                  return (
-                    <td
-                      key={s}
-                      className={cn('px-1 py-1 text-center font-bold', tone)}
-                      title={`${d} ${slotToTime(s)} — ${c}명 가능`}
-                    >
-                      {c || ''}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <WeeklyScheduleGrid
+        days={visibleDays}
+        slotStart={18}
+        slotEnd={44}
+        isInWindow={isInWindow}
+        cellClassName={(d, s, inWindow) => {
+          if (!inWindow) return undefined;
+          const c = aggregate[d]?.[s] ?? 0;
+          return colorOf(c);
+        }}
+      />
     </div>
   );
-}
-
-function anchorLabelOf(unit: ViewUnit, anchor: string): string {
-  if (unit === 'month') return anchor.slice(0, 7);
-  if (unit === 'week') return `~${anchor}`;
-  return anchor;
 }
