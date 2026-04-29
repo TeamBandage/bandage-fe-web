@@ -267,9 +267,13 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                     selectedBoardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
                     onSelect={(boardId) => setRightPanel({ kind: 'board', boardId })}
                     generateRecommendations={() => {
+                      // Task 22 — 자동 시간표 생성은 *현재 선택된 주차* 의 일자에만 적용.
+                      // visibleDays 는 anchor~anchor+6, 이 중 회의 가용 일자만 사용.
+                      const weekDays = visibleDays.filter((d) => isInWindow(d));
+                      const scopeDates = weekDays.length > 0 ? weekDays : allDays;
                       const variants = suggestScheduleBoards({
                         schedules: memberSchedules,
-                        dates: allDays,
+                        dates: scopeDates,
                         songs: editorSongPool,
                         variantCount: 3,
                       });
