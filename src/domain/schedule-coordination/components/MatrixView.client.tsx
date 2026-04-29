@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, GripVertical, Info, Lock, PanelRightOpen, Pin, Unlock, X } from 'lucide-react';
+import { Check, GripVertical, Info, Lock, Pin, Unlock, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type DragEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -61,19 +61,7 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
   const [confirmRange, setConfirmRange] = useState<DragRange | null>(null);
   const [poolDrag, setPoolDrag] = useState<DragData | null>(null);
   const [poolDropHover, setPoolDropHover] = useState<CellRef | null>(null);
-  /** 우측 사이드바 오버레이 — 기본 열림. */
-  const [sideOpen, setSideOpen] = useState(true);
   const toast = useToast();
-
-  // Esc 로 닫기.
-  useEffect(() => {
-    if (!sideOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSideOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [sideOpen]);
 
   const locksByMeeting = useMatrixLockStore((s) => s.locksByMeeting);
   const locks = useMemo(() => locksByMeeting[meetingId] ?? [], [locksByMeeting, meetingId]);
@@ -278,29 +266,8 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
   const slots = Array.from({ length: SLOT_TO - SLOT_FROM }, (_, i) => SLOT_FROM + i);
 
   return (
-    <div className="relative flex h-full overflow-hidden">
-      {/* 사이드바 닫혔을 때 노출되는 토글 버튼 (오른쪽 상단). */}
-      {!sideOpen && (
-        <button
-          type="button"
-          onClick={() => setSideOpen(true)}
-          aria-label="가용성/블록 풀 패널 열기"
-          className="bg-surface border-border text-foreground-sub hover:bg-card hover:text-foreground top-s-3 right-s-3 absolute z-30 inline-flex h-8 w-8 items-center justify-center rounded-md border shadow-sm transition-colors"
-        >
-          <PanelRightOpen className="h-4 w-4 rotate-180" />
-        </button>
-      )}
-
-      {/* 사이드바 열림 시 backdrop — 클릭으로 닫음. */}
-      {sideOpen && (
-        <div
-          aria-hidden="true"
-          onClick={() => setSideOpen(false)}
-          className="bg-bg/40 absolute inset-0 z-20 backdrop-blur-sm"
-        />
-      )}
-
-      {/* 메인: 매트릭스 그리드 — 사이드바 상태와 무관하게 풀폭 사용. */}
+    <div className="flex h-full gap-3 overflow-hidden">
+      {/* 메인: 매트릭스 그리드 */}
       <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
         <div className="text-foreground-muted text-caption px-s-1 gap-s-3 flex items-center justify-between">
           <span>
@@ -412,27 +379,8 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
         )}
       </div>
 
-      {/* 우측 사이드바 — 오버레이(슬라이드). 마스터(가능/불가) + 슬레이브(블록 풀) 세로 stack. */}
-      <aside
-        aria-hidden={!sideOpen}
-        className={cn(
-          'bg-surface border-border absolute top-0 right-0 z-30 flex h-full w-80 flex-col gap-3 border-l p-3 shadow-xl transition-transform duration-200 ease-out',
-          sideOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
-        )}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-foreground-muted text-micro font-bold uppercase">
-            가용성 · 합주 블록 풀
-          </h3>
-          <button
-            type="button"
-            onClick={() => setSideOpen(false)}
-            aria-label="패널 닫기"
-            className="text-foreground-muted hover:text-foreground rounded-md p-1"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+      {/* 우측 사이드바 — 마스터(가능/불가) + 슬레이브(블록 풀) 세로 stack. */}
+      <aside className="flex w-80 shrink-0 flex-col gap-3">
         <SidePanel
           focus={focus}
           pinned={!!pinned}
