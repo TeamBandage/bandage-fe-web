@@ -14,7 +14,7 @@ import { useBoardStore } from '../store/boardStore';
 import { useTimetableStore } from '../store/timetableStore';
 import type { ScheduleBlock } from '../types';
 import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
-import { autoRescheduleAfterMove } from '../utils/autoReschedule';
+import { autoRescheduleAfterMove, computeValidDropSlots } from '../utils/autoReschedule';
 import { slotToTime } from '../utils';
 
 import { songTone } from './palette';
@@ -89,6 +89,7 @@ export function ScheduleBoardEditor({
   const dragRef = useRef<DragData | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ date: string; slot: number } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [validDropSet, setValidDropSet] = useState<Set<string>>(() => new Set());
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [rangePreset, setRangePreset] = useState<RangePreset>('9-22');
   const exportApi = useScheduleExport<HTMLDivElement>();
@@ -114,16 +115,30 @@ export function ScheduleBoardEditor({
     return <p className="text-foreground-muted text-caption">시안을 찾을 수 없습니다.</p>;
   }
 
+  const startDragWith = (data: DragData) => {
+    dragRef.current = data;
+    setDragging(true);
+    const dur = data.durationSlots ?? defaultDurationSlots;
+    const validInWindow = days.filter((d) => isInWindow?.(d) ?? true);
+    const set = computeValidDropSlots({
+      blocks: board.blocks,
+      excludeBlockId: data.blockId,
+      durationSlots: dur,
+      constraints: board.constraints ?? DEFAULT_BOARD_CONSTRAINTS,
+      dates: validInWindow,
+    });
+    setValidDropSet(set);
+  };
+
   const onPoolDragStart = (song: SongLite) => (e: DragEvent) => {
     const data: DragData = {
       kind: 'pool',
       songId: song.id,
       durationSlots: defaultDurationSlots,
     };
-    dragRef.current = data;
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(data));
     e.dataTransfer.effectAllowed = 'copy';
-    setDragging(true);
+    startDragWith(data);
   };
 
   const onBlockDragStart = (block: ScheduleBlock) => (e: DragEvent) => {
@@ -133,32 +148,38 @@ export function ScheduleBoardEditor({
       blockId: block.blockId,
       durationSlots: block.durationSlots,
     };
-    dragRef.current = data;
     e.dataTransfer.setData(DRAG_MIME, JSON.stringify(data));
     e.dataTransfer.effectAllowed = 'move';
-    setDragging(true);
+    startDragWith(data);
   };
 
   const onDragEnd = () => {
     dragRef.current = null;
     setHoverSlot(null);
     setDragging(false);
+    setValidDropSet(new Set());
   };
 
   const onCellDragOver = (date: string, slot: number) => (e: DragEvent) => {
     if (!dragRef.current) return;
+    if (!validDropSet.has(`${date}__${slot}`)) {
+      // 유효하지 않은 셀 — drop 거부 (preventDefault 안 함).
+      return;
+    }
     e.preventDefault();
     e.dataTransfer.dropEffect = dragRef.current.kind === 'block' ? 'move' : 'copy';
     setHoverSlot({ date, slot });
   };
 
   const onCellDrop = (date: string, slot: number) => (e: DragEvent) => {
+    if (!validDropSet.has(`${date}__${slot}`)) return;
     e.preventDefault();
     const raw = e.dataTransfer.getData(DRAG_MIME);
     const data: DragData | null = raw ? JSON.parse(raw) : dragRef.current;
     dragRef.current = null;
     setHoverSlot(null);
     setDragging(false);
+    setValidDropSet(new Set());
     if (!data) return;
     if (data.kind === 'block' && data.blockId) {
       const cur = board.blocks.find((b) => b.blockId === data.blockId);
@@ -199,7 +220,8 @@ export function ScheduleBoardEditor({
     if (!inWindow) return undefined;
     const isHover = hoverSlot && hoverSlot.date === date && hoverSlot.slot === slot;
     if (isHover) return 'bg-accent-dim ring-accent ring-1';
-    if (dragging) return 'bg-accent-soft';
+    // 드래그 중에는 실제 배치 가능한 셀만 옅게 강조.
+    if (dragging && validDropSet.has(`${date}__${slot}`)) return 'bg-accent-soft';
     return undefined;
   };
 

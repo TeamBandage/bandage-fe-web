@@ -18,6 +18,58 @@ interface RescheduleInput {
   availableDates: string[];
 }
 
+/**
+ * Task 13.x — 드롭 가능한 (date, slot) 후보 계산.
+ * - workingHours / excludeLateNight 준수
+ * - 다른 블록(pinned 포함)과 겹치지 않음
+ * - excludeBlockId(이동 중인 블록) 자기 자신은 occupied 에서 제외
+ *
+ * 반환: Set<`${date}__${slot}`>
+ */
+export function computeValidDropSlots({
+  blocks,
+  excludeBlockId,
+  durationSlots,
+  constraints,
+  dates,
+}: {
+  blocks: ScheduleBlock[];
+  excludeBlockId?: string;
+  durationSlots: number;
+  constraints: ScheduleBoardConstraints;
+  dates: string[];
+}): Set<string> {
+  const c = { ...DEFAULT_BOARD_CONSTRAINTS, ...constraints };
+  const out = new Set<string>();
+  const occupiedByDate = new Map<string, OccupiedRange[]>();
+  for (const b of blocks) {
+    if (b.blockId === excludeBlockId) continue;
+    const arr = occupiedByDate.get(b.date) ?? [];
+    arr.push({
+      date: b.date,
+      start: b.startSlot,
+      end: b.startSlot + b.durationSlots,
+      blockId: b.blockId,
+    });
+    occupiedByDate.set(b.date, arr);
+  }
+  for (const date of dates) {
+    const occupied = occupiedByDate.get(date) ?? [];
+    for (let s = c.workingHoursStart; s + durationSlots <= c.workingHoursEnd; s++) {
+      if (c.excludeLateNight && s >= 44) continue;
+      const candidate: OccupiedRange = {
+        date,
+        start: s,
+        end: s + durationSlots,
+        blockId: excludeBlockId ?? '',
+      };
+      const collides = occupied.some((o) => overlap(o, candidate));
+      if (!collides) out.add(`${date}__${s}`);
+    }
+  }
+  return out;
+}
+
 interface OccupiedRange {
   date: string;
   start: number;
@@ -66,25 +118,56 @@ export function autoRescheduleAfterMove({
     blockId: anchorBlockId,
   });
 
-  // 가능한 빈 슬롯 찾기.
+  /**
+   * 빈 슬롯 탐색 — origin(원래 위치) 부터 forward 우선, 없으면 wrap.
+   * 의도: 충돌로 밀려나는 블록이 시간표 맨 앞으로 튕기지 않고
+   *       원래 위치 근처(같은 날의 더 늦은 슬롯 → 다음 날) 로 부드럽게 이동.
+   */
   const findFreeSlot = (
     excludeBlockId: string,
     durationSlots: number,
+    origin: { date: string; slot: number },
   ): { date: string; startSlot: number } | null => {
-    for (const date of sortedDates) {
+    const tryAt = (date: string, s: number) => {
+      const candidate: OccupiedRange = {
+        date,
+        start: s,
+        end: s + durationSlots,
+        blockId: excludeBlockId,
+      };
+      if (s < c.workingHoursStart) return null;
+      if (s + durationSlots > c.workingHoursEnd) return null;
+      if (c.excludeLateNight && s >= 44) return null;
       const occupied = Array.from(placedRanges.values()).filter(
         (r) => r.date === date && r.blockId !== excludeBlockId,
       );
+      const collides = occupied.some((o) => overlap(o, candidate));
+      return collides ? null : { date, startSlot: s };
+    };
+
+    const originIdx = Math.max(0, sortedDates.indexOf(origin.date));
+
+    // 1) origin 일자 — origin 슬롯부터 forward.
+    if (sortedDates[originIdx]) {
+      for (let s = origin.slot; s + durationSlots <= c.workingHoursEnd; s++) {
+        const r = tryAt(sortedDates[originIdx]!, s);
+        if (r) return r;
+      }
+    }
+    // 2) origin 이후 일자 — 매일 워킹 시작부터.
+    for (let i = originIdx + 1; i < sortedDates.length; i++) {
       for (let s = c.workingHoursStart; s + durationSlots <= c.workingHoursEnd; s++) {
-        const candidate: OccupiedRange = {
-          date,
-          start: s,
-          end: s + durationSlots,
-          blockId: excludeBlockId,
-        };
-        if (c.excludeLateNight && candidate.start >= 44) continue;
-        const collides = occupied.some((o) => overlap(o, candidate));
-        if (!collides) return { date, startSlot: s };
+        const r = tryAt(sortedDates[i]!, s);
+        if (r) return r;
+      }
+    }
+    // 3) wrap — origin 일자 이전 (origin 일자 자체는 origin 슬롯 직전까지).
+    for (let i = 0; i <= originIdx; i++) {
+      const date = sortedDates[i]!;
+      const upperBound = i === originIdx ? origin.slot : c.workingHoursEnd;
+      for (let s = c.workingHoursStart; s + durationSlots <= upperBound; s++) {
+        const r = tryAt(date, s);
+        if (r) return r;
       }
     }
     return null;
@@ -115,7 +198,11 @@ export function autoRescheduleAfterMove({
           // pinned 충돌 — 재배치 불가. 사용자에게 안내하기 위해 null 반환.
           return null;
         }
-        const free = findFreeSlot(other.blockId, other.durationSlots);
+        // origin = 충돌이 일어난 위치(=원래 위치). 이 지점 부터 forward 검색.
+        const free = findFreeSlot(other.blockId, other.durationSlots, {
+          date: other.date,
+          slot: other.startSlot,
+        });
         if (!free) return null;
         result.set(other.blockId, {
           ...other,
