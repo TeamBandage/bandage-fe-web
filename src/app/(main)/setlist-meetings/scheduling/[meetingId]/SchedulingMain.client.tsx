@@ -293,6 +293,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                 </aside>
                 <MatrixView
                   meetingId={meetingId}
+                  boardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
                   allDays={allDays}
                   participants={participants}
                   memberSchedules={memberSchedules}
