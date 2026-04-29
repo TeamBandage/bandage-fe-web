@@ -78,22 +78,42 @@ export function WeeklyScheduleGrid({
     gridTemplateRows: `36px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
   };
 
-  /** 드래그 페인트 진행 중 여부 — pointerdown 후 pointerup 까지 true. */
+  /**
+   * 드래그 페인트 진행 중 여부 + 마지막 페인트한 셀 키.
+   * - 셀 자체의 onPointerEnter 는 pointer capture / 빠른 드래그 시 누락이 잦아 부적합.
+   * - 대신 document.pointermove → elementFromPoint 로 현재 커서 아래 셀을 찾아 일괄 호출.
+   */
   const paintingRef = useRef(false);
-  const [, forceTick] = useState(0);
+  const lastPaintedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!onPaintStart) return;
+    const onMove = (e: PointerEvent) => {
+      if (!paintingRef.current) return;
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      if (!target) return;
+      const cell = (target as HTMLElement).closest<HTMLElement>('[data-paint-cell]');
+      if (!cell) return;
+      const d = cell.dataset.cellDate;
+      const sStr = cell.dataset.cellSlot;
+      if (!d || sStr === undefined) return;
+      const key = `${d}__${sStr}`;
+      if (lastPaintedRef.current === key) return;
+      lastPaintedRef.current = key;
+      onPaintEnter?.(d, Number(sStr));
+    };
     const onUp = () => {
       paintingRef.current = false;
-      forceTick((n) => n + 1);
+      lastPaintedRef.current = null;
     };
+    window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
     return () => {
+      window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, [onPaintStart]);
+  }, [onPaintStart, onPaintEnter]);
 
   return (
     <div
@@ -154,6 +174,9 @@ export function WeeklyScheduleGrid({
             return (
               <div
                 key={`c-${d}-${s}`}
+                data-paint-cell={onPaintStart && inWindow ? '1' : undefined}
+                data-cell-date={d}
+                data-cell-slot={s}
                 role={onCellClick || onPaintStart ? (inWindow ? 'button' : undefined) : undefined}
                 tabIndex={onCellClick && inWindow ? 0 : undefined}
                 onDragOver={inWindow ? onCellDragOver?.(d, s) : undefined}
@@ -166,16 +189,12 @@ export function WeeklyScheduleGrid({
                   inWindow && onPaintStart
                     ? (e) => {
                         if (e.button !== 0) return;
-                        // capture 해제 — pointerup 글로벌 핸들러가 담당.
-                        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+                        // implicit pointer capture 해제 — document.pointermove 핸들러가 담당.
+                        (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
                         paintingRef.current = true;
+                        lastPaintedRef.current = `${d}__${s}`;
                         onPaintStart(d, s);
                       }
-                    : undefined
-                }
-                onPointerEnter={
-                  inWindow && onPaintEnter && paintingRef.current
-                    ? () => onPaintEnter(d, s)
                     : undefined
                 }
                 onKeyDown={
@@ -194,7 +213,7 @@ export function WeeklyScheduleGrid({
                   !inWindow && 'bg-surface/40',
                   (onCellClick || onPaintStart) &&
                     inWindow &&
-                    'hover:bg-card-hover cursor-pointer touch-none select-none',
+                    'hover:bg-accent-soft hover:ring-accent/40 cursor-pointer touch-none select-none hover:ring-1 hover:ring-inset',
                   extraClass,
                 )}
                 style={{ gridRow: sIdx + 2, gridColumn: dIdx + 2 }}

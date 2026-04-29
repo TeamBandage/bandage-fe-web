@@ -568,8 +568,7 @@ function Step2Blocks({
           cellClassName={(d, s, inWindow) => {
             if (!inWindow) return undefined;
             const mask = blocks[d];
-            // 선택된 셀 — 단색 + 살짝 둥근 모서리 (소프트 룩).
-            return mask?.[s] ? 'bg-accent/80 rounded-sm' : undefined;
+            return mask?.[s] ? 'bg-accent/80' : undefined;
           }}
         />
       </div>
