@@ -18,6 +18,10 @@ export interface LockedSlot {
   endSlot: number;
   /** 어느 곡에 대한 합주인지 (옵션 — v1 은 곡 미지정 가능). */
   songId?: string;
+  /** 편집 다이얼로그용 메모 (Task 19). */
+  note?: string;
+  /** 표시용 곡 제목 오버라이드 (Task 19). */
+  songTitleOverride?: string;
   lockedAt: string;
 }
 
@@ -28,6 +32,12 @@ interface MatrixLockState {
 interface MatrixLockActions {
   addLock: (input: Omit<LockedSlot, 'id' | 'lockedAt'>) => LockedSlot;
   removeLock: (meetingId: string, lockId: string) => void;
+  /** 부분 갱신 — songId, note, songTitleOverride 등. 길이 변경은 replaceLocks(reflow) 권장. */
+  updateLock: (
+    meetingId: string,
+    lockId: string,
+    patch: Partial<Omit<LockedSlot, 'id' | 'meetingId' | 'lockedAt'>>,
+  ) => void;
   /** auto-reschedule 결과 일괄 반영용. */
   replaceLocks: (meetingId: string, locks: LockedSlot[]) => void;
   reset: () => void;
@@ -60,6 +70,16 @@ export const useMatrixLockStore = create<MatrixLockState & MatrixLockActions>()(
           locksByMeeting: {
             ...s.locksByMeeting,
             [meetingId]: (s.locksByMeeting[meetingId] ?? []).filter((l) => l.id !== lockId),
+          },
+        })),
+
+      updateLock: (meetingId, lockId, patch) =>
+        set((s) => ({
+          locksByMeeting: {
+            ...s.locksByMeeting,
+            [meetingId]: (s.locksByMeeting[meetingId] ?? []).map((l) =>
+              l.id === lockId ? { ...l, ...patch } : l,
+            ),
           },
         })),
 

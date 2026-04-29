@@ -16,6 +16,7 @@ import { reflowMatrixLocks } from '../utils/reflowMatrixLocks';
 
 import type { Member } from '@/domain/setlist-meeting/types';
 
+import { MatrixLockPanel } from './MatrixLockPanel.client';
 import { songTone } from './palette';
 import { RANGE_PRESETS, DEFAULT_RANGE_PRESET } from './rangePresets';
 const DEFAULT_BLOCK_SLOTS = 2; // 1h
@@ -72,6 +73,7 @@ export function MatrixView({
   const [confirmRange, setConfirmRange] = useState<DragRange | null>(null);
   const [poolDrag, setPoolDrag] = useState<DragData | null>(null);
   const [poolDropHover, setPoolDropHover] = useState<CellRef | null>(null);
+  const [editLockId, setEditLockId] = useState<string | null>(null);
   const toast = useToast();
 
   /** 표출 시간 프리셋 — 주차별 UI 와 공유. 변경 시 즉시 반영. */
@@ -89,7 +91,9 @@ export function MatrixView({
   const locks = useMemo(() => locksByMeeting[meetingId] ?? [], [locksByMeeting, meetingId]);
   const addLock = useMatrixLockStore((s) => s.addLock);
   const removeLock = useMatrixLockStore((s) => s.removeLock);
+  const updateLock = useMatrixLockStore((s) => s.updateLock);
   const replaceLocks = useMatrixLockStore((s) => s.replaceLocks);
+  const editLock = editLockId ? (locks.find((l) => l.id === editLockId) ?? null) : null;
 
   const songMap = useMemo(() => {
     const m = new Map<string, SongLite>();
@@ -445,6 +449,7 @@ export function MatrixView({
                           onDragOver={onCellDragOver(d, s)}
                           onDragLeave={() => setPoolDropHover(null)}
                           onDrop={onCellDrop(d, s)}
+                          onClick={lock ? () => setEditLockId(lock.id) : undefined}
                           title={
                             lock
                               ? `${songTitle ?? '확정 슬롯'} ${slotToTime(lock.startSlot)}~${slotToTime(lock.endSlot)}`
@@ -457,7 +462,8 @@ export function MatrixView({
                             isLockStart && 'relative',
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
                             isHover && 'outline-foreground/50 outline outline-1 -outline-offset-1',
-                            lock ? 'cursor-not-allowed' : 'cursor-pointer',
+                            lock && 'cursor-pointer hover:brightness-110',
+                            !lock && 'cursor-pointer',
                           )}
                         >
                           {isLockStart && (
@@ -508,6 +514,46 @@ export function MatrixView({
           onSongClick={(songId) => toggleFocusedSongId(meetingId, songId)}
         />
       </aside>
+
+      {editLock && (
+        <div
+          className="bg-bg/50 fixed inset-0 z-50 flex items-center justify-center p-6"
+          onClick={() => setEditLockId(null)}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <MatrixLockPanel
+              lock={editLock}
+              songPool={songPool}
+              onPatch={(patch) => updateLock(meetingId, editLock.id, patch)}
+              onResize={(durationSlots) => {
+                // 길이 변경 — 동일 anchor 로 reflow.
+                const updated = locks.map((l) =>
+                  l.id === editLock.id ? { ...l, endSlot: l.startSlot + durationSlots } : l,
+                );
+                const reflowed = reflowMatrixLocks({
+                  locks: updated,
+                  anchorLockId: editLock.id,
+                  slotFrom: SLOT_FROM,
+                  slotTo: SLOT_TO,
+                  availableDates: allDays,
+                });
+                if (!reflowed) {
+                  toast.error('길이 변경 시 자리 부족 — 다른 lock 을 먼저 정리하세요.');
+                  return;
+                }
+                replaceLocks(meetingId, reflowed);
+                toast.success('길이 변경 완료');
+              }}
+              onDelete={() => {
+                removeLock(meetingId, editLock.id);
+                setEditLockId(null);
+                toast.success('합주 슬롯 삭제');
+              }}
+              onClose={() => setEditLockId(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
