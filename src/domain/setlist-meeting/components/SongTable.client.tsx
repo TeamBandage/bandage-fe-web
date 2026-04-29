@@ -130,6 +130,7 @@ export function SongTable({
             return (
               <tr
                 key={song.id}
+                data-song-id={song.id}
                 onClick={() => onSelectSong(song.id)}
                 className={cn(
                   'border-border hover:bg-card cursor-pointer border-b transition-colors',

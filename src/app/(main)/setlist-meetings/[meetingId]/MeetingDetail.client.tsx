@@ -196,6 +196,12 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
         setSelectedSong(nextSong.id);
         setFocusedSession(null);
         setSessionPanelOpen(true);
+        // Task 25 — 포커스된 곡 행이 항상 보이도록 자동 스크롤.
+        // 마이크로태스크 후 호출 — 리스트가 selected 클래스로 재렌더된 다음 스크롤.
+        queueMicrotask(() => {
+          const row = document.querySelector<HTMLElement>(`[data-song-id="${nextSong.id}"]`);
+          row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
       }
     };
     window.addEventListener('keydown', onKey);
