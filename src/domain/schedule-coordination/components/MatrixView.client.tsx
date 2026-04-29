@@ -97,7 +97,13 @@ export function MatrixView({
   );
   const setBaseWeek = useScheduleViewStore((s) => s.setSelectedWeekStart);
   const repeatActive = useScheduleViewStore((s) => s.repeatActiveByMeeting[meetingId] ?? false);
-  const repeatTargets = useScheduleViewStore((s) => s.repeatTargetsByMeeting[meetingId] ?? []);
+  // useSyncExternalStore 무한 루프 방지 — selector 가 매번 새 배열을 만들면 안 됨.
+  // repeatTargetsByMeeting 자체(stable reference)를 select 하고 파생값은 useMemo 로 계산.
+  const repeatTargetsByMeeting = useScheduleViewStore((s) => s.repeatTargetsByMeeting);
+  const repeatTargets = useMemo(
+    () => repeatTargetsByMeeting[meetingId] ?? [],
+    [repeatTargetsByMeeting, meetingId],
+  );
   const enterRepeatMode = useScheduleViewStore((s) => s.enterRepeatMode);
   const exitRepeatMode = useScheduleViewStore((s) => s.exitRepeatMode);
   const toggleRepeatTarget = useScheduleViewStore((s) => s.toggleRepeatTarget);
