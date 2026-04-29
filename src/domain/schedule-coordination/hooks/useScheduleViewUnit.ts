@@ -38,34 +38,35 @@ function fmt(d: string): string {
 
 export function useScheduleView({ from, to }: UseScheduleViewOptions): ScheduleViewState {
   const allDays = useMemo(() => enumerateDays(from, to), [from, to]);
-  const compact = allDays.length > 0 && allDays.length <= 7;
+  /** compact: 모든 가용 일자가 같은 ISO week (월~일) 내에 들어감 → 페이지네이션 불필요. */
+  const compact = useMemo(() => {
+    if (allDays.length === 0) return true;
+    const w0 = startOfWeek(allDays[0]!);
+    return allDays.every((d) => startOfWeek(d) === w0);
+  }, [allDays]);
 
   const initialAnchor = useMemo(() => {
     if (allDays.length === 0) return from || new Date().toISOString().slice(0, 10);
-    if (compact) return allDays[0]!;
     return startOfWeek(allDays[0]!);
-  }, [allDays, compact, from]);
+  }, [allDays, from]);
   const [anchor, setAnchor] = useState(initialAnchor);
 
+  /** 항상 7컬럼(월~일) 고정. allDays 에 속하지 않는 일자는 isInWindow=false 로 disabled 표기. */
   const visibleDays = useMemo(() => {
-    if (compact) return allDays;
     if (allDays.length === 0) return [];
     return Array.from({ length: 7 }, (_, i) => addDays(anchor, i));
-  }, [compact, allDays, anchor]);
+  }, [allDays, anchor]);
 
   const allDaysSet = useMemo(() => new Set(allDays), [allDays]);
   const isInWindow = useCallback((d: string) => allDaysSet.has(d), [allDaysSet]);
 
   const rangeLabel = useMemo(() => {
     if (visibleDays.length === 0) return '';
-    if (compact) {
-      return visibleDays.map(fmt).join(', ');
-    }
     const first = visibleDays[0]!;
     const last = visibleDays[visibleDays.length - 1]!;
     const ym = first.slice(0, 4);
     return `${ym}-${fmt(first)} ~ ${fmt(last)}`;
-  }, [visibleDays, compact]);
+  }, [visibleDays]);
 
   const lastWeekStart = useMemo(() => {
     if (compact || allDays.length === 0) return anchor;

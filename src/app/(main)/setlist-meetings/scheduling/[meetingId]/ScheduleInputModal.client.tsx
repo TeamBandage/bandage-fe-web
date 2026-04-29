@@ -312,7 +312,12 @@ function Step2Blocks({
   setBlocks: (next: Record<string, SlotMask>) => void;
 }) {
   const sortedAvail = useMemo(() => [...availableDates].sort(), [availableDates]);
-  const compact = sortedAvail.length > 0 && sortedAvail.length <= 7;
+  /** compact: 가용 일자가 모두 같은 ISO 주(월~일) 내에 있으면 페이지네이션 숨김. */
+  const compact = useMemo(() => {
+    if (sortedAvail.length === 0) return true;
+    const w0 = startOfWeek(sortedAvail[0]!);
+    return sortedAvail.every((d) => startOfWeek(d) === w0);
+  }, [sortedAvail]);
   const firstWeekStart = useMemo(
     () => (sortedAvail[0] ? startOfWeek(sortedAvail[0]) : ''),
     [sortedAvail],
@@ -322,11 +327,11 @@ function Step2Blocks({
   const slotStart = range === '24h' ? 0 : 18;
   const slotEnd = range === '24h' ? 48 : 44;
 
+  /** 항상 월~일 7컬럼 고정. 가용 외 일자는 isInWindow=false. */
   const visibleDays = useMemo<string[]>(() => {
     if (sortedAvail.length === 0) return [];
-    if (compact) return sortedAvail;
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-  }, [compact, sortedAvail, weekStart]);
+  }, [sortedAvail, weekStart]);
 
   const availSet = useMemo(() => new Set(sortedAvail), [sortedAvail]);
   const isInWindow = (d: string) => availSet.has(d);
