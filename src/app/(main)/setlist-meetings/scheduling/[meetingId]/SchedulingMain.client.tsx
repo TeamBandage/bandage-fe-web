@@ -13,6 +13,7 @@ import { WeeklyScheduleGrid } from '@/domain/schedule-coordination/components/We
 import { useScheduleView } from '@/domain/schedule-coordination/hooks/useScheduleViewUnit';
 import { useBoardStore } from '@/domain/schedule-coordination/store/boardStore';
 import { useScheduleStore } from '@/domain/schedule-coordination/store/scheduleStore';
+import { useScheduleViewStore } from '@/domain/schedule-coordination/store/scheduleViewStore';
 import { useTimetableStore } from '@/domain/schedule-coordination/store/timetableStore';
 import type { ScheduleBlock } from '@/domain/schedule-coordination/types';
 import { suggestScheduleBoards } from '@/domain/schedule-coordination/utils/autoSuggest';
@@ -26,7 +27,7 @@ import { cn } from '@/lib/cn';
 
 import { ScheduleInputModal } from './ScheduleInputModal.client';
 
-type LeftTab = 'matrix' | 'member' | 'song' | 'board';
+type LeftTab = 'member' | 'song' | 'board';
 type SongFilter = 'mine' | 'all';
 type RightPanel =
   | { kind: 'member'; member: Member }
@@ -64,9 +65,10 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   );
 
   const [leftTab, setLeftTab] = useState<LeftTab>('member');
-  // 매니저 권한이 사라진 경우 매트릭스/board 탭은 멤버 시간표로 대체.
-  const safeLeftTab: LeftTab =
-    !isManager && (leftTab === 'matrix' || leftTab === 'board') ? 'member' : leftTab;
+  // 매니저 권한이 사라진 경우 board 탭은 멤버 시간표로 대체.
+  const safeLeftTab: LeftTab = !isManager && leftTab === 'board' ? 'member' : leftTab;
+  const viewMode = useScheduleViewStore((s) => s.modeByMeeting[meetingId] ?? 'weekly');
+  const setViewMode = useScheduleViewStore((s) => s.setMode);
   const [songFilter, setSongFilter] = useState<SongFilter>('mine');
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [rightPanel, setRightPanel] = useState<RightPanel>(null);
@@ -131,12 +133,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   const tabItems = [
     { id: 'member' as const, label: '멤버 시간표', badge: participants.length },
     { id: 'song' as const, label: '합주곡 시간표', badge: visibleSongs.length },
-    ...(isManager
-      ? [
-          { id: 'board' as const, label: '합주 시간표 생성' },
-          { id: 'matrix' as const, label: '매트릭스' },
-        ]
-      : []),
+    ...(isManager ? [{ id: 'board' as const, label: '합주 시간표 생성' }] : []),
   ];
 
   return (
@@ -217,7 +214,6 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               if (t === 'member' && cur.kind !== 'member') return null;
               if (t === 'song' && cur.kind !== 'song') return null;
               if (t === 'board' && cur.kind !== 'board') return null;
-              if (t === 'matrix') return null;
               return cur;
             });
           }}
@@ -225,61 +221,75 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
         />
       </div>
 
-      {safeLeftTab === 'matrix' && isManager ? (
-        <div className="bg-bg flex flex-1 overflow-hidden p-3">
-          <MatrixView
-            meetingId={meetingId}
-            allDays={allDays}
-            participants={participants}
-            memberSchedules={memberSchedules}
-            songPool={editorSongPool}
-          />
-        </div>
-      ) : safeLeftTab === 'board' && isManager ? (
-        <div className="bg-bg flex flex-1 overflow-hidden p-3">
-          {/* 좌측: 시안 카드 리스트 — 축소 */}
-          <aside className="w-56 shrink-0 overflow-y-auto pr-3">
-            <ScheduleBoardList
-              meetingId={meetingId}
-              selectedBoardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
-              onSelect={(boardId) => setRightPanel({ kind: 'board', boardId })}
-              generateRecommendations={() => {
-                const variants = suggestScheduleBoards({
-                  schedules: memberSchedules,
-                  dates: allDays,
-                  songs: editorSongPool,
-                  variantCount: 3,
-                });
-                return variants.map((v, idx) =>
-                  v.blocks.map<ScheduleBlock>((b, i) => ({
-                    ...b,
-                    pinned: false,
-                    paletteIndex: idx * 100 + i,
-                  })),
-                );
-              }}
-            />
-          </aside>
-          {/* 중앙+우측: 시간표 에디터(블록 풀 내장). */}
-          <div className="min-w-0 flex-1">
-            {rightPanel?.kind === 'board' ? (
-              <ScheduleBoardEditor
-                boardId={rightPanel.boardId}
-                days={visibleDays}
-                isInWindow={isInWindow}
-                rangeLabel={rangeLabel}
-                compact={compact}
-                onPrev={view.prev}
-                onNext={view.next}
-                onToday={view.today}
-                canPrev={view.canPrev}
-                canNext={view.canNext}
+      {safeLeftTab === 'board' && isManager ? (
+        <div className="bg-bg flex flex-1 flex-col overflow-hidden">
+          {/* 뷰 토글 — 주차별 / 매트릭스. 주차별 = 세부 슬롯 배치, 매트릭스 = 주 단위 반복 정책. */}
+          <div className="px-s-3 py-s-2 border-border gap-s-2 flex items-center border-b">
+            <ViewModeToggle value={viewMode} onChange={(m) => setViewMode(meetingId, m)} />
+            <span className="text-foreground-muted text-micro">
+              {viewMode === 'weekly'
+                ? '세부 슬롯 배치 / 자동 추천'
+                : '전체 기간 한눈에 / 주 단위 반복'}
+            </span>
+          </div>
+
+          <div className="flex flex-1 overflow-hidden p-3">
+            {viewMode === 'matrix' ? (
+              <MatrixView
+                meetingId={meetingId}
+                allDays={allDays}
+                participants={participants}
+                memberSchedules={memberSchedules}
                 songPool={editorSongPool}
               />
             ) : (
-              <p className="text-foreground-muted px-s-4 py-s-6 text-caption text-center">
-                좌측에서 시안을 선택하거나 ‘시간표 생성’으로 추천 안을 만들어 보세요.
-              </p>
+              <>
+                {/* 좌측: 시안 카드 리스트 — 축소 */}
+                <aside className="w-56 shrink-0 overflow-y-auto pr-3">
+                  <ScheduleBoardList
+                    meetingId={meetingId}
+                    selectedBoardId={rightPanel?.kind === 'board' ? rightPanel.boardId : null}
+                    onSelect={(boardId) => setRightPanel({ kind: 'board', boardId })}
+                    generateRecommendations={() => {
+                      const variants = suggestScheduleBoards({
+                        schedules: memberSchedules,
+                        dates: allDays,
+                        songs: editorSongPool,
+                        variantCount: 3,
+                      });
+                      return variants.map((v, idx) =>
+                        v.blocks.map<ScheduleBlock>((b, i) => ({
+                          ...b,
+                          pinned: false,
+                          paletteIndex: idx * 100 + i,
+                        })),
+                      );
+                    }}
+                  />
+                </aside>
+                {/* 중앙+우측: 시간표 에디터(블록 풀 내장). */}
+                <div className="min-w-0 flex-1">
+                  {rightPanel?.kind === 'board' ? (
+                    <ScheduleBoardEditor
+                      boardId={rightPanel.boardId}
+                      days={visibleDays}
+                      isInWindow={isInWindow}
+                      rangeLabel={rangeLabel}
+                      compact={compact}
+                      onPrev={view.prev}
+                      onNext={view.next}
+                      onToday={view.today}
+                      canPrev={view.canPrev}
+                      canNext={view.canNext}
+                      songPool={editorSongPool}
+                    />
+                  ) : (
+                    <p className="text-foreground-muted px-s-4 py-s-6 text-caption text-center">
+                      좌측에서 시안을 선택하거나 ‘시간표 생성’으로 추천 안을 만들어 보세요.
+                    </p>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -329,6 +339,40 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
           onOpenChange={setScheduleOpen}
         />
       )}
+    </div>
+  );
+}
+
+function ViewModeToggle({
+  value,
+  onChange,
+}: {
+  value: 'weekly' | 'matrix';
+  onChange: (v: 'weekly' | 'matrix') => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="시간표 뷰 모드"
+      className="bg-card border-border inline-flex rounded-md border p-0.5"
+    >
+      {(['weekly', 'matrix'] as const).map((m) => (
+        <button
+          key={m}
+          type="button"
+          role="tab"
+          aria-selected={value === m}
+          onClick={() => onChange(m)}
+          className={cn(
+            'text-micro px-s-3 rounded py-1 font-bold transition-colors',
+            value === m
+              ? 'bg-accent text-foreground'
+              : 'text-foreground-muted hover:text-foreground',
+          )}
+        >
+          {m === 'weekly' ? '주차별' : '매트릭스'}
+        </button>
+      ))}
     </div>
   );
 }
