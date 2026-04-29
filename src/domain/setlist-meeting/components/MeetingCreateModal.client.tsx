@@ -86,7 +86,7 @@ export function MeetingCreateModal({ trigger }: MeetingCreateModalProps) {
                 required
                 error={form.formState.errors.bandName?.message}
                 hint="실제 밴드 연결은 백엔드 도입 후 BandPickerModal 로 교체됩니다 (FE-API-024)."
-                placeholder="예: TOOL TRIBUTE"
+                placeholder="예: DREAM THEATER TRIBUTE"
                 {...form.register('bandName')}
               />
             </div>

@@ -1,5 +1,5 @@
 /**
- * 합주 일정 조율 mock 시드 — TOOL TRIBUTE '10,000 Days 전곡 합주 프로젝트' (mt1) 의
+ * 합주 일정 조율 mock 시드 — DREAM THEATER TRIBUTE 'DT 클래식 셋리스트 합주 프로젝트' (mt1) 의
  * 7명 멤버에 대한 가상의 가용 일정. 개발자 직접 검토용.
  *
  * 실제 API 도입 시 이 시드는 사용되지 않음. 잠금 없는 fresh localStorage 에서만 적용.

@@ -30,7 +30,7 @@ type GeneralTab = 'band' | 'member';
 
 /** 일반 모드의 mock 밴드 — 실제 도입 시 useMyBands + 검색 API 로 교체. */
 const MOCK_BANDS: Array<{ bandId: string; bandName: string; memberIds: string[] }> = [
-  { bandId: 'b1', bandName: 'TOOL TRIBUTE', memberIds: ['u1', 'u3', 'u4'] },
+  { bandId: 'b1', bandName: 'DREAM THEATER TRIBUTE', memberIds: ['u1', 'u3', 'u4'] },
   { bandId: 'b3', bandName: '마그마', memberIds: ['u2', 'u5', 'u6'] },
   { bandId: 'b2', bandName: '체리블라썸', memberIds: ['u8', 'u9'] },
 ];
