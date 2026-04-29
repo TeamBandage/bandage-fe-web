@@ -1,22 +1,27 @@
 'use client';
 
-import { Check, Info, Lock, Pin, Unlock, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Check, GripVertical, Info, Lock, Pin, Unlock, X } from 'lucide-react';
+import { useEffect, useMemo, useState, type DragEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
-import { useMatrixLockStore } from '../store/matrixLockStore';
+import { useMatrixLockStore, type LockedSlot } from '../store/matrixLockStore';
 import type { MemberSchedule } from '../types';
 import { dayOfWeek, isHoliday, slotToTime } from '../utils';
+import { reflowMatrixLocks } from '../utils/reflowMatrixLocks';
 
 import type { Member } from '@/domain/setlist-meeting/types';
+
+import { songTone } from './palette';
 
 /** 09:00 ~ 23:00 — 28 슬롯 */
 const SLOT_FROM = 18;
 const SLOT_TO = 46;
+const DEFAULT_BLOCK_SLOTS = 2; // 1h
 const DOW_LABEL = ['일', '월', '화', '수', '목', '금', '토'] as const;
+const DRAG_MIME = 'application/x-bandage-block';
 
 interface CellRef {
   date: string;
@@ -28,27 +33,47 @@ interface DragRange {
   endSlot: number;
 }
 
+interface SongLite {
+  id: string;
+  title: string;
+  artist?: string | null;
+}
+
+interface DragData {
+  songId: string;
+  durationSlots: number;
+}
+
 interface Props {
   meetingId: string;
   /** 합주 기간 내 모든 일자. */
   allDays: string[];
   participants: Member[];
   memberSchedules: MemberSchedule[];
+  /** 합주 블록 풀 — 확정 곡. 우측 슬레이브 패널의 드래그 소스. */
+  songPool: SongLite[];
 }
 
-export function MatrixView({ meetingId, allDays, participants, memberSchedules }: Props) {
+export function MatrixView({ meetingId, allDays, participants, memberSchedules, songPool }: Props) {
   const [hover, setHover] = useState<CellRef | null>(null);
   const [pinned, setPinned] = useState<CellRef | null>(null);
   const [drag, setDrag] = useState<DragRange | null>(null);
   const [confirmRange, setConfirmRange] = useState<DragRange | null>(null);
+  const [poolDrag, setPoolDrag] = useState<DragData | null>(null);
+  const [poolDropHover, setPoolDropHover] = useState<CellRef | null>(null);
   const toast = useToast();
 
-  // s.locksByMeeting 만 구독하고 useMemo 로 derive — '?? []' fallback 은 매번 새 배열을 만들어
-  // React 19 useSyncExternalStore 캐시 검증을 위반(getSnapshot infinite loop).
   const locksByMeeting = useMatrixLockStore((s) => s.locksByMeeting);
   const locks = useMemo(() => locksByMeeting[meetingId] ?? [], [locksByMeeting, meetingId]);
   const addLock = useMatrixLockStore((s) => s.addLock);
   const removeLock = useMatrixLockStore((s) => s.removeLock);
+  const replaceLocks = useMatrixLockStore((s) => s.replaceLocks);
+
+  const songMap = useMemo(() => {
+    const m = new Map<string, SongLite>();
+    for (const s of songPool) m.set(s.id, s);
+    return m;
+  }, [songPool]);
 
   /** date+slot → 가능한 userId set. */
   const availability = useMemo(() => {
@@ -76,13 +101,35 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
   const lockAt = (date: string, slot: number) =>
     locks.find((l) => l.date === date && slot >= l.startSlot && slot < l.endSlot);
 
+  /** 워킹 범위 안의 가능한 시작 슬롯인지 — 겹침은 reflow 로 처리하므로 통과. */
+  const canDrop = (startSlot: number, dur: number) =>
+    startSlot >= SLOT_FROM && startSlot + dur <= SLOT_TO;
+  /** 겹침 없이 깔끔하게 떨어지는지 — 하이라이트 강조용. */
+  const isCleanDrop = (date: string, startSlot: number, dur: number) => {
+    if (!canDrop(startSlot, dur)) return false;
+    for (let i = 0; i < dur; i++) {
+      if (isLocked(date, startSlot + i)) return false;
+    }
+    return true;
+  };
+
   /** focus = pinned ?? hover (PRD §2.1) */
   const focus: CellRef | null = pinned ?? hover;
 
   // 셀 색상 (PRD §3.2)
   const cellBg = (date: string, slot: number, dragHit: boolean): string => {
-    if (isLocked(date, slot)) return 'bg-success';
+    const lock = lockAt(date, slot);
+    if (lock) {
+      if (lock.songId) return songTone(lock.songId, 0).bg;
+      return 'bg-success';
+    }
     if (dragHit) return 'bg-accent';
+    if (poolDrag && canDrop(slot, poolDrag.durationSlots)) {
+      const hovered = poolDropHover && poolDropHover.date === date && poolDropHover.slot === slot;
+      const clean = isCleanDrop(date, slot, poolDrag.durationSlots);
+      if (hovered) return clean ? 'bg-accent-dim' : 'bg-warn/40';
+      return clean ? 'bg-accent-soft' : 'bg-warn/15';
+    }
     const r = ratio(date, slot);
     if (r === 0) return 'bg-card';
     if (r < 0.25) return 'bg-danger/30';
@@ -102,20 +149,18 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
   const onCellMouseEnter = (date: string, slot: number) => () => {
     setHover({ date, slot });
     if (drag && drag.date === date) {
-      // 같은 행에서만 드래그 확장 (PRD §5.1).
       const startSlot = Math.min(drag.startSlot, slot);
       const endSlot = Math.max(drag.startSlot + 1, slot + 1);
       setDrag({ date, startSlot, endSlot });
     }
   };
 
-  // 매트릭스 컨테이너 mouseup — 어디서든 마우스를 떼면 확정.
+  // 드래그 select — mouseup 시 핀/확정 미리보기.
   useEffect(() => {
     if (!drag) return;
     const onUp = () => {
       const len = drag.endSlot - drag.startSlot;
       if (len === 1) {
-        // 단일 셀 → 핀 토글.
         const cur = { date: drag.date, slot: drag.startSlot };
         setPinned((prev) =>
           prev && prev.date === cur.date && prev.slot === cur.slot ? null : cur,
@@ -129,13 +174,14 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
     return () => window.removeEventListener('mouseup', onUp);
   }, [drag]);
 
-  const commitConfirm = () => {
+  const commitConfirm = (songId?: string) => {
     if (!confirmRange) return;
     addLock({
       meetingId,
       date: confirmRange.date,
       startSlot: confirmRange.startSlot,
       endSlot: confirmRange.endSlot,
+      songId,
     });
     toast.success(
       `${confirmRange.date} ${slotToTime(confirmRange.startSlot)}~${slotToTime(confirmRange.endSlot)} 합주 일정 확정`,
@@ -144,15 +190,89 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
     setPinned(null);
   };
 
+  // ─── 풀 드래그 → 매트릭스 드롭 ──────────────────────────────
+  /** drag preview 가 다른 셀의 형제 텍스트까지 포함하지 않도록 element 만 ghost 로 사용. */
+  const setPoolDragImage = (e: DragEvent) => {
+    const el = e.currentTarget as HTMLElement;
+    const rect = el.getBoundingClientRect();
+    const ghost = el.cloneNode(true) as HTMLElement;
+    ghost.style.position = 'fixed';
+    ghost.style.top = '-9999px';
+    ghost.style.left = '-9999px';
+    ghost.style.width = `${rect.width}px`;
+    ghost.style.height = `${rect.height}px`;
+    ghost.style.pointerEvents = 'none';
+    ghost.style.opacity = '0.9';
+    ghost.style.transform = 'none';
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, rect.width / 2, rect.height / 2);
+    setTimeout(() => ghost.remove(), 0);
+  };
+
+  const onPoolDragStart = (song: SongLite) => (e: DragEvent) => {
+    const data: DragData = { songId: song.id, durationSlots: DEFAULT_BLOCK_SLOTS };
+    e.dataTransfer.setData(DRAG_MIME, JSON.stringify(data));
+    e.dataTransfer.effectAllowed = 'copy';
+    setPoolDragImage(e);
+    setPoolDrag(data);
+  };
+  const onPoolDragEnd = () => {
+    setPoolDrag(null);
+    setPoolDropHover(null);
+  };
+  const onCellDragOver = (date: string, slot: number) => (e: DragEvent) => {
+    if (!poolDrag) return;
+    if (!canDrop(slot, poolDrag.durationSlots)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setPoolDropHover({ date, slot });
+  };
+  const onCellDrop = (date: string, slot: number) => (e: DragEvent) => {
+    if (!poolDrag) return;
+    if (!canDrop(slot, poolDrag.durationSlots)) return;
+    e.preventDefault();
+    const raw = e.dataTransfer.getData(DRAG_MIME);
+    const data: DragData | null = raw ? JSON.parse(raw) : poolDrag;
+    setPoolDrag(null);
+    setPoolDropHover(null);
+    if (!data) return;
+    const newLock: LockedSlot = {
+      id: `lock_${Math.random().toString(36).slice(2, 8)}_${Date.now().toString(36)}`,
+      meetingId,
+      date,
+      startSlot: slot,
+      endSlot: slot + data.durationSlots,
+      songId: data.songId,
+      lockedAt: new Date().toISOString(),
+    };
+    const allLocks = [...locks, newLock];
+    const reflowed = reflowMatrixLocks({
+      locks: allLocks,
+      anchorLockId: newLock.id,
+      slotFrom: SLOT_FROM,
+      slotTo: SLOT_TO,
+      availableDates: allDays,
+    });
+    if (!reflowed) {
+      toast.error('빈 시간대가 부족해 배치할 수 없습니다.');
+      return;
+    }
+    replaceLocks(meetingId, reflowed);
+    toast.success(
+      `${songMap.get(data.songId)?.title ?? '곡'} — ${date} ${slotToTime(slot)} 배치 완료`,
+    );
+  };
+
   const slots = Array.from({ length: SLOT_TO - SLOT_FROM }, (_, i) => SLOT_FROM + i);
 
   return (
     <div className="flex h-full gap-3 overflow-hidden">
+      {/* 메인: 매트릭스 그리드 */}
       <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-hidden">
         <div className="text-foreground-muted text-caption px-s-1 gap-s-3 flex items-center justify-between">
           <span>
             셀 <strong className="text-foreground">드래그</strong>로 합주 시간 그리기 · 클릭으로
-            정보 고정 · 확정 슬롯은 <strong className="text-success">잠금</strong>
+            정보 고정 · 우측 풀에서 곡을 드래그해 배치
           </span>
           <Legend />
         </div>
@@ -161,11 +281,11 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
           <table className="w-fit border-collapse select-none">
             <thead>
               <tr>
-                <th className="bg-surface border-border sticky top-0 left-0 z-30 w-24 border-r border-b" />
+                <th className="bg-surface border-border sticky top-0 left-0 z-30 w-28 border-r border-b" />
                 {slots.map((s) => (
                   <th
                     key={s}
-                    className="bg-surface text-foreground-muted border-border text-micro sticky top-0 z-20 w-7 border-b px-0 py-1 text-center font-mono"
+                    className="bg-surface text-foreground-muted border-border text-micro sticky top-0 z-20 w-7 border-b px-0 py-1.5 text-center font-mono"
                   >
                     {s % 2 === 0 ? slotToTime(s).slice(0, 2) : ''}
                   </th>
@@ -176,16 +296,28 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
               {allDays.map((d) => {
                 const dow = dayOfWeek(d);
                 const holiday = isHoliday(d);
+                const isSun = dow === 0 || holiday;
+                const isSat = dow === 6;
                 return (
                   <tr key={d}>
-                    <td
-                      className={cn(
-                        'bg-surface border-border text-caption sticky left-0 z-10 border-r px-2 py-0 font-mono font-bold whitespace-nowrap',
-                        (dow === 0 || holiday) && 'text-danger',
-                        dow === 6 && 'text-accent',
-                      )}
-                    >
-                      {d.slice(5)} ({DOW_LABEL[dow]})
+                    <td className="bg-surface border-border sticky left-0 z-10 border-r px-2 py-0.5 whitespace-nowrap">
+                      <div className="gap-s-2 flex items-center">
+                        <span className="text-caption text-foreground tabular-nums">
+                          {d.slice(5)}
+                        </span>
+                        <span
+                          className={cn(
+                            'text-micro inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-bold',
+                            isSun
+                              ? 'bg-danger-dim text-danger'
+                              : isSat
+                                ? 'bg-accent-dim text-accent'
+                                : 'bg-card text-foreground-muted',
+                          )}
+                        >
+                          {DOW_LABEL[dow]}
+                        </span>
+                      </div>
                     </td>
                     {slots.map((s) => {
                       const dragHit =
@@ -195,14 +327,24 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
                       const isPinned = pinned?.date === d && pinned?.slot === s;
                       const isHover = !pinned && hover?.date === d && hover?.slot === s && !lock;
                       const count = availability.get(`${d}__${s}`)?.size ?? 0;
+                      const songTitle = lock?.songId
+                        ? (songMap.get(lock.songId)?.title ?? '곡')
+                        : null;
                       return (
                         <td
                           key={s}
                           onMouseDown={onCellMouseDown(d, s)}
                           onMouseEnter={onCellMouseEnter(d, s)}
-                          title={`${d} ${slotToTime(s)} — ${count}/${totalMembers}명 가능`}
+                          onDragOver={onCellDragOver(d, s)}
+                          onDragLeave={() => setPoolDropHover(null)}
+                          onDrop={onCellDrop(d, s)}
+                          title={
+                            lock
+                              ? `${songTitle ?? '확정 슬롯'} ${slotToTime(lock.startSlot)}~${slotToTime(lock.endSlot)}`
+                              : `${d} ${slotToTime(s)} — ${count}/${totalMembers}명 가능`
+                          }
                           className={cn(
-                            'border-border/50 h-5 w-7 border-r border-b transition-colors',
+                            'border-border/50 h-6 w-7 border-r border-b transition-colors',
                             cellBg(d, s, dragHit),
                             isLockStart && 'relative',
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
@@ -211,7 +353,9 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
                           )}
                         >
                           {isLockStart && (
-                            <Lock className="text-bg mx-auto h-2.5 w-2.5" aria-hidden="true" />
+                            <div className="text-bg gap-s-1 flex h-full items-center justify-center">
+                              <Lock className="h-2.5 w-2.5" aria-hidden="true" />
+                            </div>
                           )}
                         </td>
                       );
@@ -228,22 +372,32 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
             range={confirmRange}
             totalMembers={totalMembers}
             availability={availability}
+            songPool={songPool}
             onCancel={() => setConfirmRange(null)}
             onCommit={commitConfirm}
           />
         )}
       </div>
 
-      <SidePanel
-        focus={focus}
-        pinned={!!pinned}
-        availability={availability}
-        participants={participants}
-        memberSchedules={memberSchedules}
-        lock={focus ? (lockAt(focus.date, focus.slot) ?? null) : null}
-        onUnpin={() => setPinned(null)}
-        onUnlock={(lockId) => removeLock(meetingId, lockId)}
-      />
+      {/* 우측 사이드바 — 마스터(가능/불가) + 슬레이브(블록 풀) 세로 stack. */}
+      <aside className="flex w-80 shrink-0 flex-col gap-3">
+        <SidePanel
+          focus={focus}
+          pinned={!!pinned}
+          availability={availability}
+          participants={participants}
+          memberSchedules={memberSchedules}
+          songMap={songMap}
+          lock={focus ? (lockAt(focus.date, focus.slot) ?? null) : null}
+          onUnpin={() => setPinned(null)}
+          onUnlock={(lockId) => removeLock(meetingId, lockId)}
+        />
+        <BlockPoolPanel
+          songPool={songPool}
+          onDragStart={onPoolDragStart}
+          onDragEnd={onPoolDragEnd}
+        />
+      </aside>
     </div>
   );
 }
@@ -271,16 +425,18 @@ function ConfirmPreviewCard({
   range,
   totalMembers,
   availability,
+  songPool,
   onCancel,
   onCommit,
 }: {
   range: DragRange;
   totalMembers: number;
   availability: Map<string, Set<string>>;
+  songPool: SongLite[];
   onCancel: () => void;
-  onCommit: () => void;
+  onCommit: (songId?: string) => void;
 }) {
-  // 범위 내 모든 슬롯에서 동시 가능한 멤버 = 교집합.
+  const [songId, setSongId] = useState<string>('');
   const intersection = useMemo(() => {
     const slots = Array.from(
       { length: range.endSlot - range.startSlot },
@@ -322,13 +478,28 @@ function ConfirmPreviewCard({
           )}
         </div>
       </div>
+      {songPool.length > 0 && (
+        <select
+          value={songId}
+          onChange={(e) => setSongId(e.target.value)}
+          className="bg-surface border-border text-caption focus-visible:ring-accent rounded-md border px-2 py-1.5 focus-visible:ring-2 focus-visible:outline-none"
+          aria-label="곡 매핑"
+        >
+          <option value="">곡 미지정</option>
+          {songPool.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.title}
+            </option>
+          ))}
+        </select>
+      )}
       <Button variant="ghost" size="sm" onClick={onCancel}>
         취소
       </Button>
       <Button
         variant="primary"
         size="sm"
-        onClick={onCommit}
+        onClick={() => onCommit(songId || undefined)}
         className="bg-success hover:bg-success/90 text-white"
       >
         <Lock className="h-4 w-4" /> 확정 & 잠금
@@ -343,6 +514,7 @@ function SidePanel({
   availability,
   participants,
   memberSchedules,
+  songMap,
   lock,
   onUnpin,
   onUnlock,
@@ -352,20 +524,21 @@ function SidePanel({
   availability: Map<string, Set<string>>;
   participants: Member[];
   memberSchedules: MemberSchedule[];
-  lock: { id: string; startSlot: number; endSlot: number; date: string } | null;
+  songMap: Map<string, SongLite>;
+  lock: { id: string; startSlot: number; endSlot: number; date: string; songId?: string } | null;
   onUnpin: () => void;
   onUnlock: (lockId: string) => void;
 }) {
   if (!focus) {
     return (
-      <aside className="bg-card border-border w-80 shrink-0 rounded-md border">
-        <div className="px-s-4 py-s-8 text-foreground-muted text-caption flex h-full flex-col items-center justify-center gap-2 text-center">
-          <Info className="h-5 w-5 opacity-60" />
+      <div className="bg-card border-border flex flex-1 flex-col items-center justify-center gap-2 rounded-md border p-6 text-center">
+        <Info className="text-foreground-muted/60 h-5 w-5" />
+        <p className="text-foreground-muted text-caption">
           매트릭스의 셀에 호버하면
           <br />
           해당 시간의 멤버 가용성이 표시됩니다.
-        </div>
-      </aside>
+        </p>
+      </div>
     );
   }
 
@@ -374,7 +547,6 @@ function SidePanel({
   const availableIds = availability.get(`${focus.date}__${focus.slot}`) ?? new Set<string>();
   const total = participants.length;
 
-  // unavailable: schedule 가 있는데 이 슬롯이 false 인 멤버.
   const unavailable: Array<{ member: Member; reason?: string }> = [];
   const available: Member[] = [];
   for (const m of participants) {
@@ -391,8 +563,10 @@ function SidePanel({
     }
   }
 
+  const lockedSong = lock?.songId ? songMap.get(lock.songId) : null;
+
   return (
-    <aside className="bg-card border-border flex w-80 shrink-0 flex-col overflow-hidden rounded-md border">
+    <div className="bg-card border-border flex flex-1 flex-col overflow-hidden rounded-md border">
       <div className="border-border px-s-4 py-s-3 border-b">
         <div className="text-foreground-muted text-micro gap-s-1 flex items-center font-bold uppercase">
           {lock ? (
@@ -410,6 +584,9 @@ function SidePanel({
         <div className="text-foreground text-body mt-0.5 font-mono font-bold">
           {focus.date} ({dowLabel}) {slotToTime(focus.slot)}
         </div>
+        {lockedSong && (
+          <div className="text-accent text-caption mt-0.5 font-bold">{lockedSong.title}</div>
+        )}
         <div className="mt-s-2 gap-s-2 flex items-center">
           <div
             className="bg-bg/40 h-2 flex-1 overflow-hidden rounded-full"
@@ -484,12 +661,61 @@ function SidePanel({
           >
             <Unlock className="h-4 w-4" /> 이 슬롯 잠금 해제
           </Button>
-          <p className="text-foreground-muted text-micro mt-s-2 text-center">
-            현재 이 슬롯은 잠겨 있습니다 — 다른 곡 합주 후보에서 자동 제외.
-          </p>
         </div>
       )}
-    </aside>
+    </div>
+  );
+}
+
+function BlockPoolPanel({
+  songPool,
+  onDragStart,
+  onDragEnd,
+}: {
+  songPool: SongLite[];
+  onDragStart: (song: SongLite) => (e: DragEvent) => void;
+  onDragEnd: () => void;
+}) {
+  return (
+    <div className="bg-card border-border flex max-h-[40%] flex-col overflow-hidden rounded-md border">
+      <div className="border-border px-s-3 py-s-2 border-b">
+        <div className="text-foreground-muted text-micro font-bold uppercase">
+          합주 블록 풀 ({songPool.length})
+        </div>
+        <div className="text-foreground-muted text-micro mt-0.5">
+          드래그하여 매트릭스 셀에 1시간 단위로 배치
+        </div>
+      </div>
+      <div className="px-s-2 py-s-2 gap-s-1 flex flex-1 flex-col overflow-y-auto">
+        {songPool.length === 0 ? (
+          <p className="text-foreground-muted text-micro p-2">확정된 곡이 없습니다.</p>
+        ) : (
+          songPool.map((song) => {
+            const tone = songTone(song.id, 0);
+            return (
+              <button
+                key={song.id}
+                draggable
+                onDragStart={onDragStart(song)}
+                onDragEnd={onDragEnd}
+                className={cn(
+                  'gap-s-2 flex items-center rounded-md px-2 py-1.5 text-left text-white shadow-sm transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]',
+                  tone.bg,
+                )}
+              >
+                <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                <div className="min-w-0">
+                  <div className="text-micro truncate font-bold">{song.title}</div>
+                  {song.artist && (
+                    <div className="text-micro truncate opacity-75">{song.artist}</div>
+                  )}
+                </div>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }
 

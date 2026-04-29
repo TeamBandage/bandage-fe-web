@@ -28,6 +28,8 @@ interface MatrixLockState {
 interface MatrixLockActions {
   addLock: (input: Omit<LockedSlot, 'id' | 'lockedAt'>) => LockedSlot;
   removeLock: (meetingId: string, lockId: string) => void;
+  /** auto-reschedule 결과 일괄 반영용. */
+  replaceLocks: (meetingId: string, locks: LockedSlot[]) => void;
   reset: () => void;
 }
 
@@ -59,6 +61,11 @@ export const useMatrixLockStore = create<MatrixLockState & MatrixLockActions>()(
             ...s.locksByMeeting,
             [meetingId]: (s.locksByMeeting[meetingId] ?? []).filter((l) => l.id !== lockId),
           },
+        })),
+
+      replaceLocks: (meetingId, locks) =>
+        set((s) => ({
+          locksByMeeting: { ...s.locksByMeeting, [meetingId]: locks },
         })),
 
       reset: () => set({ locksByMeeting: {} }),

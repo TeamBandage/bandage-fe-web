@@ -129,10 +129,14 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   ).length;
 
   const tabItems = [
-    ...(isManager ? [{ id: 'matrix' as const, label: '매트릭스' }] : []),
     { id: 'member' as const, label: '멤버 시간표', badge: participants.length },
     { id: 'song' as const, label: '합주곡 시간표', badge: visibleSongs.length },
-    ...(isManager ? [{ id: 'board' as const, label: '합주 시간표 생성' }] : []),
+    ...(isManager
+      ? [
+          { id: 'board' as const, label: '합주 시간표 생성' },
+          { id: 'matrix' as const, label: '매트릭스' },
+        ]
+      : []),
   ];
 
   return (
@@ -228,6 +232,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
             allDays={allDays}
             participants={participants}
             memberSchedules={memberSchedules}
+            songPool={editorSongPool}
           />
         </div>
       ) : safeLeftTab === 'board' && isManager ? (
