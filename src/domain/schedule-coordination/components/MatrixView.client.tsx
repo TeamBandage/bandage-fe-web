@@ -278,14 +278,20 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
         </div>
 
         <div className="border-border bg-card flex-1 overflow-auto rounded-md border">
-          <table className="w-fit border-collapse select-none">
+          <table className="w-full border-collapse select-none" style={{ tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '110px' }} />
+              {slots.map((s) => (
+                <col key={s} />
+              ))}
+            </colgroup>
             <thead>
               <tr>
-                <th className="bg-surface border-border sticky top-0 left-0 z-30 w-28 border-r border-b" />
+                <th className="bg-surface border-border sticky top-0 left-0 z-30 border-r border-b" />
                 {slots.map((s) => (
                   <th
                     key={s}
-                    className="bg-surface text-foreground-muted border-border text-micro sticky top-0 z-20 w-7 border-b px-0 py-1.5 text-center font-mono"
+                    className="bg-surface text-foreground-muted border-border text-micro sticky top-0 z-20 border-b px-0 py-1.5 text-center font-mono"
                   >
                     {s % 2 === 0 ? slotToTime(s).slice(0, 2) : ''}
                   </th>
@@ -344,7 +350,7 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
                               : `${d} ${slotToTime(s)} — ${count}/${totalMembers}명 가능`
                           }
                           className={cn(
-                            'border-border/50 h-6 w-7 border-r border-b transition-colors',
+                            'border-border/50 h-7 border-r border-b transition-colors',
                             cellBg(d, s, dragHit),
                             isLockStart && 'relative',
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
