@@ -29,6 +29,8 @@ export interface WeeklyScheduleGridProps {
   onCellDragOver?: (date: string, slot: number) => (e: DragEvent) => void;
   onCellDragLeave?: () => void;
   onCellDrop?: (date: string, slot: number) => (e: DragEvent) => void;
+  /** 셀 클릭 핸들러 — 입력 모달 등 read+write 그리드용. */
+  onCellClick?: (date: string, slot: number) => void;
   /** 추가 셀 클래스 함수 — hover/highlight 상태. */
   cellClassName?: (date: string, slot: number, inWindow: boolean) => string | undefined;
   /** export 용 ref (캡처 대상). */
@@ -47,6 +49,7 @@ export function WeeklyScheduleGrid({
   onCellDragOver,
   onCellDragLeave,
   onCellDrop,
+  onCellClick,
   cellClassName,
   gridRef,
   className,
@@ -117,13 +120,27 @@ export function WeeklyScheduleGrid({
             return (
               <div
                 key={`c-${d}-${s}`}
+                role={onCellClick && inWindow ? 'button' : undefined}
+                tabIndex={onCellClick && inWindow ? 0 : undefined}
                 onDragOver={inWindow ? onCellDragOver?.(d, s) : undefined}
                 onDragLeave={inWindow ? onCellDragLeave : undefined}
                 onDrop={inWindow ? onCellDrop?.(d, s) : undefined}
+                onClick={inWindow ? () => onCellClick?.(d, s) : undefined}
+                onKeyDown={
+                  onCellClick && inWindow
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onCellClick(d, s);
+                        }
+                      }
+                    : undefined
+                }
                 className={cn(
                   'border-border border-r transition-colors',
                   isHourBoundary && 'border-t',
                   !inWindow && 'bg-surface/40',
+                  onCellClick && inWindow && 'hover:bg-card-hover cursor-pointer',
                   extraClass,
                 )}
                 style={{ gridRow: sIdx + 2, gridColumn: dIdx + 2 }}

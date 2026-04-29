@@ -13,6 +13,7 @@ import {
   ResponsiveSheetTitle,
 } from '@/components/ui/responsive-sheet';
 import { Textarea } from '@/components/ui/textarea';
+import { WeeklyScheduleGrid } from '@/domain/schedule-coordination/components/WeeklyScheduleGrid.client';
 import {
   DEFAULT_DAY_MASK,
   useScheduleStore,
@@ -23,7 +24,6 @@ import {
   dayOfWeek,
   isHoliday,
   isWeekend,
-  slotToTime,
   startOfWeek,
 } from '@/domain/schedule-coordination/utils';
 import { useToast } from '@/hooks/useToast';
@@ -300,9 +300,8 @@ function Step1Dates({
   );
 }
 
-// Step 2: 시간 블록 (when2meet 스타일, 1주 단위)
+// Step 2: 시간 블록 — 합주 시간표 생성 탭과 동일한 WeeklyScheduleGrid 사용.
 function Step2Blocks({
-  allDays,
   availableDates,
   blocks,
   setBlocks,
@@ -313,19 +312,24 @@ function Step2Blocks({
   setBlocks: (next: Record<string, SlotMask>) => void;
 }) {
   const sortedAvail = useMemo(() => [...availableDates].sort(), [availableDates]);
+  const compact = sortedAvail.length > 0 && sortedAvail.length <= 7;
   const firstWeekStart = useMemo(
-    () => (sortedAvail[0] ? startOfWeek(sortedAvail[0]) : startOfWeek(allDays[0] ?? '')),
-    [sortedAvail, allDays],
+    () => (sortedAvail[0] ? startOfWeek(sortedAvail[0]) : ''),
+    [sortedAvail],
   );
   const [weekStart, setWeekStart] = useState(firstWeekStart);
   const [range, setRange] = useState<'9-22' | '24h'>('9-22');
   const slotStart = range === '24h' ? 0 : 18;
   const slotEnd = range === '24h' ? 48 : 44;
-  const weekDates = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart],
-  );
-  const weekAvailDates = weekDates.filter((d) => availableDates.includes(d));
+
+  const visibleDays = useMemo<string[]>(() => {
+    if (sortedAvail.length === 0) return [];
+    if (compact) return sortedAvail;
+    return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  }, [compact, sortedAvail, weekStart]);
+
+  const availSet = useMemo(() => new Set(sortedAvail), [sortedAvail]);
+  const isInWindow = (d: string) => availSet.has(d);
 
   const ensureMask = (date: string): SlotMask => blocks[date] ?? [...DEFAULT_DAY_MASK];
 
@@ -336,7 +340,7 @@ function Step2Blocks({
     setBlocks({ ...blocks, [date]: next });
   };
 
-  // 9-B 시간 프리셋 칩 (Reclaim Habits) — 현재 주의 모든 가능 일자에 일괄 적용. shift 키로 추가, alt 키로 제거.
+  // 9-B 프리셋 칩 — 현재 보이는 가능 일자에 일괄 적용. shift=추가, alt=제거.
   const PRESETS: Array<{ id: string; label: string; range: [number, number] }> = [
     { id: 'morning', label: '오전 09-12', range: [18, 24] },
     { id: 'lunch', label: '점심 12-14', range: [24, 28] },
@@ -348,7 +352,8 @@ function Step2Blocks({
   const applyPreset = (preset: (typeof PRESETS)[number], mode: 'set' | 'add' | 'remove') => {
     const [from, to] = preset.range;
     const upd: Record<string, SlotMask> = { ...blocks };
-    for (const d of weekAvailDates) {
+    const targets = visibleDays.filter(isInWindow);
+    for (const d of targets) {
       const mask = mode === 'set' ? Array.from({ length: 48 }, () => false) : ensureMask(d).slice();
       for (let i = from; i < Math.min(48, to); i++) {
         mask[i] = mode === 'remove' ? false : true;
@@ -358,15 +363,17 @@ function Step2Blocks({
     setBlocks(upd);
   };
 
-  // 9-C Sling 'Copy & Repeat' — 전 주 마스크 복사.
+  // 9-C 전 주 복사 — week 모드 한정.
   const copyPrevWeek = () => {
-    const prev = weekDates.map((d) => addDays(d, -7));
+    if (compact) return;
+    const targets = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const prev = targets.map((d) => addDays(d, -7));
     const upd: Record<string, SlotMask> = { ...blocks };
     let changed = false;
-    for (let i = 0; i < weekDates.length; i++) {
-      const target = weekDates[i]!;
+    for (let i = 0; i < targets.length; i++) {
+      const target = targets[i]!;
       const source = prev[i]!;
-      if (!availableDates.includes(target)) continue;
+      if (!availSet.has(target)) continue;
       const sourceMask = blocks[source];
       if (!sourceMask) continue;
       upd[target] = sourceMask.slice();
@@ -375,7 +382,7 @@ function Step2Blocks({
     if (changed) setBlocks(upd);
   };
 
-  // 9-F Smart Defaults — 평일 저녁 + 주말 종일 mock 프리셋.
+  // 9-F Smart Default — 평일 저녁 + 주말 종일.
   const applySmartDefault = () => {
     const upd: Record<string, SlotMask> = { ...blocks };
     for (const d of availableDates) {
@@ -397,31 +404,42 @@ function Step2Blocks({
     );
   }
 
+  const firstAvail = sortedAvail[0]!;
+  const lastAvail = sortedAvail[sortedAvail.length - 1]!;
+  const canPrev = !compact && weekStart > startOfWeek(firstAvail);
+  const canNext = !compact && weekStart < startOfWeek(lastAvail);
+
   return (
     <section className="gap-s-3 flex flex-col">
-      <div className="gap-s-2 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => setWeekStart(addDays(weekStart, -7))}
-          className="text-foreground-muted hover:text-foreground p-1"
-          aria-label="이전 주"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <span className="text-caption font-mono font-bold">
-          {weekStart} ~ {addDays(weekStart, 6)}
-        </span>
-        <button
-          type="button"
-          onClick={() => setWeekStart(addDays(weekStart, 7))}
-          className="text-foreground-muted hover:text-foreground p-1"
-          aria-label="다음 주"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
+      {/* 주차 라벨 + 네비 (compact 일 때 숨김). */}
+      {!compact && (
+        <div className="gap-s-2 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => canPrev && setWeekStart(addDays(weekStart, -7))}
+            disabled={!canPrev}
+            className="text-foreground-muted hover:text-foreground rounded p-1 disabled:opacity-30"
+            aria-label="이전 주"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-caption font-mono font-bold">
+            {weekStart} ~ {addDays(weekStart, 6)}
+          </span>
+          <button
+            type="button"
+            onClick={() => canNext && setWeekStart(addDays(weekStart, 7))}
+            disabled={!canNext}
+            className="text-foreground-muted hover:text-foreground rounded p-1 disabled:opacity-30"
+            aria-label="다음 주"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       <p className="text-foreground-muted text-micro">
-        30분 단위. 셀 클릭으로 가능/불가 토글. 프리셋 칩으로 현재 주에 일괄 적용.
+        30분 단위. 셀 클릭으로 가능/불가 토글. 프리셋 칩으로 현재 주 일괄 적용.
       </p>
 
       <div className="gap-s-2 flex flex-wrap items-center">
@@ -436,17 +454,19 @@ function Step2Blocks({
             {p.label}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={copyPrevWeek}
-          className="text-accent text-micro ml-auto font-bold hover:underline"
-        >
-          전 주와 동일
-        </button>
+        {!compact && (
+          <button
+            type="button"
+            onClick={copyPrevWeek}
+            className="text-accent text-micro ml-auto font-bold hover:underline"
+          >
+            전 주와 동일
+          </button>
+        )}
         <button
           type="button"
           onClick={applySmartDefault}
-          className="text-accent text-micro font-bold hover:underline"
+          className={cn('text-accent text-micro font-bold hover:underline', compact && 'ml-auto')}
         >
           Smart Default
         </button>
@@ -477,55 +497,21 @@ function Step2Blocks({
           })}
         </div>
       </div>
-      {weekAvailDates.length === 0 ? (
-        <p className="text-foreground-muted text-caption py-s-4 text-center">
-          이 주에 선택된 일자가 없습니다.
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="text-micro w-full">
-            <thead>
-              <tr>
-                <th className="px-1 py-1"></th>
-                {Array.from({ length: slotEnd - slotStart }, (_, i) => slotStart + i)
-                  .filter((s) => s % 4 === 0)
-                  .map((s) => (
-                    <th key={s} colSpan={4} className="text-foreground-muted px-1 py-1 text-center">
-                      {slotToTime(s)}
-                    </th>
-                  ))}
-              </tr>
-            </thead>
-            <tbody>
-              {weekAvailDates.map((d) => {
-                const mask = ensureMask(d);
-                return (
-                  <tr key={d}>
-                    <td className="px-1 py-1 font-mono">{d.slice(5)}</td>
-                    {Array.from({ length: slotEnd - slotStart }, (_, i) => slotStart + i).map(
-                      (s) => (
-                        <td key={s} className="p-0">
-                          <button
-                            type="button"
-                            onClick={() => toggleSlot(d, s)}
-                            aria-label={`${d} ${slotToTime(s)}`}
-                            className={cn(
-                              'h-6 w-full border-r border-b transition-colors',
-                              mask[s]
-                                ? 'bg-accent border-accent-hi'
-                                : 'bg-card border-border hover:bg-card-hover',
-                            )}
-                          />
-                        </td>
-                      ),
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+
+      <div className="h-[420px]">
+        <WeeklyScheduleGrid
+          days={visibleDays}
+          slotStart={slotStart}
+          slotEnd={slotEnd}
+          isInWindow={isInWindow}
+          onCellClick={toggleSlot}
+          cellClassName={(d, s, inWindow) => {
+            if (!inWindow) return undefined;
+            const mask = blocks[d];
+            return mask?.[s] ? 'bg-accent/80' : undefined;
+          }}
+        />
+      </div>
     </section>
   );
 }
