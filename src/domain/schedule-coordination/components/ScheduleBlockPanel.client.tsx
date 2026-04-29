@@ -4,7 +4,6 @@ import { Lock, Trash2, Unlock, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 
@@ -38,7 +37,6 @@ export function ScheduleBlockPanel({
   const [titleOverride, setTitleOverride] = useState(block.songTitleOverride ?? '');
   const [note, setNote] = useState(block.note ?? '');
   const [duration, setDuration] = useState(block.durationSlots);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     setTitleOverride(block.songTitleOverride ?? '');
@@ -141,7 +139,14 @@ export function ScheduleBlockPanel({
         </div>
 
         <div className="mt-s-4 gap-s-2 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => setConfirmDelete(true)}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              removeBlock(boardId, block.blockId);
+              onClose();
+            }}
+            className="text-danger"
+          >
             <Trash2 className="h-4 w-4" /> 삭제
           </Button>
           <div className="gap-s-2 flex">
@@ -153,20 +158,6 @@ export function ScheduleBlockPanel({
             </Button>
           </div>
         </div>
-
-        <ConfirmDialog
-          open={confirmDelete}
-          onOpenChange={setConfirmDelete}
-          title="블록 삭제"
-          description="이 블록을 삭제할까요?"
-          confirmLabel="삭제"
-          tone="danger"
-          onConfirm={() => {
-            removeBlock(boardId, block.blockId);
-            setConfirmDelete(false);
-            onClose();
-          }}
-        />
       </div>
     </div>
   );

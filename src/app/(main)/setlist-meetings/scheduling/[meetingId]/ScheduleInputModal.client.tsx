@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -31,8 +31,6 @@ import { cn } from '@/lib/cn';
 
 const STEPS = ['가능 일자', '시간 블록', '특이사항', '확인'] as const;
 type Step = 0 | 1 | 2 | 3;
-
-type DateFilter = 'all' | 'weekday' | 'weekend' | 'no-holidays';
 
 export function ScheduleInputModal({
   meetingId,
@@ -205,12 +203,16 @@ function Step1Dates({
   availableDates: string[];
   setAvailableDates: (next: string[]) => void;
 }) {
-  const [filter, setFilter] = useState<DateFilter>('all');
+  // 다중 필터 — 평일 / 주말 (포함 조건) + 공휴일 제외 (배제 조건). 모두 독립 토글.
+  const [includeWeekday, setIncludeWeekday] = useState(true);
+  const [includeWeekend, setIncludeWeekend] = useState(true);
+  const [excludeHolidays, setExcludeHolidays] = useState(false);
 
   const passesFilter = (d: string) => {
-    if (filter === 'weekday') return !isWeekend(d);
-    if (filter === 'weekend') return isWeekend(d);
-    if (filter === 'no-holidays') return !isHoliday(d);
+    const wk = isWeekend(d);
+    if (wk && !includeWeekend) return false;
+    if (!wk && !includeWeekday) return false;
+    if (excludeHolidays && isHoliday(d)) return false;
     return true;
   };
 
@@ -226,33 +228,44 @@ function Step1Dates({
     setAvailableDates(allDays.filter(passesFilter));
   };
 
+  const Chip = ({
+    label,
+    active,
+    onClick,
+  }: {
+    label: string;
+    active: boolean;
+    onClick: () => void;
+  }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'px-s-3 py-s-1 text-micro rounded-full border font-semibold transition-colors',
+        active
+          ? 'bg-accent-dim border-accent/40 text-accent'
+          : 'bg-card border-border text-foreground-muted hover:border-border-hi',
+      )}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <section className="gap-s-3 flex flex-col">
       <p className="text-foreground-muted text-caption">
-        합주 가능한 일자를 선택하세요. 필터를 적용하면 일괄 선택됩니다.
+        합주 가능한 일자를 선택하세요. 필터는 중복 적용되며 ‘필터로 일괄 선택’ 으로 한번에
+        반영합니다.
       </p>
-      <div className="gap-s-2 flex flex-wrap">
-        {(['all', 'weekday', 'weekend', 'no-holidays'] as const).map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            className={cn(
-              'px-s-3 py-s-1 text-micro rounded-full border font-semibold',
-              filter === f
-                ? 'bg-accent-dim border-accent/40 text-accent'
-                : 'bg-card border-border text-foreground-muted hover:border-border-hi',
-            )}
-          >
-            {f === 'all'
-              ? '전체'
-              : f === 'weekday'
-                ? '평일'
-                : f === 'weekend'
-                  ? '주말'
-                  : '공휴일 제외'}
-          </button>
-        ))}
+      <div className="gap-s-2 flex flex-wrap items-center">
+        <Chip label="평일" active={includeWeekday} onClick={() => setIncludeWeekday((v) => !v)} />
+        <Chip label="주말" active={includeWeekend} onClick={() => setIncludeWeekend((v) => !v)} />
+        <Chip
+          label="공휴일 제외"
+          active={excludeHolidays}
+          onClick={() => setExcludeHolidays((v) => !v)}
+        />
         <button
           type="button"
           onClick={applyFilter}
@@ -338,12 +351,53 @@ function Step2Blocks({
 
   const ensureMask = (date: string): SlotMask => blocks[date] ?? [...DEFAULT_DAY_MASK];
 
-  const toggleSlot = (date: string, slot: number) => {
-    const mask = ensureMask(date);
-    const next = mask.slice();
-    next[slot] = !next[slot];
-    setBlocks({ ...blocks, [date]: next });
+  // 드래그 페인트 — pointerdown 한 셀의 반대값을 의도(intent)로 결정,
+  // 같은 의도를 enter 한 셀들에 일괄 적용. (Sling/when2meet 패턴)
+  const paintIntentRef = useRef<boolean | null>(null);
+
+  // 빠른 연속 페인트 시 stale state 방지를 위해 ref 로 최신 blocks 추적.
+  const blocksRef = useRef(blocks);
+  useEffect(() => {
+    blocksRef.current = blocks;
+  }, [blocks]);
+
+  const setSlotValue = useCallback(
+    (date: string, slot: number, value: boolean) => {
+      const cur = blocksRef.current;
+      const mask = (cur[date] ?? [...DEFAULT_DAY_MASK]).slice();
+      if (mask[slot] === value) return;
+      mask[slot] = value;
+      const nextBlocks = { ...cur, [date]: mask };
+      blocksRef.current = nextBlocks;
+      setBlocks(nextBlocks);
+    },
+    [setBlocks],
+  );
+
+  const onPaintStart = (date: string, slot: number) => {
+    const cur = ensureMask(date)[slot] ?? false;
+    const intent = !cur;
+    paintIntentRef.current = intent;
+    setSlotValue(date, slot, intent);
   };
+
+  const onPaintEnter = (date: string, slot: number) => {
+    if (paintIntentRef.current === null) return;
+    setSlotValue(date, slot, paintIntentRef.current);
+  };
+
+  // pointerup 후 intent 초기화 — 글로벌 핸들러.
+  useEffect(() => {
+    const reset = () => {
+      paintIntentRef.current = null;
+    };
+    window.addEventListener('pointerup', reset);
+    window.addEventListener('pointercancel', reset);
+    return () => {
+      window.removeEventListener('pointerup', reset);
+      window.removeEventListener('pointercancel', reset);
+    };
+  }, []);
 
   // 9-B 프리셋 칩 — 현재 보이는 가능 일자에 일괄 적용. shift=추가, alt=제거.
   const PRESETS: Array<{ id: string; label: string; range: [number, number] }> = [
@@ -509,11 +563,13 @@ function Step2Blocks({
           slotStart={slotStart}
           slotEnd={slotEnd}
           isInWindow={isInWindow}
-          onCellClick={toggleSlot}
+          onPaintStart={onPaintStart}
+          onPaintEnter={onPaintEnter}
           cellClassName={(d, s, inWindow) => {
             if (!inWindow) return undefined;
             const mask = blocks[d];
-            return mask?.[s] ? 'bg-accent/80' : undefined;
+            // 선택된 셀 — 단색 + 살짝 둥근 모서리 (소프트 룩).
+            return mask?.[s] ? 'bg-accent/80 rounded-sm' : undefined;
           }}
         />
       </div>

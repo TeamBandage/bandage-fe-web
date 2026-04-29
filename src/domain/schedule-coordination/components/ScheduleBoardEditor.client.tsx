@@ -81,7 +81,7 @@ export function ScheduleBoardEditor({
   canPrev,
   canNext,
   songPool,
-  defaultDurationSlots = 4,
+  defaultDurationSlots = 2,
 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
   const upsertBlock = useBoardStore((s) => s.upsertBlock);
@@ -286,7 +286,7 @@ export function ScheduleBoardEditor({
                 onDragEnd={onDragEnd}
                 onClick={() => setSelectedBlockId(b.blockId)}
                 className={cn(
-                  'm-0.5 cursor-grab overflow-hidden rounded px-1 py-0.5 text-left text-white shadow-sm transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98] active:cursor-grabbing',
+                  'm-0.5 cursor-grab overflow-hidden rounded px-1 py-0.5 text-left text-white shadow-sm ring-0 ring-white/0 transition-all duration-150 ease-out hover:scale-[1.02] hover:ring-2 hover:ring-white/40 hover:brightness-125 active:scale-[0.98] active:cursor-grabbing',
                   tone.bg,
                 )}
                 style={{

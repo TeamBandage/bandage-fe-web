@@ -1,6 +1,13 @@
 'use client';
 
-import type { CSSProperties, DragEvent, ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type DragEvent,
+  type ReactNode,
+} from 'react';
 
 import { cn } from '@/lib/cn';
 
@@ -31,6 +38,14 @@ export interface WeeklyScheduleGridProps {
   onCellDrop?: (date: string, slot: number) => (e: DragEvent) => void;
   /** 셀 클릭 핸들러 — 입력 모달 등 read+write 그리드용. */
   onCellClick?: (date: string, slot: number) => void;
+  /**
+   * 드래그 페인트 핸들러 (when2meet/Sling 스타일).
+   * onPaintStart: pointerdown 한 셀에서 호출 — 의도(추가/제거) 결정 시점.
+   * onPaintEnter: pointerdown 이후 다른 셀로 진입 시 호출 — 같은 의도로 일괄 적용.
+   * 둘 다 제공 시 onCellClick 보다 우선.
+   */
+  onPaintStart?: (date: string, slot: number) => void;
+  onPaintEnter?: (date: string, slot: number) => void;
   /** 추가 셀 클래스 함수 — hover/highlight 상태. */
   cellClassName?: (date: string, slot: number, inWindow: boolean) => string | undefined;
   /** export 용 ref (캡처 대상). */
@@ -50,6 +65,8 @@ export function WeeklyScheduleGrid({
   onCellDragLeave,
   onCellDrop,
   onCellClick,
+  onPaintStart,
+  onPaintEnter,
   cellClassName,
   gridRef,
   className,
@@ -60,6 +77,23 @@ export function WeeklyScheduleGrid({
     gridTemplateColumns: `${TIME_COL_WIDTH}px repeat(${days.length}, minmax(80px, 1fr))`,
     gridTemplateRows: `36px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
   };
+
+  /** 드래그 페인트 진행 중 여부 — pointerdown 후 pointerup 까지 true. */
+  const paintingRef = useRef(false);
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (!onPaintStart) return;
+    const onUp = () => {
+      paintingRef.current = false;
+      forceTick((n) => n + 1);
+    };
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    return () => {
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+    };
+  }, [onPaintStart]);
 
   return (
     <div
@@ -120,12 +154,30 @@ export function WeeklyScheduleGrid({
             return (
               <div
                 key={`c-${d}-${s}`}
-                role={onCellClick && inWindow ? 'button' : undefined}
+                role={onCellClick || onPaintStart ? (inWindow ? 'button' : undefined) : undefined}
                 tabIndex={onCellClick && inWindow ? 0 : undefined}
                 onDragOver={inWindow ? onCellDragOver?.(d, s) : undefined}
                 onDragLeave={inWindow ? onCellDragLeave : undefined}
                 onDrop={inWindow ? onCellDrop?.(d, s) : undefined}
-                onClick={inWindow ? () => onCellClick?.(d, s) : undefined}
+                onClick={
+                  inWindow && onCellClick && !onPaintStart ? () => onCellClick(d, s) : undefined
+                }
+                onPointerDown={
+                  inWindow && onPaintStart
+                    ? (e) => {
+                        if (e.button !== 0) return;
+                        // capture 해제 — pointerup 글로벌 핸들러가 담당.
+                        (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+                        paintingRef.current = true;
+                        onPaintStart(d, s);
+                      }
+                    : undefined
+                }
+                onPointerEnter={
+                  inWindow && onPaintEnter && paintingRef.current
+                    ? () => onPaintEnter(d, s)
+                    : undefined
+                }
                 onKeyDown={
                   onCellClick && inWindow
                     ? (e) => {
@@ -140,7 +192,9 @@ export function WeeklyScheduleGrid({
                   'border-border border-r transition-colors',
                   isHourBoundary && 'border-t',
                   !inWindow && 'bg-surface/40',
-                  onCellClick && inWindow && 'hover:bg-card-hover cursor-pointer',
+                  (onCellClick || onPaintStart) &&
+                    inWindow &&
+                    'hover:bg-card-hover cursor-pointer touch-none select-none',
                   extraClass,
                 )}
                 style={{ gridRow: sIdx + 2, gridColumn: dIdx + 2 }}

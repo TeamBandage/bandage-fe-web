@@ -58,15 +58,17 @@ export function ScheduleBoardList({
   const hasUserEdits = boards.some((b) => b.blocks.length > 0);
 
   const performRecommendation = () => {
-    // 자동 추천 안 3개 + 빈 카드 2개. 한도 초과 시 가능한 만큼만.
     const remaining = SCHEDULE_BOARD_LIMIT - boards.length;
     if (remaining <= 0) {
       toast.error(`시간표는 최대 ${SCHEDULE_BOARD_LIMIT}개까지 만들 수 있습니다.`);
       return;
     }
-    const variants = generateRecommendations?.() ?? [];
-    const recommendedCount = Math.min(3, remaining, variants.length || 3);
-    const blankCount = Math.min(2, remaining - recommendedCount);
+    const variants = (generateRecommendations?.() ?? []).filter((blocks) => blocks.length > 0);
+    if (variants.length === 0) {
+      toast.error('추천 가능한 시안이 없습니다. 멤버 일정 입력을 확인해주세요.');
+      return;
+    }
+    const recommendedCount = Math.min(variants.length, remaining);
     for (let i = 0; i < recommendedCount; i++) {
       createBoard({
         meetingId,
@@ -75,14 +77,7 @@ export function ScheduleBoardList({
         paletteSeed: boards.length + i,
       });
     }
-    for (let i = 0; i < blankCount; i++) {
-      createBoard({
-        meetingId,
-        name: `빈 시안 ${boards.length + recommendedCount + i + 1}`,
-        paletteSeed: boards.length + recommendedCount + i,
-      });
-    }
-    toast.success(`추천 ${recommendedCount}개 + 빈 시안 ${blankCount}개를 만들었습니다.`);
+    toast.success(`추천 시안 ${recommendedCount}개를 만들었습니다.`);
   };
 
   return (
