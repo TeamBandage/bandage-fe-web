@@ -9,7 +9,7 @@ import { cn } from '@/lib/cn';
 
 import { useMatrixLockStore, type LockedSlot } from '../store/matrixLockStore';
 import type { MemberSchedule } from '../types';
-import { dayOfWeek, isHoliday, slotToTime } from '../utils';
+import { dayOfWeek, isHoliday, slotToTime, startOfWeek } from '../utils';
 import { buildCoverageHeatmap, coverageRatio } from '../utils/coverageHeatmap';
 import { reflowMatrixLocks } from '../utils/reflowMatrixLocks';
 
@@ -53,9 +53,18 @@ interface Props {
   memberSchedules: MemberSchedule[];
   /** 합주 블록 풀 — 확정 곡. 우측 슬레이브 패널의 드래그 소스. */
   songPool: SongLite[];
+  /** 주차 라벨 클릭 시 → 주차별 UI 로 전환 + 해당 주로 jump (Task 17). */
+  onWeekJump?: (weekStart: string) => void;
 }
 
-export function MatrixView({ meetingId, allDays, participants, memberSchedules, songPool }: Props) {
+export function MatrixView({
+  meetingId,
+  allDays,
+  participants,
+  memberSchedules,
+  songPool,
+  onWeekJump,
+}: Props) {
   const [hover, setHover] = useState<CellRef | null>(null);
   const [pinned, setPinned] = useState<CellRef | null>(null);
   const [drag, setDrag] = useState<DragRange | null>(null);
@@ -264,6 +273,27 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
 
   const slots = Array.from({ length: SLOT_TO - SLOT_FROM }, (_, i) => SLOT_FROM + i);
 
+  /**
+   * 주차 그루핑 — allDays 의 일자들을 ISO 주(월~일) 기준으로 묶음.
+   * weekStartByDate: date → 그 주의 월요일 ISO
+   * weekRows: 주별 [weekStart, dates[]] — 정렬 보존, 매트릭스 좌측 라벨/경계선 렌더에 사용.
+   * weekIndexMap: weekStart → 1-based 순번 ("W1", "W2"…) — 사용자 친화적 라벨.
+   */
+  const { weekRows, firstDateByWeek, weekIndexMap } = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const d of allDays) {
+      const ws = startOfWeek(d);
+      const list = map.get(ws);
+      if (list) list.push(d);
+      else map.set(ws, [d]);
+    }
+    const ordered = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    const fd = new Set(ordered.map(([, ds]) => ds[0]!));
+    const idx = new Map<string, number>();
+    ordered.forEach(([ws], i) => idx.set(ws, i + 1));
+    return { weekRows: ordered, firstDateByWeek: fd, weekIndexMap: idx };
+  }, [allDays]);
+
   return (
     <div className="flex h-full gap-3 overflow-hidden">
       {/* 메인: 매트릭스 그리드 */}
@@ -279,6 +309,7 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
         <div className="border-border bg-card flex-1 overflow-auto rounded-md border">
           <table className="w-full border-collapse select-none" style={{ tableLayout: 'fixed' }}>
             <colgroup>
+              <col style={{ width: '54px' }} />
               <col style={{ width: '110px' }} />
               {slots.map((s) => (
                 <col key={s} />
@@ -286,7 +317,10 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
             </colgroup>
             <thead>
               <tr>
-                <th className="bg-surface border-border sticky top-0 left-0 z-30 border-r border-b" />
+                <th
+                  className="bg-surface border-border sticky top-0 left-0 z-30 border-r border-b"
+                  colSpan={2}
+                />
                 {slots.map((s) => (
                   <th
                     key={s}
@@ -303,9 +337,45 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
                 const holiday = isHoliday(d);
                 const isSun = dow === 0 || holiday;
                 const isSat = dow === 6;
+                const ws = startOfWeek(d);
+                const isWeekFirst = firstDateByWeek.has(d);
+                const weekRow = weekRows.find(([w]) => w === ws);
+                const weekSpan = weekRow ? weekRow[1].length : 1;
+                const weekIdx = weekIndexMap.get(ws) ?? 0;
                 return (
                   <tr key={d}>
-                    <td className="bg-surface border-border sticky left-0 z-10 border-r px-2 py-0.5 whitespace-nowrap">
+                    {isWeekFirst && (
+                      <td
+                        rowSpan={weekSpan}
+                        className={cn(
+                          'bg-surface border-border sticky left-0 z-20 border-r-2 border-b-2 p-0 align-middle',
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => onWeekJump?.(ws)}
+                          disabled={!onWeekJump}
+                          className={cn(
+                            'h-full w-full px-1 py-2 text-center transition-colors',
+                            onWeekJump ? 'hover:bg-accent-dim cursor-pointer' : 'cursor-default',
+                          )}
+                          title={onWeekJump ? `${ws} 주차별 UI 로 이동` : `${ws} 시작 주`}
+                        >
+                          <div className="text-foreground-muted text-micro font-bold tracking-wider">
+                            W{weekIdx}
+                          </div>
+                          <div className="text-foreground text-micro mt-0.5 font-mono">
+                            {ws.slice(5)}
+                          </div>
+                        </button>
+                      </td>
+                    )}
+                    <td
+                      className={cn(
+                        'bg-surface border-border sticky left-[54px] z-10 border-r px-2 py-0.5 whitespace-nowrap',
+                        isWeekFirst && 'border-t-2',
+                      )}
+                    >
                       <div className="gap-s-2 flex items-center">
                         <span className="text-caption text-foreground tabular-nums">
                           {d.slice(5)}
@@ -350,6 +420,7 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
                           }
                           className={cn(
                             'border-border/50 h-7 border-r border-b transition-colors',
+                            isWeekFirst && 'border-t-border border-t-2',
                             cellBg(d, s, dragHit),
                             isLockStart && 'relative',
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',

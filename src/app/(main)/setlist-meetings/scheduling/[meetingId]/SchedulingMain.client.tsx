@@ -241,6 +241,10 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                 participants={participants}
                 memberSchedules={memberSchedules}
                 songPool={editorSongPool}
+                onWeekJump={(ws) => {
+                  setViewMode(meetingId, 'weekly');
+                  view.goToDate(ws);
+                }}
               />
             ) : (
               <>
