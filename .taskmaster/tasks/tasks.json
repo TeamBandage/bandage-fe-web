@@ -5212,8 +5212,9 @@
         "dependencies": [
           "14"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-29T13:58:34.923Z"
       },
       {
         "id": "16",
@@ -5364,9 +5365,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-29T13:57:22.760Z",
+      "lastModified": "2026-04-29T13:58:34.927Z",
       "taskCount": 26,
-      "completedCount": 14,
+      "completedCount": 15,
       "tags": [
         "schedule-v2"
       ]
