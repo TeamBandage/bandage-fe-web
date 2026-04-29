@@ -153,12 +153,12 @@ export function MatrixView({
   /** focus = pinned ?? hover (PRD §2.1) */
   const focus: CellRef | null = pinned ?? hover;
 
-  // 셀 색상 (PRD §3.2)
+  // 셀 색상 (PRD §3.2) — lock 위에는 절대 위치 카드를 띄우므로, lock 셀 자체는 투명/은은하게.
   const cellBg = (date: string, slot: number, dragHit: boolean): string => {
     const lock = lockAt(date, slot);
     if (lock) {
-      if (lock.songId) return songTone(lock.songId, 0).bg;
-      return 'bg-success';
+      // lock 영역의 셀 배경은 카드 뒤편에 가려지므로 거의 보이지 않음 — 안전하게 어둡게.
+      return 'bg-bg';
     }
     if (dragHit) return 'bg-accent';
     if (poolDrag && canDrop(slot, poolDrag.durationSlots)) {
@@ -459,17 +459,23 @@ export function MatrixView({
                             'border-border/50 h-7 border-r border-b transition-colors',
                             isWeekFirst && 'border-t-border border-t-2',
                             cellBg(d, s, dragHit),
-                            isLockStart && 'relative',
+                            isLockStart && 'relative overflow-visible',
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
                             isHover && 'outline-foreground/50 outline outline-1 -outline-offset-1',
-                            lock && 'cursor-pointer hover:brightness-110',
+                            lock && 'cursor-pointer',
                             !lock && 'cursor-pointer',
                           )}
                         >
-                          {isLockStart && (
-                            <div className="text-bg gap-s-1 flex h-full items-center justify-center">
-                              <Lock className="h-2.5 w-2.5" aria-hidden="true" />
-                            </div>
+                          {isLockStart && lock && (
+                            <LockBlockCard
+                              lock={lock}
+                              durationSlots={lock.endSlot - lock.startSlot}
+                              title={lock.songTitleOverride ?? songTitle ?? '확정 슬롯'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditLockId(lock.id);
+                              }}
+                            />
                           )}
                         </td>
                       );
@@ -554,6 +560,45 @@ export function MatrixView({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * 매트릭스 lock 시각화 — 셀 단순 채색 대신 '셀 위에 떠 있는 카드' 로 표시.
+ * 시작 셀에서 absolute 로 height = duration * 28px 만큼 차지. 곡 색상 / 제목 / 길이 노출.
+ */
+function LockBlockCard({
+  lock,
+  durationSlots,
+  title,
+  onClick,
+}: {
+  lock: LockedSlot;
+  durationSlots: number;
+  title: string;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const tone = lock.songId ? songTone(lock.songId, 0) : null;
+  const heightPx = durationSlots * 28; // h-7 셀 = 28px
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      title={`${title} ${slotToTime(lock.startSlot)}~${slotToTime(lock.endSlot)}`}
+      className={cn(
+        'absolute inset-x-0.5 top-0 z-10 cursor-pointer overflow-hidden rounded-md border border-white/30 px-1.5 py-1 text-left text-white shadow-md transition-shadow hover:shadow-lg hover:ring-2 hover:ring-white/50',
+        tone?.bg ?? 'bg-success',
+      )}
+      style={{ height: heightPx - 2 }}
+    >
+      <div className="flex h-full flex-col">
+        <div className="text-micro flex items-center gap-1 leading-tight font-bold">
+          <Lock className="h-2.5 w-2.5 shrink-0 opacity-80" aria-hidden="true" />
+          <span className="truncate">{title}</span>
+        </div>
+        <div className="text-micro mt-auto opacity-80">{durationSlots * 30}분</div>
+      </div>
     </div>
   );
 }

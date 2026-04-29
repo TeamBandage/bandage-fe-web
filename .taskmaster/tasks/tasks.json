@@ -5360,20 +5360,21 @@
         "description": "매트릭스 뷰에서 배치된 합주 블럭(lock)의 시각화를 단순 셀 배경색에서 주차별 UI와 동일한 '셀 위에 떠 있는 블럭 카드' 형태로 개선한다.",
         "details": "1. **MatrixView.client.tsx 수정 — Lock 블럭 오버레이 구현**:\n   - 기존 `<td>` 내부의 Lock 아이콘 렌더링 제거\n   - `<tbody>` 끝에 오버레이 영역 추가하여 CSS Grid `position: absolute` 또는 `grid-row` span으로 블럭 카드 렌더링\n   - 매트릭스 테이블을 `position: relative`로 설정하고, 각 lock을 절대 위치 또는 별도 오버레이 레이어로 배치\n\n2. **LockBlockCard 컴포넌트 구현** (MatrixView 내부 또는 별도 파일):\n   ```tsx\n   interface LockBlockCardProps {\n     lock: LockedSlot;\n     song: SongLite | undefined;\n     paletteSeed: number;\n     style: CSSProperties; // top, left, height, width\n     onClick: () => void;\n   }\n   \n   function LockBlockCard({ lock, song, paletteSeed, style, onClick }: LockBlockCardProps) {\n     const tone = lock.songId ? songTone(lock.songId, paletteSeed) : { bg: 'bg-success' };\n     const duration = lock.endSlot - lock.startSlot;\n     const durationMin = duration * 30;\n     \n     return (\n       <button\n         type=\"button\"\n         onClick={onClick}\n         style={style}\n         className={cn(\n           'absolute z-20 overflow-hidden rounded-md px-1.5 py-1 text-left text-white shadow-md',\n           'ring-0 ring-white/0 transition-all hover:ring-2 hover:ring-white/50 hover:brightness-110',\n           'cursor-pointer',\n           tone.bg,\n         )}\n       >\n         {/* 곡 색상 카테고리 인디케이터 (좌측 세로 바) */}\n         <div className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l-md', tone.bg, 'brightness-75')} />\n         \n         <div className=\"pl-1.5\">\n           <div className=\"text-micro truncate font-bold\">\n             <Lock className=\"mr-0.5 inline h-2.5 w-2.5\" />\n             {song?.title ?? '곡 미지정'}\n           </div>\n           {duration >= 2 && (\n             <div className=\"text-micro mt-0.5 font-mono opacity-80\">\n               {slotToTime(lock.startSlot)}~{slotToTime(lock.endSlot)} ({durationMin}분)\n             </div>\n           )}\n         </div>\n       </button>\n     );\n   }\n   ```\n\n3. **Lock 위치 계산 로직**:\n   - 각 lock의 `(date, startSlot, endSlot)`를 테이블 셀 좌표로 변환\n   - 셀 높이 상수 `CELL_HEIGHT = 28px` (기존 `h-7`)\n   - 행 헤더 높이, 열 헤더 너비 고려한 offset 계산\n   - `top = headerHeight + (lock.startSlot - SLOT_FROM) * CELL_HEIGHT`\n   - `height = (lock.endSlot - lock.startSlot) * CELL_HEIGHT`\n   - `left` = 해당 date 열의 x 좌표 (sticky 열 너비 + 날짜 인덱스 * 열 너비)\n\n4. **테이블 레이아웃 변경**:\n   - `<table>` wrapper를 `position: relative`로 설정\n   - 또는 CSS Grid 기반으로 전환하여 `WeeklyScheduleGrid.client.tsx`와 동일한 패턴 사용\n   - 주차 경계 spacer와 충돌 방지: lock 오버레이 `z-index: 20`, spacer row `z-index: 10` 이하\n\n5. **호버/클릭 상호작용**:\n   - 호버 시: `hover:ring-2 hover:ring-white/50` 링 강조\n   - 클릭 시: `onClick` prop으로 편집 다이얼로그 트리거 (Task 19 연동)\n   - 기존 셀의 `cursor-not-allowed` 제거하고 lock 영역은 `cursor-pointer`\n\n6. **cellBg 함수 수정**:\n   - lock이 있는 셀은 배경색 변경 대신 투명 또는 연한 `bg-success/10` 처리\n   - 실제 색상 표현은 오버레이 블럭 카드가 담당\n\n7. **반응형/스크롤 고려**:\n   - 오버레이는 테이블 스크롤 컨테이너 내부에 배치하여 함께 스크롤\n   - sticky 헤더 아래로 배치되도록 `z-index` 조정",
         "testStrategy": "1. **시각적 확인**: 매트릭스에 lock 배치 후 주차별 UI의 블럭 카드와 동일한 디자인(둥근 모서리, 그림자, 색상 인디케이터)이 적용되는지 확인\n2. **슬롯 길이 반영**: 2슬롯(1시간) lock과 4슬롯(2시간) lock이 각각 셀 2개/4개 높이를 올바르게 차지하는지 확인\n3. **곡 정보 표시**: 곡이 지정된 lock에 곡 제목이 표시되고, 곡별 색상 팔레트가 적용되는지 확인\n4. **호버 강조**: lock 카드에 마우스 오버 시 ring 강조 효과가 나타나는지 확인\n5. **클릭 이벤트**: lock 카드 클릭 시 편집 다이얼로그(Task 19)가 열리는지 확인\n6. **스크롤 동기화**: 매트릭스를 가로/세로 스크롤해도 lock 카드가 셀 위치에 정확히 고정되는지 확인\n7. **주차 경계**: 주차 구분 spacer row가 있는 경우 lock 카드가 spacer 위로 겹치지 않고 올바르게 레이어링되는지 확인\n8. **다중 lock**: 같은 날짜에 여러 lock이 있을 때 각각 독립적으로 올바른 위치에 렌더링되는지 확인",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "16",
           "19"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2026-04-29T14:18:05.578Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-29T14:16:14.963Z",
+      "lastModified": "2026-04-29T14:18:05.582Z",
       "taskCount": 26,
-      "completedCount": 21,
+      "completedCount": 22,
       "tags": [
         "schedule-v2"
       ]
