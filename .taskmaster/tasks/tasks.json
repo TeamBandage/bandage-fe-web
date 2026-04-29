@@ -5189,13 +5189,184 @@
           }
         ],
         "updatedAt": "2026-04-28T22:13:36.520Z"
+      },
+      {
+        "id": "14",
+        "title": "커버리지 히트맵 셀렉터 분리 및 곡별 가용시간 유틸 추가",
+        "description": "매트릭스/주차별 UI에서 '전체 멤버' 또는 '특정 곡 참여 멤버' 기준으로 가용시간 히트맵을 계산할 수 있도록 셀렉터 함수를 분리하고, 주별 복제를 위한 유틸리티 함수를 추가한다.",
+        "details": "1. `src/domain/schedule-coordination/utils/coverageHeatmap.ts` 신규 생성\n   - `coverageHeatmap(memberSchedules, allDays, songId: string | 'ALL', songParticipantMap: Map<string, string[]>)` 함수 구현\n   - songId가 'ALL'이면 전체 멤버, 특정 songId면 해당 곡의 participantMemberIds만 필터링하여 가용시간 계산\n   - 반환 타입: `Map<string, Set<string>>` (key: `${date}__${slot}`, value: 가능 userId Set)\n\n2. `src/domain/schedule-coordination/utils/copyWeekLocks.ts` 신규 생성\n   - `copyWeekLocks(locks, srcWeekStart, targetWeekStarts[], slotFrom, slotTo, availableDates)` 함수 구현\n   - 기준 주의 lock들을 대상 주차들에 복사, 요일 매핑 (월→월, 화→화...)\n   - 복사 후 겹침 발생 시 reflowMatrixLocks 호출하여 자동 정리\n   - 반환: 성공 시 새 locks 배열, 실패 시 null\n\n3. 기존 MatrixView.client.tsx의 availability 계산 로직을 coverageHeatmap 유틸로 대체할 수 있도록 인터페이스 맞춤\n\n4. 타입 정의 (types.ts에 추가):\n   - `SongParticipantMap = Map<string, string[]>` (songId → participantMemberIds)",
+        "testStrategy": "1. coverageHeatmap 유닛 테스트: 전체 멤버 vs 특정 곡 멤버 필터링 결과 비교\n2. copyWeekLocks 유닛 테스트: 빈 주차 복사, 겹침 발생 시 reflow 동작, 경계 조건(슬롯 범위 초과) 검증\n3. 기존 MatrixView가 새 유틸 사용 후에도 동일한 히트맵 결과를 보이는지 수동 확인",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2026-04-29T13:57:22.757Z"
+      },
+      {
+        "id": "15",
+        "title": "useScheduleView 스토어 확장 — 뷰 모드, 곡별 포커스, 호버 상태",
+        "description": "합주 일정 조율의 '주차별 UI ↔ 매트릭스' 통합 및 곡별 가용시간 모드, 호버 기반 인원 패널 갱신을 위해 useScheduleView 훅 또는 별도 Zustand 스토어에 필요한 상태를 추가한다.",
+        "details": "1. `src/domain/schedule-coordination/store/scheduleViewStore.ts` 신규 생성 (또는 기존 훅 확장)\n   - 상태:\n     - `mode: 'weekly' | 'matrix'` — 현재 뷰 모드\n     - `selectedWeekStart: string` — 매트릭스에서 주차 라벨 클릭 시 전환될 주\n     - `focusedSongBlockId: string | null` — 곡별 가용시간 모드 활성화된 블럭 ID\n     - `hoveredCell: { date: string; slot: number } | null` — 호버 기반 인원 패널 갱신용\n     - `repeatBaseWeekStart: string | null` — 주별 복제의 기준 주\n     - `repeatTargetWeekStarts: string[]` — 복제 대상 주차들\n     - `repeatMode: 'idle' | 'selecting'` — 주차 선택 모드 여부\n\n   - 액션:\n     - `setMode(mode)`, `toggleMode()`\n     - `setSelectedWeekStart(weekStart)`\n     - `setFocusedSongBlockId(id | null)` — 토글 로직 포함\n     - `setHoveredCell(cell | null)`\n     - `setRepeatBaseWeek(weekStart)`, `addRepeatTarget(weekStart)`, `removeRepeatTarget(weekStart)`, `clearRepeatTargets()`, `setRepeatMode(mode)`\n\n2. persist 미들웨어는 mode만 저장, hoveredCell 등 휘발성 상태는 제외\n\n3. 기존 useScheduleViewUnit.ts 훅과 연계: anchor(주차 시작일) ↔ selectedWeekStart 동기화",
+        "testStrategy": "1. 스토어 초기 상태 및 각 액션 동작 유닛 테스트\n2. mode 전환 시 다른 상태가 의도대로 초기화/유지되는지 확인\n3. persist된 mode가 새로고침 후에도 복원되는지 확인",
+        "priority": "high",
+        "dependencies": [
+          "14"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "16",
+        "title": "합주 시간표 생성 탭 내부 뷰 토글 UI 구현 — 매트릭스 탭 통합",
+        "description": "별도로 존재하던 '매트릭스' 탭을 '합주 시간표 생성' 탭 내부의 토글로 통합하여, 한 화면에서 [주차별 | 매트릭스] 뷰를 전환할 수 있게 한다.",
+        "details": "1. `SchedulingMain.client.tsx` 수정:\n   - tabItems에서 `{ id: 'matrix' }` 항목 제거\n   - `{ id: 'board' }` 탭 내부에 `<SegmentedControl>` 또는 `<ToggleGroup>` 추가: 옵션 ['주차별', '매트릭스']\n   - 토글 상태는 scheduleViewStore의 `mode` 사용\n\n2. 토글 UI 위치: board 탭 컨텐츠 영역 상단, 보드 리스트/에디터 헤더 바로 아래\n\n3. 레이아웃 전환 로직:\n   - `mode === 'weekly'`: 기존 ScheduleBoardEditor 렌더\n   - `mode === 'matrix'`: MatrixView 렌더 (기존 safeLeftTab === 'matrix' 분기 로직 이동)\n\n4. 공통 고정 패널:\n   - 좌측: ScheduleBoardList (두 뷰 모두에서 보드 선택 가능)\n   - 우측: 합주 블럭 풀(BlockPoolPanel) + 가능/불가능 멤버 패널(SidePanel)\n   - 토글 전환 시 패널 위치/크기는 유지, 중앙 컨텐츠만 교체\n\n5. 탭 전환(member→board 등)과 모드 전환(weekly↔matrix) 간 상태 충돌 방지:\n   - board 탭 이탈 시 mode를 'weekly'로 리셋하지 않음 (사용자 선호 유지)\n   - rightPanel 상태와 mode 독립 관리",
+        "testStrategy": "1. 토글 클릭 시 주차별/매트릭스 뷰가 즉시 전환되는지 확인\n2. 좌측 보드 리스트에서 선택한 보드가 두 뷰 모두에서 반영되는지 확인\n3. 탭을 벗어났다가 돌아왔을 때 마지막 mode 유지 확인\n4. 반응형: 모바일에서는 토글이 정상 표시되고 레이아웃이 깨지지 않는지 확인",
+        "priority": "high",
+        "dependencies": [
+          "15"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "17",
+        "title": "매트릭스 주차 라벨 및 주 단위 경계선 시각화",
+        "description": "매트릭스 뷰에서 주(월~일) 단위로 행을 그룹핑하고, 좌측에 주차 라벨(W14, W15 등)을 추가하며, 주 경계에 시각적 구분선을 넣는다.",
+        "details": "1. `MatrixView.client.tsx` 수정:\n   - allDays를 주 단위로 그룹핑: `groupByWeek(allDays): { weekStart: string; days: string[] }[]`\n   - 각 주 그룹의 첫 행에 주차 라벨 셀 추가 (rowSpan=7 또는 별도 헤더 행)\n\n2. 주차 라벨 형식:\n   - `W${getISOWeek(weekStart)}` (예: W14, W15)\n   - 하위에 첫날 표기: `04-01 (월)`\n   - 라벨 셀 클릭 시: scheduleViewStore.setMode('weekly') + view.goToDate(weekStart)\n\n3. 주 경계 스타일:\n   - 주의 마지막 행(일요일) 하단에 `border-b-2 border-border` 또는 `border-b-4`\n   - 또는 주 사이에 1px 높이의 spacer 행 삽입 (bg-surface)\n\n4. 좌측 고정 컬럼(날짜) 영역 너비 조정: 주차 라벨 + 날짜 표기를 수용하도록 width 조정 (기존 110px → 130px 정도)\n\n5. 유틸 함수 추가 (`utils.ts`):\n   - `getISOWeek(date: string): number` — ISO 8601 주차 번호 반환",
+        "testStrategy": "1. 매트릭스에서 주 경계선이 월~일 다음에 표시되는지 시각적 확인\n2. 주차 라벨(W14 등)이 정확한 ISO week 번호로 표시되는지 확인\n3. 주차 라벨 클릭 시 주차별 UI로 전환 + 해당 주로 이동 확인\n4. 연도가 바뀌는 경계(12월→1월)에서 주차 번호가 올바른지 확인",
+        "priority": "medium",
+        "dependencies": [
+          "16"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "18",
+        "title": "곡별 가용시간 모드 — 합주 블럭 선택 시 히트맵 재계산",
+        "description": "우측 합주 블럭 풀에서 특정 블럭을 클릭하면, 해당 곡의 참여 멤버 기준으로 매트릭스/주차별 UI의 히트맵이 재계산된다. 다시 클릭하면 전체 멤버 기준으로 복귀.",
+        "details": "1. `BlockPoolPanel` 컴포넌트 수정:\n   - 기존 드래그 전용 → 클릭 이벤트 추가\n   - 클릭 시 scheduleViewStore.setFocusedSongBlockId(songId) 호출 (토글 로직)\n   - 선택된 블럭에 `ring-2 ring-accent` 스타일 추가\n\n2. `MatrixView.client.tsx` 수정:\n   - scheduleViewStore에서 focusedSongBlockId 구독\n   - availability 계산 시 coverageHeatmap 유틸 사용, focusedSongBlockId 전달\n   - 곡별 모드일 때 헤드 영역에 라벨 표시: \"현재 모드: {곡 제목}\" (bg-accent-dim 배지)\n   - 곡별 모드일 때 범례 옆에 \"전체 멤버로 보기\" 버튼 또는 배지 클릭 시 해제\n\n3. 곡-멤버 매핑 데이터 흐름:\n   - setlistStore의 songs에서 각 곡의 confirmed 멤버 추출 → songParticipantMap 생성\n   - SchedulingMain에서 songPool 전달 시 participantMemberIds 포함하도록 확장\n   - SongLite 타입 확장: `participantMemberIds?: string[]`\n\n4. 주차별 UI(ScheduleBoardEditor)에도 동일한 곡별 가용시간 모드 적용:\n   - WeeklyScheduleGrid의 cellClassName에 focusedSongBlockId 기반 색상 계산 반영",
+        "testStrategy": "1. 블럭 클릭 시 히트맵 색상이 변경되는지 시각적 확인\n2. 곡 참여 멤버 4명 중 3명만 가능한 슬롯이 전체 멤버 기준과 다른 색상인지 확인\n3. 같은 블럭 재클릭 시 전체 멤버 모드로 복귀 확인\n4. 다른 블럭 클릭 시 즉시 전환 확인\n5. '전체 멤버로 보기' 버튼 동작 확인",
+        "priority": "high",
+        "dependencies": [
+          "14",
+          "16"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "19",
+        "title": "매트릭스 lock 클릭 시 편집 다이얼로그 연동",
+        "description": "매트릭스 셀에 배치된 lock(확정된 합주 블럭)을 클릭하면, 주차별 UI와 동일한 편집 다이얼로그가 열려 곡 변경, 길이 변경, 메모, 삭제를 수행할 수 있게 한다.",
+        "details": "1. `src/domain/schedule-coordination/components/LockEditDialog.client.tsx` 신규 생성 (또는 기존 패널 재사용):\n   - Props: `lock: LockedSlot | null`, `songPool: SongLite[]`, `onClose: () => void`, `onUpdate: (lockId, updates) => void`, `onDelete: (lockId) => void`\n   - 필드:\n     - 곡 선택: `<select>` (songPool 드롭다운)\n     - 길이: `<input type=\"number\">` 또는 슬롯 수 ± 버튼\n     - 메모: `<textarea>`\n   - 삭제 버튼: ConfirmDialog 연동\n   - 저장 시 matrixLockStore.updateLock 호출 → reflowMatrixLocks 필요 시 적용\n\n2. `MatrixView.client.tsx` 수정:\n   - lock이 있는 셀 클릭 시 기존 동작(cursor-not-allowed) 대신 편집 다이얼로그 열기\n   - `editingLockId` 상태 추가\n   - isLockStart 셀에만 클릭 이벤트 바인딩 (중복 클릭 방지)\n\n3. `matrixLockStore` 확장:\n   - `updateLock(meetingId, lockId, { songId?, endSlot?, memo? })` 액션 추가\n   - 길이 변경 시 endSlot 업데이트 후 reflow 호출\n\n4. 다이얼로그 닫기 시 pinned 상태 유지 여부: 편집 완료 후 pinned 해제",
+        "testStrategy": "1. lock 셀 클릭 시 다이얼로그가 열리고 현재 lock 정보가 표시되는지 확인\n2. 곡 변경 후 저장 시 lock의 songId가 업데이트되고 색상이 바뀌는지 확인\n3. 길이 연장 시 기존 lock과 겹치면 reflow가 정상 동작하는지 확인\n4. 삭제 시 ConfirmDialog 표시 후 lock 제거 확인",
+        "priority": "medium",
+        "dependencies": [
+          "16"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "20",
+        "title": "매트릭스 시간 범위 동기화 — 주차별 UI 설정과 일치",
+        "description": "매트릭스의 슬롯 범위(SLOT_FROM, SLOT_TO)가 주차별 UI의 표출 시간 설정(예: 09~22시, 24h 모드)과 항상 일치하도록 동기화한다.",
+        "details": "1. `scheduleViewStore` 또는 별도 스토어에 시간 범위 상태 추가:\n   - `slotFrom: number` (기본 18 = 09:00)\n   - `slotTo: number` (기본 46 = 23:00)\n   - `setSlotRange(from, to)` 액션\n\n2. 주차별 UI(WorkingHoursPanel)의 시간 설정 변경 시 스토어 업데이트:\n   - WorkingHoursPanel에서 startHour/endHour 변경 → slotFrom/slotTo 계산 후 스토어 반영\n\n3. `MatrixView.client.tsx` 수정:\n   - 하드코딩된 SLOT_FROM=18, SLOT_TO=46 → 스토어 값 사용\n   - 스토어 구독하여 동적 렌더링\n\n4. `WeeklyScheduleGrid.client.tsx`도 동일하게 스토어 값 사용 (props로 전달받는 slotStart/slotEnd 대신)\n\n5. persist 설정: slotFrom/slotTo는 사용자 선호이므로 localStorage 저장",
+        "testStrategy": "1. 주차별 UI에서 시간 범위를 10~20시로 변경 후 매트릭스 전환 시 동일 범위 표시 확인\n2. 24시간 모드(00~24시) 설정 시 매트릭스에 48슬롯 전체 표시 확인\n3. 새로고침 후에도 마지막 설정 범위가 유지되는지 확인",
+        "priority": "medium",
+        "dependencies": [
+          "15"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "21",
+        "title": "주별 반복/복제 기능 — 모든 주차 적용 및 선택적 적용",
+        "description": "매트릭스 상단에 '모든 주차에 적용' 및 '주별 일정 반복' 버튼을 추가하여, 기준 주의 lock들을 다른 주차에 복사할 수 있게 한다.",
+        "details": "1. `MatrixView.client.tsx` 상단에 액션바 추가:\n   - \"모든 주차에 적용\" 버튼: 기준 주 선택 필요\n   - \"주별 일정 반복\" 버튼: 주차 선택 모드 진입\n\n2. 기준 주 선택 UI:\n   - 좌측 주차 라벨에 라디오 버튼 또는 별도 드롭다운\n   - 또는 \"현재 보고 있는 주\"를 기준으로 사용 (anchor 값)\n   - scheduleViewStore.repeatBaseWeekStart로 관리\n\n3. \"모든 주차에 적용\" 동작:\n   - 기준 주의 locks 추출 → 다른 모든 주차에 copyWeekLocks 호출\n   - 성공 시 toast.success, 실패(빈 슬롯 부족) 시 toast.error\n   - ConfirmDialog로 \"기존 일정이 재배치될 수 있습니다\" 경고\n\n4. \"주별 일정 반복\" 동작:\n   - 버튼 클릭 → repeatMode='selecting' 진입\n   - 매트릭스 주차 라벨들이 체크박스/클릭 가능 상태로 변경\n   - 클릭으로 repeatTargetWeekStarts에 추가/제거\n   - 상단에 \"적용\" / \"취소\" 버튼 표시\n   - \"적용\" 클릭 → copyWeekLocks(srcWeekStart, targets) 실행\n\n5. 복제 시 충돌 처리:\n   - copyWeekLocks 내부에서 reflowMatrixLocks 호출\n   - reflow 불가 시 해당 주차 스킵 + 사용자에게 부분 성공 알림",
+        "testStrategy": "1. 기준 주에 3개 lock 배치 후 \"모든 주차에 적용\" 시 다른 주차에 동일 위치 복제 확인\n2. 기존 lock이 있는 주차에 복제 시 reflow 동작 확인\n3. \"주별 일정 반복\" 선택 모드에서 3개 주차 선택 후 적용 시 해당 주차에만 복제 확인\n4. 취소 버튼 클릭 시 선택 초기화 확인",
+        "priority": "medium",
+        "dependencies": [
+          "14",
+          "17"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "22",
+        "title": "자동 시간표 생성 스코프 제한 — 선택 주차만 적용",
+        "description": "주차별 UI의 '자동 시간표 생성' 버튼이 현재 선택된 주차에만 새 lock을 추가하도록 알고리즘 입력 범위를 제한한다.",
+        "details": "1. `ScheduleBoardList.client.tsx` 또는 `ScheduleBoardEditor.client.tsx` 수정:\n   - 자동 생성 버튼 클릭 시 현재 scheduleViewStore.anchor (또는 selectedWeekStart) 기준 주차 확인\n   - suggestScheduleBoards 호출 시 dates 파라미터를 anchor 주의 7일로 제한\n\n2. `suggestScheduleBoards` 함수 시그니처 확인 및 필요 시 수정:\n   - 기존: `dates: string[]` (전체 기간)\n   - 변경: 호출 시 visibleDays만 전달\n\n3. UI 피드백:\n   - 버튼 라벨 또는 툴팁에 \"현재 주차에만 적용\" 명시\n   - 생성 완료 후 toast에 \"{주차 라벨} 주차에 {n}개 블럭 배치\" 메시지\n\n4. 전체 기간 자동 생성이 필요한 경우를 위한 옵션:\n   - 별도 \"전체 기간에 자동 생성\" 버튼 또는 드롭다운 메뉴 아이템 추가 (선택적 구현)",
+        "testStrategy": "1. 4주 기간 중 2주차 선택 후 자동 생성 시 2주차에만 블럭 배치 확인\n2. 1주차로 이동 후 동일 작업 시 1주차에만 추가 확인\n3. 기존 다른 주차의 lock이 변경되지 않았는지 확인",
+        "priority": "medium",
+        "dependencies": [
+          "15",
+          "16"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "23",
+        "title": "호버 기반 가능/불가능 인원 패널 갱신",
+        "description": "매트릭스/주차별 UI의 셀에 마우스를 올리면(pointerenter) 우측 '가능/불가능 인원' 패널이 해당 (일자, 슬롯) 기준으로 즉시 갱신된다.",
+        "details": "1. `scheduleViewStore`의 `hoveredCell` 상태 활용:\n   - MatrixView/WeeklyScheduleGrid 셀에 onPointerEnter → setHoveredCell({ date, slot })\n   - 컨테이너 onPointerLeave → hoveredCell 유지 (깜빡임 방지, 마지막 호버 상태 보존)\n\n2. `SidePanel` (MatrixView 내) 수정:\n   - focus = pinned ?? hoveredCell (기존 pinned ?? hover)\n   - hoveredCell 변경 시 가능/불가능 멤버 리스트 재계산\n   - 패널 헤더에 \"기준: {date} ({요일}) {slotToTime(slot)}\" 라벨 표시\n\n3. 곡별 가용시간 모드 연동:\n   - focusedSongBlockId가 설정되어 있으면, 인원 패널도 해당 곡 참여 멤버 한정으로 분류\n   - 가능 멤버 = 곡 참여 멤버 중 해당 슬롯 가능한 사람\n   - 불가 멤버 = 곡 참여 멤버 중 해당 슬롯 불가한 사람 + 미참여 멤버는 표시 안 함\n\n4. 성능 최적화:\n   - onPointerEnter 호출 시 throttle(50ms) 또는 requestAnimationFrame으로 과도한 상태 업데이트 방지\n   - 동일 셀 연속 호버 시 스킵\n\n5. lock 위 호버:\n   - lock이 있는 셀 호버 시 lock.startSlot 기준으로 인원 표시\n\n6. 모바일/터치 대응:\n   - 호버 이벤트 없으므로 터치(tap) 시 동일하게 hoveredCell 업데이트",
+        "testStrategy": "1. 매트릭스 셀 간 마우스 이동 시 우측 패널이 실시간 갱신되는지 확인\n2. 마우스를 매트릭스 밖으로 빼도 마지막 호버 상태 유지 확인\n3. 곡별 모드에서 호버 시 해당 곡 참여 멤버만 표시되는지 확인\n4. 빠르게 셀 간 이동해도 UI 버벅임 없이 부드러운지 확인",
+        "priority": "high",
+        "dependencies": [
+          "15",
+          "18"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "24",
+        "title": "매트릭스 히트맵 색상 명도 개선",
+        "description": "매트릭스 히트맵의 단색(초록) 5단계를 4단계로 줄이되 명도 격차를 확대하여 한눈에 비교 가능하게 한다.",
+        "details": "1. `MatrixView.client.tsx`의 `cellBg` 함수 수정:\n   - 기존 5단계: 0%, <25%, <50%, <80%, <100%, 100%\n   - 변경 4단계:\n     - r === 0 → 'bg-card' (배경색과 동일, 가용 없음)\n     - r < 0.33 → 'bg-success/20' (옅은 초록)\n     - r < 0.66 → 'bg-success/45' (중간)\n     - r < 1 → 'bg-success/75' (진한)\n     - r === 1 → 'bg-success' (전원 가능)\n\n2. `Legend` 컴포넌트 수정:\n   - 4단계에 맞게 라벨 변경: '전원', '66%+', '33%+', '소수'\n   - 또는 '100%', '66~99%', '33~65%', '1~32%'\n\n3. globals.css 또는 tailwind 테마 확인:\n   - success 색상의 명도가 충분히 대비되는지 확인\n   - 필요 시 success-dim 등 중간 톤 추가\n\n4. 컬러 블라인드 고려:\n   - 색상만으로 구분이 어려울 수 있으므로, 셀 호버 시 툴팁에 정확한 % 표시 유지",
+        "testStrategy": "1. 0%, 30%, 60%, 100% 가용률 셀을 나란히 놓고 색상 차이가 명확한지 시각적 확인\n2. 다양한 모니터/밝기에서 구분 가능한지 확인\n3. 범례와 실제 셀 색상이 일치하는지 확인",
+        "priority": "low",
+        "dependencies": [
+          "16"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "25",
+        "title": "선곡 회의 키보드 포커스 자동 스크롤",
+        "description": "선곡 회의 곡 리스트에서 방향키(ArrowUp/ArrowDown)로 선택을 이동할 때, 포커스된 곡이 항상 뷰포트 안에 보이도록 자동 스크롤을 적용한다.",
+        "details": "1. `MeetingDetail.client.tsx` 수정:\n   - 키보드 네비게이션 useEffect 내에서 선택 변경 후 scrollIntoView 호출\n   - `isUserKeyNav` ref 추가: 마운트 직후 초기 스크롤 방지\n\n2. `SongTable.client.tsx` 수정:\n   - 각 곡 행에 `data-song-id={song.id}` 속성 추가\n   - 또는 selectedSongId 행에 ref 전달\n\n3. 스크롤 로직:\n   ```tsx\n   useEffect(() => {\n     if (!isUserKeyNav.current || !selectedSongId) return;\n     const row = document.querySelector(`[data-song-id=\"${selectedSongId}\"]`);\n     row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });\n   }, [selectedSongId]);\n   ```\n   - isUserKeyNav는 onKey 핸들러에서 true로 설정, effect 후 false로 리셋\n\n4. 마우스 클릭 선택 시:\n   - scrollIntoView 호출해도 이미 보이는 항목이므로 no-op\n   - 또는 isUserKeyNav가 false면 스킵\n\n5. 스크롤 컨테이너 확인:\n   - SongTable이 감싸는 div의 overflow-y-auto 확인\n   - 부모 컨테이너가 scroll이면 block: 'nearest'가 자동으로 해당 컨테이너 스크롤",
+        "testStrategy": "1. 곡 리스트 50개 상태에서 ArrowDown 연속 입력 시 선택된 행이 항상 보이는지 확인\n2. ArrowUp으로 맨 위로 이동 시 첫 행이 보이는지 확인\n3. 페이지 진입 직후 초기 선택 시 스크롤 점프가 발생하지 않는지 확인\n4. 마우스 클릭 선택 시 불필요한 스크롤이 없는지 확인",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "26",
+        "title": "매트릭스 lock 시각화 개선 — 블럭 카드 형태 렌더링",
+        "description": "매트릭스 뷰에서 배치된 합주 블럭(lock)의 시각화를 단순 셀 배경색에서 주차별 UI와 동일한 '셀 위에 떠 있는 블럭 카드' 형태로 개선한다.",
+        "details": "1. **MatrixView.client.tsx 수정 — Lock 블럭 오버레이 구현**:\n   - 기존 `<td>` 내부의 Lock 아이콘 렌더링 제거\n   - `<tbody>` 끝에 오버레이 영역 추가하여 CSS Grid `position: absolute` 또는 `grid-row` span으로 블럭 카드 렌더링\n   - 매트릭스 테이블을 `position: relative`로 설정하고, 각 lock을 절대 위치 또는 별도 오버레이 레이어로 배치\n\n2. **LockBlockCard 컴포넌트 구현** (MatrixView 내부 또는 별도 파일):\n   ```tsx\n   interface LockBlockCardProps {\n     lock: LockedSlot;\n     song: SongLite | undefined;\n     paletteSeed: number;\n     style: CSSProperties; // top, left, height, width\n     onClick: () => void;\n   }\n   \n   function LockBlockCard({ lock, song, paletteSeed, style, onClick }: LockBlockCardProps) {\n     const tone = lock.songId ? songTone(lock.songId, paletteSeed) : { bg: 'bg-success' };\n     const duration = lock.endSlot - lock.startSlot;\n     const durationMin = duration * 30;\n     \n     return (\n       <button\n         type=\"button\"\n         onClick={onClick}\n         style={style}\n         className={cn(\n           'absolute z-20 overflow-hidden rounded-md px-1.5 py-1 text-left text-white shadow-md',\n           'ring-0 ring-white/0 transition-all hover:ring-2 hover:ring-white/50 hover:brightness-110',\n           'cursor-pointer',\n           tone.bg,\n         )}\n       >\n         {/* 곡 색상 카테고리 인디케이터 (좌측 세로 바) */}\n         <div className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l-md', tone.bg, 'brightness-75')} />\n         \n         <div className=\"pl-1.5\">\n           <div className=\"text-micro truncate font-bold\">\n             <Lock className=\"mr-0.5 inline h-2.5 w-2.5\" />\n             {song?.title ?? '곡 미지정'}\n           </div>\n           {duration >= 2 && (\n             <div className=\"text-micro mt-0.5 font-mono opacity-80\">\n               {slotToTime(lock.startSlot)}~{slotToTime(lock.endSlot)} ({durationMin}분)\n             </div>\n           )}\n         </div>\n       </button>\n     );\n   }\n   ```\n\n3. **Lock 위치 계산 로직**:\n   - 각 lock의 `(date, startSlot, endSlot)`를 테이블 셀 좌표로 변환\n   - 셀 높이 상수 `CELL_HEIGHT = 28px` (기존 `h-7`)\n   - 행 헤더 높이, 열 헤더 너비 고려한 offset 계산\n   - `top = headerHeight + (lock.startSlot - SLOT_FROM) * CELL_HEIGHT`\n   - `height = (lock.endSlot - lock.startSlot) * CELL_HEIGHT`\n   - `left` = 해당 date 열의 x 좌표 (sticky 열 너비 + 날짜 인덱스 * 열 너비)\n\n4. **테이블 레이아웃 변경**:\n   - `<table>` wrapper를 `position: relative`로 설정\n   - 또는 CSS Grid 기반으로 전환하여 `WeeklyScheduleGrid.client.tsx`와 동일한 패턴 사용\n   - 주차 경계 spacer와 충돌 방지: lock 오버레이 `z-index: 20`, spacer row `z-index: 10` 이하\n\n5. **호버/클릭 상호작용**:\n   - 호버 시: `hover:ring-2 hover:ring-white/50` 링 강조\n   - 클릭 시: `onClick` prop으로 편집 다이얼로그 트리거 (Task 19 연동)\n   - 기존 셀의 `cursor-not-allowed` 제거하고 lock 영역은 `cursor-pointer`\n\n6. **cellBg 함수 수정**:\n   - lock이 있는 셀은 배경색 변경 대신 투명 또는 연한 `bg-success/10` 처리\n   - 실제 색상 표현은 오버레이 블럭 카드가 담당\n\n7. **반응형/스크롤 고려**:\n   - 오버레이는 테이블 스크롤 컨테이너 내부에 배치하여 함께 스크롤\n   - sticky 헤더 아래로 배치되도록 `z-index` 조정",
+        "testStrategy": "1. **시각적 확인**: 매트릭스에 lock 배치 후 주차별 UI의 블럭 카드와 동일한 디자인(둥근 모서리, 그림자, 색상 인디케이터)이 적용되는지 확인\n2. **슬롯 길이 반영**: 2슬롯(1시간) lock과 4슬롯(2시간) lock이 각각 셀 2개/4개 높이를 올바르게 차지하는지 확인\n3. **곡 정보 표시**: 곡이 지정된 lock에 곡 제목이 표시되고, 곡별 색상 팔레트가 적용되는지 확인\n4. **호버 강조**: lock 카드에 마우스 오버 시 ring 강조 효과가 나타나는지 확인\n5. **클릭 이벤트**: lock 카드 클릭 시 편집 다이얼로그(Task 19)가 열리는지 확인\n6. **스크롤 동기화**: 매트릭스를 가로/세로 스크롤해도 lock 카드가 셀 위치에 정확히 고정되는지 확인\n7. **주차 경계**: 주차 구분 spacer row가 있는 경우 lock 카드가 spacer 위로 겹치지 않고 올바르게 레이어링되는지 확인\n8. **다중 lock**: 같은 날짜에 여러 lock이 있을 때 각각 독립적으로 올바른 위치에 렌더링되는지 확인",
+        "status": "pending",
+        "dependencies": [
+          "16",
+          "19"
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-04-28T22:13:36.524Z",
-      "taskCount": 13,
-      "completedCount": 13,
+      "lastModified": "2026-04-29T13:57:22.760Z",
+      "taskCount": 26,
+      "completedCount": 14,
       "tags": [
         "schedule-v2"
       ]

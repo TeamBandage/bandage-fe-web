@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 import { useMatrixLockStore, type LockedSlot } from '../store/matrixLockStore';
 import type { MemberSchedule } from '../types';
 import { dayOfWeek, isHoliday, slotToTime } from '../utils';
+import { buildCoverageHeatmap, coverageRatio } from '../utils/coverageHeatmap';
 import { reflowMatrixLocks } from '../utils/reflowMatrixLocks';
 
 import type { Member } from '@/domain/setlist-meeting/types';
@@ -75,25 +76,22 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules, 
     return m;
   }, [songPool]);
 
-  /** date+slot → 가능한 userId set. */
-  const availability = useMemo(() => {
-    const m = new Map<string, Set<string>>();
-    for (const date of allDays) {
-      for (let s = SLOT_FROM; s < SLOT_TO; s++) {
-        const set = new Set<string>();
-        for (const sched of memberSchedules) {
-          if (!sched.availableDates.includes(date)) continue;
-          if (sched.blocks[date]?.[s]) set.add(sched.userId);
-        }
-        m.set(`${date}__${s}`, set);
-      }
-    }
-    return m;
-  }, [allDays, memberSchedules]);
+  /** date+slot → 가능한 userId set. (전체 멤버 — Task 18 에서 곡별 scope 분기 추가) */
+  const availability = useMemo(
+    () =>
+      buildCoverageHeatmap({
+        memberSchedules,
+        allDays,
+        slotFrom: SLOT_FROM,
+        slotTo: SLOT_TO,
+        scope: 'ALL',
+      }),
+    [allDays, memberSchedules],
+  );
 
   const totalMembers = participants.length;
   const ratio = (date: string, slot: number) =>
-    totalMembers === 0 ? 0 : (availability.get(`${date}__${slot}`)?.size ?? 0) / totalMembers;
+    coverageRatio(availability, date, slot, totalMembers);
 
   const isLocked = (date: string, slot: number) =>
     locks.some((l) => l.date === date && slot >= l.startSlot && slot < l.endSlot);
