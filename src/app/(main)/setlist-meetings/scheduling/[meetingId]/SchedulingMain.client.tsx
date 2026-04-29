@@ -372,7 +372,8 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
         </div>
       ) : (
         <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-          <section className="border-border flex flex-col md:w-2/5 md:border-r">
+          {/* 좌측: 멤버/곡 명단 — 화면 절반이 아닌 고정 폭으로 컴팩트하게. */}
+          <section className="border-border flex w-full shrink-0 flex-col md:w-72 md:border-r">
             <div className="flex-1 overflow-y-auto" id={`tabpanel-${leftTab}`} role="tabpanel">
               {safeLeftTab === 'member' && (
                 <MemberListPane
@@ -393,7 +394,8 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               )}
             </div>
           </section>
-          <section className="bg-bg flex flex-1 flex-col overflow-hidden md:w-3/5">
+          {/* 중앙: 선택된 항목의 시간표 시각화 — 셀 클릭 시 우측 패널 갱신. */}
+          <section className="bg-bg flex min-w-0 flex-1 flex-col overflow-hidden">
             <RightVisualization
               panel={rightPanel}
               onClose={() => setRightPanel(null)}
@@ -404,6 +406,15 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               view={view}
             />
           </section>
+          {/* 우측 사이드바: 매트릭스의 가용 인원 패널 재사용 — 클릭한 셀의 인원 표시. */}
+          <aside className="border-border hidden w-64 shrink-0 border-l p-3 md:block">
+            <HoveredAvailabilityPanel
+              meetingId={meetingId}
+              participants={participants}
+              memberSchedules={memberSchedules}
+              className="h-full"
+            />
+          </aside>
         </div>
       )}
 
@@ -639,6 +650,7 @@ function RightVisualization({
           />
         ) : (
           <SongMatrixPanel
+            meetingId={meetingId}
             memberSchedules={memberSchedules}
             participants={participants}
             visibleDays={visibleDays}
@@ -662,6 +674,7 @@ function MemberSchedulePanel({
   isInWindow: (date: string) => boolean;
 }) {
   const sched = useScheduleStore((s) => s.schedules[`${meetingId}__${member.id}`]);
+  const setHoveredCell = useScheduleViewStore((s) => s.setHoveredCell);
   return (
     <div className="flex h-full flex-col gap-3">
       {sched ? (
@@ -670,6 +683,7 @@ function MemberSchedulePanel({
           slotStart={18}
           slotEnd={44}
           isInWindow={isInWindow}
+          onCellClick={(date, slot) => setHoveredCell(meetingId, { date, slot })}
           cellClassName={(d, s, inWindow) => {
             if (!inWindow) return undefined;
             if (!sched.availableDates.includes(d)) return undefined;
@@ -702,16 +716,19 @@ function MemberSchedulePanel({
 }
 
 function SongMatrixPanel({
+  meetingId,
   memberSchedules,
   participants,
   visibleDays,
   isInWindow,
 }: {
+  meetingId: string;
   memberSchedules: ReturnType<typeof useScheduleStore.getState>['schedules'][string][];
   participants: Member[];
   visibleDays: string[];
   isInWindow: (date: string) => boolean;
 }) {
+  const setHoveredCell = useScheduleViewStore((s) => s.setHoveredCell);
   const aggregate = useMemo(
     () => aggregateAvailability(memberSchedules, visibleDays),
     [memberSchedules, visibleDays],
@@ -728,13 +745,14 @@ function SongMatrixPanel({
   return (
     <div className="flex h-full flex-col gap-3">
       <p className="text-foreground-muted text-caption px-s-1">
-        참여 {total}명 기준 동시 가능 시간 — 진할수록 가능 인원 많음.
+        참여 {total}명 기준 동시 가능 시간 — 셀 클릭 시 우측 사이드바에 가능/불가 인원 표시.
       </p>
       <WeeklyScheduleGrid
         days={visibleDays}
         slotStart={18}
         slotEnd={44}
         isInWindow={isInWindow}
+        onCellClick={(date, slot) => setHoveredCell(meetingId, { date, slot })}
         cellClassName={(d, s, inWindow) => {
           if (!inWindow) return undefined;
           const c = aggregate[d]?.[s] ?? 0;
