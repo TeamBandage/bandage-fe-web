@@ -43,7 +43,10 @@ export function MatrixView({ meetingId, allDays, participants, memberSchedules }
   const [confirmRange, setConfirmRange] = useState<DragRange | null>(null);
   const toast = useToast();
 
-  const locks = useMatrixLockStore((s) => s.locksByMeeting[meetingId] ?? []);
+  // s.locksByMeeting 만 구독하고 useMemo 로 derive — '?? []' fallback 은 매번 새 배열을 만들어
+  // React 19 useSyncExternalStore 캐시 검증을 위반(getSnapshot infinite loop).
+  const locksByMeeting = useMatrixLockStore((s) => s.locksByMeeting);
+  const locks = useMemo(() => locksByMeeting[meetingId] ?? [], [locksByMeeting, meetingId]);
   const addLock = useMatrixLockStore((s) => s.addLock);
   const removeLock = useMatrixLockStore((s) => s.removeLock);
 
