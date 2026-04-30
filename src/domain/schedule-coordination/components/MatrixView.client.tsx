@@ -496,7 +496,7 @@ export function MatrixView({
                 const weekSpan = weekRow ? weekRow[1].length : 1;
                 const weekIdx = weekIndexMap.get(ws) ?? 0;
                 return (
-                  <tr key={d} style={{ height: 28 }}>
+                  <tr key={d} style={{ height: 40 }}>
                     {isWeekFirst && (
                       <td
                         rowSpan={weekSpan}
@@ -598,6 +598,10 @@ export function MatrixView({
                             // 우클릭 → 합주 블럭 즉시 삭제 (block 영역에서만 동작).
                             if (!block || !boardId) return;
                             e.preventDefault();
+                            if (block.pinned) {
+                              toast.error('잠금된 블록은 삭제할 수 없습니다 — 먼저 잠금 해제');
+                              return;
+                            }
                             removeBlock(boardId, block.blockId);
                             toast.success('합주 슬롯 삭제');
                           }}
@@ -607,7 +611,7 @@ export function MatrixView({
                               : `${d} ${slotToTime(s)} — ${count}/${totalMembers}명 가능`
                           }
                           className={cn(
-                            'border-border/50 h-7 border-r border-b p-0 transition-colors',
+                            'border-border/50 h-10 border-r border-b p-0 transition-colors',
                             isWeekFirst && 'border-t-border border-t-2',
                             cellBg(d, s, dragHit),
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
@@ -750,7 +754,7 @@ function LockBlockCard({
       role="button"
       title={`${title} ${slotToTime(block.startSlot)}~${slotToTime(block.startSlot + dur)}`}
       className={cn(
-        'mx-0.5 my-px flex h-[26px] cursor-pointer items-center gap-1 overflow-hidden rounded border border-white/30 px-1.5 text-left text-white shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-white/60 hover:ring-inset',
+        'mx-0.5 my-1 flex h-[32px] cursor-pointer items-center gap-1 overflow-hidden rounded-md border border-white/30 px-2 text-left text-white shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-white/60 hover:ring-inset',
         tone.bg,
       )}
     >

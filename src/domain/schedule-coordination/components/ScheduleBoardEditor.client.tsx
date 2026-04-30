@@ -334,8 +334,12 @@ export function ScheduleBoardEditor({
                 onDragEnd={onDragEnd}
                 onClick={() => setSelectedBlockId(b.blockId)}
                 onContextMenu={(e) => {
-                  // 우클릭 → 즉시 삭제. 모달/Confirm 생략.
+                  // 우클릭 → 즉시 삭제. 잠금 블록은 차단 (먼저 잠금 해제 필요).
                   e.preventDefault();
+                  if (b.pinned) {
+                    toast.error('잠금된 블록은 삭제할 수 없습니다 — 먼저 잠금 해제');
+                    return;
+                  }
                   removeBlock(boardId, b.blockId);
                   toast.success('합주 블록 삭제');
                 }}
