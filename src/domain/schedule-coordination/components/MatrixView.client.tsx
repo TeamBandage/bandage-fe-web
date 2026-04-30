@@ -182,16 +182,22 @@ export function MatrixView({
     return true;
   };
 
-  /** focus = pinned ?? hover (PRD §2.1) */
-  const focus: CellRef | null = pinned ?? hover;
+  /**
+   * SidePanel(가능/불가 인원) 표시 기준 = 클릭한 셀(pinned).
+   * 호버는 시각적 피드백(셀 outline)만 담당 — 패널 내용은 흔들리지 않음.
+   */
+  const focus: CellRef | null = pinned;
 
-  // 셀 색상 (PRD §3.2) — lock 위에는 절대 위치 카드를 띄우므로, lock 셀 자체는 투명/은은하게.
+  // 셀 색상 (PRD §3.2). lock 셀도 가용시간 히트맵을 그대로 노출 — 카드는 그 위에 떠 있는 구조.
+  const heatmapBg = (date: string, slot: number): string => {
+    const r = ratio(date, slot);
+    if (r === 0) return 'bg-card';
+    if (r < 0.34) return 'bg-success/20';
+    if (r < 0.67) return 'bg-success/45';
+    if (r < 1) return 'bg-success/75';
+    return 'bg-success';
+  };
   const cellBg = (date: string, slot: number, dragHit: boolean): string => {
-    const lock = lockAt(date, slot);
-    if (lock) {
-      // lock 영역의 셀 배경은 카드 뒤편에 가려지므로 거의 보이지 않음 — 안전하게 어둡게.
-      return 'bg-bg';
-    }
     if (dragHit) return 'bg-accent';
     if (poolDrag && canDrop(slot, poolDrag.durationSlots)) {
       const hovered = poolDropHover && poolDropHover.date === date && poolDropHover.slot === slot;
@@ -199,13 +205,7 @@ export function MatrixView({
       if (hovered) return clean ? 'bg-accent-dim' : 'bg-warn/40';
       return clean ? 'bg-accent-soft' : 'bg-warn/15';
     }
-    const r = ratio(date, slot);
-    // 단색(success 초록) 4단계 + 0/full — 명도 격차를 키워 한눈에 비교 가능.
-    if (r === 0) return 'bg-card';
-    if (r < 0.34) return 'bg-success/20';
-    if (r < 0.67) return 'bg-success/45';
-    if (r < 1) return 'bg-success/75';
-    return 'bg-success';
+    return heatmapBg(date, slot);
   };
 
   const onCellMouseDown =
@@ -586,8 +586,7 @@ export function MatrixView({
                           className={cn(
                             'border-border/50 h-7 border-r border-b p-0 transition-colors',
                             isWeekFirst && 'border-t-border border-t-2',
-                            !block && cellBg(d, s, dragHit),
-                            block && 'bg-bg',
+                            cellBg(d, s, dragHit),
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
                             isHover && 'outline-foreground/50 outline outline-1 -outline-offset-1',
                             'cursor-pointer',

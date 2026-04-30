@@ -71,6 +71,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
   const viewMode = useScheduleViewStore((s) => s.modeByMeeting[meetingId] ?? 'weekly');
   const setViewMode = useScheduleViewStore((s) => s.setMode);
   const [songFilter, setSongFilter] = useState<SongFilter>('mine');
+  const focusedSongId = useScheduleViewStore((s) => s.focusedSongIdByMeeting[meetingId] ?? null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [rightPanel, setRightPanel] = useState<RightPanel>(null);
   const isConfirmedTimetable = useTimetableStore((s) => Boolean(s.confirmedByMeetingId[meetingId]));
@@ -105,6 +106,11 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
     }
     return m;
   }, [allSongs]);
+  /** 우측 인원 패널 scope — 곡별 가용시간 모드 시 해당 곡 참여자만 분류. */
+  const sidebarScope = useMemo<'ALL' | string[]>(
+    () => (focusedSongId ? (songParticipantsMap[focusedSongId] ?? []) : 'ALL'),
+    [focusedSongId, songParticipantsMap],
+  );
 
   const window = meeting?.practiceWindow;
   const view = useScheduleView({
@@ -127,15 +133,14 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
     [allBoards, meetingId],
   );
   useEffect(() => {
-    if (!isManager) return;
+    // 합주 시간표 생성 탭일 때만 보드 자동 선택. 멤버/곡 탭에선 사용자 클릭한 항목 유지.
+    if (!isManager || safeLeftTab !== 'board') return;
     if (meetingBoards.length === 0) return;
-    // 이미 이 회의의 보드가 선택돼 있다면 유지.
     if (rightPanel?.kind === 'board' && meetingBoards.some((b) => b.boardId === rightPanel.boardId))
       return;
-    // 그 외 (선택 없음 / 다른 회의 보드 / 다른 종류) → 첫 보드 자동 선택.
     const first = meetingBoards[0]!;
     setRightPanel({ kind: 'board', boardId: first.boardId });
-  }, [isManager, meetingBoards, rightPanel]);
+  }, [isManager, safeLeftTab, meetingBoards, rightPanel]);
   useEffect(() => {
     if (!selectedBoard || selectedBoard.blocks.length === 0) return;
     const earliest = selectedBoard.blocks.reduce(
@@ -363,6 +368,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                     meetingId={meetingId}
                     participants={participants}
                     memberSchedules={memberSchedules}
+                    scopeUserIds={sidebarScope}
                     className="h-full"
                   />
                 </aside>
