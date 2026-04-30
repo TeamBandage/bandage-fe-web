@@ -81,6 +81,8 @@ export function MatrixView({
   const [poolDropHover, setPoolDropHover] = useState<CellRef | null>(null);
   const [editBlockId, setEditBlockId] = useState<string | null>(null);
   const [pendingApplyAll, setPendingApplyAll] = useState(false);
+  /** 슬롯 표시 밀도 — 'dense'(30분 단위) / 'hour'(1시간 단위 묶음). 시각 노이즈 줄이기 위한 토글. */
+  const [density, setDensity] = useState<'dense' | 'hour'>('dense');
   const toast = useToast();
 
   /** 표출 시간 프리셋 — 주차별 UI 와 공유. 변경 시 즉시 반영. */
@@ -381,8 +383,28 @@ export function MatrixView({
           <Legend />
         </div>
 
-        {/* Task 21 — 주별 반복/복제 액션바. */}
-        <div className="bg-card border-border px-s-3 py-s-2 gap-s-2 flex flex-wrap items-center rounded-md border">
+        {/* 액션바 — 카드화하여 매트릭스 본체와 시각적으로 분리. */}
+        <div className="bg-card border-border gap-s-3 mb-1 flex flex-wrap items-center rounded-md border px-3 py-2 shadow-sm">
+          {/* 슬롯 밀도 토글 — dense(30분) / hour(1시간 묶음). */}
+          <div className="bg-bg/60 border-border/60 inline-flex rounded-md border p-0.5">
+            {(['dense', 'hour'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setDensity(mode)}
+                aria-pressed={density === mode}
+                className={cn(
+                  'text-micro rounded px-2 py-0.5 font-bold transition-colors',
+                  density === mode
+                    ? 'bg-accent text-foreground'
+                    : 'text-foreground-muted hover:text-foreground',
+                )}
+              >
+                {mode === 'dense' ? '30분' : '1시간'}
+              </button>
+            ))}
+          </div>
+          <span className="bg-border h-4 w-px" aria-hidden="true" />
           <span className="text-foreground-muted text-micro">기준 주:</span>
           <strong className="text-foreground text-caption font-mono">
             {baseWeekStart
@@ -444,23 +466,24 @@ export function MatrixView({
           </div>
         </div>
 
-        <div className="border-border bg-card flex-1 overflow-auto rounded-md border">
+        <div className="border-border bg-card flex-1 overflow-auto rounded-md border shadow-sm">
           {/*
            * 폭을 픽셀로 정확히 고정 — tableLayout:fixed 만으로는 컨테이너가 넓을 때
            * 비례 확장되어 슬롯 폭이 들쭉날쭉해진다. width 를 합산값으로 박아 균일 보장.
            */}
+          {/* density 가 hour 면 슬롯 폭을 좁혀 1시간이 한 단위로 시각적으로 묶이게. */}
           <table
             className="border-collapse select-none"
             style={{
               tableLayout: 'fixed',
-              width: 60 + 110 + slots.length * 44,
+              width: 60 + 110 + slots.length * (density === 'hour' ? 26 : 44),
             }}
           >
             <colgroup>
               <col style={{ width: '60px' }} />
               <col style={{ width: '110px' }} />
               {slots.map((s) => (
-                <col key={s} style={{ width: '44px' }} />
+                <col key={s} style={{ width: density === 'hour' ? '26px' : '44px' }} />
               ))}
             </colgroup>
             <thead>
@@ -506,7 +529,7 @@ export function MatrixView({
                 const weekSpan = weekRow ? weekRow[1].length : 1;
                 const weekIdx = weekIndexMap.get(ws) ?? 0;
                 return (
-                  <tr key={d} style={{ height: 40 }}>
+                  <tr key={d} style={{ height: 36 }}>
                     {isWeekFirst && (
                       <td
                         rowSpan={weekSpan}
@@ -622,7 +645,13 @@ export function MatrixView({
                               : `${d} ${slotToTime(s)} — ${count}/${totalMembers}명 가능`
                           }
                           className={cn(
-                            'border-border/50 h-10 border-r border-b p-0 transition-colors',
+                            'h-9 border-b p-0 transition-colors',
+                            // 정시(짝수 슬롯) 경계는 진하게, 30분 경계는 옅게(또는 hour 모드 시 숨김).
+                            s % 2 === 0
+                              ? 'border-r-border border-r'
+                              : density === 'hour'
+                                ? ''
+                                : 'border-r-border/30 border-r',
                             isWeekFirst && 'border-t-border border-t-2',
                             cellBg(d, s, dragHit),
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
@@ -664,7 +693,7 @@ export function MatrixView({
       </div>
 
       {/* 우측 사이드바 — 마스터(가능/불가) + 슬레이브(블록 풀) 세로 stack. */}
-      <aside className="flex w-60 shrink flex-col gap-3 lg:w-72 xl:w-80">
+      <aside className="flex w-60 shrink flex-col gap-4 lg:w-72 xl:w-80">
         <SidePanel
           focus={focus}
           pinned={!!pinned}
@@ -765,7 +794,7 @@ function LockBlockCard({
       role="button"
       title={`${title} ${slotToTime(block.startSlot)}~${slotToTime(block.startSlot + dur)}`}
       className={cn(
-        'mx-0.5 my-1 flex h-[32px] cursor-pointer items-center gap-1 overflow-hidden rounded-md border border-white/30 px-2 text-left text-white shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-white/60 hover:ring-inset',
+        'mx-0.5 my-0.5 flex h-[28px] cursor-pointer items-center gap-1 overflow-hidden rounded-md border border-white/30 px-2 text-left text-white shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-white/60 hover:ring-inset',
         tone.bg,
       )}
     >
@@ -905,7 +934,7 @@ function SidePanel({
 }) {
   if (!focus) {
     return (
-      <div className="bg-card border-border flex flex-1 flex-col items-center justify-center gap-2 rounded-md border p-6 text-center">
+      <div className="bg-card border-border flex flex-1 flex-col items-center justify-center gap-2 rounded-md border p-6 text-center shadow-sm">
         <Info className="text-foreground-muted/60 h-5 w-5" />
         <p className="text-foreground-muted text-caption">
           매트릭스의 셀에 호버하면
@@ -940,7 +969,7 @@ function SidePanel({
   const blockedSong = block?.songId ? songMap.get(block.songId) : null;
 
   return (
-    <div className="bg-card border-border flex flex-1 flex-col overflow-hidden rounded-md border">
+    <div className="bg-card border-border flex flex-1 flex-col overflow-hidden rounded-md border shadow-sm">
       <div className="border-border px-s-4 py-s-3 border-b">
         <div className="text-foreground-muted text-micro gap-s-1 flex items-center font-bold uppercase">
           {block ? (
@@ -1055,7 +1084,7 @@ function BlockPoolPanel({
   onSongClick: (songId: string) => void;
 }) {
   return (
-    <div className="bg-card border-border flex max-h-[40%] flex-col overflow-hidden rounded-md border">
+    <div className="bg-card border-border flex max-h-[40%] flex-col overflow-hidden rounded-md border shadow-sm">
       <div className="border-border px-s-3 py-s-2 border-b">
         <div className="text-foreground-muted text-micro font-bold uppercase">
           합주 블록 풀 ({songPool.length})
