@@ -369,6 +369,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                     participants={participants}
                     memberSchedules={memberSchedules}
                     scopeUserIds={sidebarScope}
+                    days={allDays}
                     className="h-full"
                   />
                 </aside>
@@ -418,6 +419,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               meetingId={meetingId}
               participants={participants}
               memberSchedules={memberSchedules}
+              days={allDays}
               className="h-full"
             />
           </aside>

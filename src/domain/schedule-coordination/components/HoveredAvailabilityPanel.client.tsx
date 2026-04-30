@@ -2,14 +2,13 @@
 
 import { useMemo } from 'react';
 
-import { cn } from '@/lib/cn';
-
 import { useScheduleViewStore } from '../store/scheduleViewStore';
 import type { MemberSchedule } from '../types';
-import { dayOfWeek, slotToTime } from '../utils';
+import { buildCoverageHeatmap } from '../utils/coverageHeatmap';
 
-import { MemberAvatar } from '@/domain/setlist-meeting/components/MemberAvatar';
 import type { Member } from '@/domain/setlist-meeting/types';
+
+import { MemberAvailabilityPanel } from './MemberAvailabilityPanel.client';
 
 interface Props {
   meetingId: string;
@@ -17,21 +16,27 @@ interface Props {
   memberSchedules: MemberSchedule[];
   /** 곡별 가용시간 모드용 — 활성 시 해당 곡의 참여 멤버만 분류. */
   scopeUserIds?: string[] | 'ALL';
+  /** 표시 시간 범위 — 매트릭스/주차별 UI 의 rangePreset 과 동일 값을 받음. */
+  slotFrom?: number;
+  slotTo?: number;
+  /** 표시 일자 범위 — 보통 visibleDays 또는 allDays. */
+  days: string[];
   className?: string;
 }
 
-const DOW = ['일', '월', '화', '수', '목', '금', '토'] as const;
-
 /**
- * 매트릭스 / 주차별 UI 공통 — 셀 호버 시 우측에 가능/불가능 인원 표시 (Task 23).
- * scheduleViewStore.hoveredCellByMeeting 을 구독하여 실시간 갱신.
- * 호버 떼도 마지막 상태 유지 — 깜빡임 방지.
+ * SchedulingMain 의 우측 사이드바용 wrapper. 매트릭스 SidePanel 과 동일한
+ * MemberAvailabilityPanel 을 사용하되, 데이터(availability/cell/scope) 를
+ * scheduleViewStore 와 props 로부터 합성하여 전달.
  */
 export function HoveredAvailabilityPanel({
   meetingId,
   participants,
   memberSchedules,
   scopeUserIds = 'ALL',
+  slotFrom = 18,
+  slotTo = 44,
+  days,
   className,
 }: Props) {
   const cell = useScheduleViewStore((s) => s.hoveredCellByMeeting[meetingId] ?? null);
@@ -42,68 +47,32 @@ export function HoveredAvailabilityPanel({
     return participants.filter((p) => allow.has(p.id));
   }, [participants, scopeUserIds]);
 
-  const { available, unavailable } = useMemo(() => {
-    if (!cell) return { available: [], unavailable: [] as Member[] };
-    const ok: Member[] = [];
-    const no: Member[] = [];
-    for (const m of targetParticipants) {
-      const sched = memberSchedules.find((s) => s.userId === m.id);
-      const isAvailable = Boolean(
-        sched && sched.availableDates.includes(cell.date) && sched.blocks[cell.date]?.[cell.slot],
-      );
-      if (isAvailable) ok.push(m);
-      else no.push(m);
-    }
-    return { available: ok, unavailable: no };
-  }, [cell, targetParticipants, memberSchedules]);
+  const targetSchedules = useMemo(() => {
+    if (scopeUserIds === 'ALL') return memberSchedules;
+    const allow = new Set(scopeUserIds);
+    return memberSchedules.filter((s) => allow.has(s.userId));
+  }, [memberSchedules, scopeUserIds]);
+
+  const availability = useMemo(
+    () =>
+      buildCoverageHeatmap({
+        memberSchedules: targetSchedules,
+        allDays: days,
+        slotFrom,
+        slotTo,
+        scope: 'ALL',
+      }),
+    [targetSchedules, days, slotFrom, slotTo],
+  );
 
   return (
-    <div className={cn('bg-card border-border flex flex-col rounded-md border', className)}>
-      <header className="border-border px-s-3 py-s-2 border-b">
-        <div className="text-foreground-muted text-micro font-bold uppercase">
-          가능 / 불가능 인원
-        </div>
-        <div className="text-caption mt-0.5 font-mono">
-          {cell
-            ? `${cell.date} (${DOW[dayOfWeek(cell.date)]}) · ${slotToTime(cell.slot)}`
-            : '셀을 클릭하여 시간을 선택'}
-        </div>
-        {scopeUserIds !== 'ALL' && (
-          <div className="text-foreground-muted text-micro mt-0.5">
-            기준: 선택된 곡 참여 멤버 ({targetParticipants.length}명)
-          </div>
-        )}
-      </header>
-      <div className="px-s-3 py-s-2 gap-s-3 flex flex-1 flex-col overflow-y-auto">
-        <section>
-          <div className="text-success text-micro mb-1 font-bold">가능 {available.length}명</div>
-          <ul className="gap-s-1 flex flex-col">
-            {available.map((m) => (
-              <li key={m.id} className="gap-s-2 flex items-center">
-                <MemberAvatar member={m} size="sm" />
-                <span className="text-caption truncate">{m.name}</span>
-              </li>
-            ))}
-            {available.length === 0 && cell && (
-              <li className="text-foreground-muted text-micro">없음</li>
-            )}
-          </ul>
-        </section>
-        <section>
-          <div className="text-danger text-micro mb-1 font-bold">불가능 {unavailable.length}명</div>
-          <ul className="gap-s-1 flex flex-col">
-            {unavailable.map((m) => (
-              <li key={m.id} className="gap-s-2 flex items-center opacity-60">
-                <MemberAvatar member={m} size="sm" />
-                <span className="text-caption truncate">{m.name}</span>
-              </li>
-            ))}
-            {unavailable.length === 0 && cell && (
-              <li className="text-foreground-muted text-micro">없음</li>
-            )}
-          </ul>
-        </section>
-      </div>
-    </div>
+    <MemberAvailabilityPanel
+      cell={cell}
+      availability={availability}
+      participants={targetParticipants}
+      memberSchedules={targetSchedules}
+      className={className}
+      placeholder={'셀을 클릭하면\n해당 시간의 멤버 가용성이 표시됩니다.'}
+    />
   );
 }
