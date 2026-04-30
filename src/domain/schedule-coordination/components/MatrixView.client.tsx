@@ -527,10 +527,17 @@ export function MatrixView({
                               : '클릭하여 복사 대상 토글'
                             : `클릭=기준 주 지정 / 더블클릭=주차별 UI 로 이동`
                         }
+                        // sticky 셀은 항상 솔리드 bg-surface 유지. 강조는 inset ring + 고대비 컬러 클래스로.
+                        // (bg-accent-dim alpha 0.14 로 깔면 sticky base bg 가 override 되어
+                        //  뒤 매트릭스 본문이 비쳐 보임)
                         className={cn(
-                          'bg-surface border-border hover:bg-accent-dim sticky left-0 z-20 cursor-pointer overflow-hidden border-r-2 border-b-2 p-0 text-center align-middle transition-colors',
-                          baseWeekStart === ws && 'bg-accent-dim',
-                          repeatActive && repeatTargets.includes(ws) && 'bg-warn-dim',
+                          'border-border bg-surface sticky left-0 z-20 cursor-pointer overflow-hidden border-r-2 border-b-2 p-0 text-center align-middle transition-shadow',
+                          'hover:[box-shadow:inset_0_0_0_2px_var(--color-accent)]',
+                          baseWeekStart === ws &&
+                            '[box-shadow:inset_0_0_0_2px_var(--color-accent)]',
+                          repeatActive &&
+                            repeatTargets.includes(ws) &&
+                            '[box-shadow:inset_0_0_0_2px_var(--color-warn)]',
                         )}
                       >
                         <div className="flex flex-col items-center justify-center gap-0.5 px-1 leading-none">
@@ -657,7 +664,7 @@ export function MatrixView({
       </div>
 
       {/* 우측 사이드바 — 마스터(가능/불가) + 슬레이브(블록 풀) 세로 stack. */}
-      <aside className="flex w-80 shrink-0 flex-col gap-3">
+      <aside className="flex w-60 shrink flex-col gap-3 lg:w-72 xl:w-80">
         <SidePanel
           focus={focus}
           pinned={!!pinned}

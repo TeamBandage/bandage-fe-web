@@ -363,7 +363,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                   )}
                 </div>
                 {/* 우측: 호버 기반 가능/불가능 인원 패널 (Task 23). */}
-                <aside className="ml-3 w-64 shrink-0">
+                <aside className="ml-3 w-56 shrink lg:w-64 xl:w-72">
                   <HoveredAvailabilityPanel
                     meetingId={meetingId}
                     participants={participants}
@@ -413,7 +413,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
             />
           </section>
           {/* 우측 사이드바: 매트릭스의 가용 인원 패널 재사용 — 클릭한 셀의 인원 표시. */}
-          <aside className="border-border hidden w-64 shrink-0 border-l p-3 md:block">
+          <aside className="border-border hidden w-56 shrink border-l p-3 md:block lg:w-64 xl:w-72">
             <HoveredAvailabilityPanel
               meetingId={meetingId}
               participants={participants}
