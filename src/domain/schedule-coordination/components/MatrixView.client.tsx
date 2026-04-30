@@ -445,12 +445,16 @@ export function MatrixView({
         </div>
 
         <div className="border-border bg-card flex-1 overflow-auto rounded-md border">
-          <table className="w-full border-collapse select-none" style={{ tableLayout: 'fixed' }}>
+          {/* min-w-[N] 로 슬롯 컬럼 폭 확보 — 셀이 너무 좁아 카드/시간 라벨이 짤리지 않도록. */}
+          <table
+            className="border-collapse select-none"
+            style={{ tableLayout: 'fixed', minWidth: 60 + 110 + slots.length * 36 }}
+          >
             <colgroup>
-              <col style={{ width: '54px' }} />
+              <col style={{ width: '60px' }} />
               <col style={{ width: '110px' }} />
               {slots.map((s) => (
-                <col key={s} />
+                <col key={s} style={{ width: '36px' }} />
               ))}
             </colgroup>
             <thead>
@@ -500,36 +504,30 @@ export function MatrixView({
                     {isWeekFirst && (
                       <td
                         rowSpan={weekSpan}
+                        onClick={() => {
+                          if (repeatActive) {
+                            if (ws !== baseWeekStart) toggleRepeatTarget(meetingId, ws);
+                          } else {
+                            setBaseWeek(meetingId, ws);
+                          }
+                        }}
+                        onDoubleClick={() => {
+                          if (!repeatActive) onWeekJump?.(ws);
+                        }}
+                        title={
+                          repeatActive
+                            ? ws === baseWeekStart
+                              ? '기준 주'
+                              : '클릭하여 복사 대상 토글'
+                            : `클릭=기준 주 지정 / 더블클릭=주차별 UI 로 이동`
+                        }
                         className={cn(
-                          'bg-surface border-border sticky left-0 z-20 overflow-hidden border-r-2 border-b-2 p-0 align-middle',
+                          'bg-surface border-border hover:bg-accent-dim sticky left-0 z-20 cursor-pointer overflow-hidden border-r-2 border-b-2 p-0 text-center align-middle transition-colors',
                           baseWeekStart === ws && 'bg-accent-dim',
                           repeatActive && repeatTargets.includes(ws) && 'bg-warn-dim',
                         )}
                       >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (repeatActive) {
-                              if (ws !== baseWeekStart) toggleRepeatTarget(meetingId, ws);
-                            } else {
-                              setBaseWeek(meetingId, ws);
-                            }
-                          }}
-                          onDoubleClick={() => {
-                            if (!repeatActive) onWeekJump?.(ws);
-                          }}
-                          className={cn(
-                            'flex h-full w-full cursor-pointer flex-col items-center justify-center gap-0.5 px-1 leading-none transition-colors',
-                            'hover:bg-accent-dim',
-                          )}
-                          title={
-                            repeatActive
-                              ? ws === baseWeekStart
-                                ? '기준 주'
-                                : '클릭하여 복사 대상 토글'
-                              : `클릭=기준 주 지정 / 더블클릭=주차별 UI 로 이동`
-                          }
-                        >
+                        <div className="flex flex-col items-center justify-center gap-0.5 px-1 leading-none">
                           <div className="text-foreground text-caption font-bold tracking-wide">
                             W{weekIdx}
                           </div>
@@ -539,12 +537,12 @@ export function MatrixView({
                           {repeatActive && repeatTargets.includes(ws) && (
                             <div className="text-warn text-micro font-bold">대상</div>
                           )}
-                        </button>
+                        </div>
                       </td>
                     )}
                     <td
                       className={cn(
-                        'bg-surface border-border sticky left-[54px] z-10 border-r px-2 py-0.5 whitespace-nowrap',
+                        'bg-surface border-border sticky left-[60px] z-10 border-r px-2 py-0.5 whitespace-nowrap',
                         isWeekFirst && 'border-t-2',
                       )}
                     >
@@ -758,7 +756,7 @@ function LockBlockCard({
         tone.bg,
       )}
     >
-      <Lock className="h-2.5 w-2.5 shrink-0 opacity-80" aria-hidden="true" />
+      {block.pinned && <Lock className="h-2.5 w-2.5 shrink-0 opacity-80" aria-hidden="true" />}
       <span className="text-micro min-w-0 truncate leading-none font-bold">{title}</span>
       <span className="text-micro ml-auto shrink-0 opacity-80">{dur * 30}분</span>
     </div>
