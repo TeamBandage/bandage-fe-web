@@ -81,8 +81,6 @@ export function MatrixView({
   const [poolDropHover, setPoolDropHover] = useState<CellRef | null>(null);
   const [editBlockId, setEditBlockId] = useState<string | null>(null);
   const [pendingApplyAll, setPendingApplyAll] = useState(false);
-  /** 슬롯 표시 밀도 — 'dense'(30분 단위) / 'hour'(1시간 단위 묶음). 시각 노이즈 줄이기 위한 토글. */
-  const [density, setDensity] = useState<'dense' | 'hour'>('dense');
   const toast = useToast();
 
   /** 표출 시간 프리셋 — 주차별 UI 와 공유. 변경 시 즉시 반영. */
@@ -385,26 +383,6 @@ export function MatrixView({
 
         {/* 액션바 — 카드화하여 매트릭스 본체와 시각적으로 분리. */}
         <div className="bg-card border-border gap-s-3 mb-1 flex flex-wrap items-center rounded-md border px-3 py-2 shadow-sm">
-          {/* 슬롯 밀도 토글 — dense(30분) / hour(1시간 묶음). */}
-          <div className="bg-bg/60 border-border/60 inline-flex rounded-md border p-0.5">
-            {(['dense', 'hour'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setDensity(mode)}
-                aria-pressed={density === mode}
-                className={cn(
-                  'text-micro rounded px-2 py-0.5 font-bold transition-colors',
-                  density === mode
-                    ? 'bg-accent text-foreground'
-                    : 'text-foreground-muted hover:text-foreground',
-                )}
-              >
-                {mode === 'dense' ? '30분' : '1시간'}
-              </button>
-            ))}
-          </div>
-          <span className="bg-border h-4 w-px" aria-hidden="true" />
           <span className="text-foreground-muted text-micro">기준 주:</span>
           <strong className="text-foreground text-caption font-mono">
             {baseWeekStart
@@ -471,19 +449,18 @@ export function MatrixView({
            * 폭을 픽셀로 정확히 고정 — tableLayout:fixed 만으로는 컨테이너가 넓을 때
            * 비례 확장되어 슬롯 폭이 들쭉날쭉해진다. width 를 합산값으로 박아 균일 보장.
            */}
-          {/* density 가 hour 면 슬롯 폭을 좁혀 1시간이 한 단위로 시각적으로 묶이게. */}
           <table
             className="border-collapse select-none"
             style={{
               tableLayout: 'fixed',
-              width: 60 + 110 + slots.length * (density === 'hour' ? 26 : 44),
+              width: 60 + 110 + slots.length * 44,
             }}
           >
             <colgroup>
               <col style={{ width: '60px' }} />
               <col style={{ width: '110px' }} />
               {slots.map((s) => (
-                <col key={s} style={{ width: density === 'hour' ? '26px' : '44px' }} />
+                <col key={s} style={{ width: '44px' }} />
               ))}
             </colgroup>
             <thead>
@@ -578,8 +555,8 @@ export function MatrixView({
                     )}
                     <td
                       className={cn(
-                        'bg-surface border-border sticky left-[60px] z-10 border-r px-2 py-0.5 whitespace-nowrap',
-                        isWeekFirst && 'border-t-2',
+                        'bg-surface border-r-border/40 sticky left-[60px] z-10 border-r px-2 py-0.5 whitespace-nowrap',
+                        isWeekFirst && 'border-t-border border-t-2',
                       )}
                     >
                       <div className="gap-s-2 flex items-center">
@@ -645,13 +622,14 @@ export function MatrixView({
                               : `${d} ${slotToTime(s)} — ${count}/${totalMembers}명 가능`
                           }
                           className={cn(
-                            'h-9 border-b p-0 transition-colors',
-                            // 정시(짝수 슬롯) 경계는 진하게, 30분 경계는 옅게(또는 hour 모드 시 숨김).
+                            // 가로 경계(border-b) 는 평소엔 매우 옅게. 솔리드 강한 경계는
+                            // 주차의 첫 행(border-t-2 border-t-border) 에서만 노출되어
+                            // 주 단위 구분에만 시각 강조.
+                            'border-b-border/30 h-9 border-b p-0 transition-colors',
+                            // 세로: 정시(짝수 슬롯)는 옅은 솔리드, 30분은 더 옅게.
                             s % 2 === 0
-                              ? 'border-r-border border-r'
-                              : density === 'hour'
-                                ? ''
-                                : 'border-r-border/30 border-r',
+                              ? 'border-r-border/40 border-r'
+                              : 'border-r-border/15 border-r',
                             isWeekFirst && 'border-t-border border-t-2',
                             cellBg(d, s, dragHit),
                             isPinned && 'outline-accent outline outline-2 -outline-offset-2',
