@@ -86,6 +86,7 @@ export function ScheduleBoardEditor({
 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
   const upsertBlock = useBoardStore((s) => s.upsertBlock);
+  const removeBlock = useBoardStore((s) => s.removeBlock);
   const replaceBlocks = useBoardStore((s) => s.replaceBlocks);
   const confirmBoard = useBoardStore((s) => s.confirmBoard);
   const unconfirmAll = useBoardStore((s) => s.unconfirmAll);
@@ -332,6 +333,12 @@ export function ScheduleBoardEditor({
                 onDragStart={onBlockDragStart(b)}
                 onDragEnd={onDragEnd}
                 onClick={() => setSelectedBlockId(b.blockId)}
+                onContextMenu={(e) => {
+                  // 우클릭 → 즉시 삭제. 모달/Confirm 생략.
+                  e.preventDefault();
+                  removeBlock(boardId, b.blockId);
+                  toast.success('합주 블록 삭제');
+                }}
                 className={cn(
                   'm-0.5 cursor-grab overflow-hidden rounded px-1 py-0.5 text-left text-white shadow-sm ring-0 ring-white/0 transition-all duration-150 ease-out hover:scale-[1.02] hover:ring-2 hover:ring-white/40 hover:brightness-125 active:scale-[0.98] active:cursor-grabbing',
                   tone.bg,

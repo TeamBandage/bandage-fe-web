@@ -23,7 +23,7 @@ import { songTone } from './palette';
 import { RANGE_PRESETS, DEFAULT_RANGE_PRESET } from './rangePresets';
 import { ScheduleBlockPanel } from './ScheduleBlockPanel.client';
 const DEFAULT_BLOCK_SLOTS = 2; // 1h
-const DOW_LABEL = ['일', '월', '화', '수', '목', '금', '토'] as const;
+const DOW_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 const DRAG_MIME = 'application/x-bandage-block';
 
 interface CellRef {
@@ -473,8 +473,23 @@ export function MatrixView({
               {allDays.map((d) => {
                 const dow = dayOfWeek(d);
                 const holiday = isHoliday(d);
-                const isSun = dow === 0 || holiday;
-                const isSat = dow === 6;
+                /**
+                 * 색상 규칙: 일·공휴일 → red, 토 → accent, 그 외 평일 → 기본 텍스트
+                 * (이전엔 holiday 가 isSun 분기를 가로채 평일 공휴일도 좌측 일자 컬럼에서 일요일
+                 *  배지 색을 받았다. 명시적 변수로 정리해 평일은 평일 색을 유지.)
+                 */
+                const dowToneText =
+                  dow === 0 || holiday
+                    ? 'text-danger'
+                    : dow === 6
+                      ? 'text-accent'
+                      : 'text-foreground';
+                const dowToneBadge =
+                  dow === 0 || holiday
+                    ? 'bg-danger-dim text-danger'
+                    : dow === 6
+                      ? 'bg-accent-dim text-accent'
+                      : 'bg-card text-foreground-muted';
                 const ws = startOfWeek(d);
                 const isWeekFirst = firstDateByWeek.has(d);
                 const weekRow = weekRows.find(([w]) => w === ws);
@@ -504,7 +519,8 @@ export function MatrixView({
                             if (!repeatActive) onWeekJump?.(ws);
                           }}
                           className={cn(
-                            'gap-s-1 hover:bg-accent-dim flex h-full w-full cursor-pointer flex-col items-center justify-center px-1 py-1 text-center leading-tight transition-colors',
+                            'flex h-full w-full cursor-pointer flex-col items-center justify-center gap-0.5 px-1 leading-none transition-colors',
+                            'hover:bg-accent-dim',
                           )}
                           title={
                             repeatActive
@@ -514,10 +530,9 @@ export function MatrixView({
                               : `클릭=기준 주 지정 / 더블클릭=주차별 UI 로 이동`
                           }
                         >
-                          <div className="text-foreground-muted text-micro font-bold tracking-wider">
+                          <div className="text-foreground text-caption font-bold tracking-wide">
                             W{weekIdx}
                           </div>
-                          <div className="text-foreground text-micro font-mono">{ws.slice(5)}</div>
                           {baseWeekStart === ws && (
                             <div className="text-accent text-micro font-bold">기준</div>
                           )}
@@ -534,17 +549,18 @@ export function MatrixView({
                       )}
                     >
                       <div className="gap-s-2 flex items-center">
-                        <span className="text-caption text-foreground tabular-nums">
+                        <span
+                          className={cn(
+                            'text-caption font-mono font-semibold tracking-tight tabular-nums',
+                            dowToneText,
+                          )}
+                        >
                           {d.slice(5)}
                         </span>
                         <span
                           className={cn(
-                            'text-micro inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-bold',
-                            isSun
-                              ? 'bg-danger-dim text-danger'
-                              : isSat
-                                ? 'bg-accent-dim text-accent'
-                                : 'bg-card text-foreground-muted',
+                            'inline-flex shrink-0 items-center justify-center rounded px-1 py-px text-[10px] leading-none font-bold tracking-wide uppercase',
+                            dowToneBadge,
                           )}
                         >
                           {DOW_LABEL[dow]}
@@ -577,6 +593,13 @@ export function MatrixView({
                           onClick={() => {
                             if (block) setEditBlockId(block.blockId);
                             else setHoveredCell(meetingId, { date: d, slot: s });
+                          }}
+                          onContextMenu={(e) => {
+                            // 우클릭 → 합주 블럭 즉시 삭제 (block 영역에서만 동작).
+                            if (!block || !boardId) return;
+                            e.preventDefault();
+                            removeBlock(boardId, block.blockId);
+                            toast.success('합주 슬롯 삭제');
                           }}
                           title={
                             block

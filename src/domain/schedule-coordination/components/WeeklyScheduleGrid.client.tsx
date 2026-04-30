@@ -4,9 +4,9 @@ import { useEffect, useRef, type CSSProperties, type DragEvent, type ReactNode }
 
 import { cn } from '@/lib/cn';
 
-import { dayOfWeek, slotToTime } from '../utils';
+import { dayOfWeek, isHoliday, slotToTime } from '../utils';
 
-const DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
+const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 export const SLOT_HEIGHT = 22;
 export const TIME_COL_WIDTH = 56;
 
@@ -120,23 +120,29 @@ export function WeeklyScheduleGrid({
           style={{ gridRow: 1, gridColumn: 1 }}
         />
 
-        {/* 일자 헤더 */}
+        {/* 일자 헤더 — 색 규칙: 일/공휴일 = danger, 토 = accent, 평일 = 기본 */}
         {days.map((d, i) => {
           const dow = dayOfWeek(d);
-          const isWeekend = dow === 0 || dow === 6;
+          const holiday = isHoliday(d);
           const inWindow = isInWindow(d);
+          const tone =
+            dow === 0 || holiday ? 'text-danger' : dow === 6 ? 'text-accent' : 'text-foreground';
           return (
             <div
               key={`h-${d}-${i}`}
               className={cn(
-                'bg-surface border-border sticky top-0 z-20 border-b px-2 py-1 text-center font-mono',
+                'bg-surface border-border sticky top-0 z-20 border-b px-2 py-1 text-center',
                 !inWindow && 'opacity-30',
-                isWeekend && 'text-amber',
+                tone,
               )}
               style={{ gridRow: 1, gridColumn: i + 2 }}
             >
-              <div className="text-micro font-bold">{DOW_LABELS[dow]}</div>
-              <div className="text-caption font-bold">{d.slice(5)}</div>
+              <div className="text-[10px] font-bold tracking-wide uppercase opacity-80">
+                {DOW_LABELS[dow]}
+              </div>
+              <div className="text-caption font-mono font-semibold tracking-tight tabular-nums">
+                {d.slice(5)}
+              </div>
             </div>
           );
         })}
