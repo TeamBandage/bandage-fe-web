@@ -445,16 +445,22 @@ export function MatrixView({
         </div>
 
         <div className="border-border bg-card flex-1 overflow-auto rounded-md border">
-          {/* min-w-[N] 로 슬롯 컬럼 폭 확보 — 셀이 너무 좁아 카드/시간 라벨이 짤리지 않도록. */}
+          {/*
+           * 폭을 픽셀로 정확히 고정 — tableLayout:fixed 만으로는 컨테이너가 넓을 때
+           * 비례 확장되어 슬롯 폭이 들쭉날쭉해진다. width 를 합산값으로 박아 균일 보장.
+           */}
           <table
             className="border-collapse select-none"
-            style={{ tableLayout: 'fixed', minWidth: 60 + 110 + slots.length * 36 }}
+            style={{
+              tableLayout: 'fixed',
+              width: 60 + 110 + slots.length * 44,
+            }}
           >
             <colgroup>
               <col style={{ width: '60px' }} />
               <col style={{ width: '110px' }} />
               {slots.map((s) => (
-                <col key={s} style={{ width: '36px' }} />
+                <col key={s} style={{ width: '44px' }} />
               ))}
             </colgroup>
             <thead>
