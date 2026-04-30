@@ -451,7 +451,7 @@ export function MatrixView({
            * 비례 확장되어 슬롯 폭이 들쭉날쭉해진다. width 를 합산값으로 박아 균일 보장.
            */}
           <table
-            className="border-collapse select-none"
+            className="mx-auto border-collapse select-none"
             style={{
               tableLayout: 'fixed',
               width: 60 + 110 + slots.length * 44,

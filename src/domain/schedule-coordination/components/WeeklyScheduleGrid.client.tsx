@@ -9,6 +9,8 @@ import { dayOfWeek, isHoliday, slotToTime } from '../utils';
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 export const SLOT_HEIGHT = 22;
 export const TIME_COL_WIDTH = 56;
+/** 일자 컬럼 폭 — 매트릭스의 슬롯 단위와 마찬가지로 고정폭 유지(반응형 X). */
+export const DAY_COL_WIDTH = 140;
 
 export interface WeeklyScheduleGridProps {
   days: string[];
@@ -67,7 +69,7 @@ export function WeeklyScheduleGrid({
   const slotCount = slotEnd - slotStart;
   const slots = Array.from({ length: slotCount }, (_, i) => slotStart + i);
   const gridStyle: CSSProperties = {
-    gridTemplateColumns: `${TIME_COL_WIDTH}px repeat(${days.length}, minmax(80px, 1fr))`,
+    gridTemplateColumns: `${TIME_COL_WIDTH}px repeat(${days.length}, ${DAY_COL_WIDTH}px)`,
     gridTemplateRows: `36px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
   };
 
@@ -113,7 +115,7 @@ export function WeeklyScheduleGrid({
       ref={gridRef}
       className={cn('border-border bg-card flex-1 overflow-auto rounded-md border', className)}
     >
-      <div className="grid min-w-fit" style={gridStyle}>
+      <div className="mx-auto grid w-fit" style={gridStyle}>
         {/* 코너 */}
         <div
           className="bg-surface border-border sticky top-0 left-0 z-30 border-r border-b"
