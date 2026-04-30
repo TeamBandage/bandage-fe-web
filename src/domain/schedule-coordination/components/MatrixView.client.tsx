@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, GripVertical, Info, Lock, Pin, Unlock, X } from 'lucide-react';
+import { Check, GripVertical, Lock } from 'lucide-react';
 import { useEffect, useMemo, useState, type DragEvent } from 'react';
 
 import { Button } from '@/components/ui/button';

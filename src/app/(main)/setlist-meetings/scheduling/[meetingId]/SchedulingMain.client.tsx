@@ -339,7 +339,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                     }}
                   />
                 </aside>
-                {/* 중앙: 시간표 에디터(블록 풀 내장). */}
+                {/* 중앙+우측: 시간표 에디터 — 우측 사이드바(블럭 풀+가용 인원) 내장. */}
                 <div className="min-w-0 flex-1">
                   {rightPanel?.kind === 'board' ? (
                     <ScheduleBoardEditor
@@ -355,6 +355,9 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                       canNext={view.canNext}
                       songPool={editorSongPool}
                       songParticipantsMap={songParticipantsMap}
+                      participants={participants}
+                      memberSchedules={memberSchedules}
+                      allDays={allDays}
                     />
                   ) : (
                     <p className="text-foreground-muted px-s-4 py-s-6 text-caption text-center">
@@ -362,17 +365,6 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
                     </p>
                   )}
                 </div>
-                {/* 우측: 호버 기반 가능/불가능 인원 패널 (Task 23). */}
-                <aside className="ml-3 w-56 shrink lg:w-64 xl:w-72">
-                  <HoveredAvailabilityPanel
-                    meetingId={meetingId}
-                    participants={participants}
-                    memberSchedules={memberSchedules}
-                    scopeUserIds={sidebarScope}
-                    days={allDays}
-                    className="h-full"
-                  />
-                </aside>
               </>
             )}
           </div>
@@ -419,6 +411,7 @@ export function SchedulingMain({ meetingId }: { meetingId: string }) {
               meetingId={meetingId}
               participants={participants}
               memberSchedules={memberSchedules}
+              scopeUserIds={sidebarScope}
               days={allDays}
               className="h-full"
             />

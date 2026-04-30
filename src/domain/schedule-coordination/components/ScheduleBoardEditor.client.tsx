@@ -27,6 +27,7 @@ import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
 import { autoRescheduleAfterMove, computeValidDropSlots } from '../utils/autoReschedule';
 import { slotToTime, toLocalISODate } from '../utils';
 
+import { HoveredAvailabilityPanel } from './HoveredAvailabilityPanel.client';
 import { songTone } from './palette';
 import { RANGE_PRESETS, type RangePreset, DEFAULT_RANGE_PRESET } from './rangePresets';
 import { ScheduleBlockPanel } from './ScheduleBlockPanel.client';
@@ -59,6 +60,11 @@ interface Props {
   songPool: SongLite[];
   /** songId → 참여 멤버 userId. 곡별 가용시간 모드용 (Task 18). */
   songParticipantsMap?: Record<string, string[]>;
+  /** 우측 사이드바 가용 인원 패널 노출에 필요한 회의 멤버 정보. */
+  participants?: import('@/domain/setlist-meeting/types').Member[];
+  memberSchedules?: import('../types').MemberSchedule[];
+  /** 매트릭스/주차별 모두 같은 회의 일자 범위로 가용 시간 계산. */
+  allDays?: string[];
   defaultDurationSlots?: number;
 }
 
@@ -82,6 +88,9 @@ export function ScheduleBoardEditor({
   canNext,
   songPool,
   songParticipantsMap,
+  participants,
+  memberSchedules,
+  allDays,
   defaultDurationSlots = 2,
 }: Props) {
   const board = useBoardStore((s) => s.boards[boardId]);
@@ -493,49 +502,66 @@ export function ScheduleBoardEditor({
         />
       </div>
 
-      {/* 우측 사이드 — 합주 블록 풀. */}
-      <aside className="bg-card border-border flex w-56 shrink-0 flex-col rounded-md border">
-        <div className="border-border px-s-3 py-s-2 border-b">
-          <div className="text-foreground-muted text-micro font-bold uppercase">
-            합주 블록 풀 ({songPool.length})
+      {/* 우측 사이드 — 합주 블록 풀(상) + 가용 인원(하). 매트릭스 사이드바와 동일 구조. */}
+      <aside className="flex w-60 shrink flex-col gap-4 lg:w-72 xl:w-80">
+        <div className="bg-card border-border flex max-h-[40%] shrink-0 flex-col overflow-hidden rounded-md border shadow-sm">
+          <div className="border-border px-s-3 py-s-2 border-b">
+            <div className="text-foreground-muted text-micro font-bold uppercase">
+              합주 블록 풀 ({songPool.length})
+            </div>
+            <div className="text-foreground-muted text-micro mt-0.5">
+              드래그=배치 / 클릭=곡 참여 멤버 가용시간 모드
+            </div>
+          </div>
+          <div className="px-s-2 py-s-2 gap-s-1 flex flex-1 flex-col overflow-y-auto">
+            {songPool.length === 0 ? (
+              <p className="text-foreground-muted text-micro p-2">확정된 곡이 없습니다.</p>
+            ) : (
+              songPool.map((song) => {
+                const tone = songTone(song.id, board.paletteSeed);
+                const focused = focusedSongId === song.id;
+                return (
+                  <button
+                    key={song.id}
+                    draggable
+                    onDragStart={onPoolDragStart(song)}
+                    onDragEnd={onDragEnd}
+                    onClick={() => toggleFocusedSongId(meetingIdForRange, song.id)}
+                    aria-pressed={focused}
+                    title={
+                      focused ? '클릭하여 일반 모드로' : '클릭하여 이 곡 참여 멤버 가용시간 보기'
+                    }
+                    className={cn(
+                      'gap-s-2 flex items-center rounded-md px-2 py-1.5 text-left text-white shadow-sm transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]',
+                      tone.bg,
+                      focused && 'ring-accent ring-offset-card ring-2 ring-offset-2',
+                    )}
+                  >
+                    <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <div className="min-w-0">
+                      <div className="text-micro truncate font-bold">{song.title}</div>
+                      {song.artist && (
+                        <div className="text-micro truncate opacity-75">{song.artist}</div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
-        <div className="px-s-2 py-s-2 gap-s-1 flex flex-1 flex-col overflow-y-auto">
-          {songPool.length === 0 ? (
-            <p className="text-foreground-muted text-micro p-2">확정된 곡이 없습니다.</p>
-          ) : (
-            songPool.map((song) => {
-              const tone = songTone(song.id, board.paletteSeed);
-              const focused = focusedSongId === song.id;
-              return (
-                <button
-                  key={song.id}
-                  draggable
-                  onDragStart={onPoolDragStart(song)}
-                  onDragEnd={onDragEnd}
-                  onClick={() => toggleFocusedSongId(meetingIdForRange, song.id)}
-                  aria-pressed={focused}
-                  title={
-                    focused ? '클릭하여 일반 모드로' : '클릭하여 이 곡 참여 멤버 가용시간 보기'
-                  }
-                  className={cn(
-                    'gap-s-2 flex items-center rounded-md px-2 py-1.5 text-left text-white shadow-sm transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]',
-                    tone.bg,
-                    focused && 'ring-accent ring-offset-card ring-2 ring-offset-2',
-                  )}
-                >
-                  <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                  <div className="min-w-0">
-                    <div className="text-micro truncate font-bold">{song.title}</div>
-                    {song.artist && (
-                      <div className="text-micro truncate opacity-75">{song.artist}</div>
-                    )}
-                  </div>
-                </button>
-              );
-            })
-          )}
-        </div>
+        {participants && memberSchedules && allDays && (
+          <HoveredAvailabilityPanel
+            meetingId={meetingIdForRange}
+            participants={participants}
+            memberSchedules={memberSchedules}
+            scopeUserIds={focusedSongId ? (songParticipantsMap?.[focusedSongId] ?? []) : 'ALL'}
+            slotFrom={slotStart}
+            slotTo={slotEnd}
+            days={allDays}
+            className="flex-1"
+          />
+        )}
       </aside>
 
       <ConfirmDialog
