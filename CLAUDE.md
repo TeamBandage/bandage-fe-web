@@ -186,36 +186,34 @@ NEXT_PUBLIC_APP_ENV=local   # local | dev | prod
 
 When writing a PR description, always follow `.github/PULL_REQUEST_TEMPLATE.md` and write all content in valid Markdown syntax.
 
-## Commit Convention
-
+Commit Convention
 Always use this format for every commit message:
 
-```
-{type}: {summary}
+Plaintext
+[{issue-key}] {type}: {summary}
 - {detail 1}
 - {detail 2}
 - {detail n}
 
-#{issue-number}
-```
+{smart-commit-commands}
+Types: chore, feat, ai, test, refactor, fix
 
-**Types**: `chore`, `feat`, `ai`, `test`, `refactor`, `fix`, `style`, `design`
+[{issue-key}] — REQUIRED when working on a branch tied to a Jira issue (e.g., branch feat/BAND-12-practice-crud → [BAND-12]). Always place at the very beginning of the first line. Omit only if there is genuinely no related issue.
 
-- `{summary}` — concise description of the change
-- bullet list — one line per meaningful change (omit if only one trivial change)
-- `#{issue-number}` — GitHub issue number (omit if no related issue)
-- `#{issue-number}` — **REQUIRED** when working on a branch tied to a GitHub issue (e.g. `feat/#12-band-create-page` → `#12`). Always place on its own line at the very end, after a blank line. Omit only if there is genuinely no related issue.
-- **NEVER append `Co-Authored-By:` trailers** (e.g. `Co-Authored-By: Claude ...`) to commit messages. If AI-assisted work needs to be credited, create a separate `ai:` type commit instead.
+{summary} — concise description of the change
 
-**Example:**
-```
-feat: 밴드 생성 페이지 구현
-- CreateBandRequest, CreateBandResponse 타입 추가
-- domain/band/api/createBand.ts 함수 추가
-- app/(main)/bands/new/page.tsx 라우트 추가
-- BandCreateForm 컴포넌트 구현 (react-hook-form + zod)
+bullet list — one line per meaningful change (omit if only one trivial change)
 
-#12
+{smart-commit-commands} — OPTIONAL. Jira Smart Commit commands to transition states, log time, or add comments (e.g., #done, #time 1h 30m, #comment API 구현 완료). Always place on its own line at the very end, after a blank line.
+
+### Examples
+```plaintext
+[BAND-12] feat: 합주 생성 API 구현
+- PracticeCreateRequest, PracticeResponse DTO 추가
+- PracticeService.createPractice 구현
+- POST /practices 엔드포인트 추가
+
+#done #time 2h
 ```
 
 ## Task-master ↔ GitHub Issue Sync Workflow
