@@ -182,47 +182,15 @@ NEXT_PUBLIC_APP_ENV=local   # local | dev | prod
 
 `NEXT_PUBLIC_*`이 아닌 값은 서버에서만 접근하며, 클라이언트 컴포넌트에서 참조하지 않습니다.
 
-## Pull Request Convention
+## 운영 규칙 (workspace 공통)
 
-When writing a PR description, always follow `.github/PULL_REQUEST_TEMPLATE.md` and write all content in valid Markdown syntax.
+커밋/PR 컨벤션, Jira/GitHub/Slack 연동, AI 스타일 규칙, API 검증 절차 등은 워크스페이스 공통 문서로 추출됨: `../CLAUDE.md` 참조. 본 파일에는 bandage-fe 스택 specific 한 가이드만 둔다.
 
-Commit Convention
-Always use this format for every commit message:
+## Task-master CLI (FE 전용)
 
-Plaintext
-[{issue-key}] {type}: {summary}
-- {detail 1}
-- {detail 2}
-- {detail n}
+Task-master 태스크를 실행하라는 지시를 받으면 본 절을 따른다.
 
-{smart-commit-commands}
-Types: chore, feat, ai, test, refactor, fix
-
-[{issue-key}] — REQUIRED when working on a branch tied to a Jira issue (e.g., branch feat/BAND-12-practice-crud → [BAND-12]). Always place at the very beginning of the first line. Omit only if there is genuinely no related issue.
-
-{summary} — concise description of the change
-
-bullet list — one line per meaningful change (omit if only one trivial change)
-
-{smart-commit-commands} — OPTIONAL. Jira Smart Commit commands to transition states, log time, or add comments (e.g., #done, #time 1h 30m, #comment API 구현 완료). Always place on its own line at the very end, after a blank line.
-
-### Examples
-```plaintext
-[BAND-12] feat: 합주 생성 API 구현
-- PracticeCreateRequest, PracticeResponse DTO 추가
-- PracticeService.createPractice 구현
-- POST /practices 엔드포인트 추가
-
-#done #time 2h
-```
-
-## Task-master ↔ GitHub Issue Sync Workflow
-
-Task-master 태스크를 실행하라는 지시를 받으면 반드시 이 워크플로우를 따릅니다.
-
-### CLI 사용 (모든 세션 공통)
-
-`task-master` 바이너리는 nvm 관리 Node(`/Users/sunwoo/.nvm/versions/node/v20.20.2/bin/task-master`)에 설치되어 있으나 기본 쉘 `PATH` 에 없습니다. AI 에이전트 / 새 쉘 세션 어디서든 아래 규칙을 따릅니다.
+`task-master` 바이너리는 nvm 관리 Node(`/Users/sunwoo/.nvm/versions/node/v20.20.2/bin/task-master`)에 설치되어 있으나 기본 쉘 `PATH` 에 없다. AI 에이전트 / 새 쉘 세션 어디서든 아래 규칙을 따른다.
 
 - **모든 task-master 호출 앞에 `source ~/.nvm/nvm.sh && ` 를 붙여 실행**. 예:
   ```bash
@@ -235,103 +203,20 @@ Task-master 태스크를 실행하라는 지시를 받으면 반드시 이 워�
   source ~/.nvm/nvm.sh && task-master tags use <name>
   ```
 - `which task-master` 가 비어 있더라도 위 패턴으로 **항상** 호출 가능 (nvm 활성화로 PATH 확보).
-- `npx task-master-ai` 는 쓰지 않습니다 (항상 네트워크 의존 · 느림 · 캐시된 전역 설치를 놔두고 새로 받음).
-- 전역 설치를 건드려야 할 때 외에는 `npm install -g` 로 재설치하지 않습니다 (기존 0.43.1 버전 유지).
+- `npx task-master-ai` 는 쓰지 않는다 (항상 네트워크 의존·느림·캐시된 전역 설치를 놔두고 새로 받음).
+- 전역 설치를 건드려야 할 때 외에는 `npm install -g` 로 재설치하지 않는다 (기존 0.43.1 버전 유지).
 
-### 0. 원격 동기화 (Pre-flight)
-- 태스크를 시작하기 **직전**, 아래 순서로 로컬을 원격과 일치시킵니다. 누락된 협업자 변경분이 있는 상태에서 새 브랜치를 분기하면 이후 충돌·재작업이 발생하므로 이 단계는 생략 금지.
-  1. `git fetch --all --prune` — 원격 브랜치 상태 및 삭제된 브랜치 정리
-  2. `git checkout develop && git pull` — 기본 베이스 브랜치 최신화
-  3. `git status` 로 로컬이 깨끗한지 확인 (남아 있는 수정/미커밋 파일이 있으면 먼저 정리)
-- 이미 열려 있는 브랜치를 이어서 작업하는 경우에도 `git pull --rebase` 로 원격 반영분을 가져온 뒤 재개합니다.
+### 작업 단위(태스크) 별 커밋
+- Task-master 태스크의 서브태스크(또는 논리적 작업 단위) 하나 = 커밋 하나. 여러 서브태스크 변경을 한 커밋에 몰아넣지 않는다.
+- 커밋 형식은 `../CLAUDE.md` §2 참조 (Jira `[ISSUE-KEY]` prefix).
 
-### 1. GitHub 이슈 등록
-- 구현을 시작하기 **전**에 태스크 내용을 GitHub 이슈로 등록합니다. 먼저 `gh issue list`로 동일/유사 제목의 이슈가 이미 있는지 확인하고, 있다면 그 이슈를 사용합니다(신규 생성 금지).
-- 이슈 제목은 `{Type}: {task title}` 형식. Type은 커밋 컨벤션의 타입을 **Title Case**로 사용: `Feat`, `Design`, `Chore`, `Fix`, `Refactor`, `Style`, `Test`, `Ai`.
-- 본문은 `.github/ISSUE_TEMPLATE/` 하위의 해당 타입 템플릿(`✨-feature.md`, `🎨-design.md`, `⚙️-chore.md`, `🛸-ai.md`, `🐛-fix.md`, `♻️-refactor.md`, `🪄-style.md`, `✅-test.md`)을 채워 작성.
-- 라벨을 타입에 맞게 부여: `✨ feature`, `🎨 design`, `⚙️ chore`, `🛸 ai`, `🐛 bug/error`, `♻️ refactor`, `🪄 style`, `✅ test`.
-- **신규 컴포넌트 / 모듈 추가 항목은 이슈 본문에 명시**: 새로 만들 컴포넌트, 훅, API 함수, 라우트, 유틸의 경로와 역할을 `## 신규 컴포넌트` 섹션으로 정리. 검토자가 "이 PR 이 도입하는 표면적" 을 한눈에 파악할 수 있도록.
-  - 예: `- src/components/ui/year-month-picker.tsx — 캘린더 헤더의 연/월 빠른 선택 드롭다운`
+### API 연동 태스크 후 실서버 검증
 
-### 2. "Bandage Project" 자동 편입
-- 별도 지시가 없는 한 새로 만든 모든 이슈는 GitHub Project **"Bandage Project"** 에 `Todo` 상태로 편입합니다.
-- 프로젝트 식별 정보 (gh로 확인됨):
-  - owner: `willjsw`
-  - project number: `2`
-  - node ID: `PVT_kwHOBjXLOM4BPjMO`
-- 편입 명령: `gh project item-add 2 --owner willjsw --url <issue-url>`.
-- 프로젝트 목록 재확인이 필요하면 `gh project list --owner willjsw`.
-
-### 3. 작업 단위(태스크) 별 커밋
-- Task-master 태스크의 서브태스크(또는 논리적 작업 단위) 하나 = 커밋 하나.
-- 여러 서브태스크 변경을 한 커밋에 몰아넣지 않습니다.
-- 커밋 메시지는 위의 Commit Convention을 그대로 따르며, 본문 말미에 `#{issue-number}` 필수 포함.
-
-### 4. PR은 명시 지시가 있을 때만 진행, Squash and Merge
-- 사용자가 "PR 생성" / "PR 올려줘" 등 명시적으로 지시한 경우에만 PR을 엽니다(자동으로 열지 않음).
-- PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md`의 섹션 구조를 그대로 채웁니다.
-- PR 생성 시 메타데이터를 **원본 이슈와 동일하게** 표기:
-  - `--assignee` — 이슈 assignee (보통 현재 git user `@me`)
-  - `--label` — 이슈 라벨과 동일
-  - `--milestone` — 이슈에 마일스톤이 있으면 동일하게 지정 (없으면 생략)
-- 머지는 **Squash and Merge** 고정: `gh pr merge <N> --squash --delete-branch`.
-- 머지 직후 로컬을 동기화: `git checkout develop && git pull`.
-
-### 5. 머지 오류 대응
-- 머지 중 오류(충돌, 필수 체크 실패, 브랜치 보호 규칙 위반 등)가 발생하면 즉시 멈추고 사용자에게 다음을 보고한 뒤 지시를 기다립니다:
-  1. **무엇이 실패했는지** — 오류 메시지 원문 / 실패한 체크 이름 / 충돌 파일 목록
-  2. **왜 실패했는지** — 직관적인 원인 (예: develop 뒤처짐, CI 실패, 리뷰 미승인)
-  3. **제안하는 해결 방안** — 하나 이상 (예: `git fetch && git rebase origin/develop`, CI 재실행, 리뷰어 지정)
-- `--force`/`--no-verify` 등 파괴적·우회적 해결은 사용자 명시 승인 없이 사용 금지.
-
-### 6. API 연동 태스크 완료 후 실제 서버 검증
-도메인 API 통신 코드를 추가한 태스크(예: Task 3 · 6 · 7 · 8 · 9)의 **구현 커밋이 끝난 직후, PR 을 올리기 전에** 프론트 구현이 실제 백엔드와 일관되게 동작하는지 검증합니다. TypeScript 타입/테스트가 통과해도 실제 HTTP 계약 불일치는 이 단계에서만 드러나는 경우가 많습니다.
-
-1. **백엔드 서버 기동 요청** — 사용자(혹은 백엔드 담당자)에게 `http://localhost:8080` 기준으로 서버를 실행해 달라고 요청. 응답이 오기 전까지는 검증 단계를 시작하지 않습니다.
-2. **구현된 엔드포인트 전수 실제 호출** — `curl` 로 아래 축들을 모두 커버:
-   - 성공 케이스 (정상 요청 → 200/201)
-   - 인증/권한 경계 (Bearer 누락, 무효 토큰, 쿠키 누락, 역할 불일치)
-   - 입력 유효성 실패 (필수 필드 누락, 포맷 위반, 중복)
-   - 상태 기반 실패 (미존재 리소스, 탈퇴 후 접근, 만료 토큰)
-   - 필요 시 `-c/-b` 쿠키 jar 를 사용해 Set-Cookie 흐름(refresh 등) 까지 재현
-3. **데이터 수집 및 상관 분석**
-   - 각 호출에 대해 **HTTP 상태 / 응답 body / Set-Cookie / `ApiResponse` 언래핑 결과** 기록
-   - 오류가 난 요청은 **백엔드 애플리케이션 로그(스택 트레이스)** 를 함께 받아 프론트 응답과 대응시킴. 예외 클래스명 · 필터/컨트롤러 파일:라인 · Caused-by 체인은 근본 원인 추정의 핵심 자료
-4. **보고서 작성** — `.taskmaster/report/<domain>-api-verification-YYYY-MM-DD.md` 로 저장. 고정 섹션 구성:
-   1. **메타** — 작성일, 검증 주체, 대상 URL, 검증 도구, 검증 범위
-   2. **테스트한 API 목록** — path/method/인증요건/프론트 호출 지점/판정(✅·⚠️·❌) 표
-   3. **케이스별 실제 요청/응답 값** — 요청 헤더·body, 응답 HTTP·body·Set-Cookie, 관련 백엔드 로그를 **원문 인용** (재현성 확보)
-   4. **권장 조치 내용 및 검토 필요 사항** — 🔴 차단 / 🟠 기능 저하 / 🟡 품질 / ℹ️ 참고 우선순위로 분류. 각 항목에 **재현 절차 · 추정 원인 · 확인 체크리스트** 포함
-   5. **프론트 관련 구현 지점** — 수정이 필요한 파일 경로
-   6. **재현용 페이로드 위치** — `/tmp/<task>-api-test/` 등 curl 스크립트가 참조한 파일
-5. **리포트 기반 후속 조치**
-   - 프론트 단독으로 고칠 수 있는 이슈는 같은 PR 또는 후속 PR 로 즉시 수정
-   - 백엔드 수정이 필요한 이슈는 리포트 파일을 링크해 백엔드 팀/담당 AI 에 전달. PR 설명에도 "검증 리포트 참조" 로 연결
-6. **이 단계 생략 금지** — 타입/유닛 테스트만 통과한 상태로 API 도메인 PR 을 올리지 않습니다. 백엔드가 일시적으로 내려가 있어서 불가능한 경우에는 PR 본문에 `실서버 검증 대기 중` 명시 + 사용자에게 대기 여부 확인.
-
-## AI 생성물 스타일 규칙
-
-AI(Claude) 가 생성/수정하는 모든 산출물(문서, PR 설명, 이슈 본문, 커밋 메시지, 리포트, 채팅 응답 등) 에 아래 규칙을 적용합니다.
-
-### 1. 상태/경고 이모지 사용 금지 (기본값)
-- 다음과 같은 **상태·경고·강조 이모지** 를 AI 가 자발적으로 삽입하지 않습니다: `⚠️`, `✅`, `❌`, `🔴`, `🟠`, `🟡`, `🟢`, `🔔`, `📌`, `📚`, `🛠️`, `🧪`, `🔎`, `🚧`, `🎯`, `💡`, `🔥`, `✨`, `♻️`, `🪄`, `🐛`, `🎨`, `⚙️`, `🛸`, `📝` 등
-- 대안 표기법:
-  - 상태 라벨: 평문 `정상`, `경고`, `실패`, `차단`, `보류`, `완료`
-  - 우선순위: `P0/P1/P2` 또는 `차단/기능저하/품질/참고`
-  - 체크리스트: Markdown `- [ ] / - [x]` 문법 사용
-  - 소제목 강조: 볼드 또는 헤딩 레벨 조정
-- **예외**: 사용자(개발자) 가 명시적으로 "이모지 써도 됨", "⚠️ 로 강조해줘", "✅/❌ 로 표 만들어줘" 등 **지시한 경우에만** 해당 요청 범위 내에서 사용
-- **예외**: 커밋/이슈 **타입 라벨 자체가 이모지를 포함하는 경우**(`✨ feature`, `🎨 design`, `⚙️ chore`, `🛸 ai`, `🐛 bug/error`, `♻️ refactor`, `🪄 style`, `✅ test`) — 이는 레포의 라벨 시스템이 이미 그렇게 정의되어 있어 그대로 사용. 단 이모지 자체를 강조 도구로 재활용하지 말 것.
-
-### 2. 적용 범위 (모든 AI 출력)
-- `.taskmaster/report/*.md` 검증 리포트
-- GitHub PR 설명, 이슈 본문, 코멘트
-- 커밋 메시지 본문
-- `CLAUDE.md`, `ROUTES.md` 등 레포에 커밋되는 문서
-- 채팅 응답의 본문·요약·표·리스트
-
-### 3. 기존 문서 처리
-- 이 규칙 이전에 작성된 문서에 남아 있는 이모지는 **AI 가 자발적으로 일괄 제거하지 않습니다**. 해당 파일을 새로 편집/추가하는 부분부터 이 규칙을 적용. 전체 정리가 필요하면 사용자가 별도 지시합니다.
+도메인 API 통신 코드를 추가한 태스크(예: Task 3 · 6 · 7 · 8 · 9)는 구현 커밋 후 PR 전에 실서버 검증 절차를 수행한다. 절차 본문은 `../CLAUDE.md` §9 참조. FE 컨텍스트 보강:
+- 백엔드 base URL: `http://localhost:8080`
+- 프론트 호출 지점: `src/domain/<name>/api/*.ts`
+- `ApiResponse<T>` 언래핑 결과까지 기록
+- 보고서 위치: `.taskmaster/report/<domain>-api-verification-YYYY-MM-DD.md`
 
 
 
