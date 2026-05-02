@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+> **선행 지시 (모든 세션 시작 시 필수)**
+>
+> 이 파일을 읽기 **전에**, 반드시 워크스페이스 공통 규칙 `../CLAUDE.md` 를 **가장 먼저** 읽고 메모리에 반영한다. 커밋/PR 컨벤션, Jira/GitHub/Slack 연동, AI 생성물 스타일 규칙, API 검증 절차 등 모든 운영 규칙의 권위 있는 원본은 상위 파일이며, 본 파일은 bandage-fe 스택 specific 가이드만 보유한다. 충돌 시 상위 파일이 우선한다.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
