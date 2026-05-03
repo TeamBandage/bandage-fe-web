@@ -18,7 +18,7 @@ export function BandCreateForm() {
 
   const form = useForm<CreateBandSchema>({
     resolver: zodResolver(createBandSchema),
-    defaultValues: { name: '', description: '', profileImg: '' },
+    defaultValues: { name: '', description: '' },
   });
 
   const mutation = useCreateBand({
@@ -33,11 +33,7 @@ export function BandCreateForm() {
     <form
       className="space-y-4"
       onSubmit={form.handleSubmit((values) =>
-        mutation.mutate({
-          name: values.name,
-          description: values.description,
-          profileImg: values.profileImg,
-        }),
+        mutation.mutate({ name: values.name, description: values.description }),
       )}
       noValidate
     >
@@ -54,12 +50,9 @@ export function BandCreateForm() {
         error={form.formState.errors.description?.message}
         {...form.register('description')}
       />
-      <Input
-        label="프로필 이미지 URL"
-        placeholder="https://..."
-        error={form.formState.errors.profileImg?.message}
-        {...form.register('profileImg')}
-      />
+      <p className="text-foreground-muted text-xs">
+        프로필 이미지는 밴드 생성 후 [밴드 설정 → 사진] 에서 업로드할 수 있습니다.
+      </p>
       <Button type="submit" className="w-full" loading={mutation.isPending}>
         밴드 만들기
       </Button>
