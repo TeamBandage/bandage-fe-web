@@ -23,6 +23,9 @@ export async function uploadProfileImage({
   if (!isAllowedImageMime(file.type)) {
     throw new Error('JPEG / PNG / WEBP 형식만 업로드할 수 있습니다.');
   }
+  if (file.size <= 0) {
+    throw new Error('빈 파일은 업로드할 수 없습니다.');
+  }
   if (file.size > MAX_IMAGE_SIZE_BYTES) {
     throw new Error('이미지 크기는 5MB 이하여야 합니다.');
   }
@@ -37,6 +40,7 @@ export async function uploadProfileImage({
     bandId,
     contentType: file.type,
     ext,
+    contentLength: file.size,
   });
   await uploadToPresignedUrl(presign.uploadUrl, file);
   return presign.objectKey;

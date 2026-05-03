@@ -7,6 +7,11 @@ export interface ProfileImagePresignRequest {
   contentType: string;
   /** 점 제외, 소문자. */
   ext: string;
+  /**
+   * 업로드할 파일의 정확한 바이트 크기 (1 ~ 5,242,880).
+   * BE 가 contentLength 를 시그니처에 포함하므로 PUT body 크기와 정확히 일치해야 한다.
+   */
+  contentLength: number;
 }
 
 export interface ProfileImagePresignResponse {
