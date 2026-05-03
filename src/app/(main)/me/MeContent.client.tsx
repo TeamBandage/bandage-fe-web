@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLogout } from '@/domain/auth/hooks/useLogout';
 import { useMe } from '@/domain/member/hooks/useMe';
@@ -41,6 +42,11 @@ export function MeContent() {
 
   const [isEditing, setEditing] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+
+  const updateProfileImgMutation = useUpdateMe({
+    onSuccess: () => toast.success('프로필 이미지를 변경했습니다.'),
+    onError: (err) => toast.error(err.message || '프로필 이미지 변경에 실패했습니다.'),
+  });
 
   const logoutMutation = useLogout({
     onSuccess: () => {
@@ -83,10 +89,20 @@ export function MeContent() {
       ) : (
         <Card padding="lg">
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <div className="text-foreground text-lg font-semibold">{me.name}</div>
-              <div className="text-foreground-sub text-sm">{me.email}</div>
-              <div className="text-foreground-muted text-xs">{me.contact}</div>
+            <div className="flex items-start gap-4">
+              <ProfileImageUpload
+                value={me.profileImg ?? null}
+                onChange={(objectKey) => updateProfileImgMutation.mutate({ profileImg: objectKey })}
+                domain="MEMBER"
+                label=""
+                size={72}
+                disabled={updateProfileImgMutation.isPending}
+              />
+              <div className="space-y-1">
+                <div className="text-foreground text-lg font-semibold">{me.name}</div>
+                <div className="text-foreground-sub text-sm">{me.email}</div>
+                <div className="text-foreground-muted text-xs">{me.contact}</div>
+              </div>
             </div>
             <Badge variant="accent">Member</Badge>
           </div>
