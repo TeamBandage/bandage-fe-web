@@ -8,7 +8,10 @@ export type AllowedImageMime = (typeof ALLOWED_IMAGE_MIME)[number];
 /** `<input accept>` 용. */
 export const ALLOWED_IMAGE_ACCEPT = ALLOWED_IMAGE_MIME.join(',');
 
-/** S3 단일 PUT 한도 + UX 안전 마진. 5MB. */
+/**
+ * BE `ProfileImageUploadService.MAX_PROFILE_IMAGE_BYTES` 와 동일하게 유지 (5MB).
+ * 초과 시 BE 가 `413 FILE_SIZE_EXCEEDED` 반환.
+ */
 export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
 export function extFromMime(mime: string): string | null {
