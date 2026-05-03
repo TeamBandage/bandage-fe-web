@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
 import {
   ResponsiveSheet,
   ResponsiveSheetBody,
@@ -28,8 +29,7 @@ interface Props {
 
 /**
  * 밴드 설정 모달 — 정보 수정 / 사진 변경 / 삭제 3탭.
- * 백엔드 PATCH/DELETE/profile-image 엔드포인트 미지원 (API_REQUIRED FE-API-022, 023, 009).
- * 본 라운드는 UI 완성 + toast 안내, 백엔드 도입 시 mutation 만 교체.
+ * 사진 변경: presigned URL 발급(`/uploads/profile-image/presigned-url`) → S3 PUT → PATCH `profileImg=objectKey`.
  */
 export function BandSettingsModal({ open, onOpenChange, band }: Props) {
   const router = useRouter();
@@ -40,9 +40,6 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
   const [name, setName] = useState(band.bandName);
   const [description, setDescription] = useState(band.description ?? '');
 
-  // 사진
-  const [profileImg, setProfileImg] = useState(band.profileImg ?? '');
-
   // 삭제
   const [confirmText, setConfirmText] = useState('');
 
@@ -51,8 +48,7 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
       toast.success('밴드 정보를 저장했습니다.');
       onOpenChange(false);
     },
-    onError: (err) =>
-      toast.error(err.message || '저장에 실패했습니다 (FE-API-022 백엔드 도입 대기 중).'),
+    onError: (err) => toast.error(err.message || '저장에 실패했습니다.'),
   });
 
   const deleteMutation = useDeleteBand(band.bandId, {
@@ -61,17 +57,15 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
       onOpenChange(false);
       router.replace(ROUTES.BANDS);
     },
-    onError: (err) =>
-      toast.error(err.message || '삭제에 실패했습니다 (FE-API-023 백엔드 도입 대기 중).'),
+    onError: (err) => toast.error(err.message || '삭제에 실패했습니다.'),
   });
 
   function handleSaveInfo() {
     updateMutation.mutate({ name: name.trim(), description: description.trim() || undefined });
   }
 
-  function handleSaveImage() {
-    // FE-API-009 업로드 엔드포인트 도입 전까지는 URL 만 PATCH 로 함께 전송 (BE 가 profileImg 필드 받을 경우).
-    updateMutation.mutate({ profileImg: profileImg.trim() || null });
+  function handleImageUploaded(objectKey: string) {
+    updateMutation.mutate({ profileImg: objectKey });
   }
 
   function handleDelete() {
@@ -114,18 +108,16 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
-              <p className="text-foreground-muted text-micro">
-                백엔드에 PATCH /bands/&#123;id&#125; 가 추가되면 즉시 반영됩니다 (FE-API-022).
-              </p>
             </TabsContent>
 
             <TabsContent value="image" className="space-y-s-3">
-              <Input
-                label="프로필 이미지 URL"
-                placeholder="https://..."
-                value={profileImg}
-                onChange={(e) => setProfileImg(e.target.value)}
-                hint="업로드 엔드포인트 도입 전까지는 URL 입력으로 대체합니다."
+              <ProfileImageUpload
+                value={band.profileImg ?? null}
+                onChange={handleImageUploaded}
+                domain="BAND"
+                bandId={band.bandId}
+                hint="JPEG / PNG / WEBP, 5MB 이하. 리더만 변경할 수 있습니다."
+                disabled={updateMutation.isPending}
               />
             </TabsContent>
 
@@ -152,8 +144,8 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
             </Button>
           )}
           {tab === 'image' && (
-            <Button onClick={handleSaveImage} loading={updateMutation.isPending}>
-              저장
+            <Button onClick={() => onOpenChange(false)} disabled={updateMutation.isPending}>
+              닫기
             </Button>
           )}
           {tab === 'delete' && (
