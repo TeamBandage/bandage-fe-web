@@ -25,7 +25,7 @@ describe('sessionState', () => {
 });
 
 describe('totalNeed / confirmedCount / missingCount / isReady', () => {
-  it('Jambi (s2): 4 sessions, all confirmed → ready', () => {
+  it('Take the Time (s2): 4 sessions, all confirmed → ready', () => {
     const s = findSong('s2');
     expect(totalNeed(s)).toBe(4);
     expect(confirmedCount(s)).toBe(4);
@@ -33,7 +33,7 @@ describe('totalNeed / confirmedCount / missingCount / isReady', () => {
     expect(isReady(s)).toBe(true);
   });
 
-  it('Vicarious (s1): D 미확정 → not ready', () => {
+  it('Pull Me Under (s1): D 미확정 → not ready', () => {
     const s = findSong('s1');
     expect(totalNeed(s)).toBe(4);
     expect(confirmedCount(s)).toBe(3);
@@ -41,7 +41,7 @@ describe('totalNeed / confirmedCount / missingCount / isReady', () => {
     expect(isReady(s)).toBe(false);
   });
 
-  it('10,000 Days (s4): custom 세션 포함 → totalNeed 6, PERC 미확정으로 not ready', () => {
+  it('Metropolis Pt.1 (s4): custom 세션 포함 → totalNeed 6, PERC 미확정으로 not ready', () => {
     const s = findSong('s4');
     expect(totalNeed(s)).toBe(6);
     expect(confirmedCount(s)).toBe(5);

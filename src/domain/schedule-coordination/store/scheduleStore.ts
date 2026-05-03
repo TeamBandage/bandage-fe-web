@@ -142,3 +142,21 @@ export const useScheduleStore = create<State & Actions>()(
 );
 
 export { emptyMask, keyOf };
+
+/**
+ * 회의별 일정 입력 진행도 — 참여자 중 `completed=true` 멤버 수 / 전체.
+ * Task 1 master-detail 좌측 패널 게이지에 사용.
+ * Task 8 시간표 확정(confirmed) 시 색상 전환은 별도 store 에서 관리.
+ */
+export function selectSchedulingProgress(
+  schedules: Record<Key, MemberSchedule>,
+  meetingId: string,
+  participantUserIds: readonly string[],
+): { total: number; completed: number; pct: number } {
+  const total = participantUserIds.length;
+  if (total === 0) return { total: 0, completed: 0, pct: 0 };
+  const completed = participantUserIds.filter(
+    (uid) => schedules[keyOf(meetingId, uid)]?.completed,
+  ).length;
+  return { total, completed, pct: Math.round((completed / total) * 100) };
+}

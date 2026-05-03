@@ -29,7 +29,7 @@ export const MOCK_PERFORMANCES: PerformanceMock[] = [
     venue: '클럽 FF',
     startAt: '2026-08-15T19:00:00+09:00',
     bands: [
-      { bandId: 'b1', bandName: 'TOOL TRIBUTE', memberIds: ['u1', 'u3', 'u4'] },
+      { bandId: 'b1', bandName: 'DREAM THEATER TRIBUTE', memberIds: ['u1', 'u3', 'u4'] },
       { bandId: 'b3', bandName: '마그마', memberIds: ['u2', 'u5', 'u6'] },
     ],
   },
@@ -38,7 +38,9 @@ export const MOCK_PERFORMANCES: PerformanceMock[] = [
     title: '홍대 홈커밍',
     venue: '롤링홀',
     startAt: '2026-09-20T20:00:00+09:00',
-    bands: [{ bandId: 'b1', bandName: 'TOOL TRIBUTE', memberIds: ['u1', 'u3', 'u4', 'u7'] }],
+    bands: [
+      { bandId: 'b1', bandName: 'DREAM THEATER TRIBUTE', memberIds: ['u1', 'u3', 'u4', 'u7'] },
+    ],
   },
   {
     performanceId: 'p_yearend',
@@ -47,7 +49,7 @@ export const MOCK_PERFORMANCES: PerformanceMock[] = [
     startAt: '2026-12-23T18:30:00+09:00',
     bands: [
       { bandId: 'b3', bandName: '마그마', memberIds: ['u2', 'u5', 'u6', 'u11'] },
-      { bandId: 'b1', bandName: 'TOOL TRIBUTE', memberIds: ['u1', 'u4'] },
+      { bandId: 'b1', bandName: 'DREAM THEATER TRIBUTE', memberIds: ['u1', 'u4'] },
     ],
   },
 ];

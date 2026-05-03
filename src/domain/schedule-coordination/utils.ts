@@ -1,5 +1,16 @@
 import type { MemberSchedule, SlotMask } from './types';
 
+/**
+ * Date 를 로컬 캘린더 기준 'YYYY-MM-DD' 로 포맷.
+ * `toISOString()` 은 UTC 기준이라 UTC+9 등에서 하루씩 어긋남(timezone bug) — 절대 사용 금지.
+ */
+export function toLocalISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 /** 'YYYY-MM-DD' 형식 일자 범위 enumerate. inclusive both ends. */
 export function enumerateDays(from: string, to: string): string[] {
   if (!from || !to || from > to) return [];
@@ -7,7 +18,7 @@ export function enumerateDays(from: string, to: string): string[] {
   const start = new Date(`${from}T00:00:00`);
   const end = new Date(`${to}T00:00:00`);
   for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
-    out.push(d.toISOString().slice(0, 10));
+    out.push(toLocalISODate(d));
   }
   return out;
 }
@@ -70,13 +81,13 @@ export function startOfWeek(date: string): string {
   const day = d.getDay(); // 0=일
   const diff = day === 0 ? -6 : 1 - day; // 월요일 기준
   d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
+  return toLocalISODate(d);
 }
 
 export function addDays(date: string, n: number): string {
   const d = safeDate(date);
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return toLocalISODate(d);
 }
 
 /**
@@ -98,6 +109,42 @@ export function aggregateAvailability(
         if (mask[i]) out[date]![i]! += 1;
       }
     }
+  }
+  return out;
+}
+
+export type ViewUnit = 'day' | 'week' | 'month';
+
+/** Task 3 — 합주 기간 길이에 따른 자동 시각화 단위 추천. */
+export function getViewUnit(from: string, to: string): ViewUnit {
+  const days = enumerateDays(from, to).length;
+  if (days <= 14) return 'day';
+  if (days <= 60) return 'week';
+  return 'month';
+}
+
+/** 주(월요일 시작) 시작일 목록. inclusive — 'from' 이 속한 주부터 'to' 이전까지. */
+export function enumerateWeeks(from: string, to: string): string[] {
+  if (!from || !to || from > to) return [];
+  const out: string[] = [];
+  let cursor = startOfWeek(from);
+  while (cursor <= to) {
+    out.push(cursor);
+    cursor = addDays(cursor, 7);
+  }
+  return out;
+}
+
+/** 월 시작일(YYYY-MM-01) 목록. inclusive. */
+export function enumerateMonths(from: string, to: string): string[] {
+  if (!from || !to || from > to) return [];
+  const out: string[] = [];
+  const start = safeDate(from);
+  start.setDate(1);
+  const end = safeDate(to);
+  while (start <= end) {
+    out.push(toLocalISODate(start));
+    start.setMonth(start.getMonth() + 1);
   }
   return out;
 }
