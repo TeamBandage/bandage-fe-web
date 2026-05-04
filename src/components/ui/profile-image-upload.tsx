@@ -1,11 +1,12 @@
 'use client';
 
 import { ImagePlus, Loader2 } from 'lucide-react';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import {
   ALLOWED_IMAGE_ACCEPT,
   MAX_IMAGE_SIZE_BYTES,
+  normalizeProfileImgUrl,
   uploadProfileImage,
   type UploadDomain,
 } from '@/global/upload';
@@ -53,9 +54,15 @@ export function ProfileImageUpload({
   const [uploading, setUploading] = useState(false);
   /** 업로드 직후 BE 가 응답에 CloudFront URL 을 반영하기 전, 짧은 시간 동안 로컬 미리보기. */
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+  /** 외부 URL 이 깨졌을 때 placeholder 로 fallback. value 가 바뀌면 reset. */
+  const [errored, setErrored] = useState(false);
+  useEffect(() => {
+    setErrored(false);
+  }, [value]);
 
   const isDisabled = disabled || uploading;
-  const display = localPreview ?? value;
+  const normalizedValue = normalizeProfileImgUrl(value);
+  const display = errored ? null : (localPreview ?? normalizedValue);
 
   function trigger() {
     if (isDisabled) return;
@@ -105,12 +112,18 @@ export function ProfileImageUpload({
           style={{ width: size, height: size }}
         >
           {display ? (
-            // eslint-disable-next-line @next/next/no-img-element -- CloudFront/Blob URL 둘 다 next/image 구성 회피
+            // eslint-disable-next-line @next/next/no-img-element -- CloudFront/Blob/외부 OAuth provider URL 모두 허용
             <img
               src={display}
               alt={label}
               className="h-full w-full object-cover"
-              onError={() => setLocalPreview(null)}
+              onError={() => {
+                if (localPreview) {
+                  setLocalPreview(null);
+                } else {
+                  setErrored(true);
+                }
+              }}
             />
           ) : (
             <ImagePlus className="h-6 w-6" />

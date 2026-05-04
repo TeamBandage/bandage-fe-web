@@ -4,12 +4,7 @@ import { useRouter } from 'next/navigation';
 
 import { OAuthButton } from '@/components/ui/oauth-button';
 import { useGoogleLogin } from '@/domain/auth/hooks/useGoogleLogin';
-import { useKakaoLogin } from '@/domain/auth/hooks/useKakaoLogin';
-import {
-  oauthErrorMessage,
-  requestGoogleIdToken,
-  requestKakaoAccessToken,
-} from '@/domain/auth/oauth';
+import { oauthErrorMessage, requestGoogleIdToken, startKakaoAuthorize } from '@/domain/auth/oauth';
 import type { OAuthLoginResponse } from '@/domain/auth/types';
 import { env } from '@/global/config/env';
 import { ROUTES } from '@/global/config/routes';
@@ -17,7 +12,10 @@ import { useToast } from '@/hooks/useToast';
 
 /**
  * OAuth 로그인 섹션.
- * Kakao SDK / Google GIS 로 토큰 획득 → BE 에 전달 → JWT 수신 → /home.
+ *
+ * Kakao: SDK 2.x 가 popup `login` 을 제거했으므로 `Kakao.Auth.authorize` 로 페이지 redirect →
+ *        callback page 가 token 교환 + BE 호출. 클릭 시 페이지가 즉시 카카오로 이동한다.
+ * Google: GIS prompt() 로 in-place ID token 발급 → BE 에 바로 전달.
  *
  * BE contract:
  * - POST /api/v1/auth/oauth/kakao  body { accessToken }
@@ -36,16 +34,12 @@ export function OAuthSection() {
     router.replace(ROUTES.HOME);
   };
 
-  const kakaoMutation = useKakaoLogin({
-    onSuccess: onLoginSuccess,
-    onError: (err) => toast.error(oauthErrorMessage(err)),
-  });
   const googleMutation = useGoogleLogin({
     onSuccess: onLoginSuccess,
     onError: (err) => toast.error(oauthErrorMessage(err)),
   });
 
-  const busy = kakaoMutation.isPending || googleMutation.isPending;
+  const busy = googleMutation.isPending;
 
   async function handleKakao() {
     if (!kakaoEnabled) {
@@ -53,10 +47,10 @@ export function OAuthSection() {
       return;
     }
     try {
-      const accessToken = await requestKakaoAccessToken();
-      kakaoMutation.mutate({ accessToken });
+      // SDK 가 페이지를 카카오 authorize URL 로 이동시킨다. 이후 흐름은 callback page 가 담당.
+      await startKakaoAuthorize();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '카카오 로그인에 실패했습니다.');
+      toast.error(err instanceof Error ? err.message : '카카오 로그인을 시작할 수 없습니다.');
     }
   }
 

@@ -4,6 +4,7 @@ export const ROUTES = {
   LOGIN: '/login',
   JOIN: '/join',
   PASSWORD_CHANGE: '/password-change',
+  OAUTH_CALLBACK_KAKAO: '/oauth/callback/kakao',
 
   HOME: '/home',
 
