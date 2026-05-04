@@ -1,4 +1,10 @@
-export { loadKakao, requestKakaoAccessToken } from './kakao';
+export {
+  buildKakaoRedirectUri,
+  exchangeKakaoCodeForAccessToken,
+  loadKakao,
+  startKakaoAuthorize,
+} from './kakao';
+export { consumeKakaoState } from './kakaoState';
 export { loadGoogleGis, requestGoogleIdToken } from './google';
 
 import { ApiError } from '@/global/error/ApiError';

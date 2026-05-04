@@ -9,6 +9,7 @@ export {
 export { presignProfileImage } from './presignProfileImage';
 export { uploadProfileImage, type UploadProfileImageInput } from './uploadProfileImage';
 export { uploadToPresignedUrl } from './uploadToPresignedUrl';
+export { normalizeProfileImgUrl } from './normalizeProfileImgUrl';
 export type {
   ProfileImagePresignRequest,
   ProfileImagePresignResponse,

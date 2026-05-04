@@ -1,5 +1,6 @@
 import { useState, type ImgHTMLAttributes } from 'react';
 
+import { normalizeProfileImgUrl } from '@/global/upload';
 import { cn } from '@/lib/cn';
 
 export type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -26,7 +27,8 @@ function initialsOf(name: string) {
 
 export function Avatar({ size = 'md', src, alt, fallback, className, ...props }: AvatarProps) {
   const [errored, setErrored] = useState(false);
-  const showImage = src && !errored;
+  const normalizedSrc = typeof src === 'string' ? (normalizeProfileImgUrl(src) ?? undefined) : src;
+  const showImage = normalizedSrc && !errored;
 
   return (
     <span
@@ -39,7 +41,7 @@ export function Avatar({ size = 'md', src, alt, fallback, className, ...props }:
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element -- 프로필 아바타는 다양한 외부 origin을 허용해야 하므로 next/image 대신 native img 사용
         <img
-          src={src}
+          src={normalizedSrc}
           alt={alt ?? fallback ?? ''}
           className="h-full w-full object-cover"
           onError={() => setErrored(true)}
