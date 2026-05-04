@@ -1,9 +1,4 @@
-export {
-  buildKakaoRedirectUri,
-  exchangeKakaoCodeForAccessToken,
-  loadKakao,
-  startKakaoAuthorize,
-} from './kakao';
+export { buildKakaoRedirectUri, loadKakao, startKakaoAuthorize } from './kakao';
 export { consumeKakaoState } from './kakaoState';
 export { loadGoogleGis, requestGoogleIdToken } from './google';
 

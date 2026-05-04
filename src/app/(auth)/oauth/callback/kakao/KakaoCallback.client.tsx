@@ -5,12 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Spinner } from '@/components/ui/spinner';
 import { useKakaoLogin } from '@/domain/auth/hooks/useKakaoLogin';
-import {
-  buildKakaoRedirectUri,
-  consumeKakaoState,
-  exchangeKakaoCodeForAccessToken,
-  oauthErrorMessage,
-} from '@/domain/auth/oauth';
+import { buildKakaoRedirectUri, consumeKakaoState, oauthErrorMessage } from '@/domain/auth/oauth';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 
@@ -19,9 +14,11 @@ import { useToast } from '@/hooks/useToast';
  *
  * 1. URL 의 `code` / `state` 추출 (or `error` 파라미터)
  * 2. state 검증 (CSRF)
- * 3. Kakao token endpoint 직접 POST → access_token
- * 4. BE `POST /auth/oauth/kakao` 로 access_token 전달 → JWT 수신
- * 5. /home 으로 redirect (가입 / 로그인 분기 토스트 포함)
+ * 3. BE `POST /auth/oauth/kakao { code, redirectUri, state }` — BE 가 token 교환 + user info + JWT 발급
+ * 4. /home 으로 redirect (가입 / 로그인 분기 토스트 포함)
+ *
+ * 본 화면은 token endpoint 를 직접 호출하지 않는다 — Authorization Code 흐름이 BE 로 이관됨.
+ * (자세한 BE 명세는 `API_REQUIRED_OAUTH_KAKAO_0504.md`)
  */
 export function KakaoCallback() {
   const router = useRouter();
@@ -71,14 +68,7 @@ export function KakaoCallback() {
     }
 
     const redirectUri = buildKakaoRedirectUri();
-
-    exchangeKakaoCodeForAccessToken({ code, redirectUri })
-      .then((accessToken) => mutation.mutate({ accessToken }))
-      .catch((err) => {
-        const msg = err instanceof Error ? err.message : '카카오 토큰 교환에 실패했습니다.';
-        setError(msg);
-        toast.error(msg);
-      });
+    mutation.mutate({ code, redirectUri, state: stateParam ?? undefined });
   }, [params, toast, mutation]);
 
   return (
