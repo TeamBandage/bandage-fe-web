@@ -17,8 +17,13 @@ export default function LoginPage() {
         <h1 className="text-foreground text-2xl font-bold">로그인</h1>
         <p className="text-foreground-sub text-sm">Bandage 계정으로 로그인하세요.</p>
       </header>
-      <OAuthSection />
       <LoginForm />
+      <div className="gap-s-3 flex items-center" aria-hidden="true">
+        <span className="bg-border h-px flex-1" />
+        <span className="text-foreground-muted text-micro">또는</span>
+        <span className="bg-border h-px flex-1" />
+      </div>
+      <OAuthSection />
       <p className="text-foreground-sub text-center text-sm">
         아직 계정이 없으신가요?{' '}
         <Link href={ROUTES.JOIN} className="text-accent-hi font-medium hover:underline">
