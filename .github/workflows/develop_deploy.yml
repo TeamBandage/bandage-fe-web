@@ -1,0 +1,113 @@
+name: Deploy FE to EC2 (Develop)
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: '재배포할 이미지 태그 (예: dev-abcd123). 비우면 새로 빌드 + 푸시 후 배포'
+        required: false
+        type: string
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: bandage-fe
+  ENV_NAME: dev
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            echo "use_existing=true" >> $GITHUB_OUTPUT
+            echo "primary_tag=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+            echo "moving_tag=" >> $GITHUB_OUTPUT
+          else
+            echo "use_existing=false" >> $GITHUB_OUTPUT
+            echo "primary_tag=${ENV_NAME}-${SHA}" >> $GITHUB_OUTPUT
+            echo "moving_tag=${ENV_NAME}-latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.tags.outputs.use_existing == 'false'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push image
+        if: steps.tags.outputs.use_existing == 'false'
+        uses: docker/build-push-action@v5
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.tags.outputs.primary_tag }}
+            ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.tags.outputs.moving_tag }}
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=${{ secrets.DEV_API_BASE_URL }}
+            NEXT_PUBLIC_APP_ENV=dev
+            NEXT_PUBLIC_KAKAO_JS_KEY=${{ secrets.DEV_KAKAO_JS_KEY }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.DEV_GOOGLE_CLIENT_ID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.tags.outputs.primary_tag }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: rocky
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: REGISTRY,IMAGE_TAG
+          script: |
+            set -euo pipefail
+            cd ~/bandage
+
+            aws ecr get-login-password --region ap-northeast-2 \
+              | docker login --username AWS --password-stdin "$REGISTRY"
+
+            # docker-compose.fe.yml 의 fe-web 이미지 태그를 갱신.
+            # 형식: image: <registry>/bandage-fe:<tag> — <tag> 부분만 sed 로 치환.
+            sed -i.bak -E "s|(bandage-fe:)[^\"' ]+|\1${IMAGE_TAG}|" docker-compose.fe.yml
+
+            docker compose -f docker-compose.yml -f docker-compose.fe.yml pull fe-web
+            docker compose -f docker-compose.yml -f docker-compose.fe.yml up -d --no-deps fe-web
+
+            # 헬스체크 통과 대기 (최대 60초)
+            for i in $(seq 1 30); do
+              status=$(docker inspect --format='{{.State.Health.Status}}' bandage-fe 2>/dev/null || echo unknown)
+              if [ "$status" = "healthy" ]; then
+                echo "fe-web healthy"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "fe-web 헬스체크 실패 — 로그 출력 후 종료" >&2
+            docker logs --tail=200 bandage-fe || true
+            exit 1
