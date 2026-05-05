@@ -1,7 +1,9 @@
-import { Check, Guitar } from 'lucide-react';
+import { Check } from 'lucide-react';
 import type { HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '@/lib/cn';
+
+import { BrandMark } from '../brand';
 
 const BRAND_TAGLINE =
   '밴드의 합주·공연을 한 곳에서 관리하세요. 일정·세션·참여자까지 번거로움 없이.';
@@ -61,7 +63,7 @@ export function AuthBrand({ className, ...props }: HTMLAttributes<HTMLElement>) 
           className="bg-accent-dim mb-s-5 mx-auto flex h-18 w-18 items-center justify-center rounded-xl border"
           style={{ borderColor: 'oklch(0.62 0.22 250 / 0.26)' }}
         >
-          <Guitar className="text-accent h-9 w-9" />
+          <BrandMark size={48} />
         </div>
         <h1 className="text-display text-foreground mb-s-3 font-black tracking-tight">Bandage</h1>
         <p className="text-foreground-sub mb-s-10 text-subtitle mx-auto max-w-[280px] leading-relaxed">
