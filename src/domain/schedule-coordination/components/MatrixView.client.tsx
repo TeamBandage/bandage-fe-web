@@ -775,8 +775,9 @@ function LockBlockCard({
       role="button"
       title={`${title} ${slotToTime(block.startSlot)}~${slotToTime(block.startSlot + dur)}`}
       className={cn(
-        'mx-0.5 my-0.5 flex h-[28px] cursor-pointer items-center gap-1 overflow-hidden rounded-md border border-white/30 px-2 text-left text-white shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-white/60 hover:ring-inset',
-        tone.bg,
+        'text-foreground mx-0.5 my-0.5 flex h-[28px] cursor-pointer items-center gap-1 overflow-hidden rounded-md border px-2 text-left shadow-sm transition-shadow hover:shadow-md hover:ring-2 hover:ring-white/40 hover:ring-inset',
+        tone.softBg,
+        tone.softBorder,
       )}
     >
       {block.pinned && <Lock className="h-2.5 w-2.5 shrink-0 opacity-80" aria-hidden="true" />}

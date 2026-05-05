@@ -1,13 +1,53 @@
 /**
  * 시간표 블록 컬러 팔레트 — Task 6 에서 본격 도입.
  * 12색 순환. 시안별 paletteSeed 로 시작점 회전, 블록은 paletteIndex 로 고정.
+ *
+ * - `bg/border/text` : 풀 채도. 곡 풀(드래그 손잡이) 등 강한 식별이 필요한 곳.
+ * - `softBg/softBorder` : 다크 배경 위에 얹는 합주 블록용 톤다운 변형 (/25 bg + /60 border).
+ *   같은 hue 를 유지하면서 시각 피로를 줄인다.
+ * - `dim` : 12~15% 알파의 가장 약한 변형. 호버 프리뷰 등.
  */
 export const PALETTE_TONES = [
-  { bg: 'bg-accent', dim: 'bg-accent-dim', text: 'text-accent', border: 'border-accent' },
-  { bg: 'bg-success', dim: 'bg-success-dim', text: 'text-success', border: 'border-success' },
-  { bg: 'bg-warn', dim: 'bg-warn-dim', text: 'text-warn', border: 'border-warn' },
-  { bg: 'bg-amber', dim: 'bg-amber-dim', text: 'text-amber', border: 'border-amber' },
-  { bg: 'bg-danger', dim: 'bg-danger-dim', text: 'text-danger', border: 'border-danger' },
+  {
+    bg: 'bg-accent',
+    dim: 'bg-accent-dim',
+    text: 'text-accent',
+    border: 'border-accent',
+    softBg: 'bg-accent/25',
+    softBorder: 'border-accent/60',
+  },
+  {
+    bg: 'bg-success',
+    dim: 'bg-success-dim',
+    text: 'text-success',
+    border: 'border-success',
+    softBg: 'bg-success/25',
+    softBorder: 'border-success/60',
+  },
+  {
+    bg: 'bg-warn',
+    dim: 'bg-warn-dim',
+    text: 'text-warn',
+    border: 'border-warn',
+    softBg: 'bg-warn/25',
+    softBorder: 'border-warn/60',
+  },
+  {
+    bg: 'bg-amber',
+    dim: 'bg-amber-dim',
+    text: 'text-amber',
+    border: 'border-amber',
+    softBg: 'bg-amber/25',
+    softBorder: 'border-amber/60',
+  },
+  {
+    bg: 'bg-danger',
+    dim: 'bg-danger-dim',
+    text: 'text-danger',
+    border: 'border-danger',
+    softBg: 'bg-danger/25',
+    softBorder: 'border-danger/60',
+  },
 ] as const;
 
 export type PaletteTone = (typeof PALETTE_TONES)[number];

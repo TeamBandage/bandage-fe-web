@@ -28,7 +28,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           <circle
             cx="18"
             cy="32"
-            fill="#3563eb"
+            fill="currentColor"
             r="11"
           />
           <circle
@@ -58,7 +58,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           <path
             d="M 27 32 L 34 32 L 38 24 L 42 40 L 46 28 L 50 32 L 58 32"
             fill="none"
-            stroke="#3563eb"
+            stroke="currentColor"
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="4.5"
