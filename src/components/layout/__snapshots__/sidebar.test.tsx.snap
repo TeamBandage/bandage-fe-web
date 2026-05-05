@@ -74,7 +74,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           />
         </svg>
         <span
-          class="text-body tracking-tight font-black leading-none"
+          class="text-body tracking-tight leading-none font-black"
         >
           Bandage
         </span>
