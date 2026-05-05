@@ -3,7 +3,6 @@
 import {
   CalendarDays,
   ChevronDown,
-  Guitar,
   Home,
   ListMusic,
   Music,
@@ -19,6 +18,7 @@ import { useMe } from '@/domain/member/hooks/useMe';
 import { ROUTES } from '@/global/config/routes';
 import { cn } from '@/lib/cn';
 
+import { BrandMark } from '../brand';
 import { Avatar } from '../ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 
@@ -107,7 +107,7 @@ export function Sidebar({ className }: SidebarProps) {
           style={{ borderColor: 'oklch(0.62 0.22 250 / 0.2)' }}
           aria-hidden="true"
         >
-          <Guitar className="text-accent h-[18px] w-[18px]" />
+          <BrandMark size={22} />
         </span>
         <span className="text-accent text-body font-black tracking-tight">Bandage</span>
       </div>
