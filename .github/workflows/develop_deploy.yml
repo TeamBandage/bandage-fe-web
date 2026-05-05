@@ -137,10 +137,18 @@ jobs:
       # 새 origin 응답이 정상화되어도 CloudFront 가 잘못 캐시했던 RSC payload 가
       # TTL 만료 전까지 살아남는다. 배포가 healthy 로 통과한 직후 전체 invalidation
       # 으로 즉시 새 응답을 강제 노출.
+      #
+      # secrets.CLOUDFRONT_DIST_ID 가 비어 있으면 (또는 IAM 권한 미부여 상태이면)
+      # invalidation 만 스킵하고 배포 자체는 성공으로 종료. — 사고 직후 단계적 도입을
+      # 위해 graceful 처리.
       - name: Invalidate CloudFront Cache
         env:
           DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DIST_ID }}
         run: |
+          if [ -z "${DISTRIBUTION_ID:-}" ]; then
+            echo "::warning::CLOUDFRONT_DIST_ID secret 이 등록되어 있지 않다 — invalidation 스킵."
+            exit 0
+          fi
           aws cloudfront create-invalidation \
-            --distribution-id $DISTRIBUTION_ID \
+            --distribution-id "$DISTRIBUTION_ID" \
             --paths "/*"
