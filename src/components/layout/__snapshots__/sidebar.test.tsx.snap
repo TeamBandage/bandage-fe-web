@@ -9,12 +9,12 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
     style="width: var(--sidebar-w);"
   >
     <div
-      class="border-border mb-s-2 gap-s-2 pb-s-4 px-s-2 pt-s-1 flex items-center border-b"
+      class="border-border mb-s-2 pb-s-4 px-s-2 pt-s-1 flex items-center border-b"
     >
       <span
-        aria-hidden="true"
-        class="bg-accent-dim flex h-8 w-8 items-center justify-center rounded-md border"
-        style="border-color: oklch(0.62 0.22 250 / 0.2);"
+        aria-label="Bandage"
+        class="inline-flex items-center gap-s-2 text-accent"
+        role="img"
       >
         <svg
           aria-hidden="true"
@@ -73,11 +73,11 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
             stroke-width="0.9"
           />
         </svg>
-      </span>
-      <span
-        class="text-accent text-body font-black tracking-tight"
-      >
-        Bandage
+        <span
+          class="text-body tracking-tight leading-none font-black"
+        >
+          Bandage
+        </span>
       </span>
     </div>
     <div

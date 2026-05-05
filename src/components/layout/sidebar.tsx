@@ -18,7 +18,7 @@ import { useMe } from '@/domain/member/hooks/useMe';
 import { ROUTES } from '@/global/config/routes';
 import { cn } from '@/lib/cn';
 
-import { BrandMark } from '../brand';
+import { BrandWordmark } from '../brand';
 import { Avatar } from '../ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 
@@ -101,15 +101,8 @@ export function Sidebar({ className }: SidebarProps) {
       data-slot="sidebar"
       aria-label="주 탐색"
     >
-      <div className="border-border mb-s-2 gap-s-2 pb-s-4 px-s-2 pt-s-1 flex items-center border-b">
-        <span
-          className="bg-accent-dim flex h-8 w-8 items-center justify-center rounded-md border"
-          style={{ borderColor: 'oklch(0.62 0.22 250 / 0.2)' }}
-          aria-hidden="true"
-        >
-          <BrandMark size={22} />
-        </span>
-        <span className="text-accent text-body font-black tracking-tight">Bandage</span>
+      <div className="border-border mb-s-2 pb-s-4 px-s-2 pt-s-1 flex items-center border-b">
+        <BrandWordmark size="sm" title="Bandage" className="text-accent" />
       </div>
 
       <div className="text-foreground-muted px-s-3 pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase">
