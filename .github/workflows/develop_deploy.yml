@@ -133,3 +133,14 @@ jobs:
             echo "fe-web 헬스체크 실패 — 로그 출력 후 종료" >&2
             docker logs --tail=200 bandage-fe || true
             exit 1
+
+      # 새 origin 응답이 정상화되어도 CloudFront 가 잘못 캐시했던 RSC payload 가
+      # TTL 만료 전까지 살아남는다. 배포가 healthy 로 통과한 직후 전체 invalidation
+      # 으로 즉시 새 응답을 강제 노출.
+      - name: Invalidate CloudFront Cache
+        env:
+          DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DIST_ID }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
