@@ -26,10 +26,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
+        # ECR 한정 권한을 가진 IAM 사용자 키 — S3 / 기타 권한과 분리되어 있다.
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ECR_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
