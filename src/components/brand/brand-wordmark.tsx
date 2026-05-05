@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 
 import { BrandMark } from './brand-mark';
 
-type WordmarkSize = 'sm' | 'md' | 'lg';
+type WordmarkSize = 'sm' | 'md' | 'lg' | 'xl';
 
 const SIZE_PRESETS: Record<
   WordmarkSize,
@@ -21,6 +21,12 @@ const SIZE_PRESETS: Record<
     mark: 56,
     textClass: 'text-display',
     gapClass: 'gap-s-3',
+    trackingClass: 'tracking-tight',
+  },
+  xl: {
+    mark: 80,
+    textClass: 'text-[56px]',
+    gapClass: 'gap-s-4',
     trackingClass: 'tracking-tight',
   },
 };
