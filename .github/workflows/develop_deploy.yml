@@ -1,0 +1,135 @@
+name: Deploy FE to EC2 (Develop)
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: '재배포할 이미지 태그 (예: dev-abcd123). 비우면 새로 빌드 + 푸시 후 배포'
+        required: false
+        type: string
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: bandage-fe
+  ENV_NAME: dev
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        # ECR 한정 권한을 가진 IAM 사용자 키 — S3 / 기타 권한과 분리되어 있다.
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ECR_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ECR_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            echo "use_existing=true" >> $GITHUB_OUTPUT
+            echo "primary_tag=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+            echo "moving_tag=" >> $GITHUB_OUTPUT
+          else
+            echo "use_existing=false" >> $GITHUB_OUTPUT
+            echo "primary_tag=${ENV_NAME}-${SHA}" >> $GITHUB_OUTPUT
+            echo "moving_tag=${ENV_NAME}-latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.tags.outputs.use_existing == 'false'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push image
+        if: steps.tags.outputs.use_existing == 'false'
+        uses: docker/build-push-action@v5
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.tags.outputs.primary_tag }}
+            ${{ env.REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.tags.outputs.moving_tag }}
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=${{ secrets.DEV_API_BASE_URL }}
+            NEXT_PUBLIC_APP_ENV=dev
+            NEXT_PUBLIC_KAKAO_JS_KEY=${{ secrets.DEV_KAKAO_JS_KEY }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.DEV_GOOGLE_CLIENT_ID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+      # repo/deploy/* 를 EC2 ~/bandage/ 로 업로드.
+      # docker-compose.fe.yml + nginx/ 가 함께 동기화되므로 EC2 사전 작성 불필요.
+      - name: Upload deploy assets to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: rocky
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: 'deploy/*'
+          target: '~/bandage/'
+          strip_components: 1
+          overwrite: true
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.tags.outputs.primary_tag }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: rocky
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: REGISTRY,IMAGE_TAG
+          script: |
+            set -euo pipefail
+            cd ~/bandage
+
+            aws ecr get-login-password --region ap-northeast-2 \
+              | docker login --username AWS --password-stdin "$REGISTRY"
+
+            # compose 의 ${FE_IMAGE} 인터폴레이션에 사용.
+            export FE_IMAGE="${REGISTRY}/bandage-fe:${IMAGE_TAG}"
+
+            COMPOSE="docker compose -f docker-compose.yml -f docker-compose.fe.yml"
+
+            # 새 FE 이미지 pull
+            $COMPOSE pull fe-web
+
+            # nginx 와 fe-web 만 ensure (BE / DB / Redis 는 그대로).
+            # nginx 는 idempotent — 처음이면 새로 띄우고, 이미 있으면 유지.
+            $COMPOSE up -d --no-deps nginx fe-web
+
+            # nginx 가 이미 떠 있던 경우, scp 로 갱신된 conf.d/ 를 reload 해 즉시 반영.
+            docker exec bandage-nginx nginx -s reload 2>/dev/null || true
+
+            # 헬스체크 통과 대기 (최대 60초)
+            for i in $(seq 1 30); do
+              status=$(docker inspect --format='{{.State.Health.Status}}' bandage-fe 2>/dev/null || echo unknown)
+              if [ "$status" = "healthy" ]; then
+                echo "fe-web healthy"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "fe-web 헬스체크 실패 — 로그 출력 후 종료" >&2
+            docker logs --tail=200 bandage-fe || true
+            exit 1
