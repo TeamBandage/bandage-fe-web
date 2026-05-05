@@ -21,7 +21,7 @@ services:
       retries: 3
       start_period: 20s
     depends_on:
-      api-server-a:
+      bandage-band-manager:
         condition: service_started
 
   nginx:
@@ -36,6 +36,6 @@ services:
     depends_on:
       fe-web:
         condition: service_started
-      api-server-a:
+      bandage-band-manager:
         condition: service_started
     restart: always
