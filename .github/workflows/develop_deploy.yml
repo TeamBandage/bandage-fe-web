@@ -76,6 +76,19 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
+      # repo/deploy/* 를 EC2 ~/bandage/ 로 업로드.
+      # docker-compose.fe.yml + nginx/ 가 함께 동기화되므로 EC2 사전 작성 불필요.
+      - name: Upload deploy assets to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: rocky
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: 'deploy/*'
+          target: '~/bandage/'
+          strip_components: 1
+          overwrite: true
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -93,12 +106,20 @@ jobs:
             aws ecr get-login-password --region ap-northeast-2 \
               | docker login --username AWS --password-stdin "$REGISTRY"
 
-            # docker-compose.fe.yml 의 fe-web 이미지 태그를 갱신.
-            # 형식: image: <registry>/bandage-fe:<tag> — <tag> 부분만 sed 로 치환.
-            sed -i.bak -E "s|(bandage-fe:)[^\"' ]+|\1${IMAGE_TAG}|" docker-compose.fe.yml
+            # compose 의 ${FE_IMAGE} 인터폴레이션에 사용.
+            export FE_IMAGE="${REGISTRY}/bandage-fe:${IMAGE_TAG}"
 
-            docker compose -f docker-compose.yml -f docker-compose.fe.yml pull fe-web
-            docker compose -f docker-compose.yml -f docker-compose.fe.yml up -d --no-deps fe-web
+            COMPOSE="docker compose -f docker-compose.yml -f docker-compose.fe.yml"
+
+            # 새 FE 이미지 pull
+            $COMPOSE pull fe-web
+
+            # nginx 와 fe-web 만 ensure (BE / DB / Redis 는 그대로).
+            # nginx 는 idempotent — 처음이면 새로 띄우고, 이미 있으면 유지.
+            $COMPOSE up -d --no-deps nginx fe-web
+
+            # nginx 가 이미 떠 있던 경우, scp 로 갱신된 conf.d/ 를 reload 해 즉시 반영.
+            docker exec bandage-nginx nginx -s reload 2>/dev/null || true
 
             # 헬스체크 통과 대기 (최대 60초)
             for i in $(seq 1 30); do
