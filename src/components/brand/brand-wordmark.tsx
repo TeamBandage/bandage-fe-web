@@ -34,8 +34,8 @@ export interface BrandWordmarkProps extends HTMLAttributes<HTMLSpanElement> {
 
 /**
  * Bandage 워드마크 (mark + 텍스트 lock-up).
- * 텍스트는 부모의 `text-*` 색상 토큰을 그대로 따른다 (currentColor).
- * mark 자체는 항상 풀컬러(#3563eb 액센트).
+ * 마크와 텍스트 모두 부모의 `text-*` 색상 토큰을 그대로 따른다 (currentColor).
+ * 시스템 accent 토큰 변경 시 자동으로 동기화된다 — 별도 색상 하드코딩 없음.
  *
  * design/bandage-logo/unfurl-pulse/wordmark.svg 의 lock-up 비율을 컴포넌트로 옮긴 것.
  */

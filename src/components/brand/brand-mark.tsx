@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 export interface BrandMarkProps extends Omit<SVGProps<SVGSVGElement>, 'viewBox'> {
   /** 아이콘 픽셀 사이즈 (정사각). 기본 28. */
   size?: number;
-  /** 단색 모드. light = 흰색 단색, dark = 어두운 단색, undefined = 풀컬러(액센트 블루). */
+  /** 단색 모드. light = 흰색 단색, dark = 어두운 단색, undefined = 부모의 currentColor (보통 text-accent). */
   tone?: 'light' | 'dark';
   /** 접근성 라벨. 장식용이면 생략 — aria-hidden 자동 부여. */
   title?: string;
@@ -14,10 +14,12 @@ export interface BrandMarkProps extends Omit<SVGProps<SVGSVGElement>, 'viewBox'>
 /**
  * Bandage 브랜드 마크 (Unfurl Pulse).
  * 말린 붕대(좌측 원) + 펄스 띠(우측 라인). 64×64 viewBox.
- * design/bandage-logo/unfurl-pulse/ 의 SVG 와 동일.
+ *
+ * 기본 색상은 `currentColor` 를 따른다 — 부모에서 `text-accent` 등 토큰 클래스를 지정하면
+ * 시스템 컬러와 자동 동기화된다. 단색 처리가 필요한 경우만 `tone="light" | "dark"` 사용.
  */
 export function BrandMark({ size = 28, tone, title, className, ...props }: BrandMarkProps) {
-  const accent = tone === 'light' ? '#f4f4f8' : tone === 'dark' ? '#0d0d12' : '#3563eb';
+  const accent = tone === 'light' ? '#f4f4f8' : tone === 'dark' ? '#0d0d12' : 'currentColor';
   const ink = tone === 'dark' ? '#f4f4f8' : '#0d0d12';
   const decorated = Boolean(title);
 

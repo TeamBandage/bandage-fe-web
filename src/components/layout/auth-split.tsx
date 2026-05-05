@@ -63,7 +63,7 @@ export function AuthBrand({ className, ...props }: HTMLAttributes<HTMLElement>) 
           className="bg-accent-dim mb-s-5 mx-auto flex h-18 w-18 items-center justify-center rounded-xl border"
           style={{ borderColor: 'oklch(0.62 0.22 250 / 0.26)' }}
         >
-          <BrandMark size={48} />
+          <BrandMark size={48} className="text-accent" />
         </div>
         <h1 className="text-display text-foreground mb-s-3 font-black tracking-tight">Bandage</h1>
         <p className="text-foreground-sub mb-s-10 text-subtitle mx-auto max-w-[280px] leading-relaxed">
