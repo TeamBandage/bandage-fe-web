@@ -99,9 +99,7 @@ export function MeContent() {
             <div className="flex items-start gap-4">
               <ProfileImageUpload
                 value={me.profileImg ?? null}
-                onChange={(objectKey) =>
-                  updateProfileImgMutation.mutate({ profileImg: objectKey })
-                }
+                onChange={(objectKey) => updateProfileImgMutation.mutate({ profileImg: objectKey })}
                 domain="MEMBER"
                 label=""
                 size={72}
@@ -110,9 +108,7 @@ export function MeContent() {
               <div className="space-y-1 pt-1">
                 <div className="text-foreground text-lg font-semibold">{me.name}</div>
                 <div className="text-foreground-sub text-sm">{me.email}</div>
-                {me.contact && (
-                  <div className="text-foreground-muted text-xs">{me.contact}</div>
-                )}
+                {me.contact && <div className="text-foreground-muted text-xs">{me.contact}</div>}
               </div>
             </div>
           </Card>
@@ -140,8 +136,8 @@ export function MeContent() {
         <Card padding="md">
           <div className="flex items-center justify-between gap-4">
             <p className="text-foreground-sub text-sm">
-              계정을 삭제하시면 프로필, 가입 밴드, 공연 및 합주 정보들이 함께 삭제됩니다.
-              탈퇴를 진행하시겠습니까?
+              계정을 삭제하시면 프로필, 가입 밴드, 공연 및 합주 정보들이 함께 삭제됩니다. 탈퇴를
+              진행하시겠습니까?
             </p>
             <Button
               variant="danger"
