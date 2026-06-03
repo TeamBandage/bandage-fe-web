@@ -1,14 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LogOut, Pencil, UserX } from 'lucide-react';
-import Link from 'next/link';
+import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ErrorState } from '@/components/feedback/error-state';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -79,66 +77,83 @@ export function MeContent() {
   }
 
   return (
-    <div className="space-y-4">
-      {isEditing ? (
-        <EditCard
-          member={me}
-          onCancel={() => setEditing(false)}
-          onSaved={() => setEditing(false)}
-        />
-      ) : (
-        <Card padding="lg">
-          <div className="flex items-start justify-between gap-3">
+    <div className="space-y-s-6">
+      {/* 프로필 정보 섹션 */}
+      <section>
+        <div className="mb-s-3 flex items-center justify-between gap-3">
+          <h2 className="text-foreground text-lg font-bold">프로필 정보</h2>
+          {!isEditing && (
+            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+              프로필 정보 수정
+            </Button>
+          )}
+        </div>
+        {isEditing ? (
+          <EditCard
+            member={me}
+            onCancel={() => setEditing(false)}
+            onSaved={() => setEditing(false)}
+          />
+        ) : (
+          <Card padding="lg">
             <div className="flex items-start gap-4">
               <ProfileImageUpload
                 value={me.profileImg ?? null}
-                onChange={(objectKey) => updateProfileImgMutation.mutate({ profileImg: objectKey })}
+                onChange={(objectKey) =>
+                  updateProfileImgMutation.mutate({ profileImg: objectKey })
+                }
                 domain="MEMBER"
                 label=""
                 size={72}
                 disabled={updateProfileImgMutation.isPending}
               />
-              <div className="space-y-1">
+              <div className="space-y-1 pt-1">
                 <div className="text-foreground text-lg font-semibold">{me.name}</div>
                 <div className="text-foreground-sub text-sm">{me.email}</div>
-                <div className="text-foreground-muted text-xs">{me.contact}</div>
+                {me.contact && (
+                  <div className="text-foreground-muted text-xs">{me.contact}</div>
+                )}
               </div>
             </div>
-            <Badge variant="accent">Member</Badge>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-              <Pencil className="h-4 w-4" />
-              정보 수정
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={ROUTES.PASSWORD_CHANGE}>비밀번호 변경</Link>
-            </Button>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
+      </section>
 
-      <Card padding="md">
-        <div className="flex flex-col gap-2">
+      {/* 모바일 전용 로그아웃 — 데스크톱은 사이드바에서 처리 */}
+      <section className="lg:hidden">
+        <Card padding="md">
           <Button
             variant="ghost"
             onClick={() => logoutMutation.mutate()}
             loading={logoutMutation.isPending}
-            className="justify-start"
+            className="w-full justify-start"
           >
             <LogOut className="h-4 w-4" />
             로그아웃
           </Button>
-          <Button
-            variant="ghost"
-            onClick={() => setWithdrawOpen(true)}
-            className="text-danger justify-start hover:opacity-80"
-          >
-            <UserX className="h-4 w-4" />
-            회원 탈퇴
-          </Button>
-        </div>
-      </Card>
+        </Card>
+      </section>
+
+      {/* 계정 탈퇴 섹션 */}
+      <section>
+        <h2 className="text-foreground mb-s-3 text-lg font-bold">계정 탈퇴</h2>
+        <Card padding="md">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-foreground-sub text-sm">
+              계정을 삭제하시면 프로필, 가입 밴드, 공연 및 합주 정보들이 함께 삭제됩니다.
+              탈퇴를 진행하시겠습니까?
+            </p>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setWithdrawOpen(true)}
+              className="shrink-0"
+            >
+              회원 탈퇴
+            </Button>
+          </div>
+        </Card>
+      </section>
 
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
         <DialogContent>

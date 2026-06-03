@@ -4350,7 +4350,7 @@
   "schedule-v2": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "마스터-디테일 구조 및 라우트 재설계",
         "description": "/setlist-meetings/scheduling 경로에 마스터-디테일 구조 도입. 좌측 회의 목록 패널(SetlistMeetingsListPane 재사용) + 우측 상세 영역 분리. 회의 카드에 일정 조율 진행도 게이지 추가.",
         "details": "1. SchedulingListPane.client.tsx 생성 - SetlistMeetingsListPane 패턴 재사용\n   - 회의 카드에 진행도 막대 추가: 분모=확정 곡 참여 멤버 합집합, 분자=schedule.completed=true 멤버 수\n   - 시간표 확정 시 bg-success, 그 전 bg-accent\n2. SchedulingShell.client.tsx 생성 - SetlistMeetingsShell 패턴 재사용\n   - 오버레이 모드 ListPane + 토글 버튼 + Esc/backdrop 닫기\n3. /setlist-meetings/scheduling/layout.tsx 에 SchedulingShell 적용\n4. scheduleStore에 isConfirmed(meetingId) 셀렉터 추가\n5. 회의 클릭 시 /setlist-meetings/scheduling/{meetingId} 이동 + 패널 자동 닫힘\n\n```tsx\n// 진행도 계산 예시\nconst participantIds = meeting.participantUserIds ?? [];\nconst confirmedSongMembers = new Set(\n  songs.filter(s => isReady(s)).flatMap(s => Object.values(s.confirmed).flat())\n);\nconst totalMembers = confirmedSongMembers.size;\nconst completedCount = participantIds.filter(\n  uid => schedules[`${meetingId}__${uid}`]?.completed\n).length;\nconst pct = totalMembers ? Math.round(completedCount / totalMembers * 100) : 0;\n```",
@@ -4409,7 +4409,7 @@
         "updatedAt": "2026-04-28T15:06:21.671Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "메인 절반 분할 + 언더라인 탭 UI",
         "description": "SchedulingMain 컴포넌트를 좌우 40/60 분할 구조로 재설계. 좌측에 언더라인 탭(멤버 시간표/합주곡 시간표/합주 시간표 생성), 우측에 큰 시각화 영역 배치.",
         "details": "1. SchedulingMain.client.tsx 리팩토링\n   - 기존 좌우 절반 멤버/곡 리스트 구조 제거\n   - 새 구조: 좌측(40%) 언더라인 탭 + 우측(60%) 시각화 영역\n2. UnderlineTabs 컴포넌트 분리 - components/ui/underline-tabs.tsx\n3. 좌측 탭 구성:\n   - '멤버 시간표' - 멤버 리스트(아바타/이름/입력 상태). 클릭 시 우측에 가용 캘린더\n   - '합주곡 시간표' - 곡 리스트(필터). 클릭 시 우측에 동시 가능 매트릭스\n   - '합주 시간표 생성' (매니저 전용) - 시간표 카드 목록\n4. 우측 시각화 영역 슬롯:\n   - MemberAvailabilityViewer.client.tsx - 멤버 가용 캘린더 + 히트맵\n   - SongAvailabilityMatrix.client.tsx - 곡 동시 가능 매트릭스\n   - ScheduleBoardEditor.client.tsx - 시간표 에디터\n\n```tsx\ntype LeftTab = 'member' | 'song' | 'schedule';\ntype RightPanel = \n  | { kind: 'member'; member: Member }\n  | { kind: 'song'; song: Song }\n  | { kind: 'board'; boardId: string }\n  | null;\n```",
@@ -4470,7 +4470,7 @@
         "updatedAt": "2026-04-28T15:11:36.310Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "일/주/월 단위 전환 시각화",
         "description": "합주 기간 길이에 따른 자동 단위 추천 + 사용자 토글. 14일 이하=일, 15-60일=주, 60일 초과=월 단위. 좌우 이동 + '오늘로' 단축 버튼.",
         "details": "1. domain/schedule-coordination/utils.ts 확장\n   - getViewUnit(from, to): 'day' | 'week' | 'month'\n   - enumerateWeeks(from, to): string[] (주 시작일 목록)\n   - enumerateMonths(from, to): string[] (월 시작일 목록)\n2. useScheduleViewUnit 훅 생성\n   - 자동 추천 단위 계산\n   - 사용자 오버라이드 상태\n   - 현재 뷰포트 (startDate) 관리\n   - 좌/우 이동 + '오늘로' 액션\n3. 시각화 컴포넌트별 단위 대응:\n   - 일: 7열 그리드 1-2주 (enumerateDays 전체)\n   - 주: 1주씩 좌/우 이동 (기존 v1 패턴)\n   - 월: 한 달 캘린더, 셀당 가용 인원 농도 표기\n4. ViewUnitToggle.tsx 컴포넌트 - 세그먼트 버튼 (일/주/월)\n5. 좌/우 이동 ChevronLeft/ChevronRight + '오늘' 버튼\n\n```ts\nfunction getViewUnit(from: string, to: string): 'day' | 'week' | 'month' {\n  const days = enumerateDays(from, to).length;\n  if (days <= 14) return 'day';\n  if (days <= 60) return 'week';\n  return 'month';\n}\n```",
@@ -4531,7 +4531,7 @@
         "updatedAt": "2026-04-28T15:14:50.605Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "시간표 생성 셸 및 카드 목록 UI",
         "description": "매니저용 '합주 시간표 생성' 탭 구현. 시간표 카드 목록(최대 5개) + '시간표 생성' 버튼 + 자동 추천 mock. 시간표 CRUD store 추가.",
         "details": "1. domain/schedule-coordination/types.ts 확장\n```ts\nexport interface ScheduleBoard {\n  boardId: string;\n  meetingId: string;\n  name: string;       // '안 1', '안 2'\n  blocks: ScheduleBlock[];\n  pinned: string[];   // pinned blockId\n  paletteSeed: number;\n  confirmed: boolean;\n  createdAt: string;\n  updatedAt: string;\n}\n\nexport interface ScheduleBlock {\n  blockId: string;\n  songId: string;\n  date: string;       // 'YYYY-MM-DD'\n  startSlot: number;  // 0~47\n  durationSlots: number;\n  songTitleOverride?: string;\n  note?: string;\n  pinned: boolean;\n  paletteIndex: number;\n}\n```\n2. domain/schedule-coordination/store/boardStore.ts 생성\n   - boards: Record<boardId, ScheduleBoard>\n   - createBoard, updateBoard, deleteBoard\n   - getBoardsByMeeting\n3. ScheduleBoardList.client.tsx - 카드 목록 UI\n   - 카드당: 이름, 진행도, 옵션 메뉴(수정/삭제)\n   - '+ 시간표 생성' 버튼 (5개 제한)\n4. '시간표 생성' 버튼 클릭 시:\n   - 자동 추천 안 3개 생성 (mock 알고리즘)\n   - 빈 카드 2개 추가\n   - 기존 수정된 안 있으면 경고 다이얼로그\n\n```tsx\n<ScheduleBoardCard\n  board={board}\n  active={selectedBoardId === board.boardId}\n  onClick={() => setSelectedBoardId(board.boardId)}\n  onEdit={() => openRenameDialog(board)}\n  onDelete={() => openDeleteConfirm(board)}\n/>\n```",
@@ -4592,7 +4592,7 @@
         "updatedAt": "2026-04-28T20:40:59.482Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "시간표 그리드 에디터 + 드래그 배치",
         "description": "시간표 단건 에디터 구현. 행=일자, 열=30분 슬롯 그리드. 합주 블록 풀에서 곡 블록을 그리드로 드래그-드롭, 30분 스냅.",
         "details": "1. ScheduleBoardEditor.client.tsx 메인 컴포넌트\n   - 그리드 시간표: 행=일자(주차), 열=30분 슬롯\n   - 좌/우 화살표로 주차 이동\n   - 상단 시간 헤더 (09:00~22:00 기본)\n2. ScheduleBoardCell.tsx - 30분 셀\n   - drop target (onDragOver, onDrop)\n   - 블록이 배치된 셀은 색상 표시\n3. ScheduleBlockPool.tsx - 우측 합주 블록 풀\n   - 확정 곡 한 곡당 1 블록 (중복 사용 가능)\n   - 드래그 가능 (draggable, onDragStart)\n4. ScheduleBlockChip.tsx - 드래그 가능한 블록 칩\n   - HTML5 drag-and-drop API\n   - dragstart 시 dataTransfer에 songId 저장\n5. useScheduleBoard.ts 훅\n   - 현재 board 상태 관리\n   - addBlock, moveBlock, removeBlock 액션\n   - 30분 슬롯 스냅 로직\n\n```tsx\nconst handleDrop = (date: string, slot: number) => (e: DragEvent) => {\n  const songId = e.dataTransfer.getData('songId');\n  if (!songId) return;\n  addBlock({ songId, date, startSlot: slot, durationSlots: 4 });\n};\n```",
@@ -4654,7 +4654,7 @@
         "updatedAt": "2026-04-28T20:45:21.907Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "시간표 블록 상세 패널 + 컬러 팔레트",
         "description": "시간표 블록 클릭 시 우측 상세 패널. 곡명 수정, 메모, 고정 토글, 삭제. 디자인 토큰 기반 6-8종 컬러 팔레트, 곡별 hash로 색상 안정 매핑.",
         "details": "1. ScheduleBlockPanel.tsx - 우측 상세 패널\n   - 곡명 (songTitleOverride 수정 가능)\n   - 메모 입력 (Textarea)\n   - '고정' 토글 (자동 재생성 시 위치 보존)\n   - 삭제 버튼\n2. lib/schedule-palette.ts 컬러 팔레트 정의\n```ts\nconst PALETTE = [\n  'bg-accent-dim',\n  'bg-success-dim', \n  'bg-warn-dim',\n  'bg-amber-dim',\n  'bg-danger-dim',\n  'bg-card-hover',\n  // 추가 2종\n];\n\nexport function getSongColor(songId: string, paletteSeed: number): string {\n  const hash = hashString(songId + paletteSeed);\n  return PALETTE[hash % PALETTE.length];\n}\n```\n3. 블록 렌더링 시 getSongColor로 배경색 적용\n4. 같은 곡은 항상 같은 색 (songId + board.paletteSeed hash)\n5. updateBlock 액션으로 수정사항 저장\n\n```tsx\n<ScheduleBlockPanel\n  block={selectedBlock}\n  onUpdate={(patch) => updateBlock(block.blockId, patch)}\n  onDelete={() => removeBlock(block.blockId)}\n  onClose={() => setSelectedBlock(null)}\n/>\n```",
@@ -4715,7 +4715,7 @@
         "updatedAt": "2026-04-28T22:01:35.884Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "24h 토글 + 가로 스크롤 적용",
         "description": "시간표 에디터에 9-22 기본 / 24h 확장 토글 추가. 24h 선택 시 가로 스크롤 또는 셀 압축. 나의 스케줄 입력 모달에도 동일 적용.",
         "details": "1. ScheduleBoardEditor에 24h 토글 버튼 추가\n   - 기본: 09:00~22:00 (슬롯 18~43, 26슬롯)\n   - 24h: 00:00~24:00 (슬롯 0~47, 48슬롯)\n2. 24h 모드 시 UI 처리:\n   - 가로 스크롤 (overflow-x-auto) + 최소 셀 너비 유지\n   - 또는 셀 압축 (min-w 축소)\n3. ScheduleInputModal Step2에도 동일 토글 적용\n4. 공용 훅/상태로 분리: useTimeRangeMode()\n\n```tsx\ntype TimeRange = '9-22' | '24h';\nconst [timeRange, setTimeRange] = useState<TimeRange>('9-22');\n\nconst visibleSlots = timeRange === '24h' \n  ? Array.from({ length: 48 }, (_, i) => i)\n  : Array.from({ length: 26 }, (_, i) => 18 + i);\n```\n\n5. 셀 너비 조정:\n   - 9-22: w-10 (40px)\n   - 24h: w-6 (24px) + 가로 스크롤",
@@ -4778,7 +4778,7 @@
         "updatedAt": "2026-04-28T22:01:38.877Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "시간표 확정 및 게이지 색상 전환",
         "description": "매니저의 시간표 확정 기능. 단일 board만 confirmed 가능. 확정 시 진행도 게이지 bg-success 전환. 확정 후 수정 시 경고.",
         "details": "1. boardStore에 confirmBoard 액션 추가\n   - 다른 board confirmed=false 처리\n   - 선택 board confirmed=true\n2. '합주 시간표 확정' 버튼 (헤더 우측)\n   - ConfirmDialog로 확인\n   - 확정 시 toast 알림\n3. 확정 상태 시각화:\n   - ListPane 회의 카드 게이지: bg-success\n   - 메인 헤더 게이지: bg-success\n   - 카드에 '확정됨' 배지\n4. 확정된 board 수정 시:\n   - 경고 모달: \"확정된 시간표를 수정하시겠습니까?\"\n   - 확인 시 confirmed=false + 수정 진행\n5. Meeting 타입 확장: confirmedBoardId?: string\n\n```tsx\nconst confirmBoard = (boardId: string) => set((state) => ({\n  boards: Object.fromEntries(\n    Object.entries(state.boards).map(([id, b]) => [\n      id,\n      { ...b, confirmed: id === boardId }\n    ])\n  )\n}));\n```",
@@ -4840,7 +4840,7 @@
         "updatedAt": "2026-04-28T22:01:41.617Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "나의 스케줄 입력 모달 v2",
         "description": "PRD §5-B 기반 전면 개선: 4단계 플로우 재배열 + PointerEvent 기반 드래그 페인트 + 시간 프리셋 칩 + Copy & Repeat(전주/모든주/요일) + 24h/9-22 토글 + 실시간 요약 푸터 + Smart Defaults. input-mode 탭 제거, 외부 캘린더/AI 채우기 비범위.",
         "status": "done",
@@ -4943,7 +4943,7 @@
         "updatedAt": "2026-04-28T22:05:53.433Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "메인 헤더 진행도 게이지",
         "description": "SchedulingMain 상단 헤더에 진행도 게이지 추가. 입력 진행 중=파랑, 시간표 확정 후=초록. 텍스트: 'N/M 명 일정 입력 완료' 또는 '시간표 확정'.",
         "details": "1. SchedulingDetailHeader.client.tsx 생성\n   - 회의 제목 / 매니저 / 합주 기간 표시\n   - 진행도 게이지 바\n   - '나의 스케줄 입력' 버튼\n   - 매니저: '합주 시간표 확정' 버튼\n2. 게이지 계산:\n   - 분모: 확정 곡 참여 멤버 합집합 수\n   - 분자: schedule.completed=true 멤버 수\n3. 색상 분기:\n   - confirmedBoardId 없음: bg-accent (파랑)\n   - confirmedBoardId 있음: bg-success (초록)\n4. 텍스트:\n   - 확정 전: '5/7 명 일정 입력 완료'\n   - 확정 후: '시간표 확정 - 5/7 참여'\n\n```tsx\n<div className=\"flex items-center gap-s-2\">\n  <div className=\"h-2 flex-1 rounded-full bg-card overflow-hidden\">\n    <div \n      className={cn(\n        'h-full transition-all',\n        isConfirmed ? 'bg-success' : 'bg-accent'\n      )}\n      style={{ width: `${pct}%` }}\n    />\n  </div>\n  <span className=\"text-micro text-foreground-muted\">\n    {isConfirmed ? `시간표 확정 - ${completed}/${total} 참여` : `${completed}/${total} 명 일정 입력 완료`}\n  </span>\n</div>\n```",
@@ -5007,7 +5007,7 @@
         "updatedAt": "2026-04-28T22:06:48.222Z"
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "Export(jpeg) 기능 구현",
         "description": "시간표 캡처 및 이미지 다운로드. html2canvas 또는 dom-to-image-more 라이브러리 도입. 캡처 영역 지정 + 다운로드 트리거.",
         "details": "1. dom-to-image-more 패키지 설치 (html2canvas 대비 폰트 렌더링 우수)\n   ```bash\n   pnpm add dom-to-image-more\n   ```\n2. useScheduleExport.ts 훅 생성\n   ```ts\n   import domtoimage from 'dom-to-image-more';\n   \n   export function useScheduleExport(ref: RefObject<HTMLElement>) {\n     const exportJpeg = async (filename: string) => {\n       if (!ref.current) return;\n       const dataUrl = await domtoimage.toJpeg(ref.current, { quality: 0.95 });\n       const link = document.createElement('a');\n       link.download = `${filename}.jpg`;\n       link.href = dataUrl;\n       link.click();\n     };\n     return { exportJpeg };\n   }\n   ```\n3. ScheduleBoardEditor에 ref 연결 (캡처 대상 영역)\n4. 상단 메뉴(...)에 'Export (JPEG)' 옵션 추가\n5. 캡처 시 로딩 스피너 표시\n6. 파일명: `{회의명}_{시간표명}_{날짜}.jpg`",
@@ -5068,7 +5068,7 @@
         "updatedAt": "2026-04-28T22:08:38.455Z"
       },
       {
-        "id": "12",
+        "id": 12,
         "title": "mock 데이터 및 자동 추천 알고리즘",
         "description": "시간표 카드 mock 데이터 + 자동 추천 알고리즘 구현. 멤버 가용 종합에서 동시 가능 인원 최대 슬롯 N개 선택 후 곡 배치.",
         "details": "1. domain/schedule-coordination/mock/boardSeed.ts 생성\n   - mt1 회의에 대해 1-3개 시간표 카드 + 블록 배치\n   - 색상 팔레트 시드 고정\n2. domain/schedule-coordination/utils/autoSuggest.ts\n```ts\nexport function suggestScheduleBoards(\n  schedules: MemberSchedule[],\n  songs: Song[],\n  dates: string[],\n  count: number = 3\n): ScheduleBoard[] {\n  // 1. aggregateAvailability로 날짜/슬롯별 가능 인원 수 계산\n  const aggregate = aggregateAvailability(schedules, dates);\n  \n  // 2. 가능 인원 많은 슬롯 정렬\n  const ranked = rankSlots(aggregate);\n  \n  // 3. 상위 슬롯에 곡 순차 배치\n  // 4. count개 변형 생성 (다른 시작점 또는 우선순위)\n  return boards;\n}\n```\n3. 자동 추천 시 고려사항:\n   - 곡 duration 기반 슬롯 수 계산 (기본 4슬롯=2시간)\n   - 곡 간 겹침 방지\n   - 같은 날 연속 배치 우선\n4. boardStore 초기 상태에 SEEDED_BOARDS 적용",
@@ -5130,7 +5130,7 @@
         "updatedAt": "2026-04-28T22:10:40.142Z"
       },
       {
-        "id": "13",
+        "id": 13,
         "title": "Auto-rescheduling 엔진 + Working Hours UI + Undo/변경 로그",
         "description": "Reclaim.ai 패턴을 차용하여 시간표 블록 드래그 시 충돌 블록을 BFS 알고리즘으로 자동 재배치하고, Working Hours 제약 UI(슬라이더/토글), 되돌리기 토스트(5초), 변경 로그 사이드 패널을 구현한다.",
         "details": "## 1. ScheduleBoardConstraints 타입 정의\n`domain/schedule-coordination/types.ts` 확장:\n```ts\nexport interface ScheduleBoardConstraints {\n  workingHoursStart: number;  // 0~47 슬롯, 기본 18 (09:00)\n  workingHoursEnd: number;    // 기본 44 (22:00)\n  blockedRanges: BlockedRange[];  // 심야·휴식·외부일정\n  maxConsecutiveMinutes: number;  // 최대 연속 합주 시간 (분), 기본 180\n  excludeWeekends: boolean;\n  excludeHolidays: boolean;\n}\n\nexport interface BlockedRange {\n  id: string;\n  label: string;           // '점심 휴식', '심야'\n  startSlot: number;\n  endSlot: number;\n  recurring: boolean;      // 매일 반복 여부\n  dates?: string[];        // recurring=false 시 특정 일자\n}\n\nexport interface ScheduleChangeLog {\n  id: string;\n  timestamp: string;\n  userId: string;\n  action: 'move' | 'add' | 'remove' | 'cascade';\n  blockId: string;\n  fromSlot?: { date: string; startSlot: number };\n  toSlot?: { date: string; startSlot: number };\n  affectedBlocks?: string[];  // cascade 시 영향받은 블록 ID\n}\n```\n\n## 2. BFS 자동 재배치 알고리즘\n`domain/schedule-coordination/utils/autoReschedule.ts` 생성:\n```ts\nimport type { ScheduleBlock, ScheduleBoard, ScheduleBoardConstraints } from '../types';\nimport { isHoliday, isWeekend, slotToMin } from '../utils';\n\ninterface PlaceResult {\n  success: boolean;\n  movedBlocks: Array<{ blockId: string; from: { date: string; startSlot: number }; to: { date: string; startSlot: number } | null }>;\n  unscheduledBlocks: string[];\n}\n\nexport function placeBlock(\n  board: ScheduleBoard,\n  dropped: ScheduleBlock,\n  constraints: ScheduleBoardConstraints,\n  practiceWindowEnd: string\n): PlaceResult {\n  const blocks = [...board.blocks];\n  const movedBlocks: PlaceResult['movedBlocks'] = [];\n  const unscheduledBlocks: string[] = [];\n  \n  // 1. dropped 블록 배치\n  const existingIdx = blocks.findIndex(b => b.blockId === dropped.blockId);\n  if (existingIdx >= 0) blocks[existingIdx] = dropped;\n  else blocks.push(dropped);\n  \n  // 2. 충돌 감지 및 BFS 큐\n  const queue = findOverlaps(blocks, dropped).filter(b => !b.pinned && b.blockId !== dropped.blockId);\n  const visited = new Set<string>([dropped.blockId]);\n  \n  while (queue.length > 0) {\n    const conflict = queue.shift()!;\n    if (visited.has(conflict.blockId)) continue;\n    visited.add(conflict.blockId);\n    \n    const from = { date: conflict.date, startSlot: conflict.startSlot };\n    const nextSlot = findNextFreeSlot(blocks, conflict, constraints, practiceWindowEnd);\n    \n    if (!nextSlot) {\n      unscheduledBlocks.push(conflict.blockId);\n      movedBlocks.push({ blockId: conflict.blockId, from, to: null });\n      continue;\n    }\n    \n    conflict.date = nextSlot.date;\n    conflict.startSlot = nextSlot.startSlot;\n    movedBlocks.push({ blockId: conflict.blockId, from, to: nextSlot });\n    \n    // 새 위치에서 추가 충돌 검사\n    const newConflicts = findOverlaps(blocks, conflict).filter(b => !b.pinned && !visited.has(b.blockId));\n    queue.push(...newConflicts);\n  }\n  \n  return { success: unscheduledBlocks.length === 0, movedBlocks, unscheduledBlocks };\n}\n\nfunction findOverlaps(blocks: ScheduleBlock[], target: ScheduleBlock): ScheduleBlock[] {\n  return blocks.filter(b => \n    b.blockId !== target.blockId &&\n    b.date === target.date &&\n    b.startSlot < target.startSlot + target.durationSlots &&\n    b.startSlot + b.durationSlots > target.startSlot\n  );\n}\n\nfunction findNextFreeSlot(\n  blocks: ScheduleBlock[],\n  block: ScheduleBlock,\n  constraints: ScheduleBoardConstraints,\n  windowEnd: string\n): { date: string; startSlot: number } | null {\n  let currentDate = block.date;\n  let currentSlot = block.startSlot + 1;\n  \n  while (currentDate <= windowEnd) {\n    // Working hours 및 blocked ranges 체크\n    if (!isSlotBlocked(currentDate, currentSlot, block.durationSlots, constraints)) {\n      if (!hasOverlap(blocks, block.blockId, currentDate, currentSlot, block.durationSlots)) {\n        return { date: currentDate, startSlot: currentSlot };\n      }\n    }\n    \n    currentSlot++;\n    if (currentSlot + block.durationSlots > constraints.workingHoursEnd) {\n      currentDate = addDays(currentDate, 1);\n      currentSlot = constraints.workingHoursStart;\n    }\n  }\n  return null;\n}\n\nfunction isSlotBlocked(date: string, slot: number, duration: number, constraints: ScheduleBoardConstraints): boolean {\n  if (slot < constraints.workingHoursStart || slot + duration > constraints.workingHoursEnd) return true;\n  if (constraints.excludeWeekends && isWeekend(date)) return true;\n  if (constraints.excludeHolidays && isHoliday(date)) return true;\n  return constraints.blockedRanges.some(r => \n    (r.recurring || r.dates?.includes(date)) &&\n    slot < r.endSlot && slot + duration > r.startSlot\n  );\n}\n```\n\n## 3. Working Hours UI 컴포넌트\n`domain/schedule-coordination/components/WorkingHoursPanel.client.tsx`:\n```tsx\n'use client';\n\nimport { Minus, Plus, Clock, Moon, Coffee } from 'lucide-react';\nimport { useState } from 'react';\nimport { Button } from '@/components/ui/button';\nimport { cn } from '@/lib/cn';\nimport { slotToTime } from '../utils';\nimport type { ScheduleBoardConstraints, BlockedRange } from '../types';\n\ninterface Props {\n  constraints: ScheduleBoardConstraints;\n  onChange: (constraints: ScheduleBoardConstraints) => void;\n}\n\nexport function WorkingHoursPanel({ constraints, onChange }: Props) {\n  const [showBreakForm, setShowBreakForm] = useState(false);\n  \n  const handleSliderChange = (field: 'workingHoursStart' | 'workingHoursEnd', value: number) => {\n    onChange({ ...constraints, [field]: value });\n  };\n  \n  const addBreak = (range: Omit<BlockedRange, 'id'>) => {\n    onChange({\n      ...constraints,\n      blockedRanges: [...constraints.blockedRanges, { ...range, id: crypto.randomUUID() }]\n    });\n  };\n  \n  return (\n    <div className=\"border-border bg-card rounded-lg border p-s-4 space-y-s-4\">\n      <div className=\"flex items-center gap-s-2 text-foreground font-semibold\">\n        <Clock className=\"h-4 w-4\" />\n        Working Hours\n      </div>\n      \n      {/* 슬라이더 - 09:00~22:00 기본 */}\n      <div className=\"space-y-s-2\">\n        <div className=\"flex items-center justify-between text-caption\">\n          <span>시작: {slotToTime(constraints.workingHoursStart)}</span>\n          <input\n            type=\"range\"\n            min={0}\n            max={constraints.workingHoursEnd - 2}\n            value={constraints.workingHoursStart}\n            onChange={(e) => handleSliderChange('workingHoursStart', +e.target.value)}\n            className=\"flex-1 mx-s-3\"\n          />\n        </div>\n        <div className=\"flex items-center justify-between text-caption\">\n          <span>종료: {slotToTime(constraints.workingHoursEnd)}</span>\n          <input\n            type=\"range\"\n            min={constraints.workingHoursStart + 2}\n            max={48}\n            value={constraints.workingHoursEnd}\n            onChange={(e) => handleSliderChange('workingHoursEnd', +e.target.value)}\n            className=\"flex-1 mx-s-3\"\n          />\n        </div>\n      </div>\n      \n      {/* 심야 배제 토글 */}\n      <label className=\"flex items-center gap-s-2 cursor-pointer\">\n        <input\n          type=\"checkbox\"\n          checked={constraints.workingHoursEnd <= 44}\n          onChange={(e) => onChange({\n            ...constraints,\n            workingHoursEnd: e.target.checked ? 44 : 48\n          })}\n          className=\"rounded\"\n        />\n        <Moon className=\"h-4 w-4 text-foreground-muted\" />\n        <span className=\"text-caption\">심야 배제 (22시 이후)</span>\n      </label>\n      \n      {/* 휴식 시간 목록 */}\n      <div className=\"space-y-s-2\">\n        <div className=\"flex items-center justify-between\">\n          <span className=\"text-micro text-foreground-muted font-bold uppercase\">휴식 시간</span>\n          <Button size=\"xs\" variant=\"ghost\" onClick={() => setShowBreakForm(true)}>\n            <Plus className=\"h-3 w-3\" /> 추가\n          </Button>\n        </div>\n        {constraints.blockedRanges.map((range) => (\n          <div key={range.id} className=\"flex items-center gap-s-2 text-caption bg-surface rounded px-s-2 py-s-1\">\n            <Coffee className=\"h-3 w-3\" />\n            <span>{range.label}: {slotToTime(range.startSlot)}~{slotToTime(range.endSlot)}</span>\n            <button\n              onClick={() => onChange({\n                ...constraints,\n                blockedRanges: constraints.blockedRanges.filter(r => r.id !== range.id)\n              })}\n              className=\"ml-auto text-foreground-muted hover:text-danger\"\n            >\n              <Minus className=\"h-3 w-3\" />\n            </button>\n          </div>\n        ))}\n      </div>\n    </div>\n  );\n}\n```\n\n## 4. Undo 토스트 확장\n`hooks/useUndoToast.ts`:\n```ts\n'use client';\n\nimport { useCallback, useRef } from 'react';\nimport { useToastStore } from '@/global/store/toastStore';\n\ninterface UndoableAction<T> {\n  data: T;\n  undo: () => void;\n}\n\nexport function useUndoToast() {\n  const add = useToastStore((s) => s.add);\n  const remove = useToastStore((s) => s.remove);\n  const undoRef = useRef<(() => void) | null>(null);\n  \n  const showUndoToast = useCallback(<T>(\n    message: string,\n    action: UndoableAction<T>,\n    duration = 5000\n  ) => {\n    undoRef.current = action.undo;\n    \n    const toastId = add({\n      type: 'info',\n      message: `${message} [되돌리기]`,\n      duration\n    });\n    \n    // 5초 후 undo 참조 클리어\n    setTimeout(() => {\n      if (undoRef.current === action.undo) {\n        undoRef.current = null;\n      }\n    }, duration);\n    \n    return toastId;\n  }, [add]);\n  \n  const executeUndo = useCallback(() => {\n    if (undoRef.current) {\n      undoRef.current();\n      undoRef.current = null;\n    }\n  }, []);\n  \n  return { showUndoToast, executeUndo };\n}\n```\n\n## 5. 변경 로그 사이드 패널\n`domain/schedule-coordination/components/ChangeLogPanel.client.tsx`:\n```tsx\n'use client';\n\nimport { History, Undo2 } from 'lucide-react';\nimport { cn } from '@/lib/cn';\nimport type { ScheduleChangeLog } from '../types';\nimport { slotToTime } from '../utils';\n\ninterface Props {\n  logs: ScheduleChangeLog[];\n  onUndo: (logId: string) => void;\n  className?: string;\n}\n\nexport function ChangeLogPanel({ logs, onUndo, className }: Props) {\n  return (\n    <aside className={cn('border-border bg-card border-l w-72', className)}>\n      <header className=\"border-border border-b px-s-4 py-s-3 flex items-center gap-s-2\">\n        <History className=\"h-4 w-4\" />\n        <span className=\"font-semibold\">변경 로그</span>\n        <span className=\"text-micro text-foreground-muted\">최근 10개</span>\n      </header>\n      \n      <ul className=\"divide-y divide-border overflow-y-auto max-h-96\">\n        {logs.slice(0, 10).map((log) => (\n          <li key={log.id} className=\"px-s-4 py-s-3 space-y-s-1\">\n            <div className=\"flex items-center justify-between\">\n              <span className=\"text-micro text-foreground-muted\">\n                {new Date(log.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}\n              </span>\n              <button\n                onClick={() => onUndo(log.id)}\n                className=\"text-accent hover:text-accent-hi text-micro flex items-center gap-1\"\n              >\n                <Undo2 className=\"h-3 w-3\" /> 되돌리기\n              </button>\n            </div>\n            <p className=\"text-caption\">\n              {log.action === 'move' && log.fromSlot && log.toSlot && (\n                <>블록 이동: {log.fromSlot.date} {slotToTime(log.fromSlot.startSlot)} → {log.toSlot.date} {slotToTime(log.toSlot.startSlot)}</>\n              )}\n              {log.action === 'cascade' && (\n                <>{log.affectedBlocks?.length ?? 0}개 블록 자동 재조정</>\n              )}\n            </p>\n          </li>\n        ))}\n      </ul>\n    </aside>\n  );\n}\n```\n\n## 6. boardStore 확장\n`domain/schedule-coordination/store/boardStore.ts`에 constraints, changeLogs, undo 스택 추가:\n```ts\ninterface BoardState {\n  boards: Record<string, ScheduleBoard>;\n  constraints: Record<string, ScheduleBoardConstraints>;\n  changeLogs: Record<string, ScheduleChangeLog[]>;\n  undoStack: Record<string, ScheduleBoard[]>;\n}\n\ninterface BoardActions {\n  setConstraints: (boardId: string, constraints: ScheduleBoardConstraints) => void;\n  moveBlockWithCascade: (boardId: string, block: ScheduleBlock, practiceWindowEnd: string) => PlaceResult;\n  addChangeLog: (boardId: string, log: Omit<ScheduleChangeLog, 'id' | 'timestamp'>) => void;\n  undo: (boardId: string) => void;\n}\n```\n\n## 7. 드래그 핸들러 통합\n`useScheduleBoard.ts` 훅의 onDrop 핸들러에서 `placeBlock` 호출:\n```ts\nconst handleDrop = (date: string, slot: number, songId: string) => {\n  const snapshot = JSON.parse(JSON.stringify(board)); // undo용 스냅샷\n  \n  const newBlock: ScheduleBlock = {\n    blockId: crypto.randomUUID(),\n    songId,\n    date,\n    startSlot: slot,\n    durationSlots: 4, // 2시간 기본\n    pinned: false,\n    paletteIndex: getPaletteIndex(songId)\n  };\n  \n  const result = placeBlock(board, newBlock, constraints, practiceWindowEnd);\n  \n  if (result.movedBlocks.length > 1) {\n    // cascade 발생\n    addChangeLog(boardId, {\n      userId: currentUserId,\n      action: 'cascade',\n      blockId: newBlock.blockId,\n      affectedBlocks: result.movedBlocks.map(m => m.blockId)\n    });\n    \n    showUndoToast(\n      `${result.movedBlocks.length - 1}개 블록이 자동 재조정되었습니다`,\n      { data: snapshot, undo: () => restoreBoard(boardId, snapshot) }\n    );\n  }\n  \n  updateBoard(boardId, result);\n};\n```",
@@ -5191,7 +5191,7 @@
         "updatedAt": "2026-04-28T22:13:36.520Z"
       },
       {
-        "id": "14",
+        "id": 14,
         "title": "커버리지 히트맵 셀렉터 분리 및 곡별 가용시간 유틸 추가",
         "description": "매트릭스/주차별 UI에서 '전체 멤버' 또는 '특정 곡 참여 멤버' 기준으로 가용시간 히트맵을 계산할 수 있도록 셀렉터 함수를 분리하고, 주별 복제를 위한 유틸리티 함수를 추가한다.",
         "details": "1. `src/domain/schedule-coordination/utils/coverageHeatmap.ts` 신규 생성\n   - `coverageHeatmap(memberSchedules, allDays, songId: string | 'ALL', songParticipantMap: Map<string, string[]>)` 함수 구현\n   - songId가 'ALL'이면 전체 멤버, 특정 songId면 해당 곡의 participantMemberIds만 필터링하여 가용시간 계산\n   - 반환 타입: `Map<string, Set<string>>` (key: `${date}__${slot}`, value: 가능 userId Set)\n\n2. `src/domain/schedule-coordination/utils/copyWeekLocks.ts` 신규 생성\n   - `copyWeekLocks(locks, srcWeekStart, targetWeekStarts[], slotFrom, slotTo, availableDates)` 함수 구현\n   - 기준 주의 lock들을 대상 주차들에 복사, 요일 매핑 (월→월, 화→화...)\n   - 복사 후 겹침 발생 시 reflowMatrixLocks 호출하여 자동 정리\n   - 반환: 성공 시 새 locks 배열, 실패 시 null\n\n3. 기존 MatrixView.client.tsx의 availability 계산 로직을 coverageHeatmap 유틸로 대체할 수 있도록 인터페이스 맞춤\n\n4. 타입 정의 (types.ts에 추가):\n   - `SongParticipantMap = Map<string, string[]>` (songId → participantMemberIds)",
@@ -5203,7 +5203,7 @@
         "updatedAt": "2026-04-29T13:57:22.757Z"
       },
       {
-        "id": "15",
+        "id": 15,
         "title": "useScheduleView 스토어 확장 — 뷰 모드, 곡별 포커스, 호버 상태",
         "description": "합주 일정 조율의 '주차별 UI ↔ 매트릭스' 통합 및 곡별 가용시간 모드, 호버 기반 인원 패널 갱신을 위해 useScheduleView 훅 또는 별도 Zustand 스토어에 필요한 상태를 추가한다.",
         "details": "1. `src/domain/schedule-coordination/store/scheduleViewStore.ts` 신규 생성 (또는 기존 훅 확장)\n   - 상태:\n     - `mode: 'weekly' | 'matrix'` — 현재 뷰 모드\n     - `selectedWeekStart: string` — 매트릭스에서 주차 라벨 클릭 시 전환될 주\n     - `focusedSongBlockId: string | null` — 곡별 가용시간 모드 활성화된 블럭 ID\n     - `hoveredCell: { date: string; slot: number } | null` — 호버 기반 인원 패널 갱신용\n     - `repeatBaseWeekStart: string | null` — 주별 복제의 기준 주\n     - `repeatTargetWeekStarts: string[]` — 복제 대상 주차들\n     - `repeatMode: 'idle' | 'selecting'` — 주차 선택 모드 여부\n\n   - 액션:\n     - `setMode(mode)`, `toggleMode()`\n     - `setSelectedWeekStart(weekStart)`\n     - `setFocusedSongBlockId(id | null)` — 토글 로직 포함\n     - `setHoveredCell(cell | null)`\n     - `setRepeatBaseWeek(weekStart)`, `addRepeatTarget(weekStart)`, `removeRepeatTarget(weekStart)`, `clearRepeatTargets()`, `setRepeatMode(mode)`\n\n2. persist 미들웨어는 mode만 저장, hoveredCell 등 휘발성 상태는 제외\n\n3. 기존 useScheduleViewUnit.ts 훅과 연계: anchor(주차 시작일) ↔ selectedWeekStart 동기화",
@@ -5217,7 +5217,7 @@
         "updatedAt": "2026-04-29T13:58:34.923Z"
       },
       {
-        "id": "16",
+        "id": 16,
         "title": "합주 시간표 생성 탭 내부 뷰 토글 UI 구현 — 매트릭스 탭 통합",
         "description": "별도로 존재하던 '매트릭스' 탭을 '합주 시간표 생성' 탭 내부의 토글로 통합하여, 한 화면에서 [주차별 | 매트릭스] 뷰를 전환할 수 있게 한다.",
         "details": "1. `SchedulingMain.client.tsx` 수정:\n   - tabItems에서 `{ id: 'matrix' }` 항목 제거\n   - `{ id: 'board' }` 탭 내부에 `<SegmentedControl>` 또는 `<ToggleGroup>` 추가: 옵션 ['주차별', '매트릭스']\n   - 토글 상태는 scheduleViewStore의 `mode` 사용\n\n2. 토글 UI 위치: board 탭 컨텐츠 영역 상단, 보드 리스트/에디터 헤더 바로 아래\n\n3. 레이아웃 전환 로직:\n   - `mode === 'weekly'`: 기존 ScheduleBoardEditor 렌더\n   - `mode === 'matrix'`: MatrixView 렌더 (기존 safeLeftTab === 'matrix' 분기 로직 이동)\n\n4. 공통 고정 패널:\n   - 좌측: ScheduleBoardList (두 뷰 모두에서 보드 선택 가능)\n   - 우측: 합주 블럭 풀(BlockPoolPanel) + 가능/불가능 멤버 패널(SidePanel)\n   - 토글 전환 시 패널 위치/크기는 유지, 중앙 컨텐츠만 교체\n\n5. 탭 전환(member→board 등)과 모드 전환(weekly↔matrix) 간 상태 충돌 방지:\n   - board 탭 이탈 시 mode를 'weekly'로 리셋하지 않음 (사용자 선호 유지)\n   - rightPanel 상태와 mode 독립 관리",
@@ -5231,7 +5231,7 @@
         "updatedAt": "2026-04-29T14:00:53.658Z"
       },
       {
-        "id": "17",
+        "id": 17,
         "title": "매트릭스 주차 라벨 및 주 단위 경계선 시각화",
         "description": "매트릭스 뷰에서 주(월~일) 단위로 행을 그룹핑하고, 좌측에 주차 라벨(W14, W15 등)을 추가하며, 주 경계에 시각적 구분선을 넣는다.",
         "details": "1. `MatrixView.client.tsx` 수정:\n   - allDays를 주 단위로 그룹핑: `groupByWeek(allDays): { weekStart: string; days: string[] }[]`\n   - 각 주 그룹의 첫 행에 주차 라벨 셀 추가 (rowSpan=7 또는 별도 헤더 행)\n\n2. 주차 라벨 형식:\n   - `W${getISOWeek(weekStart)}` (예: W14, W15)\n   - 하위에 첫날 표기: `04-01 (월)`\n   - 라벨 셀 클릭 시: scheduleViewStore.setMode('weekly') + view.goToDate(weekStart)\n\n3. 주 경계 스타일:\n   - 주의 마지막 행(일요일) 하단에 `border-b-2 border-border` 또는 `border-b-4`\n   - 또는 주 사이에 1px 높이의 spacer 행 삽입 (bg-surface)\n\n4. 좌측 고정 컬럼(날짜) 영역 너비 조정: 주차 라벨 + 날짜 표기를 수용하도록 width 조정 (기존 110px → 130px 정도)\n\n5. 유틸 함수 추가 (`utils.ts`):\n   - `getISOWeek(date: string): number` — ISO 8601 주차 번호 반환",
@@ -5245,7 +5245,7 @@
         "updatedAt": "2026-04-29T14:03:01.133Z"
       },
       {
-        "id": "18",
+        "id": 18,
         "title": "곡별 가용시간 모드 — 합주 블럭 선택 시 히트맵 재계산",
         "description": "우측 합주 블럭 풀에서 특정 블럭을 클릭하면, 해당 곡의 참여 멤버 기준으로 매트릭스/주차별 UI의 히트맵이 재계산된다. 다시 클릭하면 전체 멤버 기준으로 복귀.",
         "details": "1. `BlockPoolPanel` 컴포넌트 수정:\n   - 기존 드래그 전용 → 클릭 이벤트 추가\n   - 클릭 시 scheduleViewStore.setFocusedSongBlockId(songId) 호출 (토글 로직)\n   - 선택된 블럭에 `ring-2 ring-accent` 스타일 추가\n\n2. `MatrixView.client.tsx` 수정:\n   - scheduleViewStore에서 focusedSongBlockId 구독\n   - availability 계산 시 coverageHeatmap 유틸 사용, focusedSongBlockId 전달\n   - 곡별 모드일 때 헤드 영역에 라벨 표시: \"현재 모드: {곡 제목}\" (bg-accent-dim 배지)\n   - 곡별 모드일 때 범례 옆에 \"전체 멤버로 보기\" 버튼 또는 배지 클릭 시 해제\n\n3. 곡-멤버 매핑 데이터 흐름:\n   - setlistStore의 songs에서 각 곡의 confirmed 멤버 추출 → songParticipantMap 생성\n   - SchedulingMain에서 songPool 전달 시 participantMemberIds 포함하도록 확장\n   - SongLite 타입 확장: `participantMemberIds?: string[]`\n\n4. 주차별 UI(ScheduleBoardEditor)에도 동일한 곡별 가용시간 모드 적용:\n   - WeeklyScheduleGrid의 cellClassName에 focusedSongBlockId 기반 색상 계산 반영",
@@ -5260,7 +5260,7 @@
         "updatedAt": "2026-04-29T14:12:44.995Z"
       },
       {
-        "id": "19",
+        "id": 19,
         "title": "매트릭스 lock 클릭 시 편집 다이얼로그 연동",
         "description": "매트릭스 셀에 배치된 lock(확정된 합주 블럭)을 클릭하면, 주차별 UI와 동일한 편집 다이얼로그가 열려 곡 변경, 길이 변경, 메모, 삭제를 수행할 수 있게 한다.",
         "details": "1. `src/domain/schedule-coordination/components/LockEditDialog.client.tsx` 신규 생성 (또는 기존 패널 재사용):\n   - Props: `lock: LockedSlot | null`, `songPool: SongLite[]`, `onClose: () => void`, `onUpdate: (lockId, updates) => void`, `onDelete: (lockId) => void`\n   - 필드:\n     - 곡 선택: `<select>` (songPool 드롭다운)\n     - 길이: `<input type=\"number\">` 또는 슬롯 수 ± 버튼\n     - 메모: `<textarea>`\n   - 삭제 버튼: ConfirmDialog 연동\n   - 저장 시 matrixLockStore.updateLock 호출 → reflowMatrixLocks 필요 시 적용\n\n2. `MatrixView.client.tsx` 수정:\n   - lock이 있는 셀 클릭 시 기존 동작(cursor-not-allowed) 대신 편집 다이얼로그 열기\n   - `editingLockId` 상태 추가\n   - isLockStart 셀에만 클릭 이벤트 바인딩 (중복 클릭 방지)\n\n3. `matrixLockStore` 확장:\n   - `updateLock(meetingId, lockId, { songId?, endSlot?, memo? })` 액션 추가\n   - 길이 변경 시 endSlot 업데이트 후 reflow 호출\n\n4. 다이얼로그 닫기 시 pinned 상태 유지 여부: 편집 완료 후 pinned 해제",
@@ -5274,7 +5274,7 @@
         "updatedAt": "2026-04-29T14:16:14.960Z"
       },
       {
-        "id": "20",
+        "id": 20,
         "title": "매트릭스 시간 범위 동기화 — 주차별 UI 설정과 일치",
         "description": "매트릭스의 슬롯 범위(SLOT_FROM, SLOT_TO)가 주차별 UI의 표출 시간 설정(예: 09~22시, 24h 모드)과 항상 일치하도록 동기화한다.",
         "details": "1. `scheduleViewStore` 또는 별도 스토어에 시간 범위 상태 추가:\n   - `slotFrom: number` (기본 18 = 09:00)\n   - `slotTo: number` (기본 46 = 23:00)\n   - `setSlotRange(from, to)` 액션\n\n2. 주차별 UI(WorkingHoursPanel)의 시간 설정 변경 시 스토어 업데이트:\n   - WorkingHoursPanel에서 startHour/endHour 변경 → slotFrom/slotTo 계산 후 스토어 반영\n\n3. `MatrixView.client.tsx` 수정:\n   - 하드코딩된 SLOT_FROM=18, SLOT_TO=46 → 스토어 값 사용\n   - 스토어 구독하여 동적 렌더링\n\n4. `WeeklyScheduleGrid.client.tsx`도 동일하게 스토어 값 사용 (props로 전달받는 slotStart/slotEnd 대신)\n\n5. persist 설정: slotFrom/slotTo는 사용자 선호이므로 localStorage 저장",
@@ -5288,7 +5288,7 @@
         "updatedAt": "2026-04-29T14:07:21.291Z"
       },
       {
-        "id": "21",
+        "id": 21,
         "title": "주별 반복/복제 기능 — 모든 주차 적용 및 선택적 적용",
         "description": "매트릭스 상단에 '모든 주차에 적용' 및 '주별 일정 반복' 버튼을 추가하여, 기준 주의 lock들을 다른 주차에 복사할 수 있게 한다.",
         "details": "1. `MatrixView.client.tsx` 상단에 액션바 추가:\n   - \"모든 주차에 적용\" 버튼: 기준 주 선택 필요\n   - \"주별 일정 반복\" 버튼: 주차 선택 모드 진입\n\n2. 기준 주 선택 UI:\n   - 좌측 주차 라벨에 라디오 버튼 또는 별도 드롭다운\n   - 또는 \"현재 보고 있는 주\"를 기준으로 사용 (anchor 값)\n   - scheduleViewStore.repeatBaseWeekStart로 관리\n\n3. \"모든 주차에 적용\" 동작:\n   - 기준 주의 locks 추출 → 다른 모든 주차에 copyWeekLocks 호출\n   - 성공 시 toast.success, 실패(빈 슬롯 부족) 시 toast.error\n   - ConfirmDialog로 \"기존 일정이 재배치될 수 있습니다\" 경고\n\n4. \"주별 일정 반복\" 동작:\n   - 버튼 클릭 → repeatMode='selecting' 진입\n   - 매트릭스 주차 라벨들이 체크박스/클릭 가능 상태로 변경\n   - 클릭으로 repeatTargetWeekStarts에 추가/제거\n   - 상단에 \"적용\" / \"취소\" 버튼 표시\n   - \"적용\" 클릭 → copyWeekLocks(srcWeekStart, targets) 실행\n\n5. 복제 시 충돌 처리:\n   - copyWeekLocks 내부에서 reflowMatrixLocks 호출\n   - reflow 불가 시 해당 주차 스킵 + 사용자에게 부분 성공 알림",
@@ -5303,7 +5303,7 @@
         "updatedAt": "2026-04-29T14:19:57.431Z"
       },
       {
-        "id": "22",
+        "id": 22,
         "title": "자동 시간표 생성 스코프 제한 — 선택 주차만 적용",
         "description": "주차별 UI의 '자동 시간표 생성' 버튼이 현재 선택된 주차에만 새 lock을 추가하도록 알고리즘 입력 범위를 제한한다.",
         "details": "1. `ScheduleBoardList.client.tsx` 또는 `ScheduleBoardEditor.client.tsx` 수정:\n   - 자동 생성 버튼 클릭 시 현재 scheduleViewStore.anchor (또는 selectedWeekStart) 기준 주차 확인\n   - suggestScheduleBoards 호출 시 dates 파라미터를 anchor 주의 7일로 제한\n\n2. `suggestScheduleBoards` 함수 시그니처 확인 및 필요 시 수정:\n   - 기존: `dates: string[]` (전체 기간)\n   - 변경: 호출 시 visibleDays만 전달\n\n3. UI 피드백:\n   - 버튼 라벨 또는 툴팁에 \"현재 주차에만 적용\" 명시\n   - 생성 완료 후 toast에 \"{주차 라벨} 주차에 {n}개 블럭 배치\" 메시지\n\n4. 전체 기간 자동 생성이 필요한 경우를 위한 옵션:\n   - 별도 \"전체 기간에 자동 생성\" 버튼 또는 드롭다운 메뉴 아이템 추가 (선택적 구현)",
@@ -5318,7 +5318,7 @@
         "updatedAt": "2026-04-29T14:21:10.743Z"
       },
       {
-        "id": "23",
+        "id": 23,
         "title": "호버 기반 가능/불가능 인원 패널 갱신",
         "description": "매트릭스/주차별 UI의 셀에 마우스를 올리면(pointerenter) 우측 '가능/불가능 인원' 패널이 해당 (일자, 슬롯) 기준으로 즉시 갱신된다.",
         "details": "1. `scheduleViewStore`의 `hoveredCell` 상태 활용:\n   - MatrixView/WeeklyScheduleGrid 셀에 onPointerEnter → setHoveredCell({ date, slot })\n   - 컨테이너 onPointerLeave → hoveredCell 유지 (깜빡임 방지, 마지막 호버 상태 보존)\n\n2. `SidePanel` (MatrixView 내) 수정:\n   - focus = pinned ?? hoveredCell (기존 pinned ?? hover)\n   - hoveredCell 변경 시 가능/불가능 멤버 리스트 재계산\n   - 패널 헤더에 \"기준: {date} ({요일}) {slotToTime(slot)}\" 라벨 표시\n\n3. 곡별 가용시간 모드 연동:\n   - focusedSongBlockId가 설정되어 있으면, 인원 패널도 해당 곡 참여 멤버 한정으로 분류\n   - 가능 멤버 = 곡 참여 멤버 중 해당 슬롯 가능한 사람\n   - 불가 멤버 = 곡 참여 멤버 중 해당 슬롯 불가한 사람 + 미참여 멤버는 표시 안 함\n\n4. 성능 최적화:\n   - onPointerEnter 호출 시 throttle(50ms) 또는 requestAnimationFrame으로 과도한 상태 업데이트 방지\n   - 동일 셀 연속 호버 시 스킵\n\n5. lock 위 호버:\n   - lock이 있는 셀 호버 시 lock.startSlot 기준으로 인원 표시\n\n6. 모바일/터치 대응:\n   - 호버 이벤트 없으므로 터치(tap) 시 동일하게 hoveredCell 업데이트",
@@ -5333,7 +5333,7 @@
         "updatedAt": "2026-04-29T14:24:19.334Z"
       },
       {
-        "id": "24",
+        "id": 24,
         "title": "매트릭스 히트맵 색상 명도 개선",
         "description": "매트릭스 히트맵의 단색(초록) 5단계를 4단계로 줄이되 명도 격차를 확대하여 한눈에 비교 가능하게 한다.",
         "details": "1. `MatrixView.client.tsx`의 `cellBg` 함수 수정:\n   - 기존 5단계: 0%, <25%, <50%, <80%, <100%, 100%\n   - 변경 4단계:\n     - r === 0 → 'bg-card' (배경색과 동일, 가용 없음)\n     - r < 0.33 → 'bg-success/20' (옅은 초록)\n     - r < 0.66 → 'bg-success/45' (중간)\n     - r < 1 → 'bg-success/75' (진한)\n     - r === 1 → 'bg-success' (전원 가능)\n\n2. `Legend` 컴포넌트 수정:\n   - 4단계에 맞게 라벨 변경: '전원', '66%+', '33%+', '소수'\n   - 또는 '100%', '66~99%', '33~65%', '1~32%'\n\n3. globals.css 또는 tailwind 테마 확인:\n   - success 색상의 명도가 충분히 대비되는지 확인\n   - 필요 시 success-dim 등 중간 톤 추가\n\n4. 컬러 블라인드 고려:\n   - 색상만으로 구분이 어려울 수 있으므로, 셀 호버 시 툴팁에 정확한 % 표시 유지",
@@ -5347,7 +5347,7 @@
         "updatedAt": "2026-04-29T14:07:27.165Z"
       },
       {
-        "id": "25",
+        "id": 25,
         "title": "선곡 회의 키보드 포커스 자동 스크롤",
         "description": "선곡 회의 곡 리스트에서 방향키(ArrowUp/ArrowDown)로 선택을 이동할 때, 포커스된 곡이 항상 뷰포트 안에 보이도록 자동 스크롤을 적용한다.",
         "details": "1. `MeetingDetail.client.tsx` 수정:\n   - 키보드 네비게이션 useEffect 내에서 선택 변경 후 scrollIntoView 호출\n   - `isUserKeyNav` ref 추가: 마운트 직후 초기 스크롤 방지\n\n2. `SongTable.client.tsx` 수정:\n   - 각 곡 행에 `data-song-id={song.id}` 속성 추가\n   - 또는 selectedSongId 행에 ref 전달\n\n3. 스크롤 로직:\n   ```tsx\n   useEffect(() => {\n     if (!isUserKeyNav.current || !selectedSongId) return;\n     const row = document.querySelector(`[data-song-id=\"${selectedSongId}\"]`);\n     row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });\n   }, [selectedSongId]);\n   ```\n   - isUserKeyNav는 onKey 핸들러에서 true로 설정, effect 후 false로 리셋\n\n4. 마우스 클릭 선택 시:\n   - scrollIntoView 호출해도 이미 보이는 항목이므로 no-op\n   - 또는 isUserKeyNav가 false면 스킵\n\n5. 스크롤 컨테이너 확인:\n   - SongTable이 감싸는 div의 overflow-y-auto 확인\n   - 부모 컨테이너가 scroll이면 block: 'nearest'가 자동으로 해당 컨테이너 스크롤",
@@ -5359,7 +5359,7 @@
         "updatedAt": "2026-04-29T14:25:42.011Z"
       },
       {
-        "id": "26",
+        "id": 26,
         "title": "매트릭스 lock 시각화 개선 — 블럭 카드 형태 렌더링",
         "description": "매트릭스 뷰에서 배치된 합주 블럭(lock)의 시각화를 단순 셀 배경색에서 주차별 UI와 동일한 '셀 위에 떠 있는 블럭 카드' 형태로 개선한다.",
         "details": "1. **MatrixView.client.tsx 수정 — Lock 블럭 오버레이 구현**:\n   - 기존 `<td>` 내부의 Lock 아이콘 렌더링 제거\n   - `<tbody>` 끝에 오버레이 영역 추가하여 CSS Grid `position: absolute` 또는 `grid-row` span으로 블럭 카드 렌더링\n   - 매트릭스 테이블을 `position: relative`로 설정하고, 각 lock을 절대 위치 또는 별도 오버레이 레이어로 배치\n\n2. **LockBlockCard 컴포넌트 구현** (MatrixView 내부 또는 별도 파일):\n   ```tsx\n   interface LockBlockCardProps {\n     lock: LockedSlot;\n     song: SongLite | undefined;\n     paletteSeed: number;\n     style: CSSProperties; // top, left, height, width\n     onClick: () => void;\n   }\n   \n   function LockBlockCard({ lock, song, paletteSeed, style, onClick }: LockBlockCardProps) {\n     const tone = lock.songId ? songTone(lock.songId, paletteSeed) : { bg: 'bg-success' };\n     const duration = lock.endSlot - lock.startSlot;\n     const durationMin = duration * 30;\n     \n     return (\n       <button\n         type=\"button\"\n         onClick={onClick}\n         style={style}\n         className={cn(\n           'absolute z-20 overflow-hidden rounded-md px-1.5 py-1 text-left text-white shadow-md',\n           'ring-0 ring-white/0 transition-all hover:ring-2 hover:ring-white/50 hover:brightness-110',\n           'cursor-pointer',\n           tone.bg,\n         )}\n       >\n         {/* 곡 색상 카테고리 인디케이터 (좌측 세로 바) */}\n         <div className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l-md', tone.bg, 'brightness-75')} />\n         \n         <div className=\"pl-1.5\">\n           <div className=\"text-micro truncate font-bold\">\n             <Lock className=\"mr-0.5 inline h-2.5 w-2.5\" />\n             {song?.title ?? '곡 미지정'}\n           </div>\n           {duration >= 2 && (\n             <div className=\"text-micro mt-0.5 font-mono opacity-80\">\n               {slotToTime(lock.startSlot)}~{slotToTime(lock.endSlot)} ({durationMin}분)\n             </div>\n           )}\n         </div>\n       </button>\n     );\n   }\n   ```\n\n3. **Lock 위치 계산 로직**:\n   - 각 lock의 `(date, startSlot, endSlot)`를 테이블 셀 좌표로 변환\n   - 셀 높이 상수 `CELL_HEIGHT = 28px` (기존 `h-7`)\n   - 행 헤더 높이, 열 헤더 너비 고려한 offset 계산\n   - `top = headerHeight + (lock.startSlot - SLOT_FROM) * CELL_HEIGHT`\n   - `height = (lock.endSlot - lock.startSlot) * CELL_HEIGHT`\n   - `left` = 해당 date 열의 x 좌표 (sticky 열 너비 + 날짜 인덱스 * 열 너비)\n\n4. **테이블 레이아웃 변경**:\n   - `<table>` wrapper를 `position: relative`로 설정\n   - 또는 CSS Grid 기반으로 전환하여 `WeeklyScheduleGrid.client.tsx`와 동일한 패턴 사용\n   - 주차 경계 spacer와 충돌 방지: lock 오버레이 `z-index: 20`, spacer row `z-index: 10` 이하\n\n5. **호버/클릭 상호작용**:\n   - 호버 시: `hover:ring-2 hover:ring-white/50` 링 강조\n   - 클릭 시: `onClick` prop으로 편집 다이얼로그 트리거 (Task 19 연동)\n   - 기존 셀의 `cursor-not-allowed` 제거하고 lock 영역은 `cursor-pointer`\n\n6. **cellBg 함수 수정**:\n   - lock이 있는 셀은 배경색 변경 대신 투명 또는 연한 `bg-success/10` 처리\n   - 실제 색상 표현은 오버레이 블럭 카드가 담당\n\n7. **반응형/스크롤 고려**:\n   - 오버레이는 테이블 스크롤 컨테이너 내부에 배치하여 함께 스크롤\n   - sticky 헤더 아래로 배치되도록 `z-index` 조정",
@@ -5381,6 +5381,83 @@
       "completedCount": 26,
       "tags": [
         "schedule-v2"
+      ],
+      "created": "2026-06-03T18:40:52.750Z",
+      "description": "Tasks for schedule-v2 context",
+      "updated": "2026-06-03T18:40:52.750Z"
+    }
+  },
+  "BD-65-member-profile": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "마이페이지 프로필 UI 재구성 (BD-65)",
+        "description": "이미지 참조 기반으로 마이페이지 레이아웃을 재구성한다. 사이드바 GNB에 로그아웃 버튼 추가, 프로필 섹션 헤더 분리, 모바일 전용 로그아웃 섹션 추가, 계정 탈퇴 섹션 인라인 재구성.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "프로필 섹션 헤더 컴포넌트 분리 및 레이아웃 개선",
+            "description": "MeContent.client.tsx의 프로필 정보 섹션을 독립 컴포넌트로 분리하고, 헤더('프로필 정보' 타이틀 + 수정 버튼)와 콘텐츠 영역의 시각적 계층 구조를 명확히 한다.",
+            "dependencies": [],
+            "details": "1. ProfileSection 컴포넌트 추출 (또는 인라인 구조 개선)\n2. 섹션 헤더(h2 + Button)를 별도 SectionHeader 패턴으로 정리\n3. ProfileImageUpload, 이름, 이메일, 연락처 영역 레이아웃 재정비\n4. EditCard 모드 전환 시 애니메이션/전환 효과 고려\n5. Tailwind 클래스 정리 및 디자인 토큰 일관성 확보",
+            "status": "done",
+            "testStrategy": "프로필 정보가 정상 렌더링되는지 확인, 편집 모드 전환이 동작하는지 확인, 프로필 이미지 변경이 정상 동작하는지 확인",
+            "updatedAt": "2026-06-03T19:22:48.613Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "모바일 전용 로그아웃 섹션 UI 개선",
+            "description": "lg:hidden으로 숨겨진 모바일 로그아웃 섹션의 스타일링을 개선하고, 버튼 인터랙션 및 피드백을 보강한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. 현재 Card + Button 구조 유지하되 시각적 일관성 개선\n2. 로그아웃 버튼 아이콘(LogOut) 크기/위치 미세 조정\n3. loading 상태일 때 버튼 disabled 스타일 확인\n4. 섹션 간 간격(space-y-s-6) 일관성 유지\n5. 터치 영역(44px 최소) 확보 및 접근성 속성 보강",
+            "status": "done",
+            "testStrategy": "모바일 뷰포트(360px~959px)에서 로그아웃 섹션이 보이는지 확인, 데스크톱(960px+)에서 숨겨지는지 확인, 로그아웃 버튼 클릭 시 동작 정상 여부 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-03T19:22:50.051Z"
+          },
+          {
+            "id": 3,
+            "title": "계정 탈퇴 섹션 인라인 재구성",
+            "description": "계정 탈퇴 섹션의 레이아웃을 인라인 형태로 재구성하여 경고 메시지와 탈퇴 버튼이 한 줄에 배치되도록 개선한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. 현재 flex items-center justify-between 구조 유지 및 개선\n2. 경고 텍스트 스타일(text-foreground-sub) 가독성 확보\n3. '회원 탈퇴' 버튼 variant='danger' 시각적 강조\n4. 반응형 처리: 좁은 화면에서 세로 스택으로 전환 고려(sm:flex-col)\n5. Dialog 트리거 연결 유지 및 UX 플로우 검증",
+            "status": "done",
+            "testStrategy": "계정 탈퇴 섹션이 인라인으로 렌더링되는지 확인, 탈퇴 버튼 클릭 시 Dialog가 열리는지 확인, 탈퇴 확인 후 리다이렉트가 정상 동작하는지 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-03T19:22:51.521Z"
+          },
+          {
+            "id": 4,
+            "title": "사이드바 GNB 로그아웃 버튼 스타일 및 위치 검증",
+            "description": "sidebar.tsx의 로그아웃 버튼이 이미 구현되어 있으므로, 디자인 참조 이미지 기반으로 스타일/위치가 일치하는지 검증하고 필요시 미세 조정한다.",
+            "dependencies": [],
+            "details": "1. 현재 구현: border-t 영역 하단에 Avatar + 로그아웃 버튼 배치됨\n2. 디자인 이미지와 대조하여 아이콘 크기(h-4 w-4), 패딩(px-s-3 py-s-2), 폰트(text-caption) 일치 확인\n3. hover/focus 상태 스타일(hover:bg-card, focus-visible:ring-accent) 검증\n4. disabled 상태(logoutMutation.isPending) 시각적 피드백 확인\n5. 필요시 Tailwind 클래스 조정 및 접근성 속성(aria-label) 보강",
+            "status": "done",
+            "testStrategy": "데스크톱(960px+)에서 사이드바 로그아웃 버튼이 보이는지 확인, hover/focus 스타일이 적용되는지 확인, 클릭 시 로그아웃이 정상 동작하는지 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-03T19:22:52.961Z"
+          }
+        ],
+        "updatedAt": "2026-06-03T19:22:52.961Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-06-03T19:22:52.961Z",
+      "taskCount": 1,
+      "completedCount": 1,
+      "tags": [
+        "BD-65-member-profile"
       ]
     }
   }

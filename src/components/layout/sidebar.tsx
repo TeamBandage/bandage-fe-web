@@ -5,17 +5,20 @@ import {
   ChevronDown,
   Home,
   ListMusic,
+  LogOut,
   Music,
   User,
   Users,
   type LucideIcon,
 } from 'lucide-react';
 import { GuardedLink as Link } from '@/global/navigation/guarded-link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { useLogout } from '@/domain/auth/hooks/useLogout';
 import { useMe } from '@/domain/member/hooks/useMe';
 import { ROUTES } from '@/global/config/routes';
+import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
 import { BrandWordmark } from '../brand';
@@ -89,7 +92,17 @@ export interface SidebarProps {
  */
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname() ?? '';
+  const router = useRouter();
+  const toast = useToast();
   const { data: me, isLoading: meLoading } = useMe();
+
+  const logoutMutation = useLogout({
+    onSuccess: () => {
+      toast.success('로그아웃되었습니다.');
+      router.replace(ROUTES.LOGIN);
+    },
+    onError: (err) => toast.error(err.message || '로그아웃에 실패했습니다.'),
+  });
 
   return (
     <aside
@@ -114,10 +127,10 @@ export function Sidebar({ className }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="border-border mt-s-3 gap-s-2 pt-s-3 flex items-center border-t">
+      <div className="border-border mt-s-3 pt-s-3 gap-s-1 flex flex-col border-t">
         {meLoading ? (
           <div
-            className="gap-s-2 px-s-2 py-s-2 flex min-w-0 flex-1 items-center"
+            className="gap-s-2 px-s-2 py-s-2 flex min-w-0 items-center"
             aria-label="사용자 정보 로딩 중"
           >
             <Skeleton rounded="pill" className="h-8 w-8 shrink-0" />
@@ -129,7 +142,7 @@ export function Sidebar({ className }: SidebarProps) {
         ) : (
           <Link
             href={ROUTES.ME}
-            className="hover:bg-card gap-s-2 px-s-2 py-s-1 flex min-w-0 flex-1 items-center rounded-md transition-colors"
+            className="hover:bg-card gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center rounded-md transition-colors"
             aria-label="마이페이지로 이동"
           >
             <Avatar size="sm" fallback={me?.name ?? me?.email ?? '게스트'} />
@@ -143,6 +156,20 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
           </Link>
         )}
+        <button
+          type="button"
+          onClick={() => logoutMutation.mutate()}
+          disabled={logoutMutation.isPending}
+          className={cn(
+            'gap-s-3 px-s-3 py-s-2 text-caption flex w-full items-center rounded-md font-medium transition-colors',
+            'text-foreground-sub hover:bg-card hover:text-foreground',
+            'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+          )}
+        >
+          <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="truncate">로그아웃</span>
+        </button>
       </div>
     </aside>
   );
