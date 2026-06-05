@@ -174,7 +174,7 @@ export function Sidebar({ className }: SidebarProps) {
           size="sm"
           onClick={() => logoutMutation.mutate()}
           loading={logoutMutation.isPending}
-          className="rounded-[5px] w-full"
+          className="w-full rounded-[5px]"
         >
           로그아웃
         </Button>

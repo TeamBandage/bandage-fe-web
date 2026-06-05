@@ -145,7 +145,7 @@ export function ProfileImageUpload({
             aria-label={display ? '프로필 이미지 변경' : '프로필 이미지 업로드'}
             className={cn(
               'bg-card-hover text-foreground-sub relative flex items-center justify-center overflow-hidden rounded-md transition-opacity',
-              isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer group',
+              isDisabled ? 'cursor-not-allowed opacity-50' : 'group cursor-pointer',
               imageClassName,
             )}
             style={{ width: size, height: size }}
@@ -168,7 +168,12 @@ export function ProfileImageUpload({
               <ImagePlus className="h-6 w-6" />
             )}
             {display && onDelete && (
-              <span className={cn('absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity', menuOpen && 'opacity-100')}>
+              <span
+                className={cn(
+                  'absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition-opacity group-hover:opacity-100',
+                  menuOpen && 'opacity-100',
+                )}
+              >
                 <Pencil className="h-8 w-8 text-white" />
               </span>
             )}

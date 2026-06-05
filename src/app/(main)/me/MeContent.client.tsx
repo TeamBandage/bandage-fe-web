@@ -81,27 +81,29 @@ export function MeContent() {
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="text-foreground hover:text-foreground-sub absolute -left-10 top-1/2 -translate-y-1/2 transition-colors"
+              className="text-foreground hover:text-foreground-sub absolute top-1/2 -left-10 -translate-y-1/2 transition-colors"
               aria-label="뒤로가기"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
           )}
-          <h2 className="text-foreground text-[18px] font-bold flex-1">
+          <h2 className="text-foreground flex-1 text-[18px] font-bold">
             {isEditing ? '프로필 정보 관리' : '프로필 정보'}
           </h2>
           {!isEditing && (
-            <Button variant="secondary" size="sm" onClick={() => setEditing(true)} className="rounded-[5px]">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setEditing(true)}
+              className="rounded-[5px]"
+            >
               프로필 정보 관리
             </Button>
           )}
         </div>
 
         {isEditing ? (
-          <EditCard
-            member={me}
-            onSaved={() => setEditing(false)}
-          />
+          <EditCard member={me} onSaved={() => setEditing(false)} />
         ) : (
           <Card padding="lg" className="rounded-md border-[3px]">
             <div className="flex items-start gap-[40px]">
@@ -113,9 +115,7 @@ export function MeContent() {
               <div className="space-y-1 pt-0.5">
                 <div className="text-foreground text-lg font-semibold">{me.name}</div>
                 <div className="text-foreground-sub text-sm">{me.email}</div>
-                {me.contact && (
-                  <div className="text-foreground-muted text-xs">{me.contact}</div>
-                )}
+                {me.contact && <div className="text-foreground-muted text-xs">{me.contact}</div>}
               </div>
             </div>
           </Card>
@@ -129,7 +129,8 @@ export function MeContent() {
           <Card padding="lg" className="border-foreground-sub bg-bg">
             <div className="flex items-center justify-between gap-4">
               <p className="text-foreground-sub text-[12px]">
-                탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를 진행하시겠습니까?
+                탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를
+                진행하시겠습니까?
               </p>
               <Button
                 variant="danger"
@@ -168,7 +169,12 @@ export function MeContent() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="border-0">
-            <Button variant="ghost" size="sm" onClick={() => setWithdrawOpen(false)} className="rounded-[5px]">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setWithdrawOpen(false)}
+              className="rounded-[5px]"
+            >
               취소
             </Button>
             <Button
@@ -187,13 +193,7 @@ export function MeContent() {
   );
 }
 
-function EditCard({
-  member,
-  onSaved,
-}: {
-  member: MemberInfoResponse;
-  onSaved: () => void;
-}) {
+function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: () => void }) {
   const toast = useToast();
   const form = useForm<UpdateMeSchema>({
     resolver: zodResolver(updateMeSchema),
@@ -214,14 +214,11 @@ function EditCard({
   });
 
   return (
-    <Card padding="none" className="rounded-md border-[3px] overflow-visible">
-      <form
-        onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-        noValidate
-      >
+    <Card padding="none" className="overflow-visible rounded-md border-[3px]">
+      <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>
         <div className="flex">
           {/* 좌측: 프로필 이미지 */}
-          <div className="flex w-[220px] shrink-0 items-center justify-center py-s-6">
+          <div className="py-s-6 flex w-[220px] shrink-0 items-center justify-center">
             <ProfileImageUpload
               value={member.profileImg ?? null}
               onChange={(objectKey) => imgMutation.mutate({ profileImg: objectKey })}
@@ -238,7 +235,7 @@ function EditCard({
           <div className="border-border my-s-4 w-0 border-r" />
 
           {/* 우측: 폼 필드 */}
-          <div className="flex flex-1 flex-col gap-s-4 p-s-6">
+          <div className="gap-s-4 p-s-6 flex flex-1 flex-col">
             <div className="grid grid-cols-[80px_1fr] items-center gap-4">
               <span className="text-foreground-sub text-sm">이름</span>
               <Input
@@ -265,7 +262,13 @@ function EditCard({
               />
             </div>
             <div className="flex justify-end">
-              <Button type="submit" variant="secondary" size="sm" loading={mutation.isPending} className="rounded-[5px]">
+              <Button
+                type="submit"
+                variant="secondary"
+                size="sm"
+                loading={mutation.isPending}
+                className="rounded-[5px]"
+              >
                 수정 완료
               </Button>
             </div>

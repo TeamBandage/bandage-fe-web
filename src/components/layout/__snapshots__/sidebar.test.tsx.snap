@@ -331,13 +331,11 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
     <div
       class="border-border mt-s-3 pt-s-3 gap-s-1 flex flex-col border-t"
     >
-      <a
-        aria-label="마이페이지로 이동"
-        class="hover:bg-card gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center rounded-[5px] transition-colors"
-        href="/me"
+      <div
+        class="gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center"
       >
         <span
-          class="bg-card-hover text-foreground-sub rounded-pill inline-flex items-center justify-center overflow-hidden font-semibold select-none h-6 w-6 text-[10px]"
+          class="bg-card-hover text-foreground-sub rounded-pill inline-flex items-center justify-center overflow-hidden font-semibold select-none h-[30px] w-[30px] shrink-0 text-xs"
         >
           <span
             aria-label="수연"
@@ -359,39 +357,12 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
             sooyeon@example.com
           </div>
         </div>
-      </a>
+      </div>
       <button
-        class="gap-s-3 px-s-3 py-s-2 flex w-full items-center rounded-[8px] font-medium transition-colors text-foreground-sub hover:bg-card hover:text-foreground focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        class="inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:pointer-events-none bg-surface text-foreground border border-border hover:bg-card-hover h-8 px-3 text-sm w-full rounded-[5px]"
         type="button"
       >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-log-out h-4 w-4 shrink-0"
-          fill="none"
-          height="24"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="m16 17 5-5-5-5"
-          />
-          <path
-            d="M21 12H9"
-          />
-          <path
-            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-          />
-        </svg>
-        <span
-          class="truncate"
-        >
-          로그아웃
-        </span>
+        로그아웃
       </button>
     </div>
   </aside>
