@@ -5357,7 +5357,8 @@
         "BD-65-member-profile"
       ],
       "created": "2026-06-05T15:26:40.068Z",
-      "description": "Tasks for BD-65-member-profile context"
+      "description": "Tasks for BD-65-member-profile context",
+      "updated": "2026-06-05T15:26:40.068Z"
     }
   },
   "BD-66-member-availability-timetable": {
