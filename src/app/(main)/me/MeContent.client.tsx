@@ -1,17 +1,17 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LogOut } from 'lucide-react';
+import { ChevronLeft, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ErrorState } from '@/components/feedback/error-state';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
   Dialog,
-  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -32,6 +32,7 @@ import {
 } from '@/domain/member/types';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
+import { formatPhone } from '@/lib/phone';
 
 export function MeContent() {
   const router = useRouter();
@@ -40,11 +41,6 @@ export function MeContent() {
 
   const [isEditing, setEditing] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-
-  const updateProfileImgMutation = useUpdateMe({
-    onSuccess: () => toast.success('프로필 이미지를 변경했습니다.'),
-    onError: (err) => toast.error(err.message || '프로필 이미지 변경에 실패했습니다.'),
-  });
 
   const logoutMutation = useLogout({
     onSuccess: () => {
@@ -80,40 +76,73 @@ export function MeContent() {
     <div className="space-y-s-6">
       {/* 프로필 정보 섹션 */}
       <section>
-        <div className="mb-s-3 flex items-center justify-between gap-3">
-          <h2 className="text-foreground text-lg font-bold">프로필 정보</h2>
+        <div className="mb-s-3 relative flex min-h-8 items-center">
+          {isEditing && (
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="text-foreground hover:text-foreground-sub absolute -left-10 top-1/2 -translate-y-1/2 transition-colors"
+              aria-label="뒤로가기"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          )}
+          <h2 className="text-foreground text-[18px] font-bold flex-1">
+            {isEditing ? '프로필 정보 관리' : '프로필 정보'}
+          </h2>
           {!isEditing && (
-            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-              프로필 정보 수정
+            <Button variant="secondary" size="sm" onClick={() => setEditing(true)} className="rounded-[5px]">
+              프로필 정보 관리
             </Button>
           )}
         </div>
+
         {isEditing ? (
           <EditCard
             member={me}
-            onCancel={() => setEditing(false)}
             onSaved={() => setEditing(false)}
           />
         ) : (
-          <Card padding="lg">
-            <div className="flex items-start gap-4">
-              <ProfileImageUpload
-                value={me.profileImg ?? null}
-                onChange={(objectKey) => updateProfileImgMutation.mutate({ profileImg: objectKey })}
-                domain="MEMBER"
-                label=""
-                size={72}
-                disabled={updateProfileImgMutation.isPending}
+          <Card padding="lg" className="rounded-md border-[3px]">
+            <div className="flex items-start gap-[40px]">
+              <Avatar
+                src={me.profileImg ?? undefined}
+                fallback={me.name}
+                className="h-[72px] w-[72px] rounded-md text-xl"
               />
-              <div className="space-y-1 pt-1">
+              <div className="space-y-1 pt-0.5">
                 <div className="text-foreground text-lg font-semibold">{me.name}</div>
                 <div className="text-foreground-sub text-sm">{me.email}</div>
-                {me.contact && <div className="text-foreground-muted text-xs">{me.contact}</div>}
+                {me.contact && (
+                  <div className="text-foreground-muted text-xs">{me.contact}</div>
+                )}
               </div>
             </div>
           </Card>
         )}
       </section>
+
+      {/* 계정 탈퇴 — 편집 모드에서만 표시 */}
+      {isEditing && (
+        <section className="mt-[60px]">
+          <h2 className="text-foreground mb-s-3 text-[16px] font-bold">계정 탈퇴</h2>
+          <Card padding="lg" className="border-foreground-sub bg-bg">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-foreground-sub text-[12px]">
+                탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를 진행하시겠습니까?
+              </p>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => setWithdrawOpen(true)}
+                className="shrink-0 rounded-[5px]"
+              >
+                회원 탈퇴
+              </Button>
+            </div>
+          </Card>
+        </section>
+      )}
 
       {/* 모바일 전용 로그아웃 — 데스크톱은 사이드바에서 처리 */}
       <section className="lg:hidden">
@@ -130,48 +159,24 @@ export function MeContent() {
         </Card>
       </section>
 
-      {/* 계정 탈퇴 섹션 */}
-      <section>
-        <h2 className="text-foreground mb-s-3 text-lg font-bold">계정 탈퇴</h2>
-        <Card padding="md">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-foreground-sub text-sm">
-              계정을 삭제하시면 프로필, 가입 밴드, 공연 및 합주 정보들이 함께 삭제됩니다. 탈퇴를
-              진행하시겠습니까?
-            </p>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => setWithdrawOpen(true)}
-              className="shrink-0"
-            >
-              회원 탈퇴
-            </Button>
-          </div>
-        </Card>
-      </section>
-
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
         <DialogContent>
-          <DialogHeader>
+          <DialogHeader className="border-0">
             <DialogTitle>정말 탈퇴하시겠어요?</DialogTitle>
             <DialogDescription>
-              탈퇴 후에는 참여 중인 밴드 · 합주 · 공연 데이터에 접근할 수 없습니다.
+              이 동작은 되돌릴 수 없으며 일부 기록은 감사 로그 목적 상 보관됩니다.
             </DialogDescription>
           </DialogHeader>
-          <DialogBody>
-            <p className="text-foreground-sub text-sm">
-              이 동작은 되돌릴 수 없으며 일부 기록은 감사 로그 목적 상 보관됩니다.
-            </p>
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setWithdrawOpen(false)}>
+          <DialogFooter className="border-0">
+            <Button variant="ghost" size="sm" onClick={() => setWithdrawOpen(false)} className="rounded-[5px]">
               취소
             </Button>
             <Button
               variant="danger"
+              size="sm"
               onClick={() => withdrawMutation.mutate()}
               loading={withdrawMutation.isPending}
+              className="rounded-[5px]"
             >
               탈퇴하기
             </Button>
@@ -184,11 +189,9 @@ export function MeContent() {
 
 function EditCard({
   member,
-  onCancel,
   onSaved,
 }: {
   member: MemberInfoResponse;
-  onCancel: () => void;
   onSaved: () => void;
 }) {
   const toast = useToast();
@@ -205,30 +208,68 @@ function EditCard({
     onError: (err) => toast.error(err.message || '수정에 실패했습니다.'),
   });
 
+  const imgMutation = useUpdateMe({
+    onSuccess: () => toast.success('프로필 이미지를 변경했습니다.'),
+    onError: (err) => toast.error(err.message || '프로필 이미지 변경에 실패했습니다.'),
+  });
+
   return (
-    <Card padding="lg">
+    <Card padding="none" className="rounded-md border-[3px] overflow-visible">
       <form
-        className="space-y-4"
         onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
         noValidate
       >
-        <Input
-          label="이름"
-          error={form.formState.errors.name?.message}
-          {...form.register('name')}
-        />
-        <Input
-          label="연락처"
-          error={form.formState.errors.contact?.message}
-          {...form.register('contact')}
-        />
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onCancel}>
-            취소
-          </Button>
-          <Button type="submit" loading={mutation.isPending}>
-            저장
-          </Button>
+        <div className="flex">
+          {/* 좌측: 프로필 이미지 */}
+          <div className="flex w-[220px] shrink-0 items-center justify-center py-s-6">
+            <ProfileImageUpload
+              value={member.profileImg ?? null}
+              onChange={(objectKey) => imgMutation.mutate({ profileImg: objectKey })}
+              domain="MEMBER"
+              label=""
+              size={150}
+              disabled={imgMutation.isPending}
+              imageClassName="rounded-[100px]"
+              showButton={false}
+              onDelete={() => {}}
+            />
+          </div>
+
+          <div className="border-border my-s-4 w-0 border-r" />
+
+          {/* 우측: 폼 필드 */}
+          <div className="flex flex-1 flex-col gap-s-4 p-s-6">
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
+              <span className="text-foreground-sub text-sm">이름</span>
+              <Input
+                error={form.formState.errors.name?.message}
+                className="focus-visible:ring-white"
+                {...form.register('name')}
+              />
+            </div>
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
+              <span className="text-foreground-sub text-sm">이메일</span>
+              <Input value={member.email} disabled readOnly className="focus-visible:ring-white" />
+            </div>
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
+              <span className="text-foreground-sub text-sm">연락처</span>
+              <Input
+                error={form.formState.errors.contact?.message}
+                className="focus-visible:ring-white"
+                {...form.register('contact')}
+                onChange={(e) => {
+                  const formatted = formatPhone(e.target.value);
+                  e.target.value = formatted;
+                  void form.register('contact').onChange(e);
+                }}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" variant="secondary" size="sm" loading={mutation.isPending} className="rounded-[5px]">
+                수정 완료
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
     </Card>

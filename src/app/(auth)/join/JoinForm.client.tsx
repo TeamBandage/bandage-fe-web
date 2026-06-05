@@ -13,6 +13,7 @@ import { useLogin } from '@/domain/auth/hooks/useLogin';
 import { useJoin } from '@/domain/member/hooks/useJoin';
 import { joinSchema, type JoinSchema } from '@/domain/member/types';
 import { ROUTES } from '@/global/config/routes';
+import { formatPhone } from '@/lib/phone';
 import { useToast } from '@/hooks/useToast';
 
 const STEPS = ['기본 정보', '계정 설정'] as const;
@@ -77,6 +78,11 @@ export function JoinForm() {
             required
             error={form.formState.errors.contact?.message}
             {...form.register('contact')}
+            onChange={(e) => {
+              const formatted = formatPhone(e.target.value);
+              e.target.value = formatted;
+              void form.register('contact').onChange(e);
+            }}
           />
           <Button type="button" className="w-full" onClick={goNext} disabled={isPending}>
             다음

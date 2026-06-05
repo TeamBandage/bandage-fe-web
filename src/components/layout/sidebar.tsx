@@ -5,7 +5,6 @@ import {
   ChevronDown,
   Home,
   ListMusic,
-  LogOut,
   Music,
   User,
   Users,
@@ -22,6 +21,7 @@ import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 import { Avatar } from '../ui/avatar';
+import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
 type SubItem = { href: string; label: string };
@@ -153,12 +153,12 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
           </div>
         ) : (
-          <Link
-            href={ROUTES.ME}
-            className="hover:bg-card gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center rounded-[5px] transition-colors"
-            aria-label="마이페이지로 이동"
-          >
-            <Avatar size="sm" fallback={me?.name ?? me?.email ?? '게스트'} />
+          <div className="gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center">
+            <Avatar
+              src={me?.profileImg ?? undefined}
+              fallback={me?.name ?? me?.email ?? '게스트'}
+              className="h-[30px] w-[30px] shrink-0 text-xs"
+            />
             <div className="min-w-0 flex-1">
               <div className="text-foreground text-caption truncate font-semibold">
                 {me?.name ?? '게스트'}
@@ -167,22 +167,17 @@ export function Sidebar({ className }: SidebarProps) {
                 {me?.email ?? '로그인이 필요합니다'}
               </div>
             </div>
-          </Link>
+          </div>
         )}
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => logoutMutation.mutate()}
-          disabled={logoutMutation.isPending}
-          className={cn(
-            'gap-s-3 px-s-3 py-s-2 text-caption flex w-full items-center rounded-[8px] font-medium transition-colors',
-            'text-foreground-sub hover:bg-card hover:text-foreground',
-            'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
+          loading={logoutMutation.isPending}
+          className="rounded-[5px] w-full"
         >
-          <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span className="truncate">로그아웃</span>
-        </button>
+          로그아웃
+        </Button>
       </div>
     </aside>
   );

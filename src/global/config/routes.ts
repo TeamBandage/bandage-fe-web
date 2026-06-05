@@ -19,6 +19,7 @@ export const ROUTES = {
   PERFORMANCE_DETAIL: (id: string) => `/performances/${id}`,
 
   ME: '/me',
+  ME_EDIT: '/me/edit',
 
   SETLIST_MEETINGS: '/setlist-meetings',
   SETLIST_MEETING_NEW: '/setlist-meetings/new',
