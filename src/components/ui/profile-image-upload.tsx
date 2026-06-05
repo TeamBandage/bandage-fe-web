@@ -1,6 +1,6 @@
 'use client';
 
-import { ImagePlus, Loader2 } from 'lucide-react';
+import { ImagePlus, Loader2, Pencil } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 
 import {
@@ -29,6 +29,12 @@ interface Props {
   disabled?: boolean;
   /** 미리보기 이미지 크기. default 96px. */
   size?: number;
+  /** 이미지 버튼에 추가할 className (rounded-full 등 오버라이드용). */
+  imageClassName?: string;
+  /** 이미지 변경/선택 버튼 표시 여부. default true. */
+  showButton?: boolean;
+  /** 제공 시 이미지 클릭이 파일 피커 대신 변경/삭제 토글 메뉴를 표시. */
+  onDelete?: () => void;
 }
 
 /**
@@ -47,26 +53,57 @@ export function ProfileImageUpload({
   hint,
   disabled,
   size = 96,
+  imageClassName,
+  showButton = true,
+  onDelete,
 }: Props) {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   /** 업로드 직후 BE 가 응답에 CloudFront URL 을 반영하기 전, 짧은 시간 동안 로컬 미리보기. */
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   /** 외부 URL 이 깨졌을 때 placeholder 로 fallback. value 가 바뀌면 reset. */
   const [errored, setErrored] = useState(false);
+
   useEffect(() => {
     setErrored(false);
   }, [value]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const isDisabled = disabled || uploading;
   const normalizedValue = normalizeProfileImgUrl(value);
   const display = errored ? null : (localPreview ?? normalizedValue);
 
-  function trigger() {
+  function handleImageClick() {
     if (isDisabled) return;
+    if (onDelete) {
+      setMenuOpen((v) => !v);
+    } else {
+      inputRef.current?.click();
+    }
+  }
+
+  function handleMenuChange() {
+    setMenuOpen(false);
     inputRef.current?.click();
+  }
+
+  function handleMenuDelete() {
+    setMenuOpen(false);
+    onDelete?.();
   }
 
   async function handleFile(file: File) {
@@ -99,53 +136,101 @@ export function ProfileImageUpload({
         </label>
       )}
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          id={id}
-          onClick={trigger}
-          disabled={isDisabled}
-          aria-label={display ? '프로필 이미지 변경' : '프로필 이미지 업로드'}
-          className={cn(
-            'bg-card-hover text-foreground-sub relative flex items-center justify-center overflow-hidden rounded-md transition-opacity',
-            isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:opacity-80',
-          )}
-          style={{ width: size, height: size }}
-        >
-          {display ? (
-            // eslint-disable-next-line @next/next/no-img-element -- CloudFront/Blob/외부 OAuth provider URL 모두 허용
-            <img
-              src={display}
-              alt={label}
-              className="h-full w-full object-cover"
-              onError={() => {
-                if (localPreview) {
-                  setLocalPreview(null);
-                } else {
-                  setErrored(true);
-                }
-              }}
-            />
-          ) : (
-            <ImagePlus className="h-6 w-6" />
-          )}
-          {uploading && (
-            <span className="bg-bg/60 absolute inset-0 flex items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </span>
-          )}
-        </button>
-        <div className="flex flex-col gap-1.5">
-          <Button
+        <div ref={containerRef} className="relative">
+          <button
             type="button"
-            variant="secondary"
-            size="sm"
-            onClick={trigger}
+            id={id}
+            onClick={handleImageClick}
             disabled={isDisabled}
+            aria-label={display ? '프로필 이미지 변경' : '프로필 이미지 업로드'}
+            className={cn(
+              'bg-card-hover text-foreground-sub relative flex items-center justify-center overflow-hidden rounded-md transition-opacity',
+              isDisabled ? 'cursor-not-allowed opacity-50' : 'group cursor-pointer',
+              imageClassName,
+            )}
+            style={{ width: size, height: size }}
           >
-            {display ? '이미지 변경' : '이미지 선택'}
-          </Button>
-          {hint && <p className="text-foreground-muted text-xs">{hint}</p>}
+            {display ? (
+              // eslint-disable-next-line @next/next/no-img-element -- CloudFront/Blob/외부 OAuth provider URL 모두 허용
+              <img
+                src={display}
+                alt={label}
+                className="h-full w-full object-cover"
+                onError={() => {
+                  if (localPreview) {
+                    setLocalPreview(null);
+                  } else {
+                    setErrored(true);
+                  }
+                }}
+              />
+            ) : (
+              <ImagePlus className="h-6 w-6" />
+            )}
+            {display && onDelete && (
+              <span
+                className={cn(
+                  'absolute inset-0 flex items-center justify-center bg-black/55 opacity-0 transition-opacity group-hover:opacity-100',
+                  menuOpen && 'opacity-100',
+                )}
+              >
+                <Pencil className="h-8 w-8 text-white" />
+              </span>
+            )}
+            {uploading && (
+              <span className="bg-bg/60 absolute inset-0 flex items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </span>
+            )}
+          </button>
+
+          {/* 변경/삭제 토글 메뉴 */}
+          {menuOpen && (
+            <div className="bg-card border-border absolute top-full left-1/2 z-20 mt-2 min-w-30 -translate-x-1/2 overflow-hidden rounded-md border shadow-md">
+              {display ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleMenuChange}
+                    className="text-foreground hover:bg-card-hover w-full px-4 py-2.5 text-center text-sm transition-colors"
+                  >
+                    이미지 변경
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMenuDelete}
+                    className="text-foreground hover:bg-card-hover w-full px-4 py-2.5 text-center text-sm transition-colors"
+                  >
+                    이미지 삭제
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleMenuChange}
+                  className="text-foreground hover:bg-card-hover w-full px-4 py-2.5 text-center text-sm transition-colors"
+                >
+                  이미지 추가
+                </button>
+              )}
+            </div>
+          )}
         </div>
+
+        {showButton && (
+          <div className="flex flex-col gap-1.5">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => inputRef.current?.click()}
+              disabled={isDisabled}
+            >
+              {display ? '이미지 변경' : '이미지 선택'}
+            </Button>
+            {hint && <p className="text-foreground-muted text-xs">{hint}</p>}
+          </div>
+        )}
       </div>
       <input
         ref={inputRef}

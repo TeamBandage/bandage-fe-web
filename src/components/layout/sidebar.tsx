@@ -11,15 +11,17 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { GuardedLink as Link } from '@/global/navigation/guarded-link';
-import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { useLogout } from '@/domain/auth/hooks/useLogout';
 import { useMe } from '@/domain/member/hooks/useMe';
 import { ROUTES } from '@/global/config/routes';
+import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
-
-import { BrandWordmark } from '../brand';
 import { Avatar } from '../ui/avatar';
+import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
 type SubItem = { href: string; label: string };
@@ -72,10 +74,18 @@ function isActive(pathname: string, href: string) {
 }
 
 function isSubActive(pathname: string, href: string) {
-  // 정확 매칭 — 부모 경로(/practices, /performances)와 자식(/new) 이 동시에 매칭되지 않도록.
-  if (href === ROUTES.PRACTICES) return pathname === ROUTES.PRACTICES;
-  if (href === ROUTES.PERFORMANCES) return pathname === ROUTES.PERFORMANCES;
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const hrefPath = href.split('?')[0];
+  // 정확 매칭 — 부모 경로와 자식(/new 등)이 동시에 매칭되지 않도록.
+  if (hrefPath === ROUTES.PRACTICES) return pathname === ROUTES.PRACTICES;
+  if (hrefPath === ROUTES.PERFORMANCES) return pathname === ROUTES.PERFORMANCES;
+  if (hrefPath === ROUTES.SETLIST_MEETINGS) {
+    if (!pathname.startsWith(ROUTES.SETLIST_MEETINGS)) return false;
+    return (
+      !pathname.startsWith(ROUTES.SETLIST_MEETING_NEW) &&
+      !pathname.startsWith(ROUTES.SETLIST_SCHEDULING)
+    );
+  }
+  return pathname === hrefPath || pathname.startsWith(`${hrefPath}/`);
 }
 
 export interface SidebarProps {
@@ -89,7 +99,17 @@ export interface SidebarProps {
  */
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname() ?? '';
+  const router = useRouter();
+  const toast = useToast();
   const { data: me, isLoading: meLoading } = useMe();
+
+  const logoutMutation = useLogout({
+    onSuccess: () => {
+      toast.success('로그아웃되었습니다.');
+      router.replace(ROUTES.LOGIN);
+    },
+    onError: (err) => toast.error(err.message || '로그아웃에 실패했습니다.'),
+  });
 
   return (
     <aside
@@ -102,7 +122,13 @@ export function Sidebar({ className }: SidebarProps) {
       aria-label="주 탐색"
     >
       <div className="border-border mb-s-2 pb-s-4 px-s-2 pt-s-1 flex items-center border-b">
-        <BrandWordmark size="sm" title="Bandage" className="text-accent" />
+        <Image
+          src="/brand/bandage_wave_text_white.png"
+          alt="Bandage"
+          width={100}
+          height={21}
+          priority
+        />
       </div>
 
       <div className="text-foreground-muted px-s-3 pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase">
@@ -114,10 +140,10 @@ export function Sidebar({ className }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="border-border mt-s-3 gap-s-2 pt-s-3 flex items-center border-t">
+      <div className="border-border mt-s-3 pt-s-3 gap-s-1 flex flex-col border-t">
         {meLoading ? (
           <div
-            className="gap-s-2 px-s-2 py-s-2 flex min-w-0 flex-1 items-center"
+            className="gap-s-2 px-s-2 py-s-2 flex min-w-0 items-center"
             aria-label="사용자 정보 로딩 중"
           >
             <Skeleton rounded="pill" className="h-8 w-8 shrink-0" />
@@ -127,12 +153,12 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
           </div>
         ) : (
-          <Link
-            href={ROUTES.ME}
-            className="hover:bg-card gap-s-2 px-s-2 py-s-1 flex min-w-0 flex-1 items-center rounded-md transition-colors"
-            aria-label="마이페이지로 이동"
-          >
-            <Avatar size="sm" fallback={me?.name ?? me?.email ?? '게스트'} />
+          <div className="gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center">
+            <Avatar
+              src={me?.profileImg ?? undefined}
+              fallback={me?.name ?? me?.email ?? '게스트'}
+              className="h-[30px] w-[30px] shrink-0 text-xs"
+            />
             <div className="min-w-0 flex-1">
               <div className="text-foreground text-caption truncate font-semibold">
                 {me?.name ?? '게스트'}
@@ -141,8 +167,17 @@ export function Sidebar({ className }: SidebarProps) {
                 {me?.email ?? '로그인이 필요합니다'}
               </div>
             </div>
-          </Link>
+          </div>
         )}
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => logoutMutation.mutate()}
+          loading={logoutMutation.isPending}
+          className="w-full rounded-[5px]"
+        >
+          로그아웃
+        </Button>
       </div>
     </aside>
   );
@@ -165,14 +200,14 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
         href={href}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'gap-s-3 px-s-3 py-s-2 text-caption flex items-center rounded-md font-medium transition-colors',
+          'gap-s-3 px-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium no-underline transition-colors hover:no-underline',
           'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           active
-            ? 'bg-accent-dim text-accent font-bold'
+            ? 'bg-nav-active/30 hover:bg-nav-active/55 font-bold text-white hover:text-white'
             : 'text-foreground-sub hover:bg-card hover:text-foreground',
         )}
       >
-        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <Icon className="h-[13px] w-[13px] shrink-0" aria-hidden="true" />
         <span className="truncate">{label}</span>
       </Link>
     );
@@ -185,14 +220,14 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className={cn(
-          'gap-s-3 px-s-3 py-s-2 text-caption flex w-full items-center rounded-md font-medium transition-colors',
+          'gap-s-3 px-s-3 py-s-2 flex w-full items-center rounded-[8px] text-[13px] font-medium transition-colors',
           'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           active
-            ? 'bg-accent-dim text-accent font-bold'
+            ? 'bg-nav-active/30 hover:bg-nav-active/55 font-bold text-white hover:text-white'
             : 'text-foreground-sub hover:bg-card hover:text-foreground',
         )}
       >
-        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <Icon className="h-[13px] w-[13px] shrink-0" aria-hidden="true" />
         <span className="flex-1 truncate text-left">{label}</span>
         <ChevronDown
           className={cn('h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
@@ -209,10 +244,10 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
                   href={s.href}
                   aria-current={subActive ? 'page' : undefined}
                   className={cn(
-                    'px-s-3 text-micro block rounded-md py-1 transition-colors',
+                    'px-s-3 block rounded-[8px] py-1 text-[13px] no-underline transition-colors hover:no-underline',
                     'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     subActive
-                      ? 'text-accent font-semibold'
+                      ? 'font-semibold text-white'
                       : 'text-foreground-muted hover:bg-card hover:text-foreground',
                   )}
                 >

@@ -7,7 +7,9 @@ pnpm lint
 echo "Running typecheck..."
 pnpm typecheck
 
-echo "Running format check..."
-pnpm format:check
+echo "Running format..."
+STAGED=$(git diff --cached --name-only)
+pnpm format
+echo "$STAGED" | xargs git add
 
 echo "All checks passed!"
