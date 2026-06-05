@@ -16,6 +16,9 @@
   --color-foreground-sub: #b4b4c4;
   --color-foreground-muted: #6b6b80;
 
+  /* Nav active */
+  --color-nav-active: #ceced6;
+
   /* Accent - Blue */
   --color-accent: oklch(0.62 0.22 250);
   --color-accent-dim: oklch(0.62 0.22 250 / 0.14);

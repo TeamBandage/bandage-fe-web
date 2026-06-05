@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { GuardedLink as Link } from '@/global/navigation/guarded-link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -20,8 +21,6 @@ import { useMe } from '@/domain/member/hooks/useMe';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
-
-import { BrandWordmark } from '../brand';
 import { Avatar } from '../ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 
@@ -75,10 +74,18 @@ function isActive(pathname: string, href: string) {
 }
 
 function isSubActive(pathname: string, href: string) {
-  // 정확 매칭 — 부모 경로(/practices, /performances)와 자식(/new) 이 동시에 매칭되지 않도록.
-  if (href === ROUTES.PRACTICES) return pathname === ROUTES.PRACTICES;
-  if (href === ROUTES.PERFORMANCES) return pathname === ROUTES.PERFORMANCES;
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const hrefPath = href.split('?')[0];
+  // 정확 매칭 — 부모 경로와 자식(/new 등)이 동시에 매칭되지 않도록.
+  if (hrefPath === ROUTES.PRACTICES) return pathname === ROUTES.PRACTICES;
+  if (hrefPath === ROUTES.PERFORMANCES) return pathname === ROUTES.PERFORMANCES;
+  if (hrefPath === ROUTES.SETLIST_MEETINGS) {
+    if (!pathname.startsWith(ROUTES.SETLIST_MEETINGS)) return false;
+    return (
+      !pathname.startsWith(ROUTES.SETLIST_MEETING_NEW) &&
+      !pathname.startsWith(ROUTES.SETLIST_SCHEDULING)
+    );
+  }
+  return pathname === hrefPath || pathname.startsWith(`${hrefPath}/`);
 }
 
 export interface SidebarProps {
@@ -115,7 +122,13 @@ export function Sidebar({ className }: SidebarProps) {
       aria-label="주 탐색"
     >
       <div className="border-border mb-s-2 pb-s-4 px-s-2 pt-s-1 flex items-center border-b">
-        <BrandWordmark size="sm" title="Bandage" className="text-accent" />
+        <Image
+          src="/brand/bandage_wave_text_white.png"
+          alt="Bandage"
+          width={100}
+          height={21}
+          priority
+        />
       </div>
 
       <div className="text-foreground-muted px-s-3 pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase">
@@ -142,7 +155,7 @@ export function Sidebar({ className }: SidebarProps) {
         ) : (
           <Link
             href={ROUTES.ME}
-            className="hover:bg-card gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center rounded-md transition-colors"
+            className="hover:bg-card gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center rounded-[5px] transition-colors"
             aria-label="마이페이지로 이동"
           >
             <Avatar size="sm" fallback={me?.name ?? me?.email ?? '게스트'} />
@@ -161,7 +174,7 @@ export function Sidebar({ className }: SidebarProps) {
           onClick={() => logoutMutation.mutate()}
           disabled={logoutMutation.isPending}
           className={cn(
-            'gap-s-3 px-s-3 py-s-2 text-caption flex w-full items-center rounded-md font-medium transition-colors',
+            'gap-s-3 px-s-3 py-s-2 text-caption flex w-full items-center rounded-[8px] font-medium transition-colors',
             'text-foreground-sub hover:bg-card hover:text-foreground',
             'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',
@@ -192,14 +205,14 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
         href={href}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'gap-s-3 px-s-3 py-s-2 text-caption flex items-center rounded-md font-medium transition-colors',
+          'gap-s-3 px-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium no-underline transition-colors hover:no-underline',
           'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           active
-            ? 'bg-accent-dim text-accent font-bold'
+            ? 'bg-nav-active/30 hover:bg-nav-active/55 font-bold text-white hover:text-white'
             : 'text-foreground-sub hover:bg-card hover:text-foreground',
         )}
       >
-        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <Icon className="h-[13px] w-[13px] shrink-0" aria-hidden="true" />
         <span className="truncate">{label}</span>
       </Link>
     );
@@ -212,14 +225,14 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         className={cn(
-          'gap-s-3 px-s-3 py-s-2 text-caption flex w-full items-center rounded-md font-medium transition-colors',
+          'gap-s-3 px-s-3 py-s-2 flex w-full items-center rounded-[8px] text-[13px] font-medium transition-colors',
           'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
           active
-            ? 'bg-accent-dim text-accent font-bold'
+            ? 'bg-nav-active/30 hover:bg-nav-active/55 font-bold text-white hover:text-white'
             : 'text-foreground-sub hover:bg-card hover:text-foreground',
         )}
       >
-        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <Icon className="h-[13px] w-[13px] shrink-0" aria-hidden="true" />
         <span className="flex-1 truncate text-left">{label}</span>
         <ChevronDown
           className={cn('h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
@@ -236,10 +249,10 @@ function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
                   href={s.href}
                   aria-current={subActive ? 'page' : undefined}
                   className={cn(
-                    'px-s-3 text-micro block rounded-md py-1 transition-colors',
+                    'px-s-3 block rounded-[8px] py-1 text-[13px] no-underline transition-colors hover:no-underline',
                     'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     subActive
-                      ? 'text-accent font-semibold'
+                      ? 'font-semibold text-white'
                       : 'text-foreground-muted hover:bg-card hover:text-foreground',
                   )}
                 >
