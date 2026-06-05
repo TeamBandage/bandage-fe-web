@@ -153,7 +153,7 @@ export function WeeklyTimetable({
   );
 
   return (
-    <section>
+    <section className="mt-15">
       <div className="mb-s-3 flex items-center justify-between">
         <h2 className="text-foreground text-[18px] font-bold">주간 타임테이블</h2>
         <button
@@ -191,15 +191,16 @@ export function WeeklyTimetable({
             {/* 시간 레이블 */}
             <div className="border-border relative border-r">
               {hourSlots.map((slotIdx) => (
-                <div
+                <span
                   key={slotIdx}
-                  className="border-border absolute right-0 left-0 border-t"
-                  style={{ top: slotIdx * CELL_HEIGHT }}
+                  className="text-foreground-muted absolute right-0 left-0 pr-1 text-right text-[9px] leading-none"
+                  style={{
+                    top: slotIdx * CELL_HEIGHT,
+                    transform: 'translateY(-50%)',
+                  }}
                 >
-                  <span className="text-foreground-muted absolute -top-2 left-1 text-[9px]">
-                    {slotToHourLabel(slotIdx + START_SLOT)}
-                  </span>
-                </div>
+                  {slotToHourLabel(slotIdx + START_SLOT)}
+                </span>
               ))}
               <div style={{ height: SLOT_COUNT * CELL_HEIGHT }} />
             </div>

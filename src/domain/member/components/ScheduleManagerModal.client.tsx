@@ -181,7 +181,10 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onPointerUp={handlePointerUp}
     >
-      <div className="bg-card relative mx-4 w-full max-w-lg rounded-xl p-5 shadow-xl">
+      <div
+        className="bg-card relative mx-4 w-full max-w-lg overflow-y-auto rounded-xl p-5 shadow-xl"
+        style={{ maxHeight: '90vh' }}
+      >
         {/* 닫기 버튼 */}
         <button
           type="button"

@@ -5364,7 +5364,7 @@
   "BD-66-member-availability-timetable": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "마이페이지 주간 타임테이블 UI 구현 (BD-66)",
         "description": "마이페이지 프로필 정보 하단에 주간 타임테이블 섹션을 추가한다. 본인의 합주·공연 일정이 컬러 블록으로 표시되고, 불가능 시간대는 회색으로 표시된다. [나의 스케줄 관리] 버튼으로 가능 시간대를 설정하는 2단계 모달을 제공한다. API: GET/PUT /api/v1/me/availability, GET /api/v1/practices/me, GET /api/v1/performances/me",
         "details": "",
@@ -5451,12 +5451,69 @@
           }
         ],
         "updatedAt": "2026-06-05T15:24:03.521Z"
+      },
+      {
+        "id": "2",
+        "title": "마이페이지 주간 타임테이블 UI 수정",
+        "description": "WeeklyTimetable 상단 여백 60px, 시간 레이블 그리드 라인 정렬, PC 세로 스크롤, ScheduleManagerModal 스크롤 처리",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "WeeklyTimetable 상단 여백 60px 확인",
+            "description": "WeeklyTimetable 컴포넌트의 section 요소에 mt-15(60px) 상단 여백이 적용되어 있는지 확인한다",
+            "dependencies": [],
+            "details": "WeeklyTimetable.client.tsx 156번 줄에서 section 요소에 className='mt-15'가 이미 적용되어 있음. Tailwind CSS v4 기준 mt-15는 60px(15 * 4px)에 해당. 현재 구현이 요구사항과 일치하므로 추가 작업 불필요.",
+            "status": "done",
+            "testStrategy": "개발 서버에서 마이페이지 접속 후 주간 타임테이블 섹션과 상단 프로필 섹션 간 60px 여백 시각적 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "시간 레이블 그리드 라인 수직 중앙 정렬 확인",
+            "description": "시간 레이블(9:00, 10:00 등)이 그리드 라인과 수직 중앙 정렬되도록 translateY(-50%) 적용 여부 확인",
+            "dependencies": [],
+            "details": "WeeklyTimetable.client.tsx 196-199번 줄에서 시간 레이블 span 요소에 style={{ top: slotIdx * CELL_HEIGHT, transform: 'translateY(-50%)' }}가 이미 적용되어 있음. 이로 인해 레이블이 해당 시간대 그리드 라인과 수직 중앙에 정렬됨.",
+            "status": "done",
+            "testStrategy": "개발 서버에서 마이페이지 주간 타임테이블의 시간 레이블(9:00, 10:00 등)이 가로 구분선과 수직으로 중앙 정렬되어 있는지 시각적 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "PC 데스크톱 세로 스크롤 활성화 확인",
+            "description": "(main)/layout.tsx의 Desktop main 요소에 overflow-y-auto 적용으로 세로 스크롤 활성화 여부 확인",
+            "dependencies": [],
+            "details": "layout.tsx 34번 줄에서 Desktop 레이아웃의 main 요소에 className='flex flex-1 flex-col overflow-y-auto'가 이미 적용되어 있음. Shell 내부에서 main 영역이 Sidebar와 함께 배치되며, 콘텐츠가 넘칠 경우 세로 스크롤이 정상 동작함.",
+            "status": "done",
+            "testStrategy": "lg 브레이크포인트(960px) 이상에서 마이페이지 접속 후 주간 타임테이블 포함 콘텐츠가 뷰포트를 초과할 때 세로 스크롤 동작 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "ScheduleManagerModal 스크롤 처리 확인",
+            "description": "ScheduleManagerModal 카드 div에 max-h-[90vh] overflow-y-auto 적용으로 모달 내부 스크롤 처리 여부 확인",
+            "dependencies": [],
+            "details": "ScheduleManagerModal.client.tsx 184번 줄에서 모달 카드 div에 className='overflow-y-auto'와 style={{ maxHeight: '90vh' }}가 이미 적용되어 있음. 모달 콘텐츠가 뷰포트 90%를 초과할 경우 내부 스크롤이 활성화됨.",
+            "status": "done",
+            "testStrategy": "모바일 또는 작은 뷰포트에서 '나의 스케줄 관리' 모달 오픈 후 콘텐츠가 길어질 때 모달 내부 스크롤 동작 확인",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-06-05T17:36:19.387Z"
       }
     ],
     "metadata": {
-      "created": "2026-06-05T15:26:40.071Z",
-      "updated": "2026-06-05T15:26:40.071Z",
-      "description": "멤버 가용성 타임테이블"
+      "version": "1.0.0",
+      "lastModified": "2026-06-05T17:36:19.387Z",
+      "taskCount": 2,
+      "completedCount": 2,
+      "tags": [
+        "BD-66-member-availability-timetable"
+      ]
     }
   }
 }
