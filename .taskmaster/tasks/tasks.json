@@ -37,9 +37,7 @@
             "id": 3,
             "title": "package.json scripts 및 TypeScript 설정",
             "description": "package.json에 lint, typecheck, format, test, test:e2e 스크립트를 추가하고, tsconfig.json에 strict 모드, baseUrl, paths 설정을 적용합니다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "package.json scripts 업데이트:\n```json\n{\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"build\": \"next build\",\n    \"start\": \"next start\",\n    \"lint\": \"next lint\",\n    \"typecheck\": \"tsc --noEmit\",\n    \"format\": \"prettier --write .\",\n    \"format:check\": \"prettier --check .\",\n    \"test\": \"vitest run\",\n    \"test:watch\": \"vitest\",\n    \"test:e2e\": \"playwright test\"\n  }\n}\n```\n\ntsconfig.json strict 모드 설정:\n- \"strict\": true (이미 Next.js 기본값이지만 확인)\n- \"baseUrl\": \"src\" (경로 alias 기준)\n- \"paths\": { \"@/*\": [\"*\"] } (import alias 설정)\n- \"noUncheckedIndexedAccess\": true (선택, 더 엄격한 타입 검사)\n\n완료 확인:\n- pnpm typecheck 실행하여 에러 없음 확인\n- @/ alias로 import가 정상 동작하는지 확인",
             "status": "pending",
             "testStrategy": "pnpm typecheck를 실행하여 TypeScript 에러가 없는지 확인합니다. 간단한 파일에서 @/ alias import가 정상 동작하는지 테스트합니다.",
@@ -193,7 +191,6 @@
             "description": "Authorization 헤더 자동 주입, ApiResponse 언래핑, ApiError throw 기능을 갖춘 기본 apiClient를 구현합니다.",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "src/global/api/apiClient.ts에 fetch 기반 HTTP 클라이언트를 구현합니다:\n\n1. **기본 설정**:\n   - env.NEXT_PUBLIC_API_BASE_URL을 baseURL로 사용\n   - Content-Type: application/json 기본 헤더\n   - credentials: 'include' (쿠키 전송용)\n\n2. **요청 인터셉터 기능**:\n   - authStore에서 accessToken 읽기\n   - Authorization: Bearer {token} 헤더 자동 주입\n\n3. **응답 처리**:\n   - ApiResponse<T> 형태의 응답 언래핑 → data만 반환\n   - success: false인 경우 ApiError throw\n   - HTTP 상태 코드별 에러 처리\n\n4. **HTTP 메서드 헬퍼**:\n   - get<T>(url, config?): Promise<T>\n   - post<T>(url, body?, config?): Promise<T>\n   - patch<T>(url, body?, config?): Promise<T>\n   - put<T>(url, body?, config?): Promise<T>\n   - delete<T>(url, config?): Promise<T>\n\n5. **에러 정규화**:\n   - 네트워크 에러, 파싱 에러 등을 ApiError로 변환\n   - fieldErrors 추출 (백엔드 검증 에러 대응)",
@@ -290,8 +287,7 @@
             "title": "날짜 유틸 및 (main) 레이아웃 통합",
             "description": "KST 기반 날짜 포맷 유틸리티를 구현하고, (main) route group에 BottomNav와 Header를 적용한 레이아웃을 구성합니다. root layout에 QueryClientProvider와 Toaster를 설정합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. src/lib/date.ts:\n   - date-fns + date-fns-tz 사용\n   - KST = 'Asia/Seoul' 상수\n   - FORMAT = 'yyyy-MM-dd HH:mm' 상수\n   - formatKst(date: Date): string - toZonedTime으로 KST 변환 후 format\n   - parseKst(dateString: string): Date - parse 후 fromZonedTime으로 UTC 변환\n   - formatRelative(date: Date): string - '방금 전', '5분 전', '어제' 등 상대 시간\n\n2. src/global/providers/query-provider.tsx:\n   - 'use client' 컴포넌트\n   - QueryClient 인스턴스 생성 (useState로 한 번만)\n   - 기본 옵션: staleTime 60초, retry 1회, refetchOnWindowFocus false\n   - QueryClientProvider로 children 래핑\n\n3. src/app/layout.tsx 수정:\n   - QueryProvider로 body 래핑\n   - Toaster 컴포넌트 추가\n\n4. src/app/(main)/layout.tsx 생성:\n   - Props: children\n   - BottomNav 하단 고정\n   - main 영역에 pb-16 (BottomNav 높이만큼 패딩)\n   - Container로 children 래핑\n\n5. src/app/(main)/home/page.tsx, bands/page.tsx 등 플레이스홀더 페이지 생성",
             "status": "pending",
@@ -340,8 +336,7 @@
             "title": "(auth) 라우트 그룹 및 로그인/회원가입 페이지 구현",
             "description": "src/app/(auth)/ 라우트 그룹을 생성하고, 비인증 레이아웃(BottomNav 없음)과 로그인(login), 회원가입(join) 페이지 및 폼 컴포넌트를 구현합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. src/app/(auth)/layout.tsx 생성:\n   - BottomNav 없는 심플한 레이아웃\n   - 다크 테마 배경, 중앙 정렬 컨테이너\n   - 이미 인증된 사용자는 /home으로 리다이렉트 (useIsAuthenticated 체크)\n\n2. src/app/(auth)/login/page.tsx 생성:\n   - RSC 페이지, 메타데이터(title: '로그인')\n   - LoginForm.client.tsx 임포트\n\n3. src/app/(auth)/login/LoginForm.client.tsx 생성:\n   - 'use client' 선언\n   - react-hook-form + zodResolver(loginSchema) 사용\n   - Input 컴포넌트로 email, password 필드\n   - Button 컴포넌트로 제출 (loading 상태 처리)\n   - 로그인 성공 시 router.push(ROUTES.HOME)\n   - 에러 시 useToast().error() 호출 및 필드별 인라인 메시지\n   - '회원가입' 링크 → ROUTES.JOIN\n\n4. src/app/(auth)/join/page.tsx 생성:\n   - RSC 페이지, 메타데이터(title: '회원가입')\n\n5. src/app/(auth)/join/JoinForm.client.tsx 생성:\n   - email, password, name, contact 4개 필드\n   - useJoin 훅 사용\n   - 가입 성공 시 자동 로그인 후 router.push(ROUTES.HOME)\n   - '로그인' 링크 → ROUTES.LOGIN",
             "status": "pending",
@@ -353,7 +348,6 @@
             "title": "비밀번호 변경 페이지 및 마이페이지(/me) 구현",
             "description": "비밀번호 변경 페이지(password-change)와 마이페이지(/me)를 구현합니다. 마이페이지에서 회원 정보 표시, 수정, 로그아웃, 회원 탈퇴 기능을 제공합니다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. src/app/(auth)/password-change/page.tsx 생성:\n   - RSC 페이지, 메타데이터(title: '비밀번호 변경')\n\n2. src/app/(auth)/password-change/PasswordChangeForm.client.tsx 생성:\n   - originalPassword, newPassword, confirmPassword 3개 필드\n   - passwordChangeSchema로 검증 (newPassword === confirmPassword 커스텀 검증)\n   - useChangePassword 훅 사용 (domain/auth/hooks/useChangePassword.ts 필요시 추가)\n   - 성공 시 toast.success() + router.push(ROUTES.ME)\n\n3. src/app/(main)/me/page.tsx 구현 (기존 플레이스홀더 교체):\n   - RSC 페이지, Suspense로 MeContent.client.tsx 래핑\n   - Skeleton 로딩 상태 표시\n\n4. src/app/(main)/me/MeContent.client.tsx 생성:\n   - useMe 훅으로 회원 정보 조회\n   - 이름/연락처 표시 (수정 버튼 → UpdateMeForm 모달 또는 인라인)\n   - useUpdateMe로 정보 수정\n   - 비밀번호 변경 링크 → ROUTES.PASSWORD_CHANGE\n   - 로그아웃 버튼: useLogout 훅 → authStore.clear() → router.push(ROUTES.LOGIN)\n   - 회원 탈퇴 버튼: Dialog 확인 → useWithdraw → router.push(ROUTES.LOGIN)\n\n5. src/domain/auth/hooks/useLogout.ts, useChangePassword.ts 추가:\n   - useMutation 래퍼, 성공/실패 시 토스트 및 리다이렉트 처리",
@@ -415,9 +409,7 @@
             "id": 3,
             "title": "역할 기반 UI 가드 및 밴드 역할 훅 구현",
             "description": "현재 사용자의 밴드 내 역할을 조회하는 훅과 역할 기반 조건부 렌더링을 위한 RoleGuard 컴포넌트를 구현합니다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. src/global/auth/useBandRole.ts 생성:\n   - useBandRole(bandId: string) 훅: 현재 유저의 해당 밴드 내 역할(BandRole) 반환\n   - useBandDetail 훅의 myRole 필드 활용 또는 별도 API 호출\n   - 비멤버인 경우 null 반환\n\n2. src/global/auth/RoleGuard.tsx 생성:\n   - Props: bandId, role(BandRole), children, fallback?\n   - roleHierarchy: { LEADER: 3, ADMIN: 2, MEMBER: 1 } 정의\n   - 현재 유저 역할이 요구 역할 이상일 때만 children 렌더링\n   - 권한 부족 시 fallback 렌더링 (기본값 null)\n   - 로딩 중일 때 Skeleton 또는 null 반환\n\n3. 권한별 UI 가드 사용 예시:\n   - <RoleGuard bandId={id} role=\"LEADER\">리더 위임 버튼</RoleGuard>\n   - <RoleGuard bandId={id} role=\"ADMIN\">가입 신청 탭</RoleGuard>\n   - 버튼 disabled 처리: disabled={userRole !== 'LEADER'}",
             "status": "pending",
             "testStrategy": "LEADER 계정으로 모든 기능 표시 확인, MEMBER 계정으로 제한된 기능만 표시 확인, 비멤버 계정으로 가입 신청 버튼만 표시 확인.",
@@ -441,7 +433,6 @@
             "title": "밴드 페이지 및 라우트 구현",
             "description": "밴드 목록(무한 스크롤), 생성, 상세(탭: 개요/멤버/가입신청) 페이지를 App Router 구조로 구현합니다.",
             "dependencies": [
-              2,
               4
             ],
             "details": "1. src/app/(main)/bands/page.tsx - 밴드 목록 페이지:\n   - useBandList 훅으로 무한 스크롤 구현\n   - BandCard 컴포넌트로 각 밴드 렌더링\n   - EmptyState: 밴드 없을 때 '아직 참여 중인 밴드가 없습니다'\n   - FAB(Floating Action Button): 우하단에 밴드 생성 버튼 (+)\n   - Header: title='밴드', left=false (뒤로가기 숨김)\n\n2. src/app/(main)/bands/new/page.tsx - 밴드 생성 페이지:\n   - Header: title='밴드 만들기', left=뒤로가기\n   - BandCreateForm.client.tsx 렌더링\n\n3. src/app/(main)/bands/[bandId]/page.tsx - 밴드 상세 페이지:\n   - useBandDetail 훅으로 밴드 정보 조회\n   - Tabs 컴포넌트로 3개 탭 구성:\n     a. 개요 탭: 밴드 정보, 가입 신청 버튼(비멤버), 탈퇴 버튼(멤버)\n     b. 멤버 탭: useBandMembers 무한 스크롤, 리더 위임 버튼(LEADER만)\n     c. 가입 신청 탭: RoleGuard role=\"ADMIN\", useBandApplications 무한 스크롤\n   - ErrorState: 밴드를 찾을 수 없을 때 404 처리\n   - 탈퇴/리더 위임 시 확인 다이얼로그 (useConfirmDialog)\n\n4. 낙관적 업데이트 적용:\n   - 가입 신청 승인/거절 후 신청 목록에서 즉시 제거\n   - 멤버 탈퇴 후 멤버 목록에서 즉시 제거",
@@ -503,7 +494,6 @@
             "title": "합주 목록 페이지 및 생성 폼 구현",
             "description": "합주 목록 페이지(/practices)와 합주 생성 페이지(/practices/new)를 구현합니다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. src/app/(main)/practices/page.tsx 수정:\n   - PageTitle 컴포넌트 활용\n   - Suspense + Skeleton으로 로딩 상태\n   - usePractices 훅으로 목록 조회 (무한 스크롤)\n   - PracticeCard로 목록 렌더링\n   - EmptyState: '등록된 합주가 없습니다' + 새 합주 만들기 버튼\n   - 밴드 필터 (선택사항)\n   - FAB 또는 헤더에 '새 합주' 버튼 → ROUTES.PRACTICE_NEW로 이동\n\n2. src/app/(main)/practices/new/page.tsx 생성:\n   - RSC로 페이지 구조\n   - PracticeCreateForm.client.tsx 클라이언트 컴포넌트 임포트\n\n3. src/domain/practice/components/PracticeCreateForm.client.tsx 생성:\n   - 'use client' 선언\n   - react-hook-form + zod 스키마\n   - 필드: title(선택), song(songId - Select 또는 검색), venue(선택), startAt(datetime-local), durationMinutes(number)\n   - CreatePracticeRequest에 맞춰 폼 데이터 변환\n   - useCreatePractice 훅 연동\n   - 성공 시: 토스트 + ROUTES.PRACTICE_DETAIL(practiceId)로 리다이렉트\n   - 실패 시: 에러 메시지 표시\n\n4. zod 스키마 (src/domain/practice/types/schema.ts):\n   - title: z.string().max(100).optional()\n   - song: z.string().min(1, '곡을 선택해주세요')\n   - venue: z.string().max(200).optional()\n   - startAt: z.string().datetime 또는 커스텀 검증\n   - durationMinutes: z.number().min(15).max(480)",
@@ -516,7 +506,6 @@
             "title": "합주 상세 페이지 구현 (일정/장소 편집, 세션 관리, 참여자, 삭제)",
             "description": "합주 상세 페이지(/practices/[practiceId])에서 일정/장소 편집, 세션 편성, 참여자 관리, 곡 참조 링크 관리, 삭제 기능을 구현합니다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. src/app/(main)/practices/[practiceId]/page.tsx 생성:\n   - RSC로 practiceId params 추출\n   - Suspense + Skeleton으로 로딩\n   - PracticeDetail.client.tsx 클라이언트 컴포넌트 임포트\n\n2. src/domain/practice/components/PracticeDetail.client.tsx 생성:\n   - 'use client' 선언\n   - usePractice(practiceId) 훅으로 상세 조회\n   - ErrorState/Loading 상태 처리\n\n3. 일정 섹션:\n   - PracticeScheduleBadge로 현재 일정 표시\n   - 편집 버튼 → 모달 또는 인라인 폼\n   - useUpdateSchedule 훅 연동\n\n4. 장소 섹션:\n   - PracticeVenueInline 컴포넌트 사용\n   - 인라인 편집 지원\n\n5. 세션 편성 섹션:\n   - '세션 추가' 버튼 → 모달(label, type 선택)\n   - useCreateSession 훅 연동\n   - 세션 목록: SessionRow 컴포넌트로 렌더링\n   - 각 세션에 배정/해제 버튼 (SessionAssignButton)\n   - 세션 삭제: useConfirmDialog + useDeleteSession\n\n6. 참여자 섹션:\n   - 현재 참여자 목록 표시\n   - '참여자 추가' 버튼 → 멤버 선택 드롭다운\n   - useAddParticipant 훅 연동\n\n7. 곡 참조 링크 섹션:\n   - SongRefLinkEditor 컴포넌트 사용\n   - practice.song 정보 표시\n\n8. 삭제 기능:\n   - '합주 삭제' 버튼 (danger variant)\n   - useConfirmDialog로 확인 다이얼로그\n   - useDeletePractice 훅 연동\n   - 성공 시: 토스트 + ROUTES.PRACTICES로 리다이렉트\n\n9. 권한 체크:\n   - 편집/삭제 버튼은 LEADER/ADMIN 권한 시에만 표시 (향후 useBandRole 연동)",
@@ -578,7 +567,6 @@
             "title": "공연 목록 및 생성 페이지 구현",
             "description": "공연 목록 페이지(/performances)와 공연 생성 페이지(/performances/new)를 구현합니다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. src/app/(main)/performances/page.tsx 수정:\n   - 서버 컴포넌트로 유지, 클라이언트 컴포넌트 분리\n   - PageTitle + 생성 FAB 버튼 (ROUTES.PERFORMANCE_NEW 링크)\n   - 쿼리스트링 bandId로 필터링 지원 (useSearchParams)\n\n2. src/app/(main)/performances/PerformanceList.client.tsx 생성:\n   - 'use client' 선언\n   - usePerformanceList 훅으로 무한 스크롤 목록\n   - PerformanceCard 컴포넌트로 각 항목 렌더링\n   - EmptyState (공연 없음), Skeleton (로딩) 처리\n   - 하단 스크롤 감지하여 fetchNextPage 호출\n\n3. src/app/(main)/performances/new/page.tsx 생성:\n   - 서버 컴포넌트, PageTitle '공연 생성'\n\n4. src/app/(main)/performances/new/PerformanceCreateForm.client.tsx 생성:\n   - 'use client' 선언\n   - react-hook-form + zod 스키마로 폼 검증\n   - 필드: 제목(필수), 밴드 선택(multi-select), 일시(datetime-local), 소요 시간, 장소\n   - useCreatePerformance 훅으로 생성 요청\n   - 성공 시 ROUTES.PERFORMANCES로 리다이렉트 + 토스트\n\n기존 Field (src/components/ui/field.tsx), Button, Dialog 컴포넌트 활용",
@@ -591,7 +579,6 @@
             "title": "공연 상세 페이지(조회/수정/삭제/합주 연결) 구현",
             "description": "공연 상세 페이지에서 정보 조회, 수정, 삭제, 합주 연결/해제 기능을 구현합니다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. src/app/(main)/performances/[performanceId]/page.tsx 생성:\n   - 서버 컴포넌트, params에서 performanceId 추출\n   - Suspense 경계로 클라이언트 컴포넌트 래핑\n\n2. src/app/(main)/performances/[performanceId]/PerformanceDetail.client.tsx:\n   - 'use client' 선언\n   - usePerformanceDetail 훅으로 데이터 조회\n   - 공연 정보 표시: 제목, 일정, 장소, 소요 시간\n   - PerformanceBandChips로 참여 밴드 목록 표시\n   - 매니저 목록 Avatar + 이름 표시\n   - 연결된 합주 목록 (PerformancePracticeRow)\n   - 수정/삭제 버튼 (useIsPerformanceManager로 권한 체크)\n\n3. 수정 모달/바텀시트 구현:\n   - Dialog 또는 BottomSheet 활용\n   - useUpdatePerformance 훅으로 업데이트\n   - 성공 시 토스트 + 캐시 갱신\n\n4. 삭제 기능:\n   - useConfirmDialog로 확인 다이얼로그\n   - useDeletePerformance 훅으로 삭제\n   - 성공 시 ROUTES.PERFORMANCES로 리다이렉트 + 토스트\n\n5. 합주 연결 모달:\n   - Dialog로 모달 구현\n   - 탭 2개: '기존 합주 선택' / '새 합주 생성'\n   - 기존 합주 선택: 체크박스 리스트 + useBatchAddPerformancePractices\n   - 새 합주 생성: AddPerformancePracticeRequest 폼 + useAddPerformancePractice\n\n기존 Dialog, BottomSheet, useConfirmDialog, useToast 활용",
@@ -640,9 +627,7 @@
             "id": 3,
             "title": "전체 화면 Skeleton/EmptyState/ErrorState 감사 및 적용",
             "description": "모든 목록 페이지(bands, practices, performances, me)에 Skeleton, EmptyState, ErrorState가 올바르게 적용되어 있는지 감사하고 누락된 곳을 수정합니다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. 감사 대상 페이지:\n   - src/app/(main)/bands/page.tsx\n   - src/app/(main)/practices/page.tsx\n   - src/app/(main)/performances/page.tsx\n   - src/app/(main)/me/page.tsx\n2. 각 페이지에서 확인할 사항:\n   - 데이터 로딩 중 Skeleton 표시 여부\n   - 데이터가 비어있을 때 EmptyState 컴포넌트 사용 여부 (적절한 아이콘, 제목, 설명, 액션 버튼)\n   - 에러 발생 시 ErrorState 컴포넌트 사용 여부 (재시도 버튼 포함)\n3. src/app/error.tsx 전역 에러 바운더리 페이지 구현:\n   - ErrorState 컴포넌트 활용\n   - reset 함수로 재시도 기능 제공\n4. src/app/not-found.tsx 404 페이지 구현:\n   - EmptyState 스타일로 구현\n   - 홈으로 돌아가기 버튼\n5. 누락된 곳 수정 및 일관성 확보",
             "status": "pending",
             "testStrategy": "각 페이지의 로딩/빈 상태/에러 상태를 수동으로 트리거하여 UI 확인, error.tsx와 not-found.tsx 렌더링 테스트",
@@ -743,7 +728,6 @@
             "description": "새로 추가된 토큰들이 기존 페이지들과 충돌하지 않는지 검증하고, 필요 시 기존 토큰 네이밍과 조정한다.",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "새 토큰 추가 후 기존 코드베이스와의 호환성을 검증:\n\n1. 네이밍 충돌 검사:\n   - 기존 --color-* 토큰과 새 --color-amber* 충돌 없음 확인\n   - 기존 text-* 클래스(text-foreground 등)와 새 typography 토큰 충돌 검사\n   - Tailwind의 기본 spacing scale과 새 --spacing-s-* 병존 확인\n\n2. 회귀 테스트 대상 페이지:\n   - /login, /signup (Auth 관련)\n   - /home (홈 대시보드)\n   - /bands, /bands/[id] (밴드 목록/상세)\n   - /practices (합주 목록)\n   - /me (마이페이지)\n\n3. 확인 사항:\n   - 레이아웃 깨짐 없음\n   - 색상/간격/타이포가 기존과 동일\n   - 반응형 동작 유지\n\n4. 필요 시 토큰명 조정 (예: --text-* 충돌 시 --font-size-* 로 변경 검토)",
@@ -836,7 +820,6 @@
             "description": "구현된 Shell 레이아웃 컴포넌트들을 통합하고, src/components/layout/index.ts에 barrel export를 구성하여 import 편의성을 높인다.",
             "dependencies": [
               1,
-              2,
               3,
               4
             ],
@@ -889,9 +872,7 @@
             "id": 3,
             "title": "Sidebar footer 사용자 정보 연동 (useMe 훅)",
             "description": "Sidebar footer 영역에 useMe 훅을 통해 현재 로그인한 사용자의 이름, 이메일을 표시하고 마이페이지 링크를 추가한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "sidebar.tsx의 footer 영역을 수정하여 다음을 구현한다: (1) useMe() 훅으로 MemberInfoResponse(id, email, name) 가져오기 (2) Avatar 컴포넌트에 name 전달 (3) 사용자 이름과 이메일 표시 (text overflow ellipsis 처리) (4) footer 전체를 Link로 감싸서 ROUTES.ME로 이동 가능하게 연결 (5) 로딩 상태에서는 Skeleton UI 표시 (6) lg 미만에서는 user 정보 숨김 처리 유지",
             "status": "done",
             "testStrategy": "로그인 상태에서 Sidebar footer에 사용자 이름/이메일이 올바르게 표시되는지 확인하고, 클릭 시 /me 페이지로 이동하는지 검증한다.",
@@ -915,7 +896,6 @@
             "description": "완성된 반응형 레이아웃이 960px 기준으로 올바르게 전환되는지 수동 테스트 후 Playwright E2E 테스트 케이스를 추가한다.",
             "dependencies": [
               1,
-              2,
               3,
               4
             ],
@@ -991,7 +971,6 @@
             "title": "/join 및 /password-change 페이지에 StepIndicator, PasswordStrength 적용",
             "description": "/join 페이지에 StepIndicator를 적용하고(기본 정보 -> 계정 설정), /join과 /password-change 페이지에 PasswordStrength를 적용한다.",
             "dependencies": [
-              2,
               3,
               4
             ],
@@ -1132,7 +1111,6 @@
             "description": "src/app/(main)/home/page.tsx를 디자인 원본 기준으로 재구성한다. 인사말 헤더, 4열 StatCard 그리드, 2열 섹션 그리드, 3열 공연 그리드를 구현한다.",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "1. PageTitle을 인사말 형식으로 변경: title='안녕하세요, {name}님', description='오늘도 좋은 합주 되세요.'\n2. useMe 훅으로 현재 사용자 이름 가져오기\n3. StatCard 그리드 섹션 추가:\n   - grid grid-cols-2 md:grid-cols-4 gap-4\n   - StatCard x4: 소속 밴드(band/accent), 예정 합주(practice/success), 예정 공연(performance/amber), 참여 세션(music/warn)\n4. 내 밴드 + 다가오는 합주 2열 그리드:\n   - grid grid-cols-1 lg:grid-cols-2 gap-6\n   - 각 섹션에 SectionTitle(action='전체 보기 →' Link) + 기존 MyBands/UpcomingPractices 컴포넌트\n5. 다가오는 공연 3열 그리드:\n   - SectionTitle + grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4\n   - UpcomingPerformances limit 조정\n6. 반응형 스택: 모바일에서 모든 그리드 단일 컬럼",
@@ -1212,8 +1190,7 @@
             "title": "BandDetailPane 탭 구조 재구성 (정보/멤버/신청 현황)",
             "description": "기존 BandDetailContent를 PaneDetail 내부에서 동작하도록 수정하고, 데스크톱용 Topbar + 탭 레이아웃으로 재구성한다. 디자인 와이어프레임의 탭 구조(정보/멤버/신청 현황)를 적용한다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. src/app/(main)/bands/[bandId]/page.tsx 수정:\n   - 데스크톱: PaneDetail 내부에 BandDetailPane 렌더\n   - 모바일: 기존 BandDetailContent 유지 (풀스크린)\n\n2. BandDetailPane 또는 BandDetailContent 수정:\n   - 상단 Topbar 영역: breadcrumb('밴드 탐색') + 밴드명 + 액션 버튼들\n     - LEADER/ADMIN: 밴드 설정 버튼\n     - 비멤버: 가입 신청 버튼\n     - 멤버(LEADER 제외): 밴드 탈퇴 버튼\n   \n3. 탭 구조 (Tabs 컴포넌트 사용):\n   - 정보(info): 커버 이미지 영역 + 밴드명 + 설명\n   - 멤버(members): 2열 그리드 멤버 목록 + BandRoleBadge\n   - 신청 현황(applications): RoleGuard(ADMIN 이상) + 상태 필터 칩(대기/승인/거절) + 신청 목록\n\n4. 탭 스타일링:\n   - 디자인 와이어프레임 참고: 하단 보더 방식 active 표시\n   - padding: 0 28px (px-7)\n   - 콘텐츠 영역: padding 24px 28px (p-6 px-7)\n\n5. 역할 기반 렌더링:\n   - hasRole(myRole, 'ADMIN') 체크로 신청 현황 탭 조건부 표시\n   - RoleGuard로 신청 목록 감싸기",
             "status": "done",
@@ -1226,7 +1203,6 @@
             "title": "EmptyPane 컴포넌트 및 URL 직접 접근 처리",
             "description": "/bands 단독 접근 시 우측에 표시될 EmptyPane 컴포넌트를 구현하고, /bands/[bandId] 직접 URL 접근 시 좌측 목록과 우측 상세가 동시에 정상 렌더링되도록 보장한다.",
             "dependencies": [
-              2,
               3,
               4
             ],
@@ -1306,7 +1282,6 @@
             "title": "Topbar 연동 및 반응형 통합 테스트",
             "description": "Practice/Performance/Me 상세 페이지에 Topbar를 연동하고, 전체 마스터-디테일 패턴의 반응형 동작을 통합 테스트한다.",
             "dependencies": [
-              2,
               3,
               4
             ],
@@ -1360,8 +1335,7 @@
             "title": "Playwright E2E 뷰포트 확장 및 도메인별 해피패스 테스트 추가",
             "description": "Playwright 설정에 데스크톱(1440x900)+모바일(375x812) 뷰포트를 추가하고, 6개 도메인별 해피패스 시나리오를 구현한다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. playwright.config.ts 수정:\n   - projects 배열에 모바일 뷰포트 추가: { name: 'Mobile Chrome', use: { ...devices['Pixel 5'] } }\n   - 데스크톱 뷰포트 조정: { name: 'Desktop Chrome', use: { viewport: { width: 1440, height: 900 } } }\n   - 선택적으로 iPhone 12 추가: { name: 'Mobile Safari', use: { ...devices['iPhone 12'] } }\n\n2. 기존 테스트 파일 구조 유지하며 뷰포트별 실행:\n   - tests/e2e/auth.spec.ts: 로그인 → 홈 리다이렉트 해피패스\n   - tests/e2e/home.spec.ts: 홈 대시보드 렌더링 및 통계 카드 표시 해피패스\n   - tests/e2e/band.spec.ts: 밴드 목록 → 상세 진입 해피패스\n   - tests/e2e/practice.spec.ts: 합주 목록 → 상세 진입 해피패스\n   - tests/e2e/performance.spec.ts: 공연 목록 → 상세 진입 해피패스\n   - tests/e2e/me.spec.ts (신규): 마이페이지 접근 및 프로필 표시 해피패스\n\n3. 각 해피패스 시나리오에 반응형 검증 추가:\n   - 모바일: BottomNav 표시, Sidebar 숨김 확인\n   - 데스크톱: Sidebar 표시 확인 (Task 2 완료 후)",
             "status": "done",
@@ -1388,7 +1362,6 @@
             "description": ".taskmaster/report/mvp-1-fix-audit-YYYY-MM-DD.md 파일로 시각 회귀, 남은 이슈, 성능 참고 점수를 정리한 최종 감사 리포트를 작성한다.",
             "dependencies": [
               1,
-              2,
               3,
               4
             ],
@@ -1439,9 +1412,7 @@
             "id": 3,
             "title": "온보딩 Features 섹션 구현 (3대 축 기능 소개)",
             "description": "합주 일정 관리, 세션 편성, 공연 연결 세 가지 핵심 기능을 소개하는 Features 섹션을 구현합니다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. Hero 섹션 아래에 Features 섹션 추가\n2. 모바일(기본): 단일 column 스택 레이아웃 (flex flex-col gap-s-6)\n3. 데스크톱(lg:): 3열 grid 레이아웃 (lg:grid lg:grid-cols-3 lg:gap-s-8)\n4. 각 feature 아이템 구조:\n   - 아이콘: Calendar(합주 일정), Users(세션 편성), Music(공연 연결) from lucide-react\n   - 아이콘 컨테이너: h-12 w-12 rounded-lg bg-accent-dim flex items-center justify-center\n   - 제목: text-subtitle font-semibold text-foreground\n   - 설명: text-body text-foreground-sub (1-2줄)\n   - 기능별 설명:\n     * 합주 일정 관리: '밴드별 합주 스케줄을 한눈에 확인하고 관리하세요'\n     * 세션 편성: '곡별 세션 배정으로 누가 어떤 파트를 맡는지 명확하게'\n     * 공연 연결: '예정된 공연과 셋리스트를 팀원들과 공유하세요'\n5. 전체 섹션 max-w-4xl mx-auto px-s-4 py-s-12 적용\n6. 접근성: section 태그 + aria-labelledby로 heading 연결",
             "status": "done",
             "testStrategy": "pnpm dev 실행 후 모바일 뷰포트(375px)에서 세로 스택, 데스크톱(1280px)에서 3열 grid로 전환되는지 브라우저 DevTools에서 확인. 각 feature 카드의 아이콘, 제목, 설명이 올바르게 렌더링되는지 확인.",
@@ -1466,7 +1437,6 @@
             "title": "Playwright E2E 테스트 작성 및 기존 테스트 업데이트",
             "description": "온보딩 페이지 E2E 테스트를 신규 작성하고, 기존 auth/home 테스트의 리다이렉트 기대값을 /onboarding으로 수정합니다.",
             "dependencies": [
-              2,
               3,
               4
             ],
@@ -1565,9 +1535,7 @@
             "id": 3,
             "title": "밴드/합주/공연 CRUD 시나리오 실데이터 검증",
             "description": "밴드 생성 → 목록 → 상세 이동, 합주 생성 → 세션 편성, 공연 생성 → 합주 연결 플로우 검증",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1) 시나리오 (b): 밴드 생성(POST /bands) → 목록(GET /bands) → 상세(GET /bands/{id})\n2) 시나리오 (c): 가입 신청 → 리더 승인 → 멤버 반영 (applications 엔드포인트)\n3) 시나리오 (d): 합주 생성(POST /practices) → 세션 편성 → 장소 변경 → 삭제\n   - 기존 블로커 확인: GET /api/v1/practices 미구현 이슈\n   - 유효 songId 확보 후 합주 생성 시도\n4) 시나리오 (e): 공연 생성 → 합주 일괄 연결 → 상세 진행도 확인\n   - 기존 이슈 확인: PATCH /performances/{id} 부분 업데이트 불가\n5) 역할 기반 권한 검증 (LEADER/ADMIN/MEMBER)",
             "status": "done",
             "testStrategy": "curl 연속 호출로 상태 전이 시나리오 전수 검증, 실패 시 백엔드 로그 발췌",
@@ -1579,7 +1547,6 @@
             "title": "실패 케이스 수집 및 백엔드 로그 분석",
             "description": "모든 검증 시나리오의 실패 케이스에 대해 HTTP status + ApiResponse body + 백엔드 로그 발췌 기록",
             "dependencies": [
-              2,
               3
             ],
             "details": "1) 시나리오 2, 3에서 발생한 모든 실패 케이스 정리\n2) 각 실패에 대해 HTTP status code, ApiResponse body 전문 기록\n3) 백엔드 애플리케이션 로그에서 관련 스택 트레이스 발췌\n4) 기존 리포트의 미해결 이슈 재확인:\n   - GET /api/v1/practices 미구현 (401 + Allow:POST)\n   - GET /api/v1/members/me 응답 data:null\n   - PATCH /api/v1/performances/{id} 부분 업데이트 불가\n   - 403 vs 401 경계 분리 여부\n5) 우선순위별 분류: 차단(P0) / 기능저하(P1) / 품질(P2) / 참고",
@@ -1669,7 +1636,6 @@
             "title": "목록 페이지 FAB 버튼을 모달 트리거로 전환",
             "description": "/bands, /practices, /performances 페이지의 FAB 버튼을 Link에서 모달 open 트리거로 변경하고, 각 모달 컴포넌트를 페이지에 마운트한다.",
             "dependencies": [
-              2,
               3,
               4
             ],
@@ -1783,7 +1749,6 @@
             "title": "스냅샷 테스트 추가 및 기존 Playwright 가드 검증",
             "description": "변경된 상세 화면들에 대한 Vitest 스냅샷 테스트를 추가하고 기존 E2E 테스트 통과를 확인합니다.",
             "dependencies": [
-              2,
               3,
               4
             ],
@@ -1849,8 +1814,7 @@
             "title": "src/components/ui/icon-tile.tsx 컴포넌트 생성",
             "description": "design/dist/css/components.css의 .icon-tile 스타일을 Tailwind CSS로 구현한 재사용 가능한 IconTile 컴포넌트를 생성합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. IconTileProps 인터페이스 정의: { icon: React.ReactNode, size?: 'sm' | 'md' | 'lg', tone?: IconTileTone }\n2. IconTileTone 타입: 'accent' | 'success' | 'amber' | 'warn' | 'card' (components.css .icon-tile--* 변형 기준)\n3. SIZE_CLASSES 매핑: { sm: 'w-8 h-8 rounded-sm', md: 'w-10 h-10 rounded-md', lg: 'w-14 h-14 rounded-[14px]' } (design 기준 sm=32px, md=40px, lg=56px)\n4. TONE_CLASSES 매핑: { accent: 'bg-accent-dim text-accent', success: 'bg-success-dim text-success', amber: 'bg-amber-dim text-amber', warn: 'bg-warn-dim text-warn', card: 'bg-card text-foreground-sub' }\n5. aria-hidden='true' 속성 추가 (장식용 아이콘)\n6. transition 클래스 추가: transition-colors duration-fast\n7. Badge 컴포넌트 패턴 참조하여 일관된 코드 스타일 유지\n8. cn 유틸 사용하여 className 병합 지원",
             "status": "pending",
@@ -1910,8 +1874,7 @@
             "title": "BandCard, PracticeCard, PerformanceCard에 IconTile 및 list-item 스타일 적용",
             "description": "세 도메인 카드 컴포넌트에 좌측 IconTile 배치, Card 컴포넌트 대신 list-item 스타일 직접 적용, hover 상태 구현",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. BandCard.tsx 수정:\n   - Card 컴포넌트 제거, flex 레이아웃 + list-item 스타일 직접 적용\n   - Avatar 앞에 <IconTile icon={Guitar} tone='accent' size='md' /> 추가\n   - hover:bg-card transition-all duration-fast 적용\n\n2. PracticeCard.tsx 수정:\n   - Card 제거, list-item 스타일 적용\n   - 좌측에 <IconTile icon={Clock3} tone='success' size='md' /> 추가\n   - 기존 메타 정보(일정/장소/곡) 유지\n\n3. PerformanceCard.tsx 수정:\n   - Card 제거, list-item 스타일 적용\n   - 좌측에 <IconTile icon={Music} tone='amber' size='md' /> 추가\n   - PerformanceDday 우측 배치 유지\n\n4. 각 카드 공통:\n   - Link wrapper 유지 (focus-visible 스타일 유지)\n   - isSelected prop 추가 (선택적, 마스터-디테일 레이아웃용)",
             "status": "pending",
@@ -1924,7 +1887,6 @@
             "description": "BandsListPane의 BandRow, MyBands, UpcomingPractices, UpcomingPerformances 컴포넌트에 IconTile 및 selected 상태 스타일 적용 후 전체 통합 테스트",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "1. BandsListPane.client.tsx의 BandRow 수정:\n   - 기존 Link 내부에 IconTile(Guitar, accent, sm) 추가\n   - active 상태: bg-accent-dim border-accent/25 스타일 적용\n   - hover: hover:bg-card 적용\n\n2. MyBands.tsx:\n   - BandCard 호출 시 IconTile 포함 여부 확인 (BandCard 자체에 적용됨)\n\n3. UpcomingPractices.tsx / UpcomingPerformances.tsx:\n   - PracticeCard/PerformanceCard 호출 시 IconTile 포함 여부 확인\n\n4. PracticesListPane.client.tsx, PerformancesListPane.client.tsx 존재 시 동일 패턴 적용\n\n5. 최종 검증:\n   - lg breakpoint에서 마스터-디테일 레이아웃 확인\n   - 모바일(< lg)에서 카드 렌더링 확인\n   - pnpm lint && pnpm typecheck 통과",
@@ -2045,7 +2007,6 @@
             "description": "TabsList에 접근성 aria-label 추가, 4개 탭(정보/멤버/일정 및 합주/밴드 관리) 통합 렌더링 및 역할별 조건 테스트",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "1. `<TabsList>` 에 `aria-label=\"밴드 상세 탭\"` 속성 추가 (접근성 보강)\n2. 최종 탭 순서 확인: info → members → schedule → manage(LEADER only)\n3. 전체 코드 정리:\n   - 불필요한 import 정리 (LogOut, UserPlus 등 info 탭 버튼에서만 사용)\n   - `canSeeApplications` 변수 제거 후 `canManage`로 통일\n4. `pnpm typecheck && pnpm lint` 실행 및 오류 수정\n5. 수동 테스트 시나리오 문서화:\n   - LEADER: 4개 탭 모두 표시\n   - ADMIN: 정보/멤버/일정 3개 탭 표시\n   - MEMBER: 정보/멤버/일정 3개 탭 표시\n   - 비회원: 정보/멤버/일정 3개 탭 표시, 가입 신청 버튼 활성",
@@ -2149,8 +2110,7 @@
             "title": "DateTimePicker 모달 통합 및 빠른 선택 칩 구현",
             "description": "ResponsiveSheet를 활용하여 캘린더+시간휠을 포함한 모달을 구성하고, 오늘/내일/다음 주 빠른 선택 칩을 추가합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. DateTimePicker 컴포넌트 전면 재구현:\n   - 기존 native date input + select 구조를 제거\n   - ResponsiveSheet 기반 모달로 전환 (lg: Dialog, mobile: BottomSheet)\n\n2. 트리거 UI:\n   - read-only Input 클릭 시 모달 오픈\n   - 값이 있을 때: \"2026.04.25 (토) 19:00\" 형식 표시 (dtpFormatDisplay 함수)\n   - 값이 없을 때: placeholder 텍스트 (기본값 \"날짜와 시간을 선택하세요\")\n   - 우측에 CalendarIcon 표시\n\n3. 모달 레이아웃 구조:\n   ```\n   ResponsiveSheetContent\n     ├─ QuickChips: 오늘 | 내일 | 다음 주 (Chip 컴포넌트 활용)\n     ├─ Body: flex (lg: row, mobile: column)\n     │   ├─ DateTimePickerCalendar (flex-1)\n     │   └─ TimeWheelSection (시:분 휠, 구분자 \":\", w-60)\n     └─ Footer: 선택된 값 표시 + 취소/확인 버튼\n   ```\n\n4. 빠른 선택 칩 구현:\n   - date-fns addDays, addWeeks 활용\n   - 오늘: addDays(today, 0)\n   - 내일: addDays(today, 1)\n   - 다음 주: addWeeks(today, 1)\n   - 클릭 시 해당 날짜로 draft 상태 업데이트 + viewMonth 이동\n   - 현재 draft와 일치하면 selected 스타일 적용\n\n5. 상태 관리:\n   - draft: { year, month, day, hour, minute } 임시 선택 상태\n   - viewYear, viewMonth: 캘린더 뷰 상태\n   - open: 모달 열림 상태\n   - useEffect로 open 시 value를 draft로 초기화\n\n6. Footer UI:\n   - 좌측: 선택된 값 표시 (dtpFormatDisplay(draft))\n   - 우측: 취소(ResponsiveSheetClose) + 확인 버튼\n   - 확인 클릭 시 onChange(dtpFormat(draft)) 호출 후 모달 닫기\n\n7. 반응형 레이아웃:\n   - lg 이상: 캘린더와 시간휠 가로 배치 (flex-row), 모달 너비 ~620px\n   - 모바일: 캘린더와 시간휠 세로 배치 (flex-col), BottomSheet 전체 너비",
             "status": "pending",
@@ -2274,8 +2234,7 @@
             "title": "ARIA 속성 및 시각 일관성 검증",
             "description": "ErrorState role='alert', IconTile aria-hidden, TabsList aria-label 등 접근성 속성 및 hover/selected 스타일 일관성 점검",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "접근성 속성 검증:\n\n1. ErrorState (src/components/feedback/error-state.tsx):\n   - role='alert' 유지 확인 (line 21)\n   - AlertTriangle aria-hidden='true' 확인 (line 27)\n   - Task 5 완료 후: Wrench 아이콘 + text-foreground-sub 톤 변경 확인\n\n2. TabsList aria-label:\n   - src/components/ui/tabs.tsx에 현재 aria-label 미설정\n   - 사용처(BandDetailContent, PracticeDetailContent 등)에서 명시적 aria-label 부여 여부 확인\n\n3. 버튼/링크 라벨:\n   - 모든 아이콘 전용 버튼에 aria-label 또는 텍스트 라벨 존재 확인\n   - Dialog 닫기 버튼 aria-label='닫기' 확인 (dialog.tsx line 59)\n\n4. 시각 일관성:\n   - 도메인 카드 hover:bg-* / selected 상태 전 페이지 동일 확인\n   - Card interactive prop의 hover 스타일 일관성\n   - text-danger(빨간색) 완전 제거 확인 (Task 5 후)\n\n5. axe-core 또는 Lighthouse 접근성 스캔 실행",
             "status": "pending",
@@ -2288,7 +2247,6 @@
             "description": ".taskmaster/report/mvp-1-fix-v2-audit-YYYY-MM-DD.md 형식으로 발견 이슈, 해결 상태, 잔존 이슈 분류 문서화",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "보고서 구조 (기존 mvp-1-fix-audit-2026-04-25.md 형식 참조):\n\n1. 메타 정보:\n   - 작성일, 검증 브랜치/PR, 대상 뷰포트\n\n2. 반응형 테스트 결과:\n   - 뷰포트별 레이아웃 상태 테이블 (360/768/960/1280)\n   - Sidebar/BottomNav 전환, 마스터-디테일 전환, Dialog/BottomSheet 전환\n\n3. 키보드 접근성 결과:\n   - DateTimePicker 키보드 네비게이션 상태\n   - Tabs 화살표 키 전환 상태\n   - 포커스 트랩/Esc 닫기 상태\n\n4. ARIA/시각 접근성 결과:\n   - role='alert', aria-hidden, aria-label 검증 결과\n   - axe-core/Lighthouse 스캔 점수 및 주요 경고\n\n5. 발견 이슈 분류:\n   - 차단(P0): 즉시 수정 필요\n   - 기능저하(P1): 출시 전 수정 권장\n   - 품질(P2): 후속 개선\n   - 참고: 향후 고려사항\n\n6. 해결 상태 및 잔존 이슈 목록",
@@ -2356,7 +2314,6 @@
             "title": "P2 보류 항목 및 활성화 절차/우회 현황 테이블 작성",
             "description": "P2 보류 항목(FE-API-015~016)을 추가하고, 백엔드 구현 완료 시 활성화 절차 및 프론트 mock/우회 현황 테이블을 정리합니다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. FE-API-015: 프로필 이미지 업로드 (P2)\n   - HTTP: POST /api/v1/members/me/profile-image (멀티파트)\n   - 또는 사전 서명 URL 방식 (GET /presigned-url → S3 직접 업로드)\n   - 밴드 동일: POST /api/v1/bands/{bandId}/profile-image\n   - 프론트 사용처: 프로필 편집, 밴드 생성/편집\n   - 현재: URL 텍스트 입력 폼 유지\n\n2. FE-API-016: 합주곡 검색/자동완성 (P2)\n   - HTTP: GET /api/v1/practice-songs?q=\n   - Response: { content: PracticeSong[], hasNext }\n   - 프론트 사용처: PracticeCreateModal 곡 선택\n   - 현재: songId UUID 직접 입력 폼 유지\n\n3. 활성화 절차 섹션 작성:\n   - 백엔드가 엔드포인트 구현 완료 시\n   - 프론트 domain/{name}/api/ fetcher 시그니처 갱신\n   - useDiscoverySearch 등 mock 대체 훅의 fetcher 교체\n   - .taskmaster/report/ 에서 후속 검증 라운드 실시\n\n4. 프론트 mock/우회 현황 테이블 갱신:\n   | 영역 | 우회 방법 | 관련 FE-API |\n   | 밴드 검색 | 클라이언트 필터 | FE-API-004 |\n   | 내 소속/탐색 탭 | memberOnly 미지원 | FE-API-004~006 |\n   | 합주 목록 | 405 차단 | FE-API-001 |\n   | 밴드별 합주/공연 | EmptyState | FE-API-009~010 |\n   | 참여 세션 통계 | mock 0 | FE-API-014 |\n   | 멤버 이름 | last4Chars 폴백 | FE-API-012 |\n   | 프로필 사진 | URL 입력 | FE-API-015 |\n   | 합주곡 검색 | UUID 입력 | FE-API-016 |\n\n5. 총 16개 항목 최종 검증:\n   - FE-API-001 ~ FE-API-016 존재 확인\n   - 각 항목 필수 필드 완비 확인\n   - pnpm build 통과 확인 (타입 에러 없음)",
@@ -2443,7 +2400,6 @@
             "title": "queryKeys.ts 업데이트 - 신규 엔드포인트용 쿼리 키 네임스페이스 추가",
             "description": "src/global/config/queryKeys.ts 파일을 수정하여 band.my(), band.search(keyword), practice.my(), practice.mySearch(keyword), performance.my(), performance.search(keyword) 쿼리 키 함수를 추가한다.",
             "dependencies": [
-              2,
               3,
               4
             ],
@@ -2601,7 +2557,6 @@
             "title": "HomeStatCards의 useUpcomingPractices/useUpcomingPerformances me 엔드포인트 정합성 확인",
             "description": "HomeStatCards.client.tsx에서 사용 중인 useUpcomingPractices와 useUpcomingPerformances 훅이 me 엔드포인트 기반으로 정상 동작하는지 확인하고, 필요시 조정한다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. 현재 useMyBands는 이미 HomeStatCards에서 사용 중 - 유지\n2. useUpcomingPractices와 useUpcomingPerformances가 me 엔드포인트를 사용하도록 Task 2에서 수정되었는지 확인\n3. 수정되지 않은 경우, 내 합주/공연만 카운트하도록 훅 호출 조정 또는 Task 2 완료 후 자동 반영 확인\n4. 홈 화면 진입 시 통계 카드 숫자가 내 리소스 기준으로 정확히 표시되는지 검증\n5. 타입 정합성 확인: length 속성 접근이 정상 동작하는지",
@@ -2651,9 +2606,7 @@
             "id": 3,
             "title": "합주 생성 마법사 3단계 Zod 스키마 및 타입 정의",
             "description": "3단계 위저드(밴드 선택 → 곡 검색 → 메타데이터 입력) 각 단계별 유효성 검증을 위한 Zod 스키마를 정의한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. `src/domain/practice/types/schema.ts`에 위저드용 스키마 추가:\n   - `step1Schema`: `bandId: z.string().uuid('밴드를 선택해 주세요.')`\n   - `step2Schema`: `song: z.object({ title, artist, album, duration, refLink })` 또는 자작곡용 필드\n   - `step3Schema`: 기존 `startAt`, `durationMinutes` + optional `title`, `venue`\n2. 전체 위저드 데이터 타입 정의:\n   ```ts\n   export const practiceWizardSchema = z.object({\n     bandId: z.string().uuid(),\n     songType: z.enum(['search', 'custom']),\n     song: Song (search 선택 시) | null,\n     customSong: { title, artist, album, duration, refLink } (custom 선택 시),\n     title: z.string().max(100).optional(),\n     venue: z.string().max(200).optional(),\n     startAt: z.string().regex(KST_DATETIME),\n     durationMinutes: z.number().int().min(15).max(480)\n   });\n   ```\n3. `PracticeWizardSchema` 타입 export\n4. 각 스텝별 partial 스키마로 `trigger` 시 부분 검증 가능하도록 구성",
             "status": "done",
             "testStrategy": "1. 각 스키마에 대한 vitest 단위 테스트 작성\n2. 유효/무효 데이터에 대한 검증 결과 확인\n3. `pnpm typecheck` 통과",
@@ -2666,7 +2619,6 @@
             "description": "`src/app/(main)/practices/new/` 경로에 단일 패널 레이아웃의 3단계 풀스크린 위저드 컴포넌트를 구현한다.",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "1. 기존 `PracticeCreateForm.client.tsx` 파일을 `PracticeCreateWizard.client.tsx`로 리네임 또는 교체\n2. 컴포넌트 구조:\n   - `useState<0|1|2>`로 현재 스텝 관리\n   - `react-hook-form` + `zodResolver`로 전체 폼 상태 관리\n   - 상단에 `StepIndicator` 컴포넌트 배치 (`steps=['밴드 선택', '곡 선택', '일정 설정']`)\n3. Step 1 - 밴드 선택:\n   - `useMyBands` 훅으로 내 밴드 목록 조회\n   - 밴드 카드 그리드 렌더링 (클릭 시 선택 상태 토글)\n   - 선택된 밴드 시각적 하이라이트 (`ring-accent` border)\n4. Step 2 - 곡 검색/선택:\n   - 검색 Input + 디바운스(300ms) 적용\n   - `searchSongs` API 호출 결과 리스트 렌더링\n   - '자작곡 직접 입력' 토글 스위치 → 토글 시 수동 입력 폼 노출\n   - 곡 선택 시 폼 값 설정\n5. Step 3 - 메타데이터 입력:\n   - 제목(선택), 장소(선택), 시작 시각(`DateTimePicker`), 진행 시간 Input\n6. 하단 네비게이션: 이전/다음/만들기 버튼\n7. `page.tsx` 수정하여 `PracticeCreateWizard` import",
@@ -2731,9 +2683,7 @@
             "id": 3,
             "title": "PerformanceBandPickerModal 컴포넌트 신규 구현 (밴드 검색 + 다중 선택 UI)",
             "description": "ResponsiveSheet 기반의 밴드 선택 모달을 신규 구현한다. 키워드 입력 → 디바운스 → 검색 결과 표시 → 체크박스 다중 선택 → 확인 플로우를 제공한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "**신규 파일:** `src/domain/performance/components/PerformanceBandPickerModal.client.tsx`\n\n**구현 명세:**\n1. Props 인터페이스:\n   ```tsx\n   interface PerformanceBandPickerModalProps {\n     open: boolean;\n     onOpenChange: (open: boolean) => void;\n     performanceId: string;\n     excludeBandIds?: string[]; // 이미 참여 중인 밴드 제외\n     onConfirm: (bandIds: string[]) => void;\n   }\n   ```\n\n2. 상태 관리:\n   - `keyword: string` — 검색어 입력\n   - `debouncedKeyword` — useDebounce(keyword, 300) 적용\n   - `selectedBandIds: string[]` — 선택된 밴드 ID 배열\n\n3. UI 구조 (ResponsiveSheet 기반):\n   - Header: \"참여 밴드 선택\" 제목\n   - Body:\n     - Input (검색어 입력, placeholder: \"밴드명으로 검색\")\n     - 검색어 미입력 시: EmptyState (title: \"밴드명을 입력하세요\")\n     - 검색 결과 0건 시: EmptyState (title: \"검색 결과가 없습니다\")\n     - 검색 결과 있을 시: 밴드 카드 목록 (체크박스 + 밴드명 + 설명)\n   - Footer: 취소 버튼 + 확인 버튼 (선택 개수 표시)\n\n4. 검색 API 연동:\n   - Task 1에서 구현될 `searchBands` API / `useBandSearch` 훅 사용 예정\n   - 현재는 mock fetcher 또는 placeholder 훅으로 대체\n\n5. 체크박스 다중 선택:\n   - excludeBandIds에 포함된 밴드는 disabled + \"이미 참여 중\" 표시\n   - 선택 토글 시 selectedBandIds 배열 업데이트\n\n**활용 UI 컴포넌트:** ResponsiveSheet, Input, Button, Checkbox, EmptyState",
             "status": "done",
             "testStrategy": "1. 모달 열림/닫힘 동작 확인\n2. 검색어 입력 시 디바운스 후 검색 결과 표시 확인\n3. 검색어 미입력 시 '밴드명을 입력하세요' EmptyState 표시\n4. 검색 결과 0건 시 '검색 결과가 없습니다' EmptyState 표시\n5. 체크박스 다중 선택 후 확인 버튼 클릭 시 onConfirm 콜백 호출 확인\n6. `pnpm typecheck && pnpm lint` 통과",
@@ -2807,9 +2757,7 @@
             "id": 3,
             "title": "AuthBootstrapper 컴포넌트 구현",
             "description": "useMe 쿼리 결과에 따라 로딩 스켈레톤, 에러 시 로그아웃 + 토스트 + 리다이렉트 처리를 담당하는 클라이언트 컴포넌트를 구현한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. `src/global/auth/AuthBootstrapper.tsx` 파일 신규 생성 (`'use client'` 선언)\n2. `useMe` 훅을 호출하여 `{ data, isLoading, isError }` 구조 분해\n3. `isLoading` 상태일 때 `AuthLoadingSkeleton` 반환\n4. `isError` 상태일 때 `useEffect` 내에서:\n   - `useAuthStore.getState().clear()` 호출로 accessToken 정리\n   - `useToastStore.getState().add({ type: 'error', message: '세션이 만료되었습니다' })` 호출 (훅 바깥에서 store 직접 접근)\n   - `router.replace('/login')` 호출\n5. 에러 상태에서는 `null` 반환 (리다이렉트 진행 중)\n6. 정상 인증 시 `<>{children}</>` 반환\n7. 시나리오 B/C/D 처리 대응 (apiClient 의 401 인터셉터와 연계)",
             "status": "done",
             "testStrategy": "useMe 쿼리가 에러를 반환하도록 모킹 후 토스트 메시지 표시 및 /login 리다이렉트 확인. 로딩 상태에서 AuthLoadingSkeleton 노출 확인. 정상 인증 시 children 렌더링 확인.",
@@ -2910,8 +2858,7 @@
             "title": "린트 및 타입체크 통과 검증",
             "description": "모든 변경 사항이 프로젝트의 린트 및 타입체크 규칙을 통과하는지 최종 검증한다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "다음 명령을 순차적으로 실행하여 코드 품질 검증:\n1. `pnpm typecheck` - TypeScript strict 모드 통과 확인\n2. `pnpm lint` - ESLint 규칙 통과 확인\n3. `pnpm format` - Prettier 포맷팅 적용\n4. `pnpm test src/components/ui/password-strength.test.tsx` - 유닛 테스트 통과 최종 확인\n\n모든 명령이 오류 없이 완료되어야 태스크 완료로 간주한다.",
             "status": "done",
@@ -2966,9 +2913,7 @@
             "id": 3,
             "title": "검증 리포트 작성 (.taskmaster/reports/create-api-verification-2026-04-25.md)",
             "description": "curl 검증 결과를 CLAUDE.md에 명시된 검증 리포트 형식(메타/API 목록/케이스별 요청응답/권장 조치/프론트 관련 파일)으로 정리한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "리포트 고정 섹션 구성:\n1. 메타 - 작성일, 검증 주체, 대상 URL, 검증 도구, 검증 범위\n2. 테스트한 API 목록 - path/method/인증요건/프론트 호출 지점/판정(정상/경고/실패) 표\n3. 케이스별 실제 요청/응답 값 - 요청 헤더/body, 응답 HTTP/body/Set-Cookie, 관련 백엔드 로그를 원문 인용\n4. 권장 조치 내용 및 검토 필요 사항 - 차단/기능저하/품질/참고 우선순위로 분류. 각 항목에 재현 절차/추정 원인/확인 체크리스트 포함\n5. 프론트 관련 구현 지점 - 수정이 필요한 파일 경로\n6. 재현용 페이로드 위치 - /tmp/bandage-create-api-test/ 경로 안내\n\n기존 band-api-verification-2026-04-24.md, practice-song-api-verification-2026-04-24.md 형식을 참조하여 일관된 스타일 유지.",
             "status": "done",
             "testStrategy": "리포트 내 모든 curl 명령이 재현 가능한지 확인. 발견된 이슈가 차단/기능저하/품질/참고로 명확히 분류되었는지 검토.",
@@ -3046,8 +2991,7 @@
             "title": "ViewAllLink 조건부 렌더링 로직 구현",
             "description": "각 홈 섹션 컴포넌트가 totalCount > 3일 때만 SectionTitle의 action prop에 ViewAllLink를 전달하도록 구현한다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "두 가지 구현 방식 중 선택:\n\n방식 A (권장 - 섹션 내부 캡슐화):\n- 각 Home*Section 컴포넌트가 SectionTitle을 포함\n- 내부에서 hasMoreThanLimit(data.length)로 판단\n- showViewAll이 true일 때만 action prop 전달\n\n방식 B (부모에서 관리):\n- Home*Section이 onHasMore 콜백 prop을 받음\n- page.tsx에서 상태로 관리하여 SectionTitle에 전달\n\n방식 A 채택시:\n- HomeMyBandsSection에서 <SectionTitle title='내 밴드' action={hasMore ? <ViewAllLink href={ROUTES.BANDS} label='전체 밴드 보기' /> : undefined} /> 패턴 적용\n- ViewAllLink 컴포넌트는 page.tsx에서 섹션 컴포넌트로 이동하거나 공용 컴포넌트화",
             "status": "done",
@@ -3060,7 +3004,6 @@
             "title": "홈 페이지(page.tsx) 신규 섹션 컴포넌트로 교체",
             "description": "src/app/(main)/home/page.tsx에서 기존 범용 컴포넌트를 신규 홈 전용 섹션 컴포넌트로 교체하고 불필요한 코드를 제거한다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "page.tsx 수정 내용:\n\n1. import 변경:\n- 기존: import { MyBands } from '@/domain/band/components/MyBands'\n- 신규: import { HomeMyBandsSection } from './HomeMyBandsSection.client'\n- 동일하게 UpcomingPractices → HomeUpcomingPracticeSection\n- 동일하게 UpcomingPerformances → HomeUpcomingPerformanceSection\n\n2. JSX 변경:\n- <MyBands limit={6} /> → <HomeMyBandsSection />\n- <UpcomingPractices limit={3} /> → <HomeUpcomingPracticeSection />\n- <UpcomingPerformances limit={3} /> → <HomeUpcomingPerformanceSection />\n\n3. ViewAllLink 및 SectionTitle을 섹션 컴포넌트 내부로 이동했다면 page.tsx에서 해당 부분 제거\n\n4. 불필요해진 import 정리",
@@ -3075,7 +3018,6 @@
             "description": "향후 백엔드 /home/feed 단일 엔드포인트 구현을 위한 요구사항을 API_REQUIRED.md 문서에 추가한다.",
             "dependencies": [
               1,
-              2,
               3,
               4
             ],
@@ -3143,8 +3085,7 @@
             "title": "Sidebar/BottomNav에 GuardedLink 적용",
             "description": "Sidebar와 BottomNav의 Link를 GuardedLink로 교체하여 dirty 상태일 때 이탈 경고 모달을 표시합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. `src/components/layout/sidebar.tsx` 수정\n   - `GuardedLink` 내부 컴포넌트 추가\n   - Props: `href`, `children`, 기타 Link props (className, aria-current 등)\n   - `useDirtyForm()` 훅으로 `isDirty`, `setDirty` 조회\n   - `useState`로 `confirmOpen` 관리\n   - `onClick`: isDirty면 `e.preventDefault()` + `setConfirmOpen(true)`\n   - `onConfirm`: `setDirty(false)` 후 `router.push(href)`\n   - `onCancel`: `setConfirmOpen(false)`\n   - `LeaveConfirmDialog` 렌더링\n   - `NavRow` 내 `<Link>`를 `<GuardedLink>`로 교체 (서브메뉴 포함)\n   - 하단 프로필 영역 Link도 GuardedLink로 교체\n\n2. `src/components/layout/bottom-nav.tsx` 수정\n   - 동일한 패턴으로 모바일 탭의 Link를 GuardedLink로 교체\n   - `use client` 이미 선언되어 있으므로 훅 사용 가능",
             "status": "done",
@@ -3158,7 +3099,6 @@
             "description": "합주 생성 마법사에서 입력 상태에 따라 dirty 플래그를 설정하고, 제출 성공 시 초기화합니다.",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "1. `src/app/(main)/practices/new/PracticeCreateWizard.client.tsx` 수정\n   - `useDirtyForm()` 훅 import 및 호출\n   - `useBeforeUnload(isDirty)` 훅 호출로 브라우저 새로고침/뒤로가기 경고 활성화\n   - dirty 판정 로직 (useEffect로 구현):\n     - step > 0 이면 dirty\n     - step === 0 이고 bandId가 선택되었으면 dirty\n     - 그 외에는 not dirty\n   - mutation onSuccess 콜백에서 `setDirty(false)` 호출 (라우트 이동 전)\n   - 컴포넌트 unmount 시 cleanup으로 `setDirty(false)` (useEffect return)\n\n2. dirty 로직 예시:\n   ```tsx\n   const { setDirty } = useDirtyForm();\n   useEffect(() => {\n     const hasDirtyData = step > 0 || !!bandId;\n     setDirty(hasDirtyData);\n   }, [step, bandId, setDirty]);\n   useEffect(() => () => setDirty(false), [setDirty]);\n   ```",
@@ -3208,9 +3148,7 @@
             "id": 3,
             "title": "performances/layout.tsx 풀페이지 opt-out 및 page.tsx 수정",
             "description": "/performances/new 경로에서 PaneSplit 레이아웃 대신 단일 children만 렌더링하도록 layout.tsx를 수정하고, page.tsx에서 PerformanceCreateWizard를 사용하도록 변경한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. src/app/(main)/performances/layout.tsx 수정:\n   - practices/layout.tsx 패턴 적용\n   - usePathname으로 현재 경로 확인\n   - pathname === ROUTES.PERFORMANCE_NEW || pathname.startsWith(`${ROUTES.PERFORMANCE_NEW}/`) 조건으로 fullPage 판정\n   - fullPage 시 PerformancesListPane 미노출, 단일 `<div className=\"h-full overflow-y-auto\">{children}</div>` 반환\n\n2. src/app/(main)/performances/new/page.tsx 수정 (이미 존재하면 수정, 없으면 생성):\n   - Metadata 설정: title: '공연 만들기 | Bandage'\n   - PerformanceCreateWizard 컴포넌트 import 및 렌더링\n\nimport 추가:\n- 'use client' from usePathname\n- ROUTES from '@/global/config/routes'",
             "status": "done",
             "testStrategy": "1. /performances 접근 시 기존 master-detail 레이아웃 유지 확인\n2. /performances/new 접근 시 좌측 ListPane 미노출 + 풀페이지 마법사만 표시\n3. /performances/new에서 사이드바는 그대로 노출 확인\n4. 모바일(<960px)에서도 /performances/new 풀페이지 정상 렌더링\n5. 브라우저 뒤로가기로 /performances 복귀 시 ListPane 다시 노출",
@@ -3272,8 +3210,7 @@
             "title": "BandsListPane 탐색 탭 내 항목 시각 강조 적용",
             "description": "밴드 탐색 탭의 BandRow 컴포넌트에서 사용자 소속 밴드를 MyItemMarker와 좌측 보더로 시각적으로 강조한다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "src/app/(main)/bands/BandsListPane.client.tsx 파일 수정. BandRow 컴포넌트에 isMine 변수 추가: const isMine = !!myRole. listItemClasses 호출 시 isMine 파라미터 전달. MyItemMarker 임포트 후, isMine이 true인 경우 카드 우상단에 <MyItemMarker type=\"band\" /> 표시. 마커 위치: 기존 콘텐츠 div를 relative로 감싸고 MyItemMarker를 absolute -top-1 -right-1로 배치. 중요: '내 밴드' 탭에서는 모든 항목이 이미 내 밴드이므로 MyItemMarker 미표시 (중복 방지). discover 탭에서만 isMine 시각 강조 적용.",
             "status": "done",
@@ -3286,8 +3223,7 @@
             "title": "PerformancesListPane 탐색 탭 내 항목 시각 강조 적용",
             "description": "공연 탐색 탭의 PerformanceRow 컴포넌트에서 사용자 소속 공연을 MyItemMarker와 좌측 보더로 시각적으로 강조한다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "src/app/(main)/performances/PerformancesListPane.client.tsx 파일 수정. useMyPerformances 결과에서 performanceId Set 생성하여 O(1) 조회 지원: const myPerformanceIds = useMemo(() => new Set(all.map(p => p.performanceId)), [all]). PerformanceRow에 isMine prop 추가. listItemClasses 호출 시 isMine 파라미터 전달. MyItemMarker 임포트 후, isMine이 true인 경우 카드 우상단에 <MyItemMarker type=\"performance\" /> 표시. discover 탭에서 렌더링 시 myPerformanceIds.has(p.performanceId)로 내 공연 여부 판정. 참고: 현재 PerformanceListItemResponse에는 myRole 같은 필드가 없어 별도 myPerformanceIds Set 매칭 필요. '내 공연' 탭에서는 MyItemMarker 미표시 (중복 방지).",
             "status": "done",
@@ -3336,9 +3272,7 @@
             "id": 3,
             "title": "BandSettingsModal 컴포넌트 구현 (3개 탭 구조)",
             "description": "ResponsiveSheet + Tabs를 활용한 밴드 설정 모달을 구현하고 정보/사진/삭제 탭별 폼을 작성한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. `src/domain/band/components/BandSettingsModal.client.tsx` 생성\n2. Props: bandId, initialData: BandInfoResponse, open, onOpenChange\n3. ResponsiveSheet + Tabs 컴포넌트 조합 (variant='pill')\n4. **정보 탭**: useForm + zod 스키마(bandName: z.string().min(1), description: z.string().optional()), useUpdateBand 호출, 성공 시 토스트 + onOpenChange(false)\n5. **사진 탭**: 현재 이미지 미리보기 + URL 직접 입력 폼, 저장 시 updateBand의 profileImg 필드로 전달\n6. **삭제 탭**: 경고 문구 표시, 밴드명 재입력 input, input === bandName일 때만 삭제 버튼 활성화, useDeleteBand 호출 후 router.replace(ROUTES.BANDS)\n7. 기존 createBandSchema 참조하여 updateBandSchema 추가 또는 재사용",
             "status": "done",
             "testStrategy": "1. 모달 열기/닫기 동작 확인\n2. 정보 탭: 밴드명 필수 검증, 빈 값 시 에러 메시지 표시\n3. 사진 탭: URL 입력 시 미리보기 이미지 갱신\n4. 삭제 탭: 밴드명 불일치 시 버튼 disabled, 일치 시 enabled\n5. 모바일에서 BottomSheet, 데스크톱에서 Dialog로 렌더링 확인",
@@ -3414,7 +3348,6 @@
             "title": "마법사 mutation.onSuccess 강화 토스트 적용",
             "description": "PracticeCreateWizard와 PerformanceCreateWizard의 생성 성공 시 기존 toast.success 대신 강화된 ResourceCreatedToast를 표시하도록 수정한다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "## 수정 파일\n1. `src/app/(main)/practices/new/PracticeCreateWizard.client.tsx`\n2. `src/app/(main)/performances/new/PerformanceCreateForm.client.tsx` (또는 Task 2 완료 후 PerformanceCreateWizard)\n\n## PracticeCreateWizard 수정\n### 1. 훅 import 추가\n```typescript\nimport { useResourceCreatedToast } from '@/hooks/useResourceCreatedToast';\n```\n\n### 2. 훅 초기화\n```typescript\nconst resourceCreatedToast = useResourceCreatedToast();\n```\n\n### 3. mutation.onSuccess 수정\n```typescript\nconst mutation = useCreatePractice({\n  onSuccess: (data) => {\n    resourceCreatedToast.show({\n      title: '합주가 생성되었습니다',\n      cta: {\n        label: '보러가기',\n        href: ROUTES.PRACTICE_DETAIL(data.practiceId),\n      },\n    });\n    router.replace(ROUTES.PRACTICE_DETAIL(data.practiceId));\n  },\n  onError: (err) => toast.error(err.message || '합주 생성에 실패했습니다.'),\n});\n```\n\n## PerformanceCreateForm (또는 Wizard) 수정\n동일 패턴 적용:\n```typescript\nconst mutation = useCreatePerformance({\n  onSuccess: (data) => {\n    resourceCreatedToast.show({\n      title: '공연이 생성되었습니다',\n      cta: {\n        label: '보러가기',\n        href: ROUTES.PERFORMANCE_DETAIL(data.performanceId),\n      },\n    });\n    router.replace(ROUTES.PERFORMANCE_DETAIL(data.performanceId));\n  },\n  onError: (err) => toast.error(err.message || '공연 생성에 실패했습니다.'),\n});\n```\n\n## 참고 사항\n- router.replace는 유지하여 뒤로가기 시 마법사로 돌아가지 않도록 함\n- 강화 토스트는 상세 페이지로 이동 후에도 표시됨 (CTA 클릭 시 무시됨)\n- Task 2(PerformanceCreateWizard)가 완료된 후 해당 파일에도 적용 필요",
@@ -3539,7 +3472,6 @@
             "title": "밴드 카드 선택 시각 강조 통합 (좌측 보더 + 체크 아이콘)",
             "description": "밴드 선택 카드에 선택 시각 강조를 적용합니다: 좌측 2px accent 보더 + 우상단 체크 아이콘 + bg-accent-dim 배경.",
             "dependencies": [
-              2,
               3
             ],
             "details": "## 수정 파일\n1. `src/app/(main)/practices/new/PracticeCreateWizard.client.tsx` — Step 1 밴드 카드\n2. `src/domain/performance/components/PerformanceCreateModal.client.tsx` — Step 0 밴드 카드\n3. `src/domain/band/components/BandPickerModal.client.tsx` — 모달 내 renderItem\n\n## 시각 강조 패턴\n1. **기본 상태**: `border-border bg-card hover:bg-card-hover`\n2. **선택 상태**: \n   - `border-l-2 border-l-accent border-accent bg-accent-dim`\n   - 우상단 체크 아이콘: `<Check className=\"h-4 w-4 text-accent\" />`\n   - 아이콘 위치: `absolute top-2 right-2` 또는 flex justify-between\n\n## 공통 카드 구조 예시\n```tsx\n<button\n  className={\n    'relative border bg-card hover:bg-card-hover gap-s-3 px-s-4 py-s-3 flex w-full items-center rounded-md text-left transition-colors ' +\n    (selected ? 'border-l-2 border-l-accent border-accent bg-accent-dim' : 'border-border')\n  }\n  aria-pressed={selected}\n>\n  {selected && (\n    <span className=\"absolute top-2 right-2 text-accent\">\n      <Check className=\"h-4 w-4\" />\n    </span>\n  )}\n  {/* 카드 내용 */}\n</button>\n```\n\n## 참조\n- StepIndicator의 Check 아이콘 사용 패턴 (lucide-react)\n- 기존 선택 강조: `border-accent bg-accent-dim` (PracticeCreateWizard.client.tsx:145)",
@@ -3727,8 +3659,7 @@
             "title": "setlistStore.ts — Zustand store 및 액션 구현",
             "description": "선곡 회의 상태 관리를 위한 Zustand store를 구현하고, 지원/취소/확정/채팅 등의 액션을 정의한다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "## 파일 생성 경로\nsrc/domain/setlist-meeting/store/setlistStore.ts\n\n## State 구조\n- meetings: Meeting[]\n- songs: Song[]\n- members: Member[]\n- selectedMeetingId: string | null\n- selectedSongId: string | null\n- focusedSessionId: string | null\n\n## Actions 구현\n- setSelectedMeeting(id: string): 선택된 회의 변경\n- setSelectedSong(id: string): 선택된 곡 변경\n- setFocusedSession(id: string | null): 포커스된 세션 변경\n- applySession(songId, sessionId, userId): applicants 배열에 userId 추가\n- withdrawSession(songId, sessionId, userId): applicants/confirmed에서 userId 제거\n- confirmSession(songId, sessionId, userId): confirmed 배열에 userId 추가 (need 초과 방지)\n- unconfirmSession(songId, sessionId, userId): confirmed에서 userId 제거\n- sendChat(songId, userId, msg): chat 배열에 메시지 추가\n- addSong(meetingId, song): 새 곡 추가\n- addCustomSession(songId, session): 곡에 커스텀 세션 추가\n\n## persist 설정\n- name: 'bandage-setlist'\n- storage: sessionStorage (authStore.ts 패턴 참고)\n- SSR 안전 처리: typeof window 체크",
             "status": "pending",
@@ -3801,7 +3732,6 @@
             "title": "lint/typecheck 통과 및 isActive 로직 검증",
             "description": "변경된 파일들에 대해 lint, typecheck를 실행하고 isActive 로직이 /setlist-meetings 및 하위 경로에서 올바르게 동작하는지 확인한다.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. pnpm lint 실행하여 ESLint 규칙 위반 없음 확인\n2. pnpm typecheck 실행하여 TypeScript 컴파일 오류 없음 확인\n3. isActive 로직 검증 포인트:\n   - pathname이 '/setlist-meetings'일 때 해당 탭 활성화\n   - pathname이 '/setlist-meetings/mt1', '/setlist-meetings/mt1/edit' 등 하위 경로일 때도 활성화\n   - 다른 탭 경로에서는 비활성 상태 유지\n4. pnpm format 실행하여 코드 포맷팅 일관성 확보",
@@ -3851,9 +3781,7 @@
             "id": 3,
             "title": "/setlist-meetings layout.tsx 마스터-디테일 레이아웃 구현",
             "description": "마스터 패널(SetlistMeetingsListPane)과 children을 나란히 배치하는 layout.tsx를 구현한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "## 파일 생성\n- `src/app/(main)/setlist-meetings/layout.tsx`\n\n## 구현 내용\n```tsx\nimport { Suspense, type ReactNode } from 'react';\nimport { SetlistMeetingsListPane } from './SetlistMeetingsListPane.client';\n\nexport default function SetlistMeetingsLayout({ children }: { children: ReactNode }) {\n  return (\n    <div className=\"flex h-full flex-col lg:flex-row\">\n      <Suspense fallback={null}>\n        <SetlistMeetingsListPane />\n      </Suspense>\n      <div className=\"min-w-0 flex-1 lg:overflow-y-auto\">{children}</div>\n    </div>\n  );\n}\n```\n\n## 참고\n- 기존 practices/layout.tsx 패턴을 따름\n- lg 이상에서 좌우 분할, 모바일에서는 세로 스택\n- ListPane은 'use client' 컴포넌트이므로 Suspense로 감싸서 import",
             "status": "pending",
             "testStrategy": "1. lg 이상 화면에서 좌측에 ListPane, 우측에 children 렌더링 확인\n2. 모바일 화면에서 세로 스택 레이아웃 확인",
@@ -3972,9 +3900,7 @@
             "id": 3,
             "title": "매니저 확정/해제 기능 — RoleGuard 기반 조건부 렌더링",
             "description": "매니저 권한을 가진 사용자에게만 지원자 확정/해제 버튼을 표시하고, store의 confirmSession/unconfirmSession 액션과 연동한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "SessionPanel.client.tsx 내 매니저 권한 로직 추가.\n\n1. 매니저 판별:\n   - const meeting = meetings.find(m => m.id === selectedMeetingId)\n   - const isManager = meeting?.managerId === currentUserId\n\n2. 지원자 리스트 내 매니저 전용 버튼:\n   - isManager === true일 때만 각 지원자 행에 버튼 표시\n   - 미확정 지원자: [확정] 버튼 (variant=\"secondary\" size=\"sm\")\n     - onClick → store.confirmSession(songId, sessionId, applicantUserId)\n   - 확정된 지원자: [해제] 버튼 (variant=\"ghost\" size=\"sm\")\n     - onClick → store.unconfirmSession(songId, sessionId, applicantUserId)\n\n3. 확정/해제 다이얼로그 (선택적):\n   - Dialog 컴포넌트 사용\n   - '정말 {이름}을(를) 확정하시겠습니까?' 확인\n   - 또는 즉시 실행 (PRD에 명시 없으므로 즉시 실행 우선)\n\n4. 버튼 로딩 상태:\n   - Zustand store에서 pending 상태 관리 또는\n   - 로컬 useState로 isConfirming/isUnconfirming 관리\n   - Button의 loading prop 활용\n\n5. Toast 피드백:\n   - useToast 훅 사용\n   - 확정 성공: toast.success('세션이 확정되었습니다.')\n   - 해제 성공: toast.success('확정이 해제되었습니다.')\n   - 에러 시: toast.error(err.message)",
             "status": "pending",
             "testStrategy": "1. 매니저 계정 로그인 시 각 지원자 행에 [확정]/[해제] 버튼 표시 확인\n2. 비매니저 계정에서는 [확정]/[해제] 버튼 미표시 확인\n3. [확정] 버튼 클릭 시 store.confirmSession 호출 및 UI 반영 확인\n4. [해제] 버튼 클릭 시 store.unconfirmSession 호출 및 UI 반영 확인\n5. 확정/해제 후 지원자 리스트의 배지 상태 변경 확인\n6. Toast 알림이 정상 표시되는지 확인",
@@ -4033,9 +3959,7 @@
             "id": 3,
             "title": "채팅 입력 영역 및 전송 기능 구현 (Enter/Shift+Enter 처리)",
             "description": "MeetingChatBox에 텍스트 입력 영역과 전송 버튼을 추가하고, Enter 키 전송 및 Shift+Enter 줄바꿈 동작을 구현한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "## 입력 영역 구조\n- 컨테이너: border-t border-border px-s-3 py-s-2 flex items-end gap-s-2\n- textarea 또는 input: 기존 Input 컴포넌트 스타일 참고, flex-1, min-h-[40px] max-h-[80px] resize-none\n- 전송 버튼: Button variant='primary' size='sm', Send 아이콘(lucide-react)\n\n## 키보드 이벤트 처리\n```tsx\nconst handleKeyDown = (e: KeyboardEvent) => {\n  if (e.key === 'Enter' && !e.shiftKey) {\n    e.preventDefault();\n    handleSend();\n  }\n  // Shift+Enter는 기본 동작(줄바꿈) 허용\n};\n```\n\n## 전송 로직\n- 빈 문자열/공백만 있으면 전송 방지\n- onSend(msg.trim()) 호출 후 입력 필드 초기화\n- 전송 버튼도 빈 입력 시 disabled 처리\n\n## 자동 스크롤\n- useEffect로 messages 변경 감지\n- scrollRef.current.scrollTop = scrollRef.current.scrollHeight로 최하단 스크롤",
             "status": "pending",
             "testStrategy": "1. 입력 후 Enter 키 → onSend 콜백 호출 + 입력 필드 초기화 검증\n2. Shift+Enter → 줄바꿈 동작 (onSend 호출 안 됨) 확인\n3. 빈 입력 시 전송 버튼 비활성화 및 Enter 키 무시\n4. 새 메시지 추가 시 스크롤이 최하단으로 이동하는지 확인",
@@ -4106,7 +4030,6 @@
             "description": "isManager 판정 훅을 구현하고 세션 확정/해제 버튼의 권한 기반 비활성화/숨김 처리를 적용한다.",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "## 권한 판정 유틸/훅 생성\n- `src/domain/setlist-meeting/hooks/useIsManager.ts`\n```ts\nimport { useAuthStore } from '@/global/store/authStore';\nimport { useSetlistStore } from '../store/setlistStore';\n\nexport function useIsManager(meetingId?: string) {\n  // 참고: authStore에는 accessToken만 있음. 현재 사용자 ID는 별도 member/me API 또는 토큰 디코딩 필요\n  // v5에서는 mock으로 현재 사용자 ID를 store에 하드코딩하거나 seed 데이터 기준으로 판정\n  const meeting = useSetlistStore(s => s.meetings.find(m => m.id === meetingId));\n  const currentUserId = 'mock-user-id'; // TODO: 실제 사용자 ID 연동 시 교체\n  return meeting?.managerId === currentUserId;\n}\n```\n\n## 권한 기반 UI 처리\n- SessionPanel.client.tsx (Task 6에서 구현)에서 useIsManager 훅 사용\n- isManager=true: 확정/해제 버튼 활성화 (Button disabled={false})\n- isManager=false: 확정/해제 버튼 hidden 또는 disabled={true} + 툴팁 '매니저만 가능합니다'\n- 비매니저는 지원/취소 버튼만 표시\n- Button variant 또는 className으로 시각적 구분\n\n## 권한 가드 컴포넌트 (선택적)\n```tsx\nexport function ManagerOnly({ meetingId, children, fallback }: { meetingId: string; children: ReactNode; fallback?: ReactNode }) {\n  const isManager = useIsManager(meetingId);\n  return isManager ? <>{children}</> : (fallback ?? null);\n}\n```\n\n## 적용 대상\n- SessionPanel의 [확정]/[해제] 버튼\n- 곡 삭제 버튼(매니저만 가능)\n- 회의 설정/삭제 액션(매니저만)",
@@ -4156,8 +4079,7 @@
             "title": "신규 파일 목록 및 역할 코멘트 정리",
             "description": "선곡 회의 도메인 구현으로 생성된 모든 신규 파일의 목록과 각 파일의 역할을 문서화한다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "## 문서화 위치\nAPI_REQUIRED.md 하단 또는 별도 섹션 `## 선곡 회의 구현 산출물`\n\n## 신규 파일 목록 (Task 2~8 구현 기준)\n\n### 도메인 모듈 (src/domain/setlist-meeting/)\n- `types.ts` — Meeting, Song, Session, Applicant, ChatMessage 타입 정의\n- `store/setlistStore.ts` — Zustand 상태 관리 (회의/곡/세션/채팅)\n- `mock/seed.ts` — 개발용 mock 데이터 (TOOL TRIBUTE 7곡 + 마그마 회의)\n- `utils.ts` — 세션 상태 헬퍼 (sessionState, isReady, missingCount)\n\n### 컴포넌트 (src/domain/setlist-meeting/components/)\n- `SetlistMeetingsListPane.client.tsx` — 회의 목록 마스터 패널\n- `MeetingCard.tsx` — 회의 카드 컴포넌트\n- `MeetingDetail.client.tsx` — 회의 상세 디테일 영역\n- `SongSessionTable.client.tsx` — 곡별 세션 테이블\n- `SessionCell.client.tsx` — 세션 셀 (지원/확정 UI)\n- `MeetingChatBox.client.tsx` — 곡별 채팅 분할 패널\n- `AddSongModal.client.tsx` — 곡 추가 모달\n- `MeetingCreateModal.client.tsx` — 회의 생성 모달\n\n### 라우트 (src/app/(main)/setlist-meetings/)\n- `page.tsx` — 첫 회의 자동 선택 redirect\n- `layout.tsx` — 마스터/디테일 레이아웃\n- `[id]/page.tsx` — 동적 라우트 상세 페이지",
             "status": "pending",
@@ -4385,9 +4307,7 @@
             "id": 3,
             "title": "SchedulingShell.client.tsx 생성 - 오버레이 패널 셸",
             "description": "SetlistMeetingsShell 패턴을 재사용하여 일정 조율 영역의 마스터-디테일 셸 컴포넌트를 생성합니다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "src/app/(main)/setlist-meetings/scheduling/SchedulingShell.client.tsx 파일 생성:\n\n1. SetlistMeetingsShell 구조 복제:\n   - 좌측 토글 버튼 (PanelLeftOpen 아이콘, lg 이상에서만 표시)\n   - Backdrop (열려있을 때만 bg-bg/40 backdrop-blur-sm)\n   - SchedulingListPane mode='overlay' 연결\n   - children 영역 (상세 페이지)\n2. 상태 관리:\n   - listOpen 상태 (useState)\n   - pathname 변경 시 자동 닫힘 (useEffect)\n   - Esc 키 핸들러로 닫기\n   - ?listOpen=1 쿼리 파라미터로 초기 열림 지원\n3. CSS 구조: relative flex h-full + Suspense 감싸기\n\n기존 SetlistMeetingsShell과 동일한 UX 패턴을 유지하되, SchedulingListPane을 사용합니다.",
             "status": "pending",
             "testStrategy": "1. 토글 버튼 클릭 시 패널 열림/닫힘 확인\n2. Esc 키로 패널 닫힘 확인\n3. Backdrop 클릭 시 패널 닫힘 확인\n4. pathname 변경 시 자동 닫힘 확인 (첫 마운트 제외)\n5. ?listOpen=1 쿼리 파라미터로 초기 열림 확인",
@@ -4446,9 +4366,7 @@
             "id": 3,
             "title": "좌측 3탭 컨텐츠 영역 구현 (멤버/곡/시간표 리스트)",
             "description": "좌측 40% 영역에 표시될 3개 탭의 리스트 컨텐츠를 구현한다. 멤버 시간표 탭, 합주곡 시간표 탭, 합주 시간표 생성 탭(매니저 전용).",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. 멤버 시간표 탭 ('member'):\n   - 기존 멤버 리스트 UI 재사용 (라인 145-193)\n   - 아바타 + 이름 + 입력 상태 배지(완료/입력 중/미입력)\n   - 클릭 시 setRightPanel({ kind: 'member', member })\n\n2. 합주곡 시간표 탭 ('song'):\n   - 기존 곡 리스트 UI 재사용 (라인 195-238)\n   - 곡 제목 + 아티스트 + '합주 가능' 배지\n   - 필터 유지: '내 합주곡' / '전체' (UnderlineTabs 중첩 사용)\n   - 클릭 시 setRightPanel({ kind: 'song', song })\n\n3. 합주 시간표 생성 탭 ('schedule'):\n   - 매니저(isManager)가 아닌 경우 탭 자체 비표시 또는 disabled\n   - 시간표 카드 목록 placeholder (Task 4에서 상세 구현)\n   - '+ 시간표 생성' 버튼 placeholder\n   - 클릭 시 setRightPanel({ kind: 'board', boardId })\n\n4. 공통 스타일:\n   - 각 리스트 아이템: hover:bg-card, border-b border-border\n   - 선택된 아이템 하이라이트: bg-accent-dim border-l-2 border-accent",
             "status": "pending",
             "testStrategy": "1. 'member' 탭 클릭 시 멤버 리스트 표시 확인\n2. 'song' 탭 클릭 시 곡 리스트 + 필터 표시 확인\n3. 매니저 계정에서 'schedule' 탭 표시 확인\n4. 비매니저 계정에서 'schedule' 탭 미표시 확인\n5. 멤버/곡 아이템 클릭 시 rightPanel 상태 업데이트 확인\n6. 선택된 아이템 하이라이트 스타일 적용 확인",
@@ -4458,9 +4376,7 @@
             "id": 4,
             "title": "우측 60% 시각화 영역 슬롯 및 빈 상태 UI 구현",
             "description": "우측 시각화 영역에 rightPanel 상태에 따라 적절한 컴포넌트를 렌더링하는 슬롯 구조와 선택 전 빈 상태 UI를 구현한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. 우측 영역 컨테이너:\n   - flex-1, bg-card 또는 bg-surface-dim\n   - overflow-y-auto, 내부 padding: p-s-4\n   - 최소 높이 보장: min-h-[400px] (모바일 세로 스택 시)\n\n2. rightPanel 상태별 렌더링:\n   - null: 빈 상태 UI (일러스트 + 안내 문구)\n   - { kind: 'member' }: MemberSchedulePanel 렌더링 (기존 라인 316-386 재사용)\n   - { kind: 'song' }: SongMatrixPanel 렌더링 (기존 라인 389-451 재사용)\n   - { kind: 'board' }: ScheduleBoardEditor placeholder (Task 4에서 상세 구현)\n\n3. 빈 상태 UI:\n   - 중앙 정렬 flex flex-col items-center justify-center h-full\n   - CalendarDays 또는 적절한 아이콘 (text-foreground-muted, h-12 w-12)\n   - 안내 문구: '좌측에서 멤버 또는 곡을 선택하세요'\n   - 부가 설명: '선택한 항목의 가용 시간을 확인할 수 있습니다'\n\n4. 헤더 영역 (기존 aside 헤더 패턴 재사용):\n   - 패널 제목: '멤버 일정' / '곡 합주 가능 매트릭스' / '시간표 에디터'\n   - 닫기 버튼(X): onClick={() => setRightPanel(null)}",
             "status": "pending",
             "testStrategy": "1. rightPanel이 null일 때 빈 상태 UI 렌더링 확인\n2. 멤버 선택 시 MemberSchedulePanel 렌더링 확인\n3. 곡 선택 시 SongMatrixPanel 렌더링 확인\n4. 닫기 버튼 클릭 시 빈 상태로 복귀 확인\n5. 패널 제목이 kind에 따라 변경되는지 확인\n6. 반응형 레이아웃에서 시각화 영역 최소 높이 보장 확인",
@@ -4519,7 +4435,6 @@
             "description": "좌/우 이동 버튼과 '오늘' 버튼을 포함한 네비게이션 컴포넌트 구현 및 SchedulingMain에 뷰 단위 전환 기능 통합",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "1. src/domain/schedule-coordination/components/ViewUnitNavigation.client.tsx 생성\n\n2. 컴포넌트 Props:\n```ts\ninterface ViewUnitNavigationProps {\n  onPrev: () => void;\n  onNext: () => void;\n  onToday: () => void;\n  canGoPrev: boolean;\n  canGoNext: boolean;\n  label: string;  // 현재 뷰포트 표시 (예: '2026-04-26 ~ 05-02' 또는 '2026년 5월')\n}\n```\n\n3. UI 구현:\n- 좌우로 ChevronLeft/ChevronRight 버튼 (lucide-react 아이콘)\n- 중앙에 현재 뷰포트 라벨 (font-mono font-bold)\n- '오늘' 버튼: text-accent 링크 스타일 또는 작은 버튼\n- disabled 상태 시 opacity-50 cursor-not-allowed\n- 기존 ScheduleInputModal의 주간 네비게이션 스타일 참조\n\n4. SchedulingMain.client.tsx 수정:\n- useScheduleViewUnit 훅 import 및 사용\n- 헤더 영역에 ViewUnitToggle + ViewUnitNavigation 배치\n- activeUnit에 따른 시각화 분기 준비 (일: 7열 그리드, 주: 기존 패턴, 월: 캘린더)\n- allDays 대신 activeUnit 기반 날짜 범위 사용\n\n5. MemberSchedulePanel, SongMatrixPanel의 allDays prop을 동적 날짜 범위로 교체 준비",
@@ -4568,9 +4483,7 @@
             "id": 3,
             "title": "ScheduleBoardCard 컴포넌트 및 ScheduleBoardList.client.tsx 구현",
             "description": "시간표 카드 목록 UI 컴포넌트를 구현합니다. 개별 카드(이름, 진행도, 옵션 메뉴)와 카드 목록(최대 5개) + '시간표 생성' 버튼을 포함합니다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "domain/schedule-coordination/components/ 폴더에 컴포넌트 생성:\n1. ScheduleBoardCard.client.tsx - board 데이터 표시(이름, blocks 기반 진행도 계산), active 상태 스타일, onClick/onEdit/onDelete 콜백, 옵션 메뉴(수정/삭제) 드롭다운\n2. ScheduleBoardList.client.tsx - boardStore에서 getBoardsByMeeting으로 카드 목록 조회, 카드 선택 상태(selectedBoardId) 관리, '+ 시간표 생성' 버튼(5개 제한 시 disabled), 이름 수정 다이얼로그, 삭제 확인 다이얼로그(ConfirmDialog 사용)\n3. Card, Button, ConfirmDialog 등 기존 UI 컴포넌트 재사용",
             "status": "pending",
             "testStrategy": "시간표 카드 최대 5개 제한 확인, 카드 클릭 시 selectedBoardId 변경, 이름 수정 다이얼로그 열림/저장 동작, 삭제 확인 다이얼로그 표시 및 삭제 실행 확인.",
@@ -4642,7 +4555,6 @@
             "title": "ScheduleBoardCell 드롭 타겟 및 통합 연결",
             "description": "그리드 셀을 드롭 타겟으로 구현. onDragOver/onDrop 핸들러 추가하여 블록 배치 완료. useScheduleBoard의 addBlock 호출로 상태 업데이트 및 시각적 표시 완성.",
             "dependencies": [
-              2,
               3
             ],
             "details": "1. ScheduleBoardCell.tsx 드롭 핸들러 추가\n   - onDragOver: e.preventDefault() + 드래그 중 셀 하이라이트 (border-accent border-2 border-dashed)\n   - onDragLeave: 하이라이트 제거\n   - onDrop:\n     ```tsx\n     const handleDrop = (e: DragEvent) => {\n       e.preventDefault();\n       const songId = e.dataTransfer.getData('songId');\n       const durationSlots = Number(e.dataTransfer.getData('durationSlots')) || 4;\n       if (!songId) return;\n       addBlock({ songId, date, startSlot: slot, durationSlots });\n     };\n     ```\n2. 배치된 블록 렌더링 개선\n   - 블록이 차지하는 셀 범위: startSlot ~ startSlot + durationSlots - 1\n   - 첫 셀에만 블록 내용 표시 (곡 제목 truncate), 나머지 셀은 같은 색상 연속\n   - colSpan 대신 position: absolute + width: calc(슬롯수 * 셀너비) 방식 권장 (테이블 구조 유지)\n3. ScheduleBoardEditor 에서 전체 통합\n   - useScheduleBoard 훅의 blocks 상태를 그리드에 전달\n   - 블록 클릭 시 selectBlock(blockId) 호출 → 선택된 블록 ring-2 ring-accent 표시\n   - 블록 삭제: 선택 후 키보드 Delete 또는 우클릭 메뉴 (간단 버전: X 버튼)\n4. 드래그 중 전역 피드백: 드래그 시작 시 그리드 영역에 bg-accent/5 오버레이",
@@ -4703,7 +4615,6 @@
             "description": "시간표 그리드의 블록 렌더링 시 getSongColor 적용 및 블록 클릭 시 ScheduleBlockPanel 연동",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "ScheduleBoardEditor.client.tsx(Task 5 산출물 예정) 또는 해당 블록 렌더링 컴포넌트에서 getSongColor(block.songId, board.paletteSeed) 호출하여 배경색 적용. 블록 클릭 이벤트 핸들러: setSelectedBlock(block.blockId) 호출. 조건부 렌더링: selectedBlockId 존재 시 우측에 ScheduleBlockPanel 표시. 패널 onUpdate 콜백에서 scheduleStore.updateBlock 호출, onDelete에서 removeBlock 호출 후 setSelectedBlock(null). 패널 외부 클릭 또는 Esc 키로 패널 닫기 처리. 같은 songId 블록은 항상 동일 색상으로 시각적 일관성 확보",
@@ -4753,8 +4664,7 @@
             "title": "Step2Blocks에 24h 토글 및 가로 스크롤 적용",
             "description": "ScheduleInputModal의 Step2Blocks 컴포넌트에 useTimeRangeMode 훅과 TimeRangeToggle을 통합하고 24h 모드 시 가로 스크롤 UI를 적용합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "ScheduleInputModal.client.tsx의 Step2Blocks 수정. useTimeRangeMode 훅 import 및 사용. TimeRangeToggle 컴포넌트를 주차 네비게이션 옆에 배치. 현재 하드코딩된 슬롯 배열(18~43)을 visibleSlots로 교체. table 컨테이너에 24h 모드일 때 overflow-x-auto + min-w-[1200px] 적용. 셀 너비를 cellWidthClass로 동적 적용(9-22: h-6 w-10, 24h: h-6 w-6). 헤더 시간 레이블도 visibleSlots 기반으로 동적 생성(매 4슬롯마다 표시).",
             "status": "pending",
@@ -4766,8 +4676,7 @@
             "title": "SongMatrixPanel에 24h 토글 적용",
             "description": "SchedulingMain의 SongMatrixPanel 컴포넌트에 동일한 24h 토글 기능을 적용합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "SchedulingMain.client.tsx의 SongMatrixPanel 수정. useTimeRangeMode 훅 import 및 사용. TimeRangeToggle을 패널 상단 설명 문구 옆에 배치. 현재 하드코딩된 슬롯 배열([18,22,26,30,34,38,42])을 visibleSlots 기반으로 교체(9-22: 매 4슬롯, 24h: 매 4슬롯 또는 매 6슬롯 표시). 24h 모드 시 overflow-x-auto 적용. 셀 너비 동적 조정. 헤더/바디 슬롯 레이블을 slotToTime 헬퍼로 동적 생성.",
             "status": "pending",
@@ -4828,8 +4737,7 @@
             "title": "확정된 board 수정 시 경고 모달 구현",
             "description": "이미 확정된 시간표를 수정하려 할 때 경고 모달을 표시하고, 확인 시 confirmed=false로 변경 후 수정을 진행합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. ScheduleBoardEditor.client.tsx (또는 시간표 편집 컴포넌트)에 경고 로직 추가:\n   - board.confirmed === true 상태에서 편집 시도 감지\n   - 편집 시도 훅: useEditGuard(board) 또는 인라인 체크\n\n2. 경고 모달 (ConfirmDialog 재사용):\n   - title: '확정된 시간표 수정'\n   - description: '확정된 시간표를 수정하시겠습니까? 수정 시 확정 상태가 해제됩니다.'\n   - confirmLabel: '수정하기'\n   - cancelLabel: '취소'\n   - tone: 'danger'\n\n3. 수정 진행 로직:\n   ```tsx\n   const handleEditConfirmed = () => {\n     unconfirmBoard(meetingId, boardId);\n     toast.warn('시간표 확정이 해제되었습니다.');\n     // 수정 모드 진입\n     setEditMode(true);\n   };\n   ```\n\n4. 편집 진입점들에 가드 적용:\n   - 슬롯 드래그/추가 시\n   - 시간표 이름 변경 시\n   - 슬롯 삭제 시\n   - 블록(곡) 이동/재배치 시\n\n5. UX 고려사항:\n   - 경고 모달은 세션당 한 번만 표시 옵션 (체크박스)\n   - 또는 매번 표시하되 간결한 메시지",
             "status": "pending",
@@ -4878,8 +4786,7 @@
             "title": "9-B 시간 프리셋 칩 — Reclaim Habits 패턴",
             "description": "오전/점심/오후/저녁/심야 5개 프리셋 칩 구현, Shift(replace)/Alt(remove) modifier 지원, localStorage 빈도 추적으로 자주 쓰는 칩 상단 고정",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. `TIME_PRESETS` 상수 정의:\n   ```tsx\n   const TIME_PRESETS = [\n     { id: 'morning', label: '오전', start: 18, end: 24 },   // 09:00-12:00\n     { id: 'lunch', label: '점심', start: 24, end: 28 },     // 12:00-14:00\n     { id: 'afternoon', label: '오후', start: 28, end: 36 }, // 14:00-18:00\n     { id: 'evening', label: '저녁', start: 38, end: 44 },   // 19:00-22:00\n     { id: 'night', label: '심야', start: 44, end: 4 },      // 22:00-02:00 (wrap)\n   ] as const;\n   ```\n2. `TimePresetChips` 컴포넌트 생성 (Step2Blocks 상단에 배치)\n3. 클릭 핸들러 구현:\n   - 기본 클릭: 선택된 일자에 해당 시간 mask OR 적용\n   - Shift+클릭: 해당 mask만 남기기 (replace)\n   - Alt+클릭: 해당 mask 영역 제거\n4. localStorage 빈도 추적:\n   - key: `bandage-preset-freq`\n   - 구조: `{ [presetId]: number }`\n   - 클릭 시 해당 프리셋 count 증가\n5. 칩 정렬: 빈도 상위 3개는 'Quick' prefix + 상단 고정\n6. 심야(22-02) wrap 처리: slot 44~47 + 0~3 범위 적용",
             "status": "pending",
@@ -4891,8 +4798,7 @@
             "title": "9-C Copy & Repeat — 전주/모든주/요일 복사 + 키보드 단축키",
             "description": "'전 주와 동일'/'모든 주차에 적용'/'요일 복사' 버튼 구현, Cmd+C/V/Z 키보드 단축키 지원, undo history 최대 10개",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. `CopyRepeatActions` 컴포넌트 생성 (시간 그리드 상단 우측)\n2. '전 주와 동일' 버튼:\n   - 현재 주차의 선택된 일자에 직전 주차 mask 복제\n   - `copyFromPreviousWeek(weekStart, blocks, availableDates)` 유틸 함수\n3. '모든 주차에 적용' 버튼:\n   - 확인 다이얼로그 표시 (덮어쓰기 경고)\n   - 현재 주차 패턴을 모든 주에 브로드캐스트\n   - `applyToAllWeeks(weekStart, blocks, allDays)` 유틸 함수\n4. '요일 복사 → 다른 요일' 기능:\n   - 일자 라벨에 ⋯ 메뉴 추가\n   - 클립보드 상태: `useState<SlotMask | null>(copiedMask)`\n   - 메뉴 항목: '이 요일 복사' / '붙여넣기'\n5. Undo history 구현:\n   - `useState<Record<string, SlotMask>[]>` 최대 10개\n   - blocks 변경 시 이전 상태 push\n   - `useHistoryStack(blocks, maxSize: 10)` 커스텀 훅\n6. 키보드 단축키:\n   - `Cmd/Ctrl+C`: 현재 주차 mask 복사\n   - `Cmd/Ctrl+V`: 붙여넣기\n   - `Cmd/Ctrl+Z`: undo\n   - useEffect로 keydown 리스너 등록",
             "status": "pending",
@@ -4904,8 +4810,7 @@
             "title": "9-D 24h/9-22 토글 + Working Hours 시각화",
             "description": "헤더에 24h/9-22 토글 추가, 24h 모드 가로 스크롤, 9-22 모드 working-hours 외부 stripe 강조",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. `useState<'9-22' | '24h'>` 상태 추가\n2. 토글 버튼 UI (헤더 우측):\n   ```tsx\n   <button onClick={() => setTimeMode(m => m === '9-22' ? '24h' : '9-22')}>\n     {timeMode === '9-22' ? '24h로 보기' : '9-22로 보기'}\n   </button>\n   ```\n3. 9-22 모드 (슬롯 18~43, 26개):\n   - 현재 구현 유지\n   - working-hours 외부 셀에 stripe 패턴 + opacity-50 적용\n   - 외부 셀 클릭 시 토스트: '근무 시간 외입니다'\n4. 24h 모드 (슬롯 0~47, 48개):\n   - 가로 스크롤 활성화\n   - `scrollLeft` 위치 저장 (토글 시 복원)\n   - 시간 레이블 전체 표시 (00:00~23:30)\n5. stripe 패턴 CSS:\n   ```css\n   .stripe-pattern {\n     background: repeating-linear-gradient(\n       45deg,\n       transparent,\n       transparent 2px,\n       rgba(128,128,128,0.1) 2px,\n       rgba(128,128,128,0.1) 4px\n     );\n   }\n   ```\n6. 시간축 sticky 헤더 구현",
             "status": "pending",
@@ -4917,8 +4822,7 @@
             "title": "9-E 실시간 요약 푸터",
             "description": "모달 푸터 위에 '선택: 12시간 / 5일 / 멤버 평균 14시간' 형태의 실시간 요약 표시",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "1. `ScheduleSummary` 컴포넌트 생성\n2. 계산 로직 (useMemo):\n   ```tsx\n   const summary = useMemo(() => {\n     const totalSlots = Object.values(blocks).reduce(\n       (acc, mask) => acc + mask.filter(Boolean).length, 0\n     );\n     const totalHours = Math.round((totalSlots * 30) / 60);\n     const totalDays = availableDates.length;\n     const avgHoursPerDay = totalDays > 0 \n       ? (totalHours / totalDays).toFixed(1) \n       : 0;\n     return { totalHours, totalDays, avgHoursPerDay };\n   }, [blocks, availableDates]);\n   ```\n3. UI 레이아웃:\n   ```tsx\n   <div className=\"border-t border-border px-s-4 py-s-2 text-caption\">\n     선택: <strong>{summary.totalHours}</strong>시간 / \n     <strong>{summary.totalDays}</strong>일 / \n     일평균 <strong>{summary.avgHoursPerDay}</strong>시간\n   </div>\n   ```\n4. 위치: ResponsiveSheetBody 하단, ResponsiveSheetFooter 상단\n5. Step 2(시간 블록) 단계에서만 표시",
             "status": "pending",
@@ -4931,7 +4835,6 @@
             "description": "첫 진입 시 '평일 저녁 + 주말 종일' 프리셋 자동 적용, '비우고 시작' 버튼, 무시 시 다음부터 비활성",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "1. localStorage 플래그: `bandage-smart-default-dismissed`\n2. 첫 진입 감지:\n   - 모달 open 시 blocks가 비어있고 dismissed 플래그가 false면 적용\n3. Smart Default 패턴:\n   - 평일: 저녁 19-22 (슬롯 38-43)\n   - 주말: 종일 09-22 (슬롯 18-43)\n4. `applySmartDefault(allDays, setBlocks)` 유틸 함수:\n   ```tsx\n   const applySmartDefault = (allDays: string[]) => {\n     const newBlocks: Record<string, SlotMask> = {};\n     for (const day of allDays) {\n       const mask = Array.from({ length: 48 }, () => false);\n       if (isWeekend(day)) {\n         // 주말: 09-22 전체\n         for (let i = 18; i < 44; i++) mask[i] = true;\n       } else {\n         // 평일: 19-22\n         for (let i = 38; i < 44; i++) mask[i] = true;\n       }\n       newBlocks[day] = mask;\n     }\n     return newBlocks;\n   };\n   ```\n5. '비우고 시작' 버튼:\n   - 클릭 시 blocks 초기화 + dismissed 플래그 true로 설정\n   - 위치: Step 1(가능 일자) 상단 또는 Smart Default 배너 내\n6. 배너 UI:\n   ```tsx\n   {showSmartDefault && (\n     <div className=\"bg-accent-dim rounded-lg px-s-4 py-s-3 mb-s-3\">\n       <p>평일 저녁 + 주말 종일이 자동 적용되었습니다.</p>\n       <button onClick={clearAndDismiss}>비우고 시작</button>\n     </div>\n   )}\n   ```",
@@ -4995,7 +4898,6 @@
             "description": "기존 SchedulingMain.client.tsx 헤더 영역에 진행도 게이지와 텍스트를 통합합니다. 회의 제목/매니저/합주 기간 아래, 버튼 위에 배치합니다.",
             "dependencies": [
               1,
-              2,
               3
             ],
             "details": "1. SchedulingMain.client.tsx에 calculateScheduleProgress 임포트 및 호출:\n```tsx\nconst progressInfo = useMemo(() => \n  calculateScheduleProgress(allSongs, schedulesAll, meeting),\n  [allSongs, schedulesAll, meeting]\n);\n```\n\n2. 헤더 영역(line 105-141)에 진행도 게이지 삽입:\n- 위치: mt-s-2의 메타 정보 div와 mt-s-3의 버튼 div 사이\n- 레이아웃: flex items-center gap-s-2\n\n3. 기존 confirmedSlot 뱃지와 중복 제거 또는 조정:\n- 진행도 게이지가 확정 상태를 이미 표시하므로 기존 뱃지 제거 검토\n- 또는 뱃지는 확정 일시를 표시하고, 게이지는 참여도를 표시하는 역할 분리\n\n4. 구현 코드:\n```tsx\n<div className=\"mt-s-2 flex items-center gap-s-2\">\n  <div className=\"h-2 flex-1 rounded-full bg-card overflow-hidden\">\n    <div \n      className={cn(\n        'h-full transition-all',\n        progressInfo.isConfirmed ? 'bg-success' : 'bg-accent'\n      )}\n      style={{ width: `${progressInfo.total > 0 ? (progressInfo.completed / progressInfo.total) * 100 : 0}%` }}\n    />\n  </div>\n  <span className=\"text-micro text-foreground-muted shrink-0\">\n    {progressInfo.isConfirmed \n      ? `시간표 확정 - ${progressInfo.completed}/${progressInfo.total} 참여` \n      : `${progressInfo.completed}/${progressInfo.total} 명 일정 입력 완료`}\n  </span>\n</div>\n```",
@@ -5044,9 +4946,7 @@
             "id": 3,
             "title": "SchedulingMain 컴포넌트에 캡처 대상 ref 연결 및 DropdownMenu 추가",
             "description": "SchedulingMain.client.tsx에 캡처 대상 영역의 ref를 연결하고, 상단 헤더에 DropdownMenu를 추가하여 Export (JPEG) 옵션을 제공합니다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "1. SchedulingMain.client.tsx 상단에 useRef<HTMLDivElement>(null) 추가\n2. 캡처 대상 영역(메인 컨텐츠 래퍼 div)에 ref 연결\n3. @radix-ui/react-dropdown-menu 활용하여 헤더에 MoreHorizontal 아이콘 버튼 + DropdownMenu 추가\n4. DropdownMenu 메뉴 항목: 'Export (JPEG)' - Download 아이콘 + 텍스트\n5. useScheduleExport 훅 호출: const { exportJpeg, isExporting } = useScheduleExport(captureRef)\n6. 메뉴 클릭 시 exportJpeg(`${meeting.title}_${meeting.bandName}_${new Date().toISOString().slice(0,10)}`) 호출\n7. isExporting=true 상태일 때 버튼에 Spinner 표시 또는 disabled 처리\n8. 파일명 생성 로직: formatKst 활용하여 'yyyy-MM-dd' 형식 날짜 포함",
             "status": "pending",
             "testStrategy": "1. DropdownMenu 렌더링 확인 - MoreHorizontal 아이콘 클릭 시 메뉴 표시\n2. Export (JPEG) 메뉴 항목 존재 확인\n3. 메뉴 클릭 시 exportJpeg 함수 호출 확인\n4. isExporting 상태에서 로딩 표시 확인",
@@ -5118,8 +5018,7 @@
             "title": "autoSuggest.ts 자동 추천 알고리즘 구현",
             "description": "멤버 가용 시간을 종합하여 동시 가능 인원이 최대인 슬롯에 곡을 배치하는 자동 추천 알고리즘을 구현합니다.",
             "dependencies": [
-              1,
-              2
+              1
             ],
             "details": "domain/schedule-coordination/utils/autoSuggest.ts 파일을 새로 생성합니다:\n\n1. parseDurationToSlots(duration: string | undefined): number 함수\n   - 'mm:ss' 포맷을 30분 슬롯 수로 변환 (올림 처리, 기본 4슬롯)\n\n2. rankSlots(aggregate: Record<string, number[]>): RankedSlot[] 함수\n   - date, startSlot, availableCount 객체 배열 반환\n   - availableCount 내림차순 정렬\n\n3. suggestScheduleBoards 메인 함수:\n```ts\nexport function suggestScheduleBoards(\n  schedules: MemberSchedule[],\n  songs: Song[],\n  dates: string[],\n  count: number = 3\n): ScheduleBoard[]\n```\n\n알고리즘:\n1. aggregateAvailability(schedules, dates)로 날짜/슬롯별 가능 인원 수 계산\n2. rankSlots로 가능 인원 많은 슬롯 정렬\n3. 곡 순차 배치 시 고려사항:\n   - 곡 duration 기반 슬롯 수 계산\n   - 이미 배치된 블록과 겹침 방지 (hasOverlap 체크)\n   - 같은 날 연속 배치 우선 (날짜 그룹핑)\n4. count개 변형 생성 (다른 시작점, 우선순위 변형)\n5. COLOR_PALETTE 적용하여 ScheduleBoard[] 반환",
             "status": "pending",
@@ -5167,9 +5066,7 @@
             "id": 3,
             "title": "Working Hours UI 컴포넌트 및 Undo 토스트 훅 구현",
             "description": "Working Hours 설정 패널(슬라이더, 토글, 휴식 시간 관리)과 되돌리기 액션이 포함된 Undo 토스트 훅을 구현한다.",
-            "dependencies": [
-              2
-            ],
+            "dependencies": [],
             "details": "## 구현 내용\n\n### 1. WorkingHoursPanel.client.tsx\n`domain/schedule-coordination/components/WorkingHoursPanel.client.tsx`:\n- 시작/종료 시간 슬라이더 (0~47 슬롯, 기본 09:00~22:00)\n- 심야 배제 토글 (22시 이후 자동 차단)\n- 주말 배제 토글\n- 공휴일 배제 토글\n- 휴식 시간(BlockedRange) 추가/삭제 UI\n  - label 입력, 시작/종료 슬롯 선택, recurring 토글\n- slotToTime 유틸로 슬롯을 시간 문자열로 표시\n- onChange 콜백으로 constraints 변경 전파\n\n### 2. useUndoToast.ts 훅\n`hooks/useUndoToast.ts`:\n```ts\ninterface UndoableAction<T> {\n  data: T;\n  undo: () => void;\n}\n\nexport function useUndoToast() {\n  const { add, remove } = useToastStore();\n  const undoRef = useRef<(() => void) | null>(null);\n  \n  const showUndoToast = <T>(\n    message: string,\n    action: UndoableAction<T>,\n    duration = 5000\n  ) => {\n    undoRef.current = action.undo;\n    // 토스트 표시 + 5초 후 참조 클리어\n  };\n  \n  const executeUndo = () => {\n    if (undoRef.current) {\n      undoRef.current();\n      undoRef.current = null;\n    }\n  };\n  \n  return { showUndoToast, executeUndo };\n}\n```\n\n### 3. 토스트 메시지 형식\n- '{N}개 블록이 자동 재조정되었습니다 [되돌리기]'\n- 5초 지속, 클릭 시 undo 실행",
             "status": "pending",
             "testStrategy": "컴포넌트/훅 테스트:\n1. WorkingHoursPanel 슬라이더 조작 시 constraints 변경 콜백 호출\n2. 심야 배제 토글 시 workingHoursEnd가 44로 설정\n3. 휴식 시간 추가 시 blockedRanges 배열에 항목 추가\n4. 휴식 시간 삭제 동작\n5. useUndoToast - showUndoToast 호출 시 토스트 표시\n6. 5초 내 executeUndo 호출 시 undo 함수 실행\n7. 5초 후 executeUndo 호출 시 아무 동작 없음\n8. 연속 showUndoToast 시 최신 undo만 유효",
@@ -5390,7 +5287,7 @@
   "BD-65-member-profile": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "마이페이지 프로필 UI 재구성 (BD-65)",
         "description": "이미지 참조 기반으로 마이페이지 레이아웃을 재구성한다. 사이드바 GNB에 로그아웃 버튼 추가, 프로필 섹션 헤더 분리, 모바일 전용 로그아웃 섹션 추가, 계정 탈퇴 섹션 인라인 재구성.",
         "details": "",
@@ -5453,12 +5350,112 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-06-03T19:22:52.961Z",
-      "taskCount": 1,
-      "completedCount": 1,
+      "lastModified": "2026-06-05T15:24:03.521Z",
+      "taskCount": 2,
+      "completedCount": 2,
       "tags": [
         "BD-65-member-profile"
-      ]
+      ],
+      "created": "2026-06-05T15:26:40.068Z",
+      "description": "Tasks for BD-65-member-profile context"
+    }
+  },
+  "BD-66-member-availability-timetable": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "마이페이지 주간 타임테이블 UI 구현 (BD-66)",
+        "description": "마이페이지 프로필 정보 하단에 주간 타임테이블 섹션을 추가한다. 본인의 합주·공연 일정이 컬러 블록으로 표시되고, 불가능 시간대는 회색으로 표시된다. [나의 스케줄 관리] 버튼으로 가능 시간대를 설정하는 2단계 모달을 제공한다. API: GET/PUT /api/v1/me/availability, GET /api/v1/practices/me, GET /api/v1/performances/me",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Availability 관련 타입 정의 (domain/member/types)",
+            "description": "마이페이지 주간 타임테이블 기능에 필요한 MemberAvailability 관련 타입을 정의한다. API_SPEC 2-7, 2-8을 참조하여 백엔드 DTO와 1:1 대응하는 타입을 작성한다.",
+            "dependencies": [],
+            "details": "domain/member/types/req.ts에 MemberAvailabilityRequest 추가: weeklyRules (WeeklyRuleRequest[]), exceptions (AvailabilityExceptionRequest[]), note (string|null). WeeklyRuleRequest: dayOfWeek (DayOfWeek enum), startSlot (0-47), endSlot (1-48), effectiveFrom (string), effectiveTo (string|null). AvailabilityExceptionRequest: date (string), kind (AvailabilityKind enum), startSlot (number|null), endSlot (number|null). domain/member/types/res.ts에 MemberAvailabilityResponse 추가: memberId, weeklyRules (WeeklyRuleResponse[]), exceptions (AvailabilityExceptionResponse[]), note, updatedAt. 공통 enum: DayOfWeek (MONDAY~SUNDAY), AvailabilityKind (AVAILABLE|BLOCKED). 슬롯 체계: 30분 단위, slot 0=00:00, slot 18=09:00, slot 44=22:00. [startSlot, endSlot) 반열린 구간. index.ts에 새 타입 export 추가.",
+            "status": "done",
+            "testStrategy": "TypeScript 컴파일 테스트로 타입 정의 검증. API_SPEC의 JSON 예시와 타입 구조 일치 확인.",
+            "updatedAt": "2026-06-05T15:23:56.391Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Availability API 함수 구현 (getMyAvailability, updateMyAvailability)",
+            "description": "내 가용성 조회(GET /api/v1/me/availability) 및 등록/수정(PUT /api/v1/me/availability) API 함수를 구현한다.",
+            "dependencies": [
+              1
+            ],
+            "details": "domain/member/api/getMyAvailability.ts 생성: apiClient.get<MemberAvailabilityResponse>('/api/v1/me/availability') 호출. domain/member/api/updateMyAvailability.ts 생성: apiClient.put<MemberAvailabilityResponse>('/api/v1/me/availability', request) 호출. 기존 getMe.ts, updateMe.ts 패턴 참조. RequestConfig 타입 활용하여 인증 헤더 자동 주입. 에러 응답(400 AVAILABILITY_INVALID 등)은 apiClient 인터셉터에서 ApiError로 변환됨.",
+            "status": "done",
+            "testStrategy": "백엔드 로컬 서버 구동 후 API 호출 테스트. 정상 응답/에러 케이스(슬롯 범위 오류 등) 검증.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-05T15:23:57.802Z"
+          },
+          {
+            "id": 3,
+            "title": "Availability TanStack Query 훅 구현 (useMyAvailability, useUpdateMyAvailability)",
+            "description": "가용성 조회/수정을 위한 TanStack Query 훅을 구현한다. 기존 useMe, useUpdateMe 패턴을 따른다.",
+            "dependencies": [],
+            "details": "domain/member/hooks/useMyAvailability.ts 생성: useQuery로 getMyAvailability 호출. queryKey는 queryKeys.member에 'availability' 키 추가 필요 (global/config/queryKeys.ts 수정). staleTime 5분. enabled 옵션으로 인증 여부 체크(useIsAuthenticated). domain/member/hooks/useUpdateMyAvailability.ts 생성: useMutation으로 updateMyAvailability 호출. onSuccess 시 queryClient.invalidateQueries로 availability 캐시 무효화. 기존 useUpdateMe.ts 패턴 참조하여 onSuccess/onError 콜백 옵션 지원.",
+            "status": "done",
+            "testStrategy": "컴포넌트에서 훅 사용하여 데이터 fetching/mutation 동작 확인. React Query Devtools로 캐시 상태 검증.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-05T15:23:59.191Z"
+          },
+          {
+            "id": 4,
+            "title": "WeeklyTimetable 컴포넌트 구현",
+            "description": "주간 타임테이블 그리드 UI를 구현한다. 현재 주 날짜 헤더, 9:00~22:00 시간 그리드, 가용/불가 시간대 및 합주/공연 이벤트를 표시한다.",
+            "dependencies": [
+              3
+            ],
+            "details": "domain/member/components/WeeklyTimetable.client.tsx 생성. Props: weeklyRules, exceptions, practices (PracticeListItemResponse[]), performances (PerformanceListItemResponse[]), onManageClick 콜백. 헤더: 현재 주 월~일 날짜 표시 (yyyy-MM-dd (요일) 형식). lib/date.ts의 formatKst 활용. 그리드: 9:00~22:00 (slot 18~44), 30분 단위 행. 요일별 열 7개. 불가능 시간대(weeklyRules 없는 슬롯): bg-gray-500/50 회색 처리. 합주 이벤트: bg-yellow-500 노란색, title truncate. 공연 이벤트: bg-green-500 초록색, title truncate. 상단 오른쪽 [나의 스케줄 관리] 버튼 (variant='secondary', size='sm'). 반응형: 모바일에서 가로 스크롤. Tailwind CSS v4 토큰 사용.",
+            "status": "done",
+            "testStrategy": "Storybook 또는 실제 페이지에서 다양한 데이터 조합으로 렌더링 확인. 모바일 뷰포트에서 가로 스크롤 동작 검증.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-05T15:24:00.687Z"
+          },
+          {
+            "id": 5,
+            "title": "ScheduleManagerModal 컴포넌트 구현 (2단계 모달)",
+            "description": "가능 시간대 설정을 위한 2단계 모달을 구현한다. Step 1에서 드래그/클릭으로 시간대 선택, Step 2에서 특이사항 입력 후 저장한다.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "domain/member/components/ScheduleManagerModal.client.tsx 생성. Props: open, onOpenChange, initialData (MemberAvailabilityResponse|null), onSave 콜백. Dialog 컴포넌트 활용 (src/components/ui/dialog.tsx). 배경 오버레이 bg-black/50, 팝업 내부 bg-card. Step 1/2: 요일별 9:00~22:00 그리드. 클릭/드래그로 가능 시간대 선택 (coral/salmon 색상 bg-coral-500 또는 bg-orange-400). 선택된 슬롯은 weeklyRules로 변환. [스케줄 초기화] 버튼으로 전체 선택 해제. [다음] 버튼은 슬롯 1개 이상 선택 시 활성화. Step 2/2: 특이사항 textarea (max 500자). [이전] 버튼으로 Step 1 복귀. [완료] 버튼(항상 활성화)으로 useUpdateMyAvailability mutation 호출. 성공 시 onOpenChange(false) + toast.success. 로딩 중 버튼 비활성화.",
+            "status": "done",
+            "testStrategy": "모달 열기/닫기, 단계 전환, 드래그 선택, 초기화, 저장 동작 E2E 테스트. 에러 케이스(API 실패) 시 toast.error 표시 확인.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-05T15:24:02.051Z"
+          },
+          {
+            "id": 6,
+            "title": "MeContent에 WeeklyTimetable 섹션 통합",
+            "description": "MeContent.client.tsx의 프로필 정보 섹션 하단에 주간 타임테이블 섹션을 추가하고, 내 합주/공연 데이터를 fetching하여 전달한다.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "MeContent.client.tsx 수정. useMyAvailability 훅으로 가용성 데이터 조회. useMyPractices, useMyPerformances 훅으로 내 합주/공연 목록 조회 (현재 주 필터링 필요시 클라이언트에서 처리). ScheduleManagerModal 상태 관리 (useState로 open/close). 프로필 정보 섹션(</section>) 이후, 계정 탈퇴 섹션 이전에 새 section 추가: <section> + h2 '주간 스케줄' + WeeklyTimetable. WeeklyTimetable에 onManageClick prop으로 모달 열기 핸들러 전달. ScheduleManagerModal 렌더링. 로딩 상태: WeeklyTimetable 영역에 Skeleton 표시. 에러 상태: ErrorState 컴포넌트 또는 인라인 메시지.",
+            "status": "done",
+            "testStrategy": "마이페이지 접속하여 타임테이블 섹션 렌더링 확인. [나의 스케줄 관리] 버튼 클릭 시 모달 열림 확인. 데이터 저장 후 타임테이블 UI 갱신 확인.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-05T15:24:03.521Z"
+          }
+        ],
+        "updatedAt": "2026-06-05T15:24:03.521Z"
+      }
+    ],
+    "metadata": {
+      "created": "2026-06-05T15:26:40.071Z",
+      "updated": "2026-06-05T15:26:40.071Z",
+      "description": "멤버 가용성 타임테이블"
     }
   }
 }

@@ -1,9 +1,20 @@
-export type { JoinRequest, UpdateMeRequest } from './req';
+export type {
+  JoinRequest,
+  UpdateMeRequest,
+  WeeklyRuleRequest,
+  AvailabilityExceptionRequest,
+  UpdateMyAvailabilityRequest,
+} from './req';
 export type {
   JoinResponse,
   MemberInfoResponse,
   MemberMetricsResponse,
   MemberSearchItemResponse,
+  AvailabilityKind,
+  DayOfWeek,
+  WeeklyRuleResponse,
+  AvailabilityExceptionResponse,
+  MemberAvailabilityResponse,
 } from './res';
 export { joinSchema, updateMeSchema } from './schema';
 export type { JoinSchema, UpdateMeSchema } from './schema';

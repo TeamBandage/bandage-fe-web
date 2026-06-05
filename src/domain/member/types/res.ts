@@ -30,3 +30,40 @@ export interface MemberSearchItemResponse {
   email: string;
   profileImg?: string | null;
 }
+
+export type AvailabilityKind = 'AVAILABLE' | 'BLOCKED';
+
+export type DayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY';
+
+/** API_SPEC §2-7 — 주간 반복 가용 규칙. slot 0=00:00, slot 18=09:00, 30분 단위, [startSlot, endSlot) */
+export interface WeeklyRuleResponse {
+  dayOfWeek: DayOfWeek;
+  startSlot: number;
+  endSlot: number;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+/** API_SPEC §2-7 — 날짜별 예외. startSlot/endSlot null이면 전일 적용. */
+export interface AvailabilityExceptionResponse {
+  date: string;
+  kind: AvailabilityKind;
+  startSlot: number | null;
+  endSlot: number | null;
+}
+
+/** API_SPEC §2-7 — 내 가용성 응답. 미등록 시 weeklyRules/exceptions 빈 배열, updatedAt null. */
+export interface MemberAvailabilityResponse {
+  memberId: number;
+  weeklyRules: WeeklyRuleResponse[];
+  exceptions: AvailabilityExceptionResponse[];
+  note: string | null;
+  updatedAt: string | null;
+}
