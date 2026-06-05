@@ -27,11 +27,11 @@ describe('Sidebar', () => {
     expect(asFragment()).toMatchSnapshot();
   });
 
-  it('active 상태의 Link 는 bg-accent-dim / text-accent / font-bold 를 가진다', () => {
+  it('active 상태의 Link 는 bg-nav-active/30 / text-white / font-bold 를 가진다', () => {
     const { getByRole } = render(withQueryClient(<Sidebar />));
     const bandsLink = getByRole('link', { name: /밴드/ });
-    expect(bandsLink.className).toContain('bg-accent-dim');
-    expect(bandsLink.className).toContain('text-accent');
+    expect(bandsLink.className).toContain('bg-nav-active/30');
+    expect(bandsLink.className).toContain('text-white');
     expect(bandsLink.className).toContain('font-bold');
     expect(bandsLink.getAttribute('aria-current')).toBe('page');
   });
