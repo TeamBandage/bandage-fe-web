@@ -190,6 +190,10 @@ NEXT_PUBLIC_APP_ENV=local   # local | dev | prod
 
 커밋/PR 컨벤션, Jira/GitHub/Slack 연동, AI 스타일 규칙, API 검증 절차 등은 워크스페이스 공통 문서로 추출됨: `../CLAUDE.md` 참조. 본 파일에는 bandage-fe 스택 specific 한 가이드만 둔다.
 
+## MCP 영향평가 — 도메인 작업 시 선행 조회 (필수)
+
+도메인/화면 작업에 착수하기 **전에**, 대상 영역(`fe_area`)으로 MCP Tool `check_impacting_changes` 를 호출해 영향을 주는 최근 BE 변경을 먼저 확인한다. 영역 정의·매핑은 `fe-areas.json`, 판정/절차/상태 규칙은 `docs/mcp-impact/` 참조. breaking 변경이 보고되면 무시하지 말고 사용자에게 보고 후 구현 계획에 반영한다. `mock-only` 영역은 "미연동" 반환이므로 생략 가능. 맵 변경 시 `pnpm verify:fe-areas` 로 정합성 검증.
+
 ## Task-master CLI (FE 전용)
 
 Task-master 태스크를 실행하라는 지시를 받으면 본 절을 따른다.
