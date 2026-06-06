@@ -78,17 +78,29 @@ export async function requestGoogleIdToken(): Promise<string> {
         pendingResolver = null;
         pendingRejecter = null;
         const reason = notification.getNotDisplayedReason();
+        // opt_out_or_no_session: 브라우저에 구글 계정 로그인 없음
+        const isNoSession = reason === 'opt_out_or_no_session' || reason === 'suppressed_by_user';
         reject(
           new Error(
-            `Google 로그인 창을 표시할 수 없습니다 (${reason}). 브라우저의 third-party cookie 차단 또는 시크릿 모드를 확인해주세요.`,
+            isNoSession
+              ? 'Chrome에 구글 계정이 로그인되어 있지 않습니다. 브라우저에 구글 계정을 추가한 후 다시 시도해주세요.'
+              : `Google 로그인 창을 표시할 수 없습니다 (${reason}).`,
           ),
         );
       } else if (notification.isSkippedMoment()) {
         pendingResolver = null;
         pendingRejecter = null;
         reject(new Error('Google 로그인이 취소되었습니다.'));
+      } else if (notification.isDismissedMoment()) {
+        // FedCM abort 포함 — credential callback 없이 닫힌 경우
+        const reason = notification.getDismissedReason();
+        if (reason !== 'credential_returned') {
+          pendingResolver = null;
+          pendingRejecter = null;
+          reject(new Error('Google 로그인이 취소되었습니다.'));
+        }
+        // credential_returned 는 callback 에서 처리됨.
       }
-      // dismissed/displayed 는 callback 에서 처리됨.
     });
   });
 }
