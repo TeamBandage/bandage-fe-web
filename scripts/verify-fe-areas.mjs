@@ -27,7 +27,11 @@ function collectSourceFiles(dir) {
     if (statSync(full).isDirectory()) {
       if (entry === 'node_modules') continue;
       out.push(...collectSourceFiles(full));
-    } else if (/\.tsx?$/.test(entry) && !/\.(test|spec)\.tsx?$/.test(entry)) {
+    } else if (
+      /\.tsx?$/.test(entry) &&
+      !/\.(test|spec)\.tsx?$/.test(entry) &&
+      !/\.d\.ts$/.test(entry) // 생성된 선언 파일(예: schema.d.ts)은 호출부가 아니므로 제외
+    ) {
       out.push(full);
     }
   }

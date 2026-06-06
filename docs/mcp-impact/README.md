@@ -17,6 +17,7 @@ BE/FE가 서로의 작업을 모른 채 개발하다 API 변경이 반대편을 
 | [`area-status-policy.md`](./area-status-policy.md) | mock/미연동 영역의 영향 조회 처리 규칙 |
 | [`agent-workflow.md`](./agent-workflow.md) | FE Agent의 자동 호출 시점/절차 |
 | [`repo-access.md`](./repo-access.md) | 2단계 자동매핑을 위한 FE 리포 접근 조건 |
+| [`openapi-types.md`](./openapi-types.md) | OpenAPI 타입 생성(openapi-typescript) 도입 가이드 |
 | [`../../scripts/verify-fe-areas.mjs`](../../scripts/verify-fe-areas.mjs) | 매핑 검증 스크립트 (`pnpm verify:fe-areas`) |
 
 ## 영역 단위 결정 — 도메인 모듈
