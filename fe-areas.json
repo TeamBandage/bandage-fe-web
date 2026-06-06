@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "stack": "typescript/next.js",
+  "repo": "TeamBandage/bandage-fe-web",
+  "description": "MCP 영향평가 Tool(check_impacting_changes)의 조회 단위(fe_area)와 BE endpoint 매핑. FE 도메인 모듈을 영역으로 사용하며 BE 도메인 경계와 1:1 정렬한다. endpointPrefixes는 longest-prefix match로 endpoint를 영역에 귀속시킨다. 자세한 규칙은 docs/mcp-impact/README.md 참조.",
+  "areas": [
+    {
+      "id": "auth",
+      "label": "인증",
+      "routes": ["/login", "/join", "/password-change", "/oauth"],
+      "endpointPrefixes": ["/api/v1/auth"],
+      "status": "active"
+    },
+    {
+      "id": "member",
+      "label": "회원",
+      "routes": ["/me"],
+      "endpointPrefixes": ["/api/v1/members"],
+      "status": "active"
+    },
+    {
+      "id": "band",
+      "label": "밴드",
+      "routes": ["/bands"],
+      "endpointPrefixes": ["/api/v1/bands"],
+      "status": "active"
+    },
+    {
+      "id": "practice",
+      "label": "합주",
+      "routes": ["/practices"],
+      "endpointPrefixes": ["/api/v1/practices", "/api/v1/practice-songs"],
+      "status": "active",
+      "notes": "practice-song은 BE에서 embedded 엔티티로 관리되어 practice 영역에 귀속한다."
+    },
+    {
+      "id": "performance",
+      "label": "공연",
+      "routes": ["/performances"],
+      "endpointPrefixes": ["/api/v1/performances"],
+      "status": "active"
+    },
+    {
+      "id": "setlist-meeting",
+      "label": "셋리스트 회의",
+      "routes": ["/setlist-meetings"],
+      "endpointPrefixes": ["/api/v1/setlist-meetings"],
+      "status": "partial-mock",
+      "notes": "일부 화면이 mock 데이터(domain/setlist-meeting/mock)와 병존한다. 영향 조회 시 mock 구간은 BE 미연동으로 간주."
+    },
+    {
+      "id": "schedule-coordination",
+      "label": "일정 조율",
+      "routes": ["/setlist-meetings/scheduling"],
+      "endpointPrefixes": [],
+      "status": "mock-only",
+      "notes": "BE 미연동(api/ 폴더 없음, 전량 mock). endpoint 매핑 없음 → 영향 조회 대상에서 제외하거나 '미연동'으로 표시."
+    }
+  ]
+}
