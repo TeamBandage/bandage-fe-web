@@ -77,7 +77,8 @@ jobs:
           provenance: false
 
       # repo/deploy/* 를 EC2 ~/bandage/ 로 업로드.
-      # docker-compose.fe.yml + nginx/ 가 함께 동기화되므로 EC2 사전 작성 불필요.
+      # docker-compose.fe.yml 이 동기화되므로 EC2 사전 작성 불필요.
+      # (nginx 설정/배포는 본 워크플로우에서 분리 — FE 이미지만 배포한다.)
       - name: Upload deploy assets to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -114,12 +115,8 @@ jobs:
             # 새 FE 이미지 pull
             $COMPOSE pull fe-web
 
-            # nginx 와 fe-web 만 ensure (BE / DB / Redis 는 그대로).
-            # nginx 는 idempotent — 처음이면 새로 띄우고, 이미 있으면 유지.
-            $COMPOSE up -d --no-deps nginx fe-web
-
-            # nginx 가 이미 떠 있던 경우, scp 로 갱신된 conf.d/ 를 reload 해 즉시 반영.
-            docker exec bandage-nginx nginx -s reload 2>/dev/null || true
+            # fe-web 만 ensure (nginx / BE / DB / Redis 는 그대로 — nginx 는 별도 배포).
+            $COMPOSE up -d --no-deps fe-web
 
             # 헬스체크 통과 대기 (최대 60초)
             for i in $(seq 1 30); do
