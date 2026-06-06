@@ -60,16 +60,14 @@ type BandInfo = Schemas['BandInfoResponse'];           // 이름이 일치하는
 권장 순서: operationId → 도메인 `api/*.ts` 의 요청/응답 타입을 `ApiRequestBody`/`ApiResponseBody`
 로 교체 → 깨지는 호출부 수정 → 수기 DTO 제거.
 
-## 후속 점검 항목 (영향평가 Tool 후보)
+## 후속 점검 항목 (BE 회신 반영 완료)
 
-스펙 대조 중 발견된 BE/FE 잠재 불일치 — 본 태스크 범위 밖, 별도 확인 필요:
+스펙 대조 중 발견된 BE/FE 불일치 — BE 회신으로 방향이 확정됨:
 
-- **[높음] practices ↔ jams 경로 발산**: 벤더 스냅샷(`openapi/openapi.json`)에는
-  `/api/v1/practices` 가 **존재하지 않고** `/api/v1/jams/*` 가 있다. 그러나 FE practice
-  도메인(`domain/practice/api/*`)은 `/api/v1/practices/*` 를 호출한다. 스냅샷과 FE 빌드
-  기준 스펙의 버전 차이일 수 있으므로 **방향(어느 쪽이 최신인지)은 BE/실서버로 확인 필요**.
-  확정 시 한쪽을 정렬해야 한다.
-- `createBand` 는 스펙상 `memberId` **query 파라미터를 요구**하나, FE
-  `domain/band/api/createBand.ts` 는 이를 전달하지 않는다. 실서버 검증 시 확인 요망.
+- **practices ↔ jams**: `/api/v1/practices` 는 **폐기**, `/api/v1/jams` 가 최신(BD-70, 단순
+  리네임 아닌 도메인 재구조화). FE 호출 코드가 폐기 경로를 사용 중 → 계약 불일치로 정식 등재.
+  상세·필드 단위 차이는 [known-contract-gaps.md](./known-contract-gaps.md) 참조.
+- `createBand` 의 `memberId`: 인증 파생값이라 FE 미전달이 **정답**(불일치 아님). BE가 SpringDoc
+  hidden 처리로 스펙 노이즈도 제거함. → 등재 제외.
 
-> 위 항목들은 MCP 영향평가 Tool이 자동 검출하려는 대상의 실제 사례다.
+> practices↔jams 는 MCP 영향평가 Tool이 자동 검출하려는 대상의 실제 사례다.
