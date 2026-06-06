@@ -23,19 +23,3 @@ services:
     depends_on:
       bandage-band-manager:
         condition: service_started
-
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: bandage-nginx
-    ports:
-      - '80:80'
-      # 향후 HTTPS 도입 시: '443:443' 추가 + cert volume 마운트
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-    depends_on:
-      fe-web:
-        condition: service_started
-      bandage-band-manager:
-        condition: service_started
-    restart: always
