@@ -23,10 +23,10 @@ const DAY_OF_WEEK_KEYS: DayOfWeek[] = [
 ];
 const DAY_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
-// 모달 표시 범위: 9:00(slot 18) ~ 22:30(slot 45) — 선택 가능한 마지막 시작 슬롯 포함
+// 모달 표시 범위: 9:00(slot 18) ~ 22:00(slot 44)
 const START_SLOT = 18;
-const END_SLOT = 45;
-const SLOT_COUNT = END_SLOT - START_SLOT; // 27슬롯
+const END_SLOT = 44;
+const SLOT_COUNT = END_SLOT - START_SLOT; // 26슬롯
 
 const CELL_HEIGHT = 22; // px
 
@@ -166,12 +166,6 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
 
   if (!open) return null;
 
-  const weekDates = (() => {
-    const now = toZonedTime(new Date(), KST);
-    const monday = startOfWeek(now, { weekStartsOn: 1 });
-    return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  })();
-
   const hourSlots = Array.from({ length: SLOT_COUNT }, (_, i) => i).filter(
     (i) => (i + START_SLOT) % 2 === 0,
   );
@@ -182,161 +176,175 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
       onPointerUp={handlePointerUp}
     >
       <div
-        className="bg-card relative mx-4 w-full max-w-lg overflow-y-auto rounded-xl p-5 shadow-xl"
+        className="bg-card relative mx-4 flex w-full max-w-lg flex-col overflow-hidden rounded-xl shadow-xl"
         style={{ maxHeight: '90vh' }}
       >
-        {/* 닫기 버튼 */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-foreground-sub hover:text-foreground absolute top-4 right-4"
-          aria-label="닫기"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        {/* 헤더 — 고정 */}
+        <div className="shrink-0 px-5 pt-5">
+          {/* 닫기 버튼 */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-foreground-sub hover:text-foreground absolute top-4 right-4"
+            aria-label="닫기"
+          >
+            <X className="h-5 w-5" />
+          </button>
 
-        {/* 제목 */}
-        <h3 className="text-foreground mb-1 text-[17px] font-bold">
-          나의 스케줄 관리{' '}
-          <span className="text-foreground-muted text-[13px] font-normal">({step}/2)</span>
-        </h3>
+          {/* 제목 */}
+          <h3 className="text-foreground mb-1 text-[17px] font-bold">
+            나의 스케줄 관리{' '}
+            <span className="text-foreground-muted text-[13px] font-normal">({step}/2)</span>
+          </h3>
+        </div>
 
         {step === 1 ? (
           <>
-            <p className="text-foreground-sub mb-3 text-[12px]">
-              주간 가능 시간대를 모두 채워주세요
-            </p>
-
-            {/* 초기화 버튼 */}
-            <div className="mb-2 flex justify-end">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="text-foreground-muted border-border rounded border px-2 py-0.5 text-[11px]"
-              >
-                스케줄 초기화
-              </button>
+            {/* 설명 + 초기화 — 고정 */}
+            <div className="shrink-0 px-5 pt-1">
+              <p className="text-foreground-sub mb-3 text-[12px]">
+                주간 가능 시간대를 모두 채워주세요
+              </p>
+              <div className="mb-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="text-foreground-sub border-border rounded border px-2 py-0.5 text-[11px]"
+                >
+                  스케줄 초기화
+                </button>
+              </div>
             </div>
 
-            {/* 선택 그리드 */}
-            <div className="overflow-x-auto select-none" onPointerLeave={handlePointerUp}>
-              <div className="min-w-[320px]">
-                {/* 요일 헤더 */}
-                <div className="grid" style={{ gridTemplateColumns: '36px repeat(7, 1fr)' }}>
-                  <div />
-                  {weekDates.map((d, i) => (
-                    <div key={i} className="flex flex-col items-center py-1">
-                      <span className="text-foreground-sub text-[10px] font-medium">
-                        {DAY_SHORT[i]}
-                      </span>
-                      <span className="text-foreground-muted text-[10px]">
-                        {format(d, 'MM-dd')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 슬롯 그리드 */}
-                <div
-                  className="relative grid"
-                  style={{ gridTemplateColumns: '36px repeat(7, 1fr)' }}
-                >
-                  {/* 시간 레이블 */}
-                  <div className="relative">
-                    {hourSlots.map((slotIdx) => (
-                      <div
-                        key={slotIdx}
-                        className="absolute right-0 left-0"
-                        style={{ top: slotIdx * CELL_HEIGHT }}
-                      >
-                        <span className="text-foreground-muted absolute -top-2 left-0 text-[9px]">
-                          {slotToTimeLabel(slotIdx + START_SLOT)}
-                        </span>
+            {/* 선택 그리드 — 내부 스크롤 */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-5">
+              <div className="overflow-x-auto select-none" onPointerLeave={handlePointerUp}>
+                <div className="min-w-[320px]">
+                  {/* 요일 헤더 */}
+                  <div className="grid" style={{ gridTemplateColumns: '36px repeat(7, 1fr)' }}>
+                    <div />
+                    {DAY_SHORT.map((day, i) => (
+                      <div key={i} className="flex items-center justify-center py-1">
+                        <span className="text-foreground-sub text-[10px] font-medium">{day}</span>
                       </div>
                     ))}
-                    <div style={{ height: SLOT_COUNT * CELL_HEIGHT }} />
                   </div>
 
-                  {/* 요일별 슬롯 */}
-                  {Array.from({ length: 7 }, (_, dayIdx) => (
-                    <div
-                      key={dayIdx}
-                      className="border-border relative border-l"
-                      style={{ height: SLOT_COUNT * CELL_HEIGHT }}
-                    >
-                      {/* 수평 구분선 */}
+                  {/* 슬롯 그리드 */}
+                  <div
+                    className="relative grid"
+                    style={{ gridTemplateColumns: '36px repeat(7, 1fr)' }}
+                  >
+                    {/* 시간 레이블 */}
+                    <div className="relative">
                       {hourSlots.map((slotIdx) => (
-                        <div
+                        <span
                           key={slotIdx}
-                          className="border-border absolute right-0 left-0 border-t"
-                          style={{ top: slotIdx * CELL_HEIGHT }}
-                        />
-                      ))}
-
-                      {/* 슬롯 셀 */}
-                      {Array.from({ length: SLOT_COUNT }, (_, slotIdx) => (
-                        <div
-                          key={slotIdx}
-                          className={cn(
-                            'absolute right-0 left-0 cursor-pointer transition-colors',
-                            grid[dayIdx]![slotIdx] ? 'bg-[#e8856a]' : 'hover:bg-[#e8856a]/20',
-                          )}
+                          className="text-foreground-muted absolute right-2 text-right text-[9px] leading-none"
                           style={{
-                            top: slotIdx * CELL_HEIGHT,
-                            height: CELL_HEIGHT,
+                            top: slotIdx * CELL_HEIGHT + (slotIdx === 0 ? 7 : 0),
+                            transform: 'translateY(-50%)',
                           }}
-                          onPointerDown={(e) => {
-                            e.preventDefault();
-                            handlePointerDown(dayIdx, slotIdx);
-                          }}
-                          onPointerEnter={() => handlePointerEnter(dayIdx, slotIdx)}
-                        />
+                        >
+                          {slotToTimeLabel(slotIdx + START_SLOT)}
+                        </span>
                       ))}
+                      <span
+                        className="text-foreground-muted absolute right-2 text-right text-[9px] leading-none"
+                        style={{ top: SLOT_COUNT * CELL_HEIGHT - 7, transform: 'translateY(-50%)' }}
+                      >
+                        22:00
+                      </span>
+                      <div style={{ height: SLOT_COUNT * CELL_HEIGHT }} />
                     </div>
-                  ))}
+
+                    {/* 요일별 슬롯 */}
+                    {Array.from({ length: 7 }, (_, dayIdx) => (
+                      <div
+                        key={dayIdx}
+                        className="border-border relative border-l"
+                        style={{ height: SLOT_COUNT * CELL_HEIGHT }}
+                      >
+                        {/* 수평 구분선 */}
+                        {hourSlots.map((slotIdx) => (
+                          <div
+                            key={slotIdx}
+                            className="border-border absolute right-0 left-0 border-t"
+                            style={{ top: slotIdx * CELL_HEIGHT }}
+                          />
+                        ))}
+
+                        {/* 슬롯 셀 */}
+                        {Array.from({ length: SLOT_COUNT }, (_, slotIdx) => (
+                          <div
+                            key={slotIdx}
+                            className={cn(
+                              'absolute right-0 left-0 cursor-pointer transition-colors',
+                              grid[dayIdx]![slotIdx] ? 'bg-[#e8856a]' : 'hover:bg-[#e8856a]/20',
+                            )}
+                            style={{
+                              top: slotIdx * CELL_HEIGHT,
+                              height: CELL_HEIGHT,
+                            }}
+                            onPointerDown={(e) => {
+                              e.preventDefault();
+                              handlePointerDown(dayIdx, slotIdx);
+                            }}
+                            onPointerEnter={() => handlePointerEnter(dayIdx, slotIdx)}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <p className="text-foreground-muted mt-2 text-[11px]">* 셀 1칸 당 30분 단위입니다</p>
-            <p className="text-foreground-muted text-[11px]">
-              * 입력한 주간 가능 시간대는 향후 전 주 동일 적용됩니다
-            </p>
-
-            <div className="mt-4 flex justify-end">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleNext}
-                disabled={!hasAnySelected(grid)}
-                className="rounded-[5px]"
-              >
-                다음
-              </Button>
+            {/* 푸터 — 고정 */}
+            <div className="shrink-0 px-5 pb-5">
+              <p className="text-foreground-muted mt-2.5 text-[11px]">
+                * 셀 1칸 당 30분 단위입니다
+              </p>
+              <p className="text-foreground-muted text-[11px]">
+                * 입력한 주간 가능 시간대는 향후 전 주 동일 적용됩니다
+              </p>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleNext}
+                  disabled={!hasAnySelected(grid)}
+                  className="rounded-[5px]"
+                >
+                  다음
+                </Button>
+              </div>
             </div>
           </>
         ) : (
           <>
-            <p className="text-foreground-sub mb-3 text-[12px]">특이사항을 적어주세요</p>
+            <div className="px-5 pb-5">
+              <p className="text-foreground-sub mb-3 text-[12px]">특이사항을 적어주세요</p>
 
-            <Textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="평일 저녁만, 주말은 1시 이후부터 가능합니다."
-              className="h-40 resize-none"
-              maxLength={500}
-            />
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="평일 저녁만, 주말은 1시 이후부터 가능합니다."
+                className="h-40 resize-none"
+                maxLength={500}
+              />
 
-            <div className="mt-4 flex justify-end">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleSave}
-                loading={isSaving}
-                className="rounded-[5px]"
-              >
-                완료
-              </Button>
+              <div className="mt-4 flex justify-end">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleSave}
+                  loading={isSaving}
+                  className="rounded-[5px]"
+                >
+                  완료
+                </Button>
+              </div>
             </div>
           </>
         )}

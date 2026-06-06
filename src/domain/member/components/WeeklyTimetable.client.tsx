@@ -155,20 +155,18 @@ export function WeeklyTimetable({
   return (
     <section className="mt-15">
       <div className="mb-s-3 flex items-center justify-between">
-        <h2 className="text-foreground text-[18px] font-bold">주간 타임테이블</h2>
+        <p className="text-foreground-sub text-[13px]">{weekLabel}</p>
         <button
           type="button"
           onClick={onManageSchedule}
-          className="text-foreground border-border rounded-[5px] border px-3 py-1 text-[13px] font-medium"
+          className="text-foreground border-border shrink-0 rounded-[5px] border px-3 py-1 text-sm font-medium"
         >
           나의 스케줄 관리
         </button>
       </div>
 
-      <p className="text-foreground-sub mb-3 text-center text-[13px]">{weekLabel}</p>
-
-      <div className="border-border overflow-x-auto rounded-md border">
-        <div className="min-w-[360px]">
+      <div className="border-border rounded-md border">
+        <div>
           {/* 요일 헤더 */}
           <div
             className="border-border grid border-b"
@@ -193,15 +191,21 @@ export function WeeklyTimetable({
               {hourSlots.map((slotIdx) => (
                 <span
                   key={slotIdx}
-                  className="text-foreground-muted absolute right-0 left-0 pr-1 text-right text-[9px] leading-none"
+                  className="text-foreground-muted absolute right-2 text-right text-[9px] leading-none"
                   style={{
-                    top: slotIdx * CELL_HEIGHT,
+                    top: slotIdx * CELL_HEIGHT + (slotIdx === 0 ? 7 : 0),
                     transform: 'translateY(-50%)',
                   }}
                 >
                   {slotToHourLabel(slotIdx + START_SLOT)}
                 </span>
               ))}
+              <span
+                className="text-foreground-muted absolute right-2 text-right text-[9px] leading-none"
+                style={{ top: SLOT_COUNT * CELL_HEIGHT - 7, transform: 'translateY(-50%)' }}
+              >
+                22:00
+              </span>
               <div style={{ height: SLOT_COUNT * CELL_HEIGHT }} />
             </div>
 
