@@ -3938,9 +3938,7 @@ export interface operations {
     };
     logout: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4008,9 +4006,7 @@ export interface operations {
     };
     changePassword: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4078,9 +4074,7 @@ export interface operations {
     };
     createBand: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4106,7 +4100,6 @@ export interface operations {
         parameters: {
             query: {
                 query: components["schemas"]["BandPagingQuery"];
-                memberId: number;
             };
             header?: never;
             path?: never;
@@ -4171,9 +4164,7 @@ export interface operations {
     };
     deleteBand: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 bandId: string;
@@ -4195,9 +4186,7 @@ export interface operations {
     };
     updateBand: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 bandId: string;
@@ -4225,7 +4214,6 @@ export interface operations {
         parameters: {
             query: {
                 query: components["schemas"]["BandApplicationPagingQuery"];
-                memberId: number;
             };
             header?: never;
             path: {
@@ -4248,9 +4236,7 @@ export interface operations {
     };
     applyToJoin: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 bandId: string;
@@ -4272,9 +4258,7 @@ export interface operations {
     };
     withdrawApplication: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 bandId: string;
@@ -4297,7 +4281,6 @@ export interface operations {
     processApplication: {
         parameters: {
             query: {
-                memberId: number;
                 status: "PENDING" | "REJECTED" | "APPROVED" | "WITHDRAWN" | "LEAVED";
             };
             header?: never;
@@ -4346,9 +4329,7 @@ export interface operations {
     };
     leaveBand: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 bandId: string;
@@ -4393,9 +4374,7 @@ export interface operations {
     };
     kickMember: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 bandId: string;
@@ -4418,9 +4397,7 @@ export interface operations {
     };
     delegateLeader: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 bandId: string;
@@ -4496,7 +4473,6 @@ export interface operations {
         parameters: {
             query: {
                 query: components["schemas"]["JamPagingQuery"];
-                memberId: number;
             };
             header?: never;
             path?: never;
@@ -4519,7 +4495,6 @@ export interface operations {
         parameters: {
             query: {
                 query: components["schemas"]["JamSearchQuery"];
-                memberId: number;
             };
             header?: never;
             path?: never;
@@ -4562,9 +4537,7 @@ export interface operations {
     };
     deleteJam: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 jamId: string;
@@ -4586,9 +4559,7 @@ export interface operations {
     };
     addParticipant: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 jamId: string;
@@ -4614,9 +4585,7 @@ export interface operations {
     };
     deleteParticipant: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 jamId: string;
@@ -4639,9 +4608,7 @@ export interface operations {
     };
     updateSessions: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 jamId: string;
@@ -4667,9 +4634,7 @@ export interface operations {
     };
     updateTimeInfo: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 jamId: string;
@@ -4695,9 +4660,7 @@ export interface operations {
     };
     updateVenue: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 jamId: string;
@@ -4723,9 +4686,7 @@ export interface operations {
     };
     getMyAvailability: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4745,9 +4706,7 @@ export interface operations {
     };
     updateMyAvailability: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4795,9 +4754,7 @@ export interface operations {
     };
     getMemberInfo: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4817,9 +4774,7 @@ export interface operations {
     };
     withdrawMember: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4839,9 +4794,7 @@ export interface operations {
     };
     updateMemberInfo: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4865,9 +4818,7 @@ export interface operations {
     };
     getMemberStats: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4887,9 +4838,8 @@ export interface operations {
     };
     searchMembers: {
         parameters: {
-            query: {
+            query?: {
                 q?: string;
-                memberId: number;
             };
             header?: never;
             path?: never;
@@ -4933,9 +4883,7 @@ export interface operations {
     };
     createPerformance: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4959,9 +4907,7 @@ export interface operations {
     };
     getMyInvitations: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4983,7 +4929,6 @@ export interface operations {
         parameters: {
             query: {
                 query: components["schemas"]["PerformancePagingQuery"];
-                memberId: number;
             };
             header?: never;
             path?: never;
@@ -5048,9 +4993,7 @@ export interface operations {
     };
     deletePerformance: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5072,9 +5015,7 @@ export interface operations {
     };
     updatePerformance: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5100,9 +5041,7 @@ export interface operations {
     };
     getInvitations: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5124,9 +5063,7 @@ export interface operations {
     };
     sendInvitation: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5154,7 +5091,6 @@ export interface operations {
         parameters: {
             query: {
                 status: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELED";
-                memberId: number;
             };
             header?: never;
             path: {
@@ -5178,9 +5114,7 @@ export interface operations {
     };
     getBoards: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5202,9 +5136,7 @@ export interface operations {
     };
     createBoard: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5230,9 +5162,7 @@ export interface operations {
     };
     deleteBoard: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5255,9 +5185,7 @@ export interface operations {
     };
     updateBoard: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5284,9 +5212,7 @@ export interface operations {
     };
     autoPlace: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5313,9 +5239,7 @@ export interface operations {
     };
     upsertBlock: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5343,9 +5267,7 @@ export interface operations {
     };
     deleteBlock: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5369,9 +5291,7 @@ export interface operations {
     };
     anchorBlock: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5395,9 +5315,7 @@ export interface operations {
     };
     setPin: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5425,9 +5343,7 @@ export interface operations {
     };
     confirmBoard: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5450,9 +5366,7 @@ export interface operations {
     };
     preview: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5479,9 +5393,7 @@ export interface operations {
     };
     replan: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5508,9 +5420,7 @@ export interface operations {
     };
     unconfirmBoard: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5533,9 +5443,7 @@ export interface operations {
     };
     addSetlists: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5561,9 +5469,7 @@ export interface operations {
     };
     removeSetlist: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 performanceId: string;
@@ -5586,9 +5492,7 @@ export interface operations {
     };
     getAllSchedules: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 meetingId: string;
@@ -5610,9 +5514,7 @@ export interface operations {
     };
     getAggregatedSchedule: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 meetingId: string;
@@ -5634,9 +5536,7 @@ export interface operations {
     };
     getMySchedule: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 meetingId: string;
@@ -5658,9 +5558,7 @@ export interface operations {
     };
     upsertMySchedule: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 meetingId: string;
@@ -5686,9 +5584,7 @@ export interface operations {
     };
     createSetlist: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -5713,7 +5609,6 @@ export interface operations {
     getSetlistsByTitle: {
         parameters: {
             query: {
-                memberId: number;
                 title: string;
             };
             header?: never;
@@ -5736,7 +5631,6 @@ export interface operations {
     getMySetlists: {
         parameters: {
             query: {
-                memberId: number;
                 query: components["schemas"]["SetlistPagingQuery"];
             };
             header?: never;
@@ -5758,9 +5652,7 @@ export interface operations {
     };
     getSetlist: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 setlistId: string;
@@ -5782,9 +5674,7 @@ export interface operations {
     };
     updateSetlist: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 setlistId: string;
@@ -5810,9 +5700,7 @@ export interface operations {
     };
     createJamsFromSetlist: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 setlistId: string;
@@ -5839,7 +5727,6 @@ export interface operations {
     getTracks: {
         parameters: {
             query: {
-                memberId: number;
                 query: components["schemas"]["SetlistTrackPagingQuery"];
             };
             header?: never;
@@ -5863,9 +5750,7 @@ export interface operations {
     };
     getTrack: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 setlistId: string;
@@ -5888,9 +5773,7 @@ export interface operations {
     };
     deleteTrack: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 setlistId: string;
@@ -5913,9 +5796,7 @@ export interface operations {
     };
     updateTrack: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 setlistId: string;
@@ -5942,9 +5823,7 @@ export interface operations {
     };
     createSelection: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -5969,7 +5848,6 @@ export interface operations {
     getMySelections: {
         parameters: {
             query: {
-                memberId: number;
                 query: components["schemas"]["TrackSelectionPagingQuery"];
             };
             header?: never;
@@ -5991,9 +5869,7 @@ export interface operations {
     };
     getSelection: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6015,9 +5891,7 @@ export interface operations {
     };
     deleteSelection: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6039,9 +5913,7 @@ export interface operations {
     };
     updateSelection: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6068,7 +5940,6 @@ export interface operations {
     getItems: {
         parameters: {
             query: {
-                memberId: number;
                 query: components["schemas"]["TrackSelectionItemPagingQuery"];
             };
             header?: never;
@@ -6092,9 +5963,7 @@ export interface operations {
     };
     createItem: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6120,9 +5989,7 @@ export interface operations {
     };
     getItem: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6145,9 +6012,7 @@ export interface operations {
     };
     deleteItem: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6170,9 +6035,7 @@ export interface operations {
     };
     updateItem: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6199,8 +6062,7 @@ export interface operations {
     };
     getChatMessages: {
         parameters: {
-            query: {
-                memberId: number;
+            query?: {
                 lastId?: string;
                 pageSize?: number;
             };
@@ -6226,9 +6088,7 @@ export interface operations {
     };
     createChatMessage: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6255,9 +6115,7 @@ export interface operations {
     };
     updateItemSelection: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6284,9 +6142,7 @@ export interface operations {
     };
     applyForSession: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6310,9 +6166,7 @@ export interface operations {
     };
     withdrawSessionApplication: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6337,9 +6191,7 @@ export interface operations {
     };
     updateConfirmations: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6367,9 +6219,7 @@ export interface operations {
     };
     lockSelection: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6391,9 +6241,7 @@ export interface operations {
     };
     updateParticipants: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6419,9 +6267,7 @@ export interface operations {
     };
     unlockSelection: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path: {
                 selectionId: string;
@@ -6443,9 +6289,7 @@ export interface operations {
     };
     issueProfileImagePresignedUrl: {
         parameters: {
-            query: {
-                memberId: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
