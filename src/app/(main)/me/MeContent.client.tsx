@@ -22,14 +22,21 @@ import { Input } from '@/components/ui/input';
 import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLogout } from '@/domain/auth/hooks/useLogout';
+import { ScheduleManagerModal } from '@/domain/member/components/ScheduleManagerModal.client';
+import { WeeklyTimetable } from '@/domain/member/components/WeeklyTimetable.client';
 import { useMe } from '@/domain/member/hooks/useMe';
+import { useMyAvailability } from '@/domain/member/hooks/useMyAvailability';
+import { useUpdateMyAvailability } from '@/domain/member/hooks/useUpdateMyAvailability';
 import { useUpdateMe } from '@/domain/member/hooks/useUpdateMe';
 import { useWithdraw } from '@/domain/member/hooks/useWithdraw';
 import {
   updateMeSchema,
   type MemberInfoResponse,
   type UpdateMeSchema,
+  type WeeklyRuleRequest,
 } from '@/domain/member/types';
+import { useMyPerformances } from '@/domain/performance/hooks/useMyPerformances';
+import { useMyPractices } from '@/domain/practice/hooks/useMyPractices';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 import { formatPhone } from '@/lib/phone';
@@ -38,9 +45,28 @@ export function MeContent() {
   const router = useRouter();
   const toast = useToast();
   const { data: me, isLoading, isError, refetch } = useMe();
+  const { data: availability } = useMyAvailability();
+  const { data: practicesData } = useMyPractices(100);
+  const { data: performancesData } = useMyPerformances(100);
+
+  const practices = practicesData?.pages.flatMap((p) => p.content) ?? [];
+  const performances = performancesData?.pages.flatMap((p) => p.content) ?? [];
 
   const [isEditing, setEditing] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+
+  const updateAvailabilityMutation = useUpdateMyAvailability({
+    onSuccess: () => {
+      toast.success('스케줄이 저장되었습니다.');
+      setScheduleModalOpen(false);
+    },
+    onError: (err) => toast.error(err.message || '스케줄 저장에 실패했습니다.'),
+  });
+
+  const handleSaveSchedule = (weeklyRules: WeeklyRuleRequest[], note: string) => {
+    updateAvailabilityMutation.mutate({ weeklyRules, note });
+  };
 
   const logoutMutation = useLogout({
     onSuccess: () => {
@@ -122,6 +148,16 @@ export function MeContent() {
         )}
       </section>
 
+      {/* 주간 타임테이블 — 편집 모드에서는 숨김 */}
+      {!isEditing && (
+        <WeeklyTimetable
+          availability={availability}
+          practices={practices}
+          performances={performances}
+          onManageSchedule={() => setScheduleModalOpen(true)}
+        />
+      )}
+
       {/* 계정 탈퇴 — 편집 모드에서만 표시 */}
       {isEditing && (
         <section className="mt-[60px]">
@@ -159,6 +195,14 @@ export function MeContent() {
           </Button>
         </Card>
       </section>
+
+      <ScheduleManagerModal
+        open={scheduleModalOpen}
+        onClose={() => setScheduleModalOpen(false)}
+        availability={availability}
+        onSave={handleSaveSchedule}
+        isSaving={updateAvailabilityMutation.isPending}
+      />
 
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
         <DialogContent>

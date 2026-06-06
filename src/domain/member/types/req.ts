@@ -11,3 +11,25 @@ export interface UpdateMeRequest {
   /** presigned URL 업로드 후 받은 objectKey 또는 그대로의 CloudFront URL. */
   profileImg?: string;
 }
+
+export interface WeeklyRuleRequest {
+  dayOfWeek: import('./res').DayOfWeek;
+  startSlot: number;
+  endSlot: number;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
+}
+
+export interface AvailabilityExceptionRequest {
+  date: string;
+  kind: import('./res').AvailabilityKind;
+  startSlot?: number | null;
+  endSlot?: number | null;
+}
+
+/** API_SPEC §2-8 — 가용성 등록/수정. weeklyRules·exceptions 전체 교체 방식. */
+export interface UpdateMyAvailabilityRequest {
+  weeklyRules?: WeeklyRuleRequest[];
+  exceptions?: AvailabilityExceptionRequest[];
+  note?: string | null;
+}

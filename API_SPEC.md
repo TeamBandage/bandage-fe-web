@@ -213,6 +213,84 @@ Base URL: `/api/v1`
 
 ---
 
+### 2-7. 내 가용성 조회
+- **GET** `/api/v1/me/availability`
+- **인증 필요**
+- **Response**: `MemberAvailabilityResponse`
+  ```json
+  {
+    "memberId": 1,
+    "weeklyRules": [
+      {
+        "dayOfWeek": "MONDAY",
+        "startSlot": 18,
+        "endSlot": 36,
+        "effectiveFrom": "2026-01-01",
+        "effectiveTo": null
+      }
+    ],
+    "exceptions": [
+      {
+        "date": "2026-06-10",
+        "kind": "BLOCKED",
+        "startSlot": 20,
+        "endSlot": 30
+      }
+    ],
+    "note": "평일 저녁만, 주말은 1시 이후부터 가능합니다.",
+    "updatedAt": "2026-06-05 15:30"
+  }
+  ```
+- **비고**: 미등록 시 `weeklyRules: []`, `exceptions: []`, `note: null`, `updatedAt: null` 반환. `startSlot`·`endSlot`은 30분 단위 슬롯(slot 0 = 00:00, slot 18 = 09:00, slot 44 = 22:00). `[startSlot, endSlot)` 반열린 구간. `dayOfWeek` enum — `MONDAY`…`SUNDAY`.
+
+---
+
+### 2-8. 내 가용성 등록/수정
+- **PUT** `/api/v1/me/availability`
+- **인증 필요**
+- **Request Body**
+  ```json
+  {
+    "weeklyRules": [
+      {
+        "dayOfWeek": "MONDAY",
+        "startSlot": 18,
+        "endSlot": 36,
+        "effectiveFrom": "2026-01-01",
+        "effectiveTo": null
+      }
+    ],
+    "exceptions": [
+      {
+        "date": "2026-06-10",
+        "kind": "BLOCKED",
+        "startSlot": 20,
+        "endSlot": 30
+      }
+    ],
+    "note": "평일 저녁만, 주말은 1시 이후부터 가능합니다."
+  }
+  ```
+  | 필드 | 타입 | 필수 | 설명 |
+  |------|------|------|------|
+  | `weeklyRules` | Array | N | 가능 시간대 반복 규칙 목록 (전체 교체) |
+  | `weeklyRules[].dayOfWeek` | String | Y | 요일 (MONDAY…SUNDAY) |
+  | `weeklyRules[].startSlot` | Int (0~47) | Y | 시작 슬롯 (포함) |
+  | `weeklyRules[].endSlot` | Int (1~48) | Y | 종료 슬롯 (미포함) |
+  | `weeklyRules[].effectiveFrom` | Date (yyyy-MM-dd) | Y | 규칙 유효 시작일 |
+  | `weeklyRules[].effectiveTo` | Date (yyyy-MM-dd) | N | 규칙 유효 종료일 (null=무기한) |
+  | `exceptions` | Array | N | 날짜별 예외 목록 (전체 교체) |
+  | `exceptions[].date` | Date (yyyy-MM-dd) | Y | 예외 날짜 |
+  | `exceptions[].kind` | String | Y | `AVAILABLE` (추가 가용) 또는 `BLOCKED` (차단) |
+  | `exceptions[].startSlot` | Int | N | 시작 슬롯 (null이면 전일 적용) |
+  | `exceptions[].endSlot` | Int | N | 종료 슬롯 (startSlot과 함께 지정 또는 함께 null) |
+  | `note` | String (max 500) | N | 특이사항 |
+- **Response**: `MemberAvailabilityResponse` (2-7과 동일)
+- **에러**: 400 `AVAILABILITY_INVALID` (슬롯 범위 오류, startSlot ≥ endSlot 등)
+- **비고**: `weeklyRules`·`exceptions` 모두 전체 교체(replace) 방식. 빈 배열 전송 시 기존 데이터 전체 삭제.
+
+---
+
 ## 3. 밴드 (Band)
 
 ### 3-1. 밴드 생성

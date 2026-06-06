@@ -5,6 +5,7 @@ export const queryKeys = {
   member: {
     me: ['member', 'me'] as const,
     myMetrics: ['member', 'me', 'metrics'] as const,
+    myAvailability: ['member', 'me', 'availability'] as const,
     search: (q: string) => ['member', 'search', q] as const,
   },
   band: {

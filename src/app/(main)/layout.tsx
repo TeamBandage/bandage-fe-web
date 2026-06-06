@@ -31,7 +31,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           <div className="hidden lg:block">
             <Shell>
               <Sidebar />
-              <main className="flex flex-1 flex-col overflow-hidden">{children}</main>
+              <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>
             </Shell>
           </div>
 
