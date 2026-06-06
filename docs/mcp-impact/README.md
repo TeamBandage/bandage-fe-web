@@ -61,10 +61,12 @@ prefix로 깔끔히 분리되기 때문에 "endpoint prefix → 영역" 매핑�
 | band | 밴드 | /bands | /api/v1/bands | active |
 | practice | 합주 | /practices | /api/v1/practices, /api/v1/practice-songs | active |
 | performance | 공연 | /performances | /api/v1/performances | active |
+| upload | 파일 업로드 | (없음) | /api/v1/uploads | active |
 | setlist-meeting | 셋리스트 회의 | /setlist-meetings | /api/v1/setlist-meetings | partial-mock |
 | schedule-coordination | 일정 조율 | /setlist-meetings/scheduling | (없음) | mock-only |
 
-> practice-song은 BE에서 embedded 엔티티로 관리되어 별도 영역이 아닌 practice 영역에 귀속한다.
+> - practice-song은 BE에서 embedded 엔티티로 관리되어 별도 영역이 아닌 practice 영역에 귀속한다.
+> - upload는 도메인 모듈이 아닌 횡단 관심사(`src/global/upload`)지만 BE endpoint를 소비하므로 별도 영역으로 둔다. `pnpm verify:fe-areas` 검증 과정에서 누락이 발견되어 추가됨.
 
 ## 유지보수
 

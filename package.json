@@ -12,7 +12,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify:fe-areas": "node scripts/verify-fe-areas.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

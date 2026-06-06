@@ -41,6 +41,14 @@
       "status": "active"
     },
     {
+      "id": "upload",
+      "label": "파일 업로드",
+      "routes": [],
+      "endpointPrefixes": ["/api/v1/uploads"],
+      "status": "active",
+      "notes": "도메인 모듈이 아닌 횡단(cross-cutting) 관심사(src/global/upload). 프로필 이미지 업로드 등 공용 UI(components/ui/profile-image-upload, avatar)에서 사용. 전용 라우트 없음."
+    },
+    {
       "id": "setlist-meeting",
       "label": "셋리스트 회의",
       "routes": ["/setlist-meetings"],
