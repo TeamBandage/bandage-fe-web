@@ -5364,7 +5364,7 @@
   "BD-66-member-availability-timetable": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "마이페이지 주간 타임테이블 UI 구현 (BD-66)",
         "description": "마이페이지 프로필 정보 하단에 주간 타임테이블 섹션을 추가한다. 본인의 합주·공연 일정이 컬러 블록으로 표시되고, 불가능 시간대는 회색으로 표시된다. [나의 스케줄 관리] 버튼으로 가능 시간대를 설정하는 2단계 모달을 제공한다. API: GET/PUT /api/v1/me/availability, GET /api/v1/practices/me, GET /api/v1/performances/me",
         "details": "",
@@ -5453,7 +5453,7 @@
         "updatedAt": "2026-06-05T15:24:03.521Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "마이페이지 주간 타임테이블 UI 수정",
         "description": "WeeklyTimetable 상단 여백 60px, 시간 레이블 그리드 라인 정렬, PC 세로 스크롤, ScheduleManagerModal 스크롤 처리",
         "details": "",
@@ -5513,6 +5513,86 @@
       "completedCount": 2,
       "tags": [
         "BD-66-member-availability-timetable"
+      ],
+      "created": "2026-06-09T21:24:33.429Z",
+      "description": "Tasks for BD-66-member-availability-timetable context",
+      "updated": "2026-06-09T21:24:33.429Z"
+    }
+  },
+  "BD-64-create-performance-ui": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "공연 생성 위저드 Step2 셋리스트 피커 교체",
+        "description": "PerformanceCreateWizard의 Step2 '참여 밴드'를 '셋리스트' 단계로 교체. SetlistPickerModal 신규 구현, CreatePerformanceRequest에 setlistMeetingIds 필드 추가, 위저드 submit 로직 업데이트.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "CreatePerformanceRequest 타입 및 스키마에 setlistMeetingIds 필드 추가",
+            "description": "CreatePerformanceRequest 타입에서 bandIds 필드를 setlistMeetingIds로 교체하고, createPerformanceSchema zod 스키마 업데이트",
+            "dependencies": [],
+            "details": "src/domain/performance/types/req.ts에서 CreatePerformanceRequest 인터페이스의 bandIds?: string[] 필드를 setlistMeetingIds?: string[]로 변경. src/domain/performance/types/schema.ts의 createPerformanceSchema에서 해당 필드 검증 로직 업데이트. 백엔드 API 스펙과 필드명 일치 확인 필요.",
+            "status": "done",
+            "testStrategy": "타입 체크(pnpm typecheck) 통과 확인, 기존 bandIds 참조 코드 컴파일 에러 발생 시 연쇄 수정 필요",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-09T21:27:19.377Z"
+          },
+          {
+            "id": 2,
+            "title": "SetlistPickerModal 컴포넌트 신규 구현",
+            "description": "EntityPickerModal 패턴 기반으로 셋리스트 미팅 선택용 SetlistPickerModal.client.tsx 구현",
+            "dependencies": [
+              1
+            ],
+            "details": "src/domain/setlist-meeting/components/SetlistPickerModal.client.tsx 생성. BandPickerModal 패턴 참조하여 EntityPickerModal<SetlistMeetingResponse> 래핑. fetcher로 getMySetlistMeetings API 활용(keyword 검색 지원 여부 확인 후 필터링 로직 결정). multiple={true} 다중 선택 지원. renderItem에서 미팅 제목, 밴드명, purpose 표시. 선택 상태 UI는 Chip 형태로 표현.",
+            "status": "done",
+            "testStrategy": "Storybook 또는 단독 렌더링 테스트로 모달 열기/닫기, 검색, 선택/해제 동작 확인",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-09T21:28:30.826Z"
+          },
+          {
+            "id": 3,
+            "title": "PerformanceCreateWizard Step1을 셋리스트 피커로 교체",
+            "description": "위저드의 Step1 '참여 밴드' UI를 '셋리스트' 단계로 전환, BandPickerModal 대신 SetlistPickerModal 사용",
+            "dependencies": [
+              2
+            ],
+            "details": "PerformanceCreateWizard.client.tsx에서 selectedBands 상태를 selectedSetlistMeetings: SetlistMeetingResponse[]로 변경. Step1 라벨 '참여 밴드' → '셋리스트'로 수정. BandPickerModal import 제거, SetlistPickerModal로 교체. 선택된 셋리스트 Chip 렌더링 로직 업데이트(미팅 제목+밴드명 표시). Step1 → Step2 이동 시 별도 검증 없음(선택 optional 유지).",
+            "status": "done",
+            "testStrategy": "위저드 Step1 진입 시 셋리스트 피커 모달 정상 동작 확인, 선택/해제 후 Chip UI 반영 테스트",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-09T21:30:00.635Z"
+          },
+          {
+            "id": 4,
+            "title": "위저드 submit 로직 및 Review 단계 업데이트",
+            "description": "공연 생성 mutation 호출 시 setlistMeetingIds 전달, Step2 검토 화면에 셋리스트 요약 표시",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "handleSubmit 함수에서 mutationRequest 객체의 bandIds를 setlistMeetingIds로 변경(selectedSetlistMeetings에서 meetingId 추출). WizardSummaryCard에 셋리스트 필드 추가(label: '셋리스트', value: 선택된 미팅 제목 나열 또는 개수 표시, onEdit: setStep(1)). useCreatePerformance 훅이 새 필드 전달하도록 확인. 최종 API 호출 전 데이터 구조 로깅으로 검증.",
+            "status": "done",
+            "testStrategy": "공연 생성 전체 플로우 E2E 테스트: Step0 → Step1(셋리스트 선택) → Step2(검토) → Submit 성공 확인. Network 탭에서 setlistMeetingIds 포함 여부 검증",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-09T21:30:01.949Z"
+          }
+        ],
+        "updatedAt": "2026-06-09T21:30:01.949Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-06-09T21:30:01.949Z",
+      "taskCount": 1,
+      "completedCount": 1,
+      "tags": [
+        "BD-64-create-performance-ui"
       ]
     }
   }
