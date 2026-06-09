@@ -4,6 +4,7 @@ import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 import { BrandMark } from '../brand';
+import { HeroCinematic } from './HeroCinematic.client';
 
 const BRAND_TAGLINE =
   '밴드의 합주·공연을 한 곳에서 관리하세요. 일정·세션·참여자까지 번거로움 없이.';
@@ -118,7 +119,7 @@ export function AuthSplit({ children }: { children: ReactNode }) {
       className="bg-bg flex min-h-screen w-full lg:h-screen lg:overflow-hidden"
       data-slot="auth-split"
     >
-      <AuthBrand />
+      <HeroCinematic />
       <AuthFormPanel>{children}</AuthFormPanel>
     </div>
   );
