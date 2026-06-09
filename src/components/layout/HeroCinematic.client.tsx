@@ -1,8 +1,9 @@
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useGLTF, useAnimations, ContactShadows, Environment } from '@react-three/drei';
+import { Component, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import { ContactShadows, Environment } from '@react-three/drei';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -44,35 +45,53 @@ const PHASE_LABELS = [
   { headline: 'Bandage', sub: '밴드의 모든 것을 한 곳에.' },
 ];
 
-// ── GLB drummer model ─────────────────────────────────────────────────────────
+// ── ErrorBoundary for model loading failures ──────────────────────────────────
+
+class ModelErrorBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+// ── FBX drummer model (FBXLoader handles Mixamo eInheritRrs natively) ─────────
 
 function DrummerModel({ position }: { position: THREE.Vector3Tuple }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const { scene, animations } = useGLTF('/models/drummer.glb');
-  const { actions } = useAnimations(animations, groupRef);
+  const fbx = useLoader(FBXLoader, '/models/playing-drums.fbx');
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
 
   useEffect(() => {
-    // Play first animation (mixamo.com driving animation)
-    const action = Object.values(actions)[0];
-    action?.reset().fadeIn(0.3).play();
+    mixerRef.current = new THREE.AnimationMixer(fbx);
+    const clip = fbx.animations[0];
+    if (clip) mixerRef.current.clipAction(clip).reset().play();
 
-    scene.traverse((obj) => {
+    fbx.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) {
         obj.castShadow = true;
         obj.receiveShadow = true;
       }
     });
-  }, [actions, scene]);
+
+    return () => {
+      mixerRef.current?.stopAllAction();
+    };
+  }, [fbx]);
+
+  useFrame((_, delta) => mixerRef.current?.update(delta));
 
   return (
-    <group ref={groupRef} position={position}>
-      {/* Mixamo exports at 1 unit = 1 cm; scale to ~1.75 Three.js meters */}
-      <primitive object={scene} scale={0.01} rotation={[0, Math.PI, 0]} />
+    <group position={position}>
+      {/* Mixamo FBX: 1 unit = 1 cm → scale 0.01 gives ~1.75 Three.js meters */}
+      <primitive object={fbx} scale={0.01} rotation={[0, Math.PI / 2, 0]} />
     </group>
   );
 }
-
-useGLTF.preload('/models/drummer.glb');
 
 // ── Placeholder figures for the other three musicians ─────────────────────────
 
@@ -219,9 +238,27 @@ function Scene({ progress }: { progress: { current: number } }) {
       {/* Bassist — at +Z, camera approaches from +Z → face +Z = yRot π */}
       <MusicianFigure position={MUSICIAN_POS[1]!} color={MUSICIAN_COLORS[1]} yRot={Math.PI} />
       {/* Drummer — at -X, camera approaches from -X → face -X = yRot π/2 */}
-      <Suspense fallback={null}>
-        <DrummerModel position={MUSICIAN_POS[2]!} />
-      </Suspense>
+      <ModelErrorBoundary
+        fallback={
+          <MusicianFigure
+            position={MUSICIAN_POS[2]!}
+            color={MUSICIAN_COLORS[2]}
+            yRot={Math.PI / 2}
+          />
+        }
+      >
+        <Suspense
+          fallback={
+            <MusicianFigure
+              position={MUSICIAN_POS[2]!}
+              color={MUSICIAN_COLORS[2]}
+              yRot={Math.PI / 2}
+            />
+          }
+        >
+          <DrummerModel position={MUSICIAN_POS[2]!} />
+        </Suspense>
+      </ModelErrorBoundary>
       {/* Vocalist — at -Z, camera approaches from -Z → face -Z = yRot 0 (default) */}
       <MusicianFigure position={MUSICIAN_POS[3]!} color={MUSICIAN_COLORS[3]} yRot={0} />
 
