@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, Plus, X } from 'lucide-react';
+import { CalendarDays, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -9,14 +9,14 @@ import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
-import { BandPickerModal } from '@/domain/band/components/BandPickerModal.client';
-import type { BandInfoResponse } from '@/domain/band/types';
+import { SetlistPickerModal } from '@/domain/setlist-meeting/components/SetlistPickerModal.client';
+import type { Meeting } from '@/domain/setlist-meeting/types';
 import { useCreatePerformance } from '@/domain/performance/hooks/useCreatePerformance';
 import { ROUTES } from '@/global/config/routes';
 import { useRegisterDirtyForm } from '@/global/navigation/dirty-form-context';
 import { useToast } from '@/hooks/useToast';
 
-const STEPS = ['기본 정보', '참여 밴드', '검토'] as const;
+const STEPS = ['기본 정보', '셋리스트', '검토'] as const;
 
 export function PerformanceCreateWizard() {
   const router = useRouter();
@@ -31,10 +31,10 @@ export function PerformanceCreateWizard() {
 
   // Step 2
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [selectedBands, setSelectedBands] = useState<BandInfoResponse[]>([]);
+  const [selectedMeetings, setSelectedMeetings] = useState<Meeting[]>([]);
 
   const dirty =
-    step > 0 || title.length > 0 || venue.length > 0 || !!startAt || selectedBands.length > 0;
+    step > 0 || title.length > 0 || venue.length > 0 || !!startAt || selectedMeetings.length > 0;
   useRegisterDirtyForm('performance-create-wizard', dirty);
 
   const mutation = useCreatePerformance({
@@ -62,8 +62,7 @@ export function PerformanceCreateWizard() {
     if (!title || !startAt) return;
     mutation.mutate({
       title,
-      // 백엔드는 bandIds null/missing 시 400 (mvp-1-fix-v3 Task 8 검증). 항상 배열 전송.
-      bandIds: selectedBands.map((b) => b.bandId),
+      setlistMeetingIds: selectedMeetings.map((m) => m.id),
       startAt,
       durationMinutes,
       venue: venue || undefined,
@@ -124,27 +123,25 @@ export function PerformanceCreateWizard() {
 
       {/* Step 2 */}
       {step === 1 && (
-        <section data-slot="wizard-step-bands" className="space-y-s-4">
-          <h2 className="text-subtitle font-semibold">참여 밴드를 추가하세요 (선택)</h2>
-          {selectedBands.length === 0 ? (
+        <section data-slot="wizard-step-setlists" className="space-y-s-4">
+          <h2 className="text-subtitle font-semibold">셋리스트를 추가하세요 (선택)</h2>
+          {selectedMeetings.length === 0 ? (
             <p className="text-foreground-muted text-caption">
-              추가하지 않으면 빈 배열로 전송됩니다. 공연 생성 후 상세 화면에서 추가할 수 있습니다.
+              추가하지 않으면 셋리스트 없이 공연이 생성됩니다.
             </p>
           ) : (
             <ul className="gap-s-2 flex flex-wrap">
-              {selectedBands.map((b) => (
+              {selectedMeetings.map((m) => (
                 <li
-                  key={b.bandId}
+                  key={m.id}
                   className="bg-card border-border gap-s-2 px-s-3 py-s-1 inline-flex items-center rounded-full border"
                 >
-                  <span className="text-caption">{b.bandName}</span>
+                  <span className="text-caption">{m.title}</span>
                   <button
                     type="button"
-                    aria-label={`${b.bandName} 제거`}
+                    aria-label={`${m.title} 제거`}
                     className="text-foreground-muted hover:text-foreground"
-                    onClick={() =>
-                      setSelectedBands((prev) => prev.filter((x) => x.bandId !== b.bandId))
-                    }
+                    onClick={() => setSelectedMeetings((prev) => prev.filter((x) => x.id !== m.id))}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -158,7 +155,7 @@ export function PerformanceCreateWizard() {
             onClick={() => setPickerOpen(true)}
             className="w-full"
           >
-            <Plus className="h-4 w-4" /> 밴드 검색해서 추가
+            셋리스트 검색해서 추가
           </Button>
         </section>
       )}
@@ -189,11 +186,11 @@ export function PerformanceCreateWizard() {
                 onEdit: () => setStep(0),
               },
               {
-                label: '참여 밴드',
+                label: '셋리스트',
                 value:
-                  selectedBands.length === 0
+                  selectedMeetings.length === 0
                     ? '없음'
-                    : selectedBands.map((b) => b.bandName).join(', '),
+                    : selectedMeetings.map((m) => m.title).join(', '),
                 onEdit: () => setStep(1),
               },
             ]}
@@ -217,13 +214,11 @@ export function PerformanceCreateWizard() {
         )}
       </footer>
 
-      <BandPickerModal
+      <SetlistPickerModal
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        multiple
-        initialSelection={selectedBands}
-        onConfirm={(bands) => setSelectedBands(bands)}
-        title="참여 밴드 추가"
+        initialSelection={selectedMeetings}
+        onConfirm={(meetings) => setSelectedMeetings(meetings)}
       />
     </div>
   );
