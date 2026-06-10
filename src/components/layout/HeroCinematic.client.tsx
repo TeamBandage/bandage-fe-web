@@ -1,8 +1,16 @@
 'use client';
 
-import { Component, Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Component,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { ContactShadows, Environment } from '@react-three/drei';
+import { ContactShadows, Environment, useAnimations, useGLTF } from '@react-three/drei';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import * as THREE from 'three';
 import gsap from 'gsap';
@@ -60,10 +68,43 @@ class ModelErrorBoundary extends Component<
   }
 }
 
-// ── FBX drummer model (FBXLoader handles Mixamo eInheritRrs natively) ─────────
+// ── GLB drummer model ─────────────────────────────────────────────────────────
 
 function DrummerModel({ position }: { position: THREE.Vector3Tuple }) {
-  const fbx = useLoader(FBXLoader, '/models/playing-drums.fbx');
+  const { scene, animations } = useGLTF('/models/drummer.glb');
+  const groupRef = useRef<THREE.Group>(null);
+  const { actions } = useAnimations(animations, groupRef);
+
+  useEffect(() => {
+    scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+    });
+    const first = Object.values(actions)[0];
+    if (first) first.reset().play();
+  }, [scene, actions]);
+
+  return (
+    <group ref={groupRef} position={position}>
+      {/* Armature baked scale=0.01; trans y=-0.186 → lift by 0.186 to ground feet */}
+      <primitive
+        object={scene}
+        scale={1}
+        rotation={[0, -Math.PI / 2, 0]}
+        position={[0, 0.186, 0]}
+      />
+    </group>
+  );
+}
+
+useGLTF.preload('/models/drummer.glb');
+
+// ── FBX vocalist model (vocal.glb is FBX binary; FBXLoader handles it natively) ──
+
+function VocalModel({ position }: { position: THREE.Vector3Tuple }) {
+  const fbx = useLoader(FBXLoader, '/models/vocal.glb');
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
 
   useEffect(() => {
@@ -87,11 +128,88 @@ function DrummerModel({ position }: { position: THREE.Vector3Tuple }) {
 
   return (
     <group position={position}>
-      {/* Mixamo FBX: 1 unit = 1 cm → scale 0.01 gives ~1.75 Three.js meters */}
-      <primitive object={fbx} scale={0.01} rotation={[0, Math.PI / 2, 0]} />
+      {/* FBX: 1 unit = 1 cm → scale 0.01; at -Z, face outward (-Z) = Ry π */}
+      <primitive object={fbx} scale={0.01} rotation={[0, Math.PI, 0]} />
     </group>
   );
 }
+
+// ── GLB guitarist model ───────────────────────────────────────────────────────
+
+function GuitaristModel({ position }: { position: THREE.Vector3Tuple }) {
+  const { scene, animations } = useGLTF('/models/guitarist.glb');
+  const groupRef = useRef<THREE.Group>(null);
+  const { actions } = useAnimations(animations, groupRef);
+
+  useEffect(() => {
+    scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+
+      // Fix: BLEND alpha materials don't write depth by default, causing hair to z-sort over face.
+      // Force depthWrite + alphaTest so body/face always renders correctly.
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mats.forEach((m: THREE.Material) => {
+        if (m.transparent) {
+          m.depthWrite = true;
+          (m as THREE.MeshStandardMaterial).alphaTest = 0.1;
+        }
+      });
+
+      // Body mesh (face included) renders on top of hair mesh
+      if (mesh.name.toLowerCase().includes('body')) mesh.renderOrder = 1;
+    });
+    const first = Object.values(actions)[0];
+    if (first) first.reset().play();
+  }, [scene, actions]);
+
+  return (
+    <group ref={groupRef} position={position}>
+      {/* Armature already has scale=0.01 baked in (cm→m); face outward (+X) = Ry +π/2 */}
+      <primitive object={scene} scale={1} rotation={[0, Math.PI / 2, 0]} />
+    </group>
+  );
+}
+
+useGLTF.preload('/models/guitarist.glb');
+
+// ── GLB pianist model ─────────────────────────────────────────────────────────
+
+function PianistModel({ position }: { position: THREE.Vector3Tuple }) {
+  const { scene, animations } = useGLTF('/models/pianist.glb');
+  const groupRef = useRef<THREE.Group>(null);
+  const { actions } = useAnimations(animations, groupRef);
+
+  useEffect(() => {
+    scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mats.forEach((m: THREE.Material) => {
+        if (m.transparent) {
+          m.depthWrite = true;
+          (m as THREE.MeshStandardMaterial).alphaTest = 0.1;
+        }
+      });
+      if (mesh.name.toLowerCase().includes('body')) mesh.renderOrder = 1;
+    });
+    const first = Object.values(actions)[0];
+    if (first) first.reset().play();
+  }, [scene, actions]);
+
+  return (
+    <group ref={groupRef} position={position}>
+      {/* Armature scale=0.01 baked in; at +Z, face outward (+Z) = no rotation */}
+      <primitive object={scene} scale={1} rotation={[0, 0, 0]} />
+    </group>
+  );
+}
+
+useGLTF.preload('/models/pianist.glb');
 
 // ── Placeholder figures for the other three musicians ─────────────────────────
 
@@ -192,15 +310,30 @@ function CameraRig({ progress }: { progress: { current: number } }) {
   return null;
 }
 
+// ── Ready signal — mounts only after all sibling models in the Suspense resolve ─
+
+function ReadySignal({ onReady }: { onReady: () => void }) {
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
+  return null;
+}
+
 // ── Scene graph ───────────────────────────────────────────────────────────────
 
-function Scene({ progress }: { progress: { current: number } }) {
+function Scene({
+  progress,
+  onModelsLoaded,
+}: {
+  progress: { current: number };
+  onModelsLoaded: () => void;
+}) {
   return (
     <>
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={0.6} />
       <directionalLight
         position={[4, 8, 5]}
-        intensity={1.5}
+        intensity={2.0}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-far={30}
@@ -209,7 +342,7 @@ function Scene({ progress }: { progress: { current: number } }) {
         shadow-camera-top={8}
         shadow-camera-bottom={-8}
       />
-      <hemisphereLight args={['#1a1a2e', '#080808', 0.55]} />
+      <hemisphereLight args={['#2a2a4e', '#141414', 0.85]} />
 
       {/* Per-musician colored accent lights */}
       {MUSICIAN_POS.map((pos, i) => (
@@ -217,8 +350,8 @@ function Scene({ progress }: { progress: { current: number } }) {
           key={i}
           position={[pos[0], 2.8, pos[2]]}
           color={MUSICIAN_COLORS[i]}
-          intensity={1.4}
-          distance={5}
+          intensity={2.2}
+          distance={6}
           decay={2}
         />
       ))}
@@ -233,34 +366,46 @@ function Scene({ progress }: { progress: { current: number } }) {
 
       <Environment preset="night" />
 
-      {/* Guitarist — at +X, camera approaches from +X → face +X = yRot -π/2 */}
-      <MusicianFigure position={MUSICIAN_POS[0]!} color={MUSICIAN_COLORS[0]} yRot={-Math.PI / 2} />
-      {/* Bassist — at +Z, camera approaches from +Z → face +Z = yRot π */}
-      <MusicianFigure position={MUSICIAN_POS[1]!} color={MUSICIAN_COLORS[1]} yRot={Math.PI} />
-      {/* Drummer — at -X, camera approaches from -X → face -X = yRot π/2 */}
-      <ModelErrorBoundary
-        fallback={
-          <MusicianFigure
-            position={MUSICIAN_POS[2]!}
-            color={MUSICIAN_COLORS[2]}
-            yRot={Math.PI / 2}
-          />
-        }
-      >
-        <Suspense
+      {/* All models in one Suspense — ReadySignal fires only when all four resolve */}
+      <Suspense fallback={null}>
+        <ModelErrorBoundary
           fallback={
             <MusicianFigure
-              position={MUSICIAN_POS[2]!}
-              color={MUSICIAN_COLORS[2]}
+              position={MUSICIAN_POS[0]!}
+              color={MUSICIAN_COLORS[0]}
               yRot={Math.PI / 2}
             />
           }
         >
+          <GuitaristModel position={MUSICIAN_POS[0]!} />
+        </ModelErrorBoundary>
+        <ModelErrorBoundary
+          fallback={
+            <MusicianFigure position={MUSICIAN_POS[1]!} color={MUSICIAN_COLORS[1]} yRot={0} />
+          }
+        >
+          <PianistModel position={MUSICIAN_POS[1]!} />
+        </ModelErrorBoundary>
+        <ModelErrorBoundary
+          fallback={
+            <MusicianFigure
+              position={MUSICIAN_POS[2]!}
+              color={MUSICIAN_COLORS[2]}
+              yRot={-Math.PI / 2}
+            />
+          }
+        >
           <DrummerModel position={MUSICIAN_POS[2]!} />
-        </Suspense>
-      </ModelErrorBoundary>
-      {/* Vocalist — at -Z, camera approaches from -Z → face -Z = yRot 0 (default) */}
-      <MusicianFigure position={MUSICIAN_POS[3]!} color={MUSICIAN_COLORS[3]} yRot={0} />
+        </ModelErrorBoundary>
+        <ModelErrorBoundary
+          fallback={
+            <MusicianFigure position={MUSICIAN_POS[3]!} color={MUSICIAN_COLORS[3]} yRot={Math.PI} />
+          }
+        >
+          <VocalModel position={MUSICIAN_POS[3]!} />
+        </ModelErrorBoundary>
+        <ReadySignal onReady={onModelsLoaded} />
+      </Suspense>
 
       <CameraRig progress={progress} />
     </>
@@ -274,9 +419,19 @@ export function HeroCinematic() {
   const [scrollerEl, setScrollerEl] = useState<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const labelRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const logoRef = useRef<HTMLImageElement | null>(null);
 
   // Shared scalar read by CameraRig inside Canvas — written only in GSAP callback
   const cameraProgress = useRef<number>(0);
+
+  const [sceneReady, setSceneReady] = useState(false);
+  const handleModelsLoaded = useCallback(() => setSceneReady(true), []);
+
+  // Fallback: hide overlay after 45s even if a model fails/hangs
+  useEffect(() => {
+    const t = setTimeout(() => setSceneReady(true), 45_000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -312,6 +467,7 @@ export function HeroCinematic() {
     labelRefs.current.forEach((el, i) => {
       if (el) gsap.set(el, { opacity: i === 0 ? 1 : 0 });
     });
+    if (logoRef.current) gsap.set(logoRef.current, { opacity: 0, scale: 0.88, y: 12 });
 
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -330,7 +486,8 @@ export function HeroCinematic() {
       .to(lbl(2), { opacity: 0, duration: 0.35 }, 2.65)
       .to(lbl(3), { opacity: 1, duration: 0.35 }, 2.65)
       .to(lbl(3), { opacity: 0, duration: 0.4 }, 3.35)
-      .to(lbl(4), { opacity: 1, duration: 0.4 }, 3.35);
+      .to(lbl(4), { opacity: 1, duration: 0.4 }, 3.35)
+      .to(logoRef.current, { opacity: 1, scale: 1, y: 0, duration: 0.5 }, 3.35);
 
     ScrollTrigger.addEventListener('refresh', () => ScrollTrigger.update());
     ScrollTrigger.refresh();
@@ -343,12 +500,7 @@ export function HeroCinematic() {
   }, [scrollerEl]);
 
   return (
-    <div
-      ref={setScrollerEl}
-      className="border-border relative hidden flex-1 overflow-y-auto border-r lg:block"
-      style={{ height: '100%' }}
-      aria-hidden="true"
-    >
+    <div ref={setScrollerEl} className="absolute inset-0 overflow-y-auto" aria-hidden="true">
       <div style={{ height: '520vh' }}>
         <div
           ref={stageRef}
@@ -366,8 +518,21 @@ export function HeroCinematic() {
             }}
             style={{ position: 'absolute', inset: 0 }}
           >
-            <Scene progress={cameraProgress} />
+            <Scene progress={cameraProgress} onModelsLoaded={handleModelsLoaded} />
           </Canvas>
+
+          {/* Loading overlay — fades out once all models are ready */}
+          <div
+            className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 transition-opacity duration-700"
+            style={{ background: '#06060a', opacity: sceneReady ? 0 : 1 }}
+          >
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/50" />
+            <span
+              style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, letterSpacing: '0.12em' }}
+            >
+              LOADING
+            </span>
+          </div>
 
           {/* ── HTML overlays ─────────────────────────────────────────── */}
 
@@ -392,6 +557,16 @@ export function HeroCinematic() {
               </div>
             ))}
           </div>
+
+          {/* Center logo — fades in with GSAP at final scroll phase */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={logoRef}
+            src="/brand/bandage_wave_text_white.png"
+            alt="Bandage"
+            className="pointer-events-none absolute top-1/2 left-1/2 w-56 -translate-x-1/2 -translate-y-1/2"
+            style={{ opacity: 0 }}
+          />
 
           {/* Brand wordmark */}
           <div
