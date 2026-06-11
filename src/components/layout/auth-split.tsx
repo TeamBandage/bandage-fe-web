@@ -3,7 +3,12 @@
 import { useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { BottomSheet, BottomSheetBody, BottomSheetContent } from '@/components/ui/bottom-sheet';
+import {
+  BottomSheet,
+  BottomSheetBody,
+  BottomSheetContent,
+  BottomSheetTitle,
+} from '@/components/ui/bottom-sheet';
 
 import { HeroCinematic } from './HeroCinematic.client';
 
@@ -17,8 +22,10 @@ export function AuthSplit({ children }: { children: ReactNode }) {
     <div className="relative h-screen w-full overflow-hidden" data-slot="auth-split">
       <HeroCinematic />
 
-      {/* Top-right login button overlay */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end px-6 py-5">
+      {/* Top bar: logo left, login button right */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/bandage_wave_text_white.png" alt="Bandage" className="h-7 w-auto" />
         <Button
           variant="secondary"
           size="sm"
@@ -31,6 +38,7 @@ export function AuthSplit({ children }: { children: ReactNode }) {
 
       <BottomSheet open={open} onOpenChange={setOpen}>
         <BottomSheetContent className="max-h-[92vh]">
+          <BottomSheetTitle className="sr-only">로그인</BottomSheetTitle>
           <BottomSheetBody className="overflow-y-auto px-5 py-6">{children}</BottomSheetBody>
         </BottomSheetContent>
       </BottomSheet>

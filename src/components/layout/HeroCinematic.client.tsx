@@ -46,11 +46,10 @@ const CAM_KEYS: Array<{ pos: THREE.Vector3Tuple; look: THREE.Vector3Tuple }> = [
 ];
 
 const PHASE_LABELS = [
-  { headline: '당신의 밴드를', sub: 'Guitar is the heartbeat.' },
-  { headline: '하나의 흐름으로', sub: 'Bass drives the groove.' },
-  { headline: '리듬에 실어', sub: 'Drums hold the band together.' },
-  { headline: '완성하세요', sub: 'Vocal brings it to life.' },
-  { headline: 'Bandage', sub: '밴드의 모든 것을 한 곳에.' },
+  { headline: '당신의 밴드를', sub: 'Bring Your Band Together' },
+  { headline: '하나의 흐름으로', sub: 'Into One Seamless Flow' },
+  { headline: '리듬에 실어', sub: 'Driven By Rhythm' },
+  { headline: '완성하세요', sub: 'Make It Complete' },
 ];
 
 // ── ErrorBoundary for model loading failures ──────────────────────────────────
@@ -419,10 +418,13 @@ export function HeroCinematic() {
   const [scrollerEl, setScrollerEl] = useState<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const labelRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const logoRef = useRef<HTMLImageElement | null>(null);
+  const logoRef = useRef<HTMLDivElement | null>(null);
 
   // Shared scalar read by CameraRig inside Canvas — written only in GSAP callback
   const cameraProgress = useRef<number>(0);
+
+  const currentSnapIdx = useRef(0);
+  const isSnapping = useRef(false);
 
   const [sceneReady, setSceneReady] = useState(false);
   const handleModelsLoaded = useCallback(() => setSceneReady(true), []);
@@ -432,6 +434,40 @@ export function HeroCinematic() {
     const t = setTimeout(() => setSceneReady(true), 45_000);
     return () => clearTimeout(t);
   }, []);
+
+  // Wheel → one event = one phase advance, no snap delay
+  useEffect(() => {
+    if (!scrollerEl) return;
+    const PHASES = 5;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (isSnapping.current) return;
+
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const next = Math.max(0, Math.min(PHASES - 1, currentSnapIdx.current + dir));
+      if (next === currentSnapIdx.current) return;
+
+      currentSnapIdx.current = next;
+      isSnapping.current = true;
+
+      const maxScroll = scrollerEl.scrollHeight - scrollerEl.clientHeight;
+      gsap.to(scrollerEl, {
+        scrollTop: (next / (PHASES - 1)) * maxScroll,
+        duration: 0.7,
+        ease: 'power2.inOut',
+        onUpdate: () => ScrollTrigger.update(),
+      });
+
+      // 애니메이션(0.7s) + 트랙패드 잔여 이벤트 여운(300ms) 이후 해제
+      setTimeout(() => {
+        isSnapping.current = false;
+      }, 1000);
+    };
+
+    scrollerEl.addEventListener('wheel', handleWheel, { passive: false });
+    return () => scrollerEl.removeEventListener('wheel', handleWheel);
+  }, [scrollerEl]);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -456,7 +492,7 @@ export function HeroCinematic() {
       trigger: stageRef.current,
       start: 'top top',
       end: '+=400%',
-      scrub: 1.5,
+      scrub: true,
       onUpdate(self) {
         cameraProgress.current = self.progress;
       },
@@ -475,19 +511,20 @@ export function HeroCinematic() {
         trigger: stageRef.current,
         start: 'top top',
         end: '+=400%',
-        scrub: 1.5,
+        scrub: true,
       },
     });
 
-    tl.to(lbl(0), { opacity: 0, duration: 0.35 }, 0.65)
-      .to(lbl(1), { opacity: 1, duration: 0.35 }, 0.65)
-      .to(lbl(1), { opacity: 0, duration: 0.35 }, 1.65)
-      .to(lbl(2), { opacity: 1, duration: 0.35 }, 1.65)
-      .to(lbl(2), { opacity: 0, duration: 0.35 }, 2.65)
-      .to(lbl(3), { opacity: 1, duration: 0.35 }, 2.65)
-      .to(lbl(3), { opacity: 0, duration: 0.4 }, 3.35)
-      .to(lbl(4), { opacity: 1, duration: 0.4 }, 3.35)
-      .to(logoRef.current, { opacity: 1, scale: 1, y: 0, duration: 0.5 }, 3.35);
+    // snap 포인트(progress 0.25→1, 0.5→2, 0.75→3)에 정확히 맞춰 즉각 전환 — 겹침 없음
+    tl.set(lbl(0), { opacity: 0 }, 1)
+      .set(lbl(1), { opacity: 1 }, 1)
+      .set(lbl(1), { opacity: 0 }, 2)
+      .set(lbl(2), { opacity: 1 }, 2)
+      .set(lbl(2), { opacity: 0 }, 3)
+      .set(lbl(3), { opacity: 1 }, 3)
+      .set(lbl(3), { opacity: 0 }, 3.5)
+      .to(logoRef.current, { opacity: 1, scale: 1, y: 0, duration: 0.3 }, 3.5)
+      .to({}, { duration: 0.5 }, 3.5); // total duration = 4 (snap 1.0 alignment)
 
     ScrollTrigger.addEventListener('refresh', () => ScrollTrigger.update());
     ScrollTrigger.refresh();
@@ -559,21 +596,28 @@ export function HeroCinematic() {
           </div>
 
           {/* Center logo — fades in with GSAP at final scroll phase */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            ref={logoRef}
-            src="/brand/bandage_wave_text_white.png"
-            alt="Bandage"
-            className="pointer-events-none absolute top-1/2 left-1/2 w-56 -translate-x-1/2 -translate-y-1/2"
-            style={{ opacity: 0 }}
-          />
-
-          {/* Brand wordmark */}
           <div
-            className="pointer-events-none absolute top-8 left-8 font-black"
-            style={{ color: 'rgba(255,255,255,0.60)', fontSize: 17, letterSpacing: '-0.02em' }}
+            ref={logoRef}
+            className="pointer-events-none absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ opacity: 0 }}
           >
-            Bandage
+            {/* Radial dark veil behind the logo */}
+            <div
+              className="absolute inset-0 -z-10"
+              style={{
+                transform: 'scale(2.8)',
+                background:
+                  'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(6,6,10,0.82) 0%, transparent 100%)',
+              }}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/bandage_wave_text_white.png" alt="Bandage" className="w-70" />
+            <p
+              className="mt-3 text-center"
+              style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, letterSpacing: '0.04em' }}
+            >
+              밴드 합주 관리의 모든 것을 한 곳에
+            </p>
           </div>
 
           {/* Scroll hint */}
