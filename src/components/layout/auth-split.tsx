@@ -1,125 +1,47 @@
-import { Check } from 'lucide-react';
-import type { HTMLAttributes, ReactNode } from 'react';
+'use client';
 
-import { cn } from '@/lib/cn';
+import { useState, type ReactNode } from 'react';
 
-import { BrandMark } from '../brand';
+import { Button } from '@/components/ui/button';
+import {
+  BottomSheet,
+  BottomSheetBody,
+  BottomSheetContent,
+  BottomSheetTitle,
+} from '@/components/ui/bottom-sheet';
 
-const BRAND_TAGLINE =
-  '밴드의 합주·공연을 한 곳에서 관리하세요. 일정·세션·참여자까지 번거로움 없이.';
-
-const BRAND_FEATURES = ['합주 일정 관리', '세션 배정', '공연 연결'] as const;
-
-/**
- * Auth 화면 좌측 브랜딩 패널 (desktop 전용, lg 미만 hidden).
- * design/dist/css/layout.css .auth-brand 스펙 미러링.
- * - 145deg gradient, 3 decorative rings, 72px 로고, 40px title, tagline, feature chips
- */
-export function AuthBrand({ className, ...props }: HTMLAttributes<HTMLElement>) {
-  return (
-    <aside
-      className={cn(
-        'border-border relative hidden flex-1 flex-col items-center justify-center overflow-hidden border-r px-15 py-15 lg:flex',
-        className,
-      )}
-      style={{ backgroundImage: 'var(--gradient-auth-brand)' }}
-      data-slot="auth-brand"
-      aria-hidden="true"
-      {...props}
-    >
-      {/* Decorative rings */}
-      <div className="pointer-events-none absolute inset-0 flex items-start justify-center pt-20">
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 400,
-            height: 400,
-            top: '10%',
-            border: '1px solid oklch(0.62 0.22 250 / 0.12)',
-          }}
-        />
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 280,
-            height: 280,
-            top: '20%',
-            border: '1px solid oklch(0.62 0.22 250 / 0.12)',
-          }}
-        />
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 160,
-            height: 160,
-            top: '25%',
-            background: 'oklch(0.62 0.22 250 / 0.05)',
-          }}
-        />
-      </div>
-
-      <div className="relative z-[1] max-w-sm text-center">
-        <div
-          className="bg-accent-dim mb-s-5 mx-auto flex h-18 w-18 items-center justify-center rounded-xl border"
-          style={{ borderColor: 'oklch(0.62 0.22 250 / 0.26)' }}
-        >
-          <BrandMark size={48} className="text-accent" />
-        </div>
-        <h1 className="text-display text-foreground mb-s-3 font-black tracking-tight">Bandage</h1>
-        <p className="text-foreground-sub mb-s-10 text-subtitle mx-auto max-w-[280px] leading-relaxed">
-          {BRAND_TAGLINE}
-        </p>
-        <ul className="gap-s-3 flex flex-wrap justify-center">
-          {BRAND_FEATURES.map((f) => (
-            <li
-              key={f}
-              className="bg-card border-border text-foreground-sub gap-s-2 rounded-pill px-s-4 py-s-2 text-caption flex items-center border"
-            >
-              <Check className="text-accent h-3.5 w-3.5" />
-              {f}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </aside>
-  );
-}
+import { HeroCinematic } from './HeroCinematic.client';
 
 /**
- * Auth 화면 우측 폼 패널.
- * - lg 이상: 480px 고정 폭, 중앙 정렬 inner(max-w 360)
- * - lg 미만: 전체 너비, 중앙 정렬 inner
- */
-export function AuthFormPanel({
-  className,
-  children,
-  ...props
-}: HTMLAttributes<HTMLElement> & { children: ReactNode }) {
-  return (
-    <section
-      className={cn(
-        'bg-surface px-s-4 py-s-10 flex w-full flex-col items-center justify-center lg:w-[480px] lg:flex-none lg:px-15',
-        className,
-      )}
-      data-slot="auth-form-panel"
-      {...props}
-    >
-      <div className="w-full max-w-[360px]">{children}</div>
-    </section>
-  );
-}
-
-/**
- * Auth 전체 shell: 좌측 브랜드(>=lg) + 우측 폼.
+ * Auth 전체 shell: 3D 씬 전체화면 + 상단 로그인 버튼 오버레이 + BottomSheet 폼.
  */
 export function AuthSplit({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div
-      className="bg-bg flex min-h-screen w-full lg:h-screen lg:overflow-hidden"
-      data-slot="auth-split"
-    >
-      <AuthBrand />
-      <AuthFormPanel>{children}</AuthFormPanel>
+    <div className="relative h-screen w-full overflow-hidden" data-slot="auth-split">
+      <HeroCinematic />
+
+      {/* Top bar: logo left, login button right */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/bandage_wave_text_white.png" alt="Bandage" className="h-7 w-auto" />
+        <Button
+          variant="secondary"
+          size="sm"
+          className="pointer-events-auto border border-white/20 bg-white/10 text-white/90 backdrop-blur-sm hover:bg-white/20"
+          onClick={() => setOpen(true)}
+        >
+          로그인
+        </Button>
+      </div>
+
+      <BottomSheet open={open} onOpenChange={setOpen}>
+        <BottomSheetContent className="max-h-[92vh]">
+          <BottomSheetTitle className="sr-only">로그인</BottomSheetTitle>
+          <BottomSheetBody className="overflow-y-auto px-5 py-6">{children}</BottomSheetBody>
+        </BottomSheetContent>
+      </BottomSheet>
     </div>
   );
 }
