@@ -54,7 +54,7 @@ export function JoinForm() {
       <Input
         label="이름"
         autoComplete="name"
-        placeholder="홍길동"
+        placeholder="이름을 입력하세요"
         required
         error={form.formState.errors.name?.message}
         className={INPUT_CLASS}

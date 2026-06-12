@@ -41,7 +41,7 @@ export function AuthSplit({ children }: { children: ReactNode }) {
 
       <ResponsiveSheet open={open} onOpenChange={setOpen}>
         <ResponsiveSheetContent
-          className="max-h-[92vh] border-white/20"
+          className="max-h-[92vh] border-white/20 lg:max-h-none"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <ResponsiveSheetTitle className="sr-only">로그인</ResponsiveSheetTitle>
