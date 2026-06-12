@@ -22,6 +22,7 @@ export default [
       'node_modules/**',
       'next-env.d.ts',
       'design/**',
+      'src/global/api/schema.d.ts',
     ],
   },
   js.configs.recommended,

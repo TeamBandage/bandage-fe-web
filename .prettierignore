@@ -19,3 +19,7 @@ design
 CLAUDE.md
 API_SPEC.md
 README.md
+
+# Generated / vendored (openapi-typescript 산출물 · BE 스펙 스냅샷)
+openapi
+src/global/api/schema.d.ts

@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "stack": "typescript/next.js",
+  "repo": "TeamBandage/bandage-fe-web",
+  "description": "MCP 영향평가 Tool(check_impacting_changes)의 조회 단위(fe_area)와 BE endpoint 매핑. FE 도메인 모듈을 영역으로 사용하며 BE 도메인 경계와 1:1 정렬한다. endpointPrefixes는 longest-prefix match로 endpoint를 영역에 귀속시킨다. 자세한 규칙은 docs/mcp-impact/README.md 참조.",
+  "areas": [
+    {
+      "id": "auth",
+      "label": "인증",
+      "routes": ["/login", "/join", "/password-change", "/oauth"],
+      "endpointPrefixes": ["/api/v1/auth"],
+      "status": "active"
+    },
+    {
+      "id": "member",
+      "label": "회원",
+      "routes": ["/me"],
+      "endpointPrefixes": ["/api/v1/members"],
+      "status": "active"
+    },
+    {
+      "id": "band",
+      "label": "밴드",
+      "routes": ["/bands"],
+      "endpointPrefixes": ["/api/v1/bands"],
+      "status": "active"
+    },
+    {
+      "id": "jam",
+      "label": "합주(Jam)",
+      "routes": ["/practices"],
+      "endpointPrefixes": ["/api/v1/jams"],
+      "operationIds": [
+        "getJams",
+        "createJam",
+        "getMyJams",
+        "searchMyJams",
+        "getJam",
+        "deleteJam",
+        "addParticipant",
+        "deleteParticipant",
+        "updateSessions",
+        "updateTimeInfo",
+        "updateVenue",
+        "createJamsFromSetlist"
+      ],
+      "status": "active",
+      "notes": "BD-70에서 practice→jam 도메인 재구조화(PracticeSong 제거, TrackInfo 임베디드, participant/session 모델 변경). BE source of truth는 /api/v1/jams이며 /api/v1/practices는 폐기됨. FE 라우트(/practices)·호출 코드(src/domain/practice)는 아직 legacy practices를 사용 → 계약 불일치는 docs/mcp-impact/known-contract-gaps.md 참조. createJamsFromSetlist는 /api/v1/setlists/{setlistId}/jams 경유(별도 nested 경로)."
+    },
+    {
+      "id": "performance",
+      "label": "공연",
+      "routes": ["/performances"],
+      "endpointPrefixes": ["/api/v1/performances"],
+      "status": "active"
+    },
+    {
+      "id": "upload",
+      "label": "파일 업로드",
+      "routes": [],
+      "endpointPrefixes": ["/api/v1/uploads"],
+      "status": "active",
+      "notes": "도메인 모듈이 아닌 횡단(cross-cutting) 관심사(src/global/upload). presign 발급(/api/v1/uploads/profile-image/presigned-url)은 BE OpenAPI 대상이라 영향평가 대상(스펙에 존재 확인). 단, 발급받은 URL로의 실제 S3 PUT(uploadToPresignedUrl.ts)은 외부 호출이라 영향평가 대상이 아님. 전용 라우트 없음(공용 UI: profile-image-upload, avatar)."
+    },
+    {
+      "id": "setlist-meeting",
+      "label": "셋리스트 회의",
+      "routes": ["/setlist-meetings"],
+      "endpointPrefixes": ["/api/v1/setlist-meetings"],
+      "status": "partial-mock",
+      "notes": "일부 화면이 mock 데이터(domain/setlist-meeting/mock)와 병존한다. 영향 조회 시 mock 구간은 BE 미연동으로 간주."
+    },
+    {
+      "id": "schedule-coordination",
+      "label": "일정 조율",
+      "routes": ["/setlist-meetings/scheduling"],
+      "endpointPrefixes": [],
+      "status": "mock-only",
+      "notes": "BE 미연동(api/ 폴더 없음, 전량 mock). endpoint 매핑 없음 → 영향 조회 대상에서 제외하거나 '미연동'으로 표시."
+    }
+  ],
+  "knownGaps": [
+    {
+      "area": "jam",
+      "deprecatedPrefixes": ["/api/v1/practices", "/api/v1/practice-songs"],
+      "status": "unaligned",
+      "doc": "docs/mcp-impact/known-contract-gaps.md",
+      "reason": "BD-70 practice→jam 도메인 재구조화로 /api/v1/practices·/api/v1/practice-songs 폐기. FE 호출 코드(src/domain/practice, src/domain/practice-song)가 아직 폐기 경로를 호출 — 개발자 코드 정렬 영역. 검증에서 uncovered가 아닌 known-gap으로 분류한다."
+    }
+  ]
+}
