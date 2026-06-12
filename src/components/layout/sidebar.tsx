@@ -155,7 +155,7 @@ export function Sidebar({ className }: SidebarProps) {
       >
         {collapsed ? (
           <Image
-            src="/brand/bandage_wave_logo_white.png"
+            src="/brand/bandage_pick_logo_white.png"
             alt="Bandage"
             width={18}
             height={18}
