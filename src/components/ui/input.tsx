@@ -30,8 +30,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-required={required || undefined}
           className={cn(
             baseInputClasses,
-            error ? 'border-danger' : 'border-border hover:border-border-hi',
+            'border-border hover:border-border-hi',
             className,
+            error &&
+              'border-danger hover:border-danger focus-visible:border-danger [&:not(:placeholder-shown)]:border-danger',
           )}
           {...props}
         />

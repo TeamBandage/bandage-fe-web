@@ -79,7 +79,12 @@ export function OAuthSection() {
         <OAuthButton provider="kakao" onClick={handleKakao} disabled={busy} />
         <OAuthButton provider="apple" onClick={notReady} disabled={busy} />
       */}
-      <OAuthButton provider="google" onClick={handleGoogle} disabled={busy} />
+      <OAuthButton
+        provider="google"
+        onClick={handleGoogle}
+        disabled={busy}
+        className="rounded-[5px]"
+      />
     </section>
   );
 }

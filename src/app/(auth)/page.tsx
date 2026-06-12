@@ -15,7 +15,7 @@ export default function RootPage() {
     <div className="space-y-s-6">
       <header className="space-y-1 text-center">
         <h1 className="text-foreground text-2xl font-bold">로그인</h1>
-        <p className="text-foreground-sub text-sm">Bandage 계정으로 로그인하세요.</p>
+        <p className="text-foreground-muted text-sm">밴드 합주 관리를 간편하게 시작하세요</p>
       </header>
       <LoginForm />
       <div className="gap-s-3 flex items-center" aria-hidden="true">
@@ -26,7 +26,10 @@ export default function RootPage() {
       <OAuthSection />
       <p className="text-foreground-sub text-center text-sm">
         아직 계정이 없으신가요?{' '}
-        <Link href={ROUTES.JOIN} className="text-accent-hi font-medium hover:underline">
+        <Link
+          href={ROUTES.JOIN}
+          className="cursor-pointer font-medium text-white hover:no-underline"
+        >
           회원가입
         </Link>
       </p>

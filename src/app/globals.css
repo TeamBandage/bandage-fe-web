@@ -19,11 +19,12 @@
   /* Nav active */
   --color-nav-active: #ceced6;
 
-  /* Accent - Blue */
-  --color-accent: oklch(0.62 0.22 250);
-  --color-accent-dim: oklch(0.62 0.22 250 / 0.14);
-  --color-accent-soft: oklch(0.62 0.22 250 / 0.08);
-  --color-accent-hi: oklch(0.72 0.2 250);
+  /* Accent — 브랜드 컬러 #e27363 (oklch 변환) */
+  --color-brand: #e27363;
+  --color-accent: oklch(0.68 0.15 29);
+  --color-accent-dim: oklch(0.68 0.15 29 / 0.14);
+  --color-accent-soft: oklch(0.68 0.15 29 / 0.08);
+  --color-accent-hi: oklch(0.74 0.13 29);
 
   /* Semantic */
   --color-success: oklch(0.7 0.18 155);
@@ -136,6 +137,15 @@
     }
   }
 
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
   @keyframes shimmer {
     0% {
       background-position: -400px 0;
@@ -167,6 +177,14 @@
 
   a:hover {
     text-decoration: underline;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #161620 inset !important;
+    -webkit-text-fill-color: #f4f4f8 !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
   button {

@@ -18,6 +18,8 @@ export function LoginForm() {
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
   });
 
   const mutation = useLogin({
@@ -40,6 +42,7 @@ export function LoginForm() {
         autoComplete="email"
         placeholder="you@bandage.com"
         error={form.formState.errors.email?.message}
+        className="rounded-[5px] border-white/20 not-placeholder-shown:border-white/70 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
         {...form.register('email')}
       />
       <Input
@@ -48,9 +51,10 @@ export function LoginForm() {
         autoComplete="current-password"
         placeholder="8자 이상"
         error={form.formState.errors.password?.message}
+        className="rounded-[5px] border-white/20 not-placeholder-shown:border-white/70 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
         {...form.register('password')}
       />
-      <Button type="submit" className="w-full" loading={mutation.isPending}>
+      <Button type="submit" className="w-full rounded-[5px] font-bold" loading={mutation.isPending}>
         로그인
       </Button>
     </form>

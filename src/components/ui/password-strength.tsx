@@ -22,56 +22,28 @@ export function evaluatePassword(pw: string): { score: number; level: PasswordSt
 }
 
 const LABEL_MAP: Record<PasswordStrengthLevel, string> = {
-  empty: '비밀번호를 입력하세요',
-  weak: '약함',
-  medium: '보통',
-  strong: '강함',
-};
-
-const SEG_COLOR: Record<PasswordStrengthLevel, string> = {
-  empty: 'bg-border',
-  weak: 'bg-danger',
-  medium: 'bg-warn',
-  strong: 'bg-success',
+  empty: '',
+  weak: '보안 약함',
+  medium: '보안 보통',
+  strong: '보안 강함',
 };
 
 const LABEL_COLOR: Record<PasswordStrengthLevel, string> = {
-  empty: 'text-foreground-muted',
+  empty: '',
   weak: 'text-danger',
   medium: 'text-warn',
   strong: 'text-success',
 };
 
-/**
- * 비밀번호 강도 4-segment 바 + 하단 힌트.
- * design/dist/css/components.css .pw-strength 규칙 미러링.
- */
 export function PasswordStrength({ password, className, onLevelChange }: PasswordStrengthProps) {
   const { score, level } = evaluatePassword(password);
   onLevelChange?.(level, score);
-  const filled = level === 'empty' ? 0 : score;
+
+  if (level === 'empty') return null;
 
   return (
-    <div className={cn('-mt-s-2 mb-s-3', className)} data-slot="password-strength">
-      <div
-        className="flex gap-[3px]"
-        role="progressbar"
-        aria-label="비밀번호 강도"
-        aria-valuemin={0}
-        aria-valuemax={4}
-        aria-valuenow={score}
-      >
-        {[0, 1, 2, 3].map((i) => (
-          <span
-            key={i}
-            className={cn(
-              'h-1 flex-1 rounded-sm transition-colors duration-200',
-              i < filled ? SEG_COLOR[level] : 'bg-border',
-            )}
-          />
-        ))}
-      </div>
-      <p className={cn('text-micro mt-s-1', LABEL_COLOR[level])}>{LABEL_MAP[level]}</p>
-    </div>
+    <p className={cn('text-xs', LABEL_COLOR[level], className)} data-slot="password-strength">
+      {LABEL_MAP[level]}
+    </p>
   );
 }
