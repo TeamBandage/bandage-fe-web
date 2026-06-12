@@ -1,6 +1,6 @@
 export { buildKakaoRedirectUri, loadKakao, startKakaoAuthorize } from './kakao';
 export { consumeKakaoState } from './kakaoState';
-export { loadGoogleGis, requestGoogleIdToken } from './google';
+export { loadGoogleGis, renderGoogleButton } from './google';
 
 import { ApiError } from '@/global/error/ApiError';
 
