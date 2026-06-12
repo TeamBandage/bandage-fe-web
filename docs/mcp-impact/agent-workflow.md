@@ -17,10 +17,10 @@ FE Agent는 다음 시점에 영향 조회를 **선행**한다.
 
 작업 대상 파일 경로 → 영역 식별자(`fe-areas.json`의 `id`)로 환원한다.
 
-| 작업 경로 패턴 | 영역 판정 |
-|---|---|
-| `src/domain/{id}/**` | `{id}` 를 그대로 영역으로 |
-| `src/app/**` 라우트 | `fe-areas.json` 의 `routes` 와 longest-prefix match |
+| 작업 경로 패턴               | 영역 판정                                            |
+| ---------------------------- | ---------------------------------------------------- |
+| `src/domain/{id}/**`         | `{id}` 를 그대로 영역으로                            |
+| `src/app/**` 라우트          | `fe-areas.json` 의 `routes` 와 longest-prefix match  |
 | 컴포넌트가 호출하는 endpoint | `endpointPrefixes` longest-prefix match 로 영역 역산 |
 
 `mock-only` 영역(예: schedule-coordination)은 호출해도 "미연동"이 반환되므로 생략 가능하다.

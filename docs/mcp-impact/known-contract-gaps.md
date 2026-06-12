@@ -24,57 +24,57 @@ FE `src/domain/practice` 는 여전히 폐기된 practices 경로를 호출 중�
 
 ### 1-1. endpoint 경로 매핑 (FE 호출 → BE operationId)
 
-| FE 파일 | FE 호출(폐기) | BE operationId | BE 경로 | 비고 |
-|---|---|---|---|---|
-| `createPractice.ts` | POST `/api/v1/practices` | `createJam` | POST `/api/v1/jams` | payload 대변경(1-2) |
-| `getPractice.ts` | GET `/api/v1/practices/{id}` | `getJam` | GET `/api/v1/jams/{jamId}` | 응답 대변경(1-3) |
-| `getPractices.ts` | GET `/api/v1/practices` | `getJams` | GET `/api/v1/jams` | 목록 응답 변경 |
-| `getMyPractices.ts` | GET `/api/v1/practices/me` | `getMyJams` | GET `/api/v1/jams/me` | |
-| `searchMyPractices.ts` | GET `/api/v1/practices/me/search` | `searchMyJams` | GET `/api/v1/jams/me/search` | |
-| `deletePractice.ts` | DELETE `/api/v1/practices/{id}` | `deleteJam` | DELETE `/api/v1/jams/{jamId}` | 경로만 |
-| `updateSchedule.ts` | PATCH `/api/v1/practices/{id}/schedule` | `updateTimeInfo` | PATCH `/api/v1/jams/{jamId}/time-info` | 경로+이름, payload 동일 |
-| `updateVenue.ts` | PATCH `/api/v1/practices/{id}/venue` | `updateVenue` | PATCH `/api/v1/jams/{jamId}/venue` | 경로만, payload 동일 |
-| `addParticipant.ts` | POST `/api/v1/practices/{id}/participants` | `addParticipant` | POST `/api/v1/jams/{jamId}/participants` | payload 변경(1-4) |
-| `createSession.ts` | POST `/api/v1/practices/{id}/sessions` | (직접 대응 없음) | PUT `/api/v1/jams/{jamId}/sessions` | 세션 모델 변경(1-5) |
-| `deleteSession.ts` | DELETE `/api/v1/practices/{id}/sessions/{sid}` | (직접 대응 없음) | PUT `/api/v1/jams/{jamId}/sessions` | 일괄 교체 모델 |
-| `assignSession.ts` | PATCH `.../sessions/{sid}/assignment` | (직접 대응 없음) | `addParticipant`(sessionId 포함) | 배정 모델 변경(1-4,1-5) |
-| `unassignSession.ts` | DELETE `.../sessions/{sid}/assignment` | (직접 대응 없음) | `deleteParticipant` | 배정 모델 변경 |
+| FE 파일                | FE 호출(폐기)                                  | BE operationId   | BE 경로                                  | 비고                    |
+| ---------------------- | ---------------------------------------------- | ---------------- | ---------------------------------------- | ----------------------- |
+| `createPractice.ts`    | POST `/api/v1/practices`                       | `createJam`      | POST `/api/v1/jams`                      | payload 대변경(1-2)     |
+| `getPractice.ts`       | GET `/api/v1/practices/{id}`                   | `getJam`         | GET `/api/v1/jams/{jamId}`               | 응답 대변경(1-3)        |
+| `getPractices.ts`      | GET `/api/v1/practices`                        | `getJams`        | GET `/api/v1/jams`                       | 목록 응답 변경          |
+| `getMyPractices.ts`    | GET `/api/v1/practices/me`                     | `getMyJams`      | GET `/api/v1/jams/me`                    |                         |
+| `searchMyPractices.ts` | GET `/api/v1/practices/me/search`              | `searchMyJams`   | GET `/api/v1/jams/me/search`             |                         |
+| `deletePractice.ts`    | DELETE `/api/v1/practices/{id}`                | `deleteJam`      | DELETE `/api/v1/jams/{jamId}`            | 경로만                  |
+| `updateSchedule.ts`    | PATCH `/api/v1/practices/{id}/schedule`        | `updateTimeInfo` | PATCH `/api/v1/jams/{jamId}/time-info`   | 경로+이름, payload 동일 |
+| `updateVenue.ts`       | PATCH `/api/v1/practices/{id}/venue`           | `updateVenue`    | PATCH `/api/v1/jams/{jamId}/venue`       | 경로만, payload 동일    |
+| `addParticipant.ts`    | POST `/api/v1/practices/{id}/participants`     | `addParticipant` | POST `/api/v1/jams/{jamId}/participants` | payload 변경(1-4)       |
+| `createSession.ts`     | POST `/api/v1/practices/{id}/sessions`         | (직접 대응 없음) | PUT `/api/v1/jams/{jamId}/sessions`      | 세션 모델 변경(1-5)     |
+| `deleteSession.ts`     | DELETE `/api/v1/practices/{id}/sessions/{sid}` | (직접 대응 없음) | PUT `/api/v1/jams/{jamId}/sessions`      | 일괄 교체 모델          |
+| `assignSession.ts`     | PATCH `.../sessions/{sid}/assignment`          | (직접 대응 없음) | `addParticipant`(sessionId 포함)         | 배정 모델 변경(1-4,1-5) |
+| `unassignSession.ts`   | DELETE `.../sessions/{sid}/assignment`         | (직접 대응 없음) | `deleteParticipant`                      | 배정 모델 변경          |
 
 BE 신규(미대응): `createJamsFromSetlist` (POST `/api/v1/setlists/{setlistId}/jams`) — 셋리스트 경유 jam 일괄 생성. FE 미구현.
 
 ### 1-2. 생성 요청 payload — `CreatePracticeRequest` → `JamCreateRequest`
 
-| FE `CreatePracticeRequest` | BE `JamCreateRequest` | 차이 |
-|---|---|---|
-| `song: string` | `track: TrackInfoRequest` | **곡이 문자열 → 구조화 객체**. `{ *title, *artist, album?, duration?, reference? }` |
-| (없음) | `sessions: SessionDefDto[]` (필수) | 생성 시 세션 정의 필수. FE는 생성 후 별도 추가 모델 |
-| (없음) | `note?: string` | 신규 |
-| `title?` `venue?` `startAt` `durationMinutes` | 동일 키 존재 | 호환 |
+| FE `CreatePracticeRequest`                    | BE `JamCreateRequest`              | 차이                                                                                |
+| --------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------- |
+| `song: string`                                | `track: TrackInfoRequest`          | **곡이 문자열 → 구조화 객체**. `{ *title, *artist, album?, duration?, reference? }` |
+| (없음)                                        | `sessions: SessionDefDto[]` (필수) | 생성 시 세션 정의 필수. FE는 생성 후 별도 추가 모델                                 |
+| (없음)                                        | `note?: string`                    | 신규                                                                                |
+| `title?` `venue?` `startAt` `durationMinutes` | 동일 키 존재                       | 호환                                                                                |
 
 응답: FE `CreatePracticeResponse { practiceId, practiceTitle }` → BE `JamResponse { jamId, jamTitle }` (필드명 변경).
 
 ### 1-3. 상세 응답 — `PracticeDetailResponse` → `JamDetailResponse`
 
-| FE | BE | 차이 |
-|---|---|---|
-| `practiceId` | `jamId` | 필드명 |
+| FE                                                          | BE                                                                    | 차이                                                                |
+| ----------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `practiceId`                                                | `jamId`                                                               | 필드명                                                              |
 | `song: PracticeSongResponse {songId,title,artist,refLink?}` | `track: TrackInfoResponse {title,artist,album?,duration?,reference?}` | 구조 변경: `refLink→reference`, `+album`,`+duration`, `songId` 없음 |
-| (없음) | `setlistId?`, `note?` | 신규 |
-| `sessions: PracticeSessionResponse[]` | `sessions: JamSessionResponse[]` | 세션 모델 변경(1-5) |
-| `participants: PracticeParticipantResponse[]` | `participants: JamParticipantResponse[]` | 참가자 모델 변경(1-4) |
+| (없음)                                                      | `setlistId?`, `note?`                                                 | 신규                                                                |
+| `sessions: PracticeSessionResponse[]`                       | `sessions: JamSessionResponse[]`                                      | 세션 모델 변경(1-5)                                                 |
+| `participants: PracticeParticipantResponse[]`               | `participants: JamParticipantResponse[]`                              | 참가자 모델 변경(1-4)                                               |
 
 ### 1-4. 참가자 모델
 
-| FE `PracticeParticipantResponse` | BE `JamParticipantResponse` | 차이 |
-|---|---|---|
+| FE `PracticeParticipantResponse`     | BE `JamParticipantResponse`                    | 차이                                                             |
+| ------------------------------------ | ---------------------------------------------- | ---------------------------------------------------------------- |
 | `participantId`, `memberId`, `name?` | `participantId`, `memberId`, `sessionId`(필수) | **`sessionId` 필수 추가**(참가자가 세션에 종속). FE `name?` 없음 |
 
 요청: FE `AddParticipantRequest { memberId }` → BE `JamMemberAddRequest { memberId, sessionId }`. **`sessionId` 필수**.
 
 ### 1-5. 세션 모델 (가장 큰 변화)
 
-| FE `PracticeSessionResponse` | BE `JamSessionResponse` | 차이 |
-|---|---|---|
+| FE `PracticeSessionResponse`                    | BE `JamSessionResponse`                                                         | 차이                                                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `sessionId`, `label`, `type: SessionType`(enum) | `sessionId`, `label`, `short`, `need:int`, `custom:bool`, `participants: int[]` | `type` 제거 → `short/need/custom` 도입. **참가자 1:1(`participant\|null`) → N:M(`participants: memberId[]`)** |
 
 - 세션 CRUD 모델 변경: 개별 생성/삭제/배정(`POST/DELETE .../sessions/{sid}`, `.../assignment`) →
@@ -92,13 +92,13 @@ BE는 `PracticeSong` 도메인을 제거하고 곡 정보를 jam 에 `track`(Tra
 스펙에 `/api/v1/practice-songs/*` 경로가 **전혀 없다**. FE `src/domain/practice-song` 전체가
 폐기 경로를 호출 중이다.
 
-| FE 파일 | FE 호출(폐기) | BE 대체 | 비고 |
-|---|---|---|---|
-| `createPracticeSongFromFields.ts` | POST `/api/v1/practice-songs` | `JamCreateRequest.track` 임베디드 | 별도 곡 생성 개념 제거 |
-| `createPracticeSongFromSong.ts` | POST `/api/v1/practice-songs/from-song` | 동상 | |
-| `upsertRefLink.ts` | PUT `/api/v1/practice-songs/{id}/ref-link` | `track.reference` 필드 | refLink → track.reference 흡수 |
-| `deleteRefLink.ts` | DELETE `/api/v1/practice-songs/{id}/ref-link` | 동상 | |
-| `searchSongs.ts` | GET `/api/v1/practice-songs/search` | **대체 미확인** | jam 오퍼레이션에 곡 검색 대응 없음 → BE 확인 필요 |
+| FE 파일                           | FE 호출(폐기)                                 | BE 대체                           | 비고                                              |
+| --------------------------------- | --------------------------------------------- | --------------------------------- | ------------------------------------------------- |
+| `createPracticeSongFromFields.ts` | POST `/api/v1/practice-songs`                 | `JamCreateRequest.track` 임베디드 | 별도 곡 생성 개념 제거                            |
+| `createPracticeSongFromSong.ts`   | POST `/api/v1/practice-songs/from-song`       | 동상                              |                                                   |
+| `upsertRefLink.ts`                | PUT `/api/v1/practice-songs/{id}/ref-link`    | `track.reference` 필드            | refLink → track.reference 흡수                    |
+| `deleteRefLink.ts`                | DELETE `/api/v1/practice-songs/{id}/ref-link` | 동상                              |                                                   |
+| `searchSongs.ts`                  | GET `/api/v1/practice-songs/search`           | **대체 미확인**                   | jam 오퍼레이션에 곡 검색 대응 없음 → BE 확인 필요 |
 
 > **BE 확인 필요**: 곡 검색(`searchSongs`)의 대체 endpoint가 jam 재구조화 후 어디로 갔는지
 > 불명확하다(track 임베디드만으로는 검색 UI를 대체하지 못함). 별도 확인 요망.

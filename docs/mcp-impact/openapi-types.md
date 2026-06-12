@@ -35,24 +35,24 @@ cp ../bandage-band-manager/docs/openapi.json openapi/openapi.json && pnpm gen:ap
 ```ts
 import type { ApiRequestBody, ApiResponseBody, Schemas } from '@/global/api/openapi';
 
-type CreateBandBody = ApiRequestBody<'createBand'>;   // BandCreateRequest
-type CreateBandRes = ApiResponseBody<'createBand'>;    // ApiResponseBandResponse (래퍼 포함)
-type BandInfo = Schemas['BandInfoResponse'];           // 이름이 일치하는 스키마는 직접 사용
+type CreateBandBody = ApiRequestBody<'createBand'>; // BandCreateRequest
+type CreateBandRes = ApiResponseBody<'createBand'>; // ApiResponseBandResponse (래퍼 포함)
+type BandInfo = Schemas['BandInfoResponse']; // 이름이 일치하는 스키마는 직접 사용
 ```
 
 ## 중요 — 스키마명이 FE DTO명과 1:1로 일치하지 않음 (확인된 사실)
 
 생성된 컴포넌트 스키마명은 FE 수기 DTO명과 다르다. 단순 rename 치환이 **부분만** 가능하다.
 
-| FE 수기 DTO | BE 스펙 스키마 | 비고 |
-|---|---|---|
-| `BandInfoResponse` | `BandInfoResponse` | 일치 |
-| `CreateBandRequest` | `BandCreateRequest` | 이름 불일치 |
-| `CreateBandResponse` | `BandResponse`(→ `ApiResponseBandResponse` 래퍼) | 불일치 |
-| `CursorResponse<BandInfoResponse>` | `CursorResponseBandInfoResponseUUID` | 제네릭 mangling |
+| FE 수기 DTO                        | BE 스펙 스키마                                   | 비고            |
+| ---------------------------------- | ------------------------------------------------ | --------------- |
+| `BandInfoResponse`                 | `BandInfoResponse`                               | 일치            |
+| `CreateBandRequest`                | `BandCreateRequest`                              | 이름 불일치     |
+| `CreateBandResponse`               | `BandResponse`(→ `ApiResponseBandResponse` 래퍼) | 불일치          |
+| `CursorResponse<BandInfoResponse>` | `CursorResponseBandInfoResponseUUID`             | 제네릭 mangling |
 
 → DTO 치환은 이름 매칭이 아니라 **operationId 기반**으로 진행해야 안전하다.
-   (operationId는 101개 전부 고유 → 안정적 조인 키)
+(operationId는 101개 전부 고유 → 안정적 조인 키)
 
 ## 2단계 — DTO 점진 치환 (개발자 지시 대기)
 

@@ -5,12 +5,12 @@
 
 ## 현재 상태 (확인된 사실)
 
-| 항목 | 값 |
-|---|---|
-| 리포 | `TeamBandage/bandage-fe-web` |
-| URL | https://github.com/TeamBandage/bandage-fe-web |
-| 가시성 | **PUBLIC** (`gh repo view ... --json visibility` 확인) |
-| 기본 브랜치 | `develop` |
+| 항목        | 값                                                     |
+| ----------- | ------------------------------------------------------ |
+| 리포        | `TeamBandage/bandage-fe-web`                           |
+| URL         | https://github.com/TeamBandage/bandage-fe-web          |
+| 가시성      | **PUBLIC** (`gh repo view ... --json visibility` 확인) |
+| 기본 브랜치 | `develop`                                              |
 
 ## 함의 — 별도 접근권 확보 불필요
 
