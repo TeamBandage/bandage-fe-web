@@ -9,7 +9,6 @@ describe('evaluatePassword', () => {
   });
 
   it('짧은 영문만은 weak (1점: 대소문자만 부분 충족)', () => {
-    // 'ab' 는 8자 미만, 대문자 없음, 숫자 없음, 특수 없음 → 0점
     expect(evaluatePassword('ab')).toEqual({ score: 0, level: 'weak' });
   });
 
@@ -28,24 +27,30 @@ describe('PasswordStrength', () => {
     expect(asFragment()).toMatchSnapshot();
   });
 
-  it('빈 비밀번호는 모든 세그먼트 bg-border', () => {
+  it('빈 비밀번호는 아무것도 렌더하지 않음', () => {
     const { container } = render(<PasswordStrength password="" />);
-    const segs = container.querySelectorAll('span.h-1');
-    expect(segs.length).toBe(4);
-    segs.forEach((s) => expect(s.className).toContain('bg-border'));
+    expect(container.firstChild).toBeNull();
   });
 
-  it('strong 는 4 segments 모두 bg-success', () => {
+  it('strong 는 text-success 텍스트로 렌더', () => {
     const { container } = render(<PasswordStrength password="Abcdefg1!" />);
-    const segs = container.querySelectorAll('span.h-1');
-    expect(segs.length).toBe(4);
-    segs.forEach((s) => expect(s.className).toContain('bg-success'));
+    const el = container.querySelector('[data-slot="password-strength"]');
+    expect(el).not.toBeNull();
+    expect(el?.className).toContain('text-success');
+    expect(el?.textContent).toBe('보안 강함');
   });
 
-  it('progressbar aria 값이 score 와 일치', () => {
+  it('medium 는 text-warn 텍스트로 렌더', () => {
     const { container } = render(<PasswordStrength password="Abcdefg1" />);
-    const bar = container.querySelector('[role="progressbar"]');
-    expect(bar?.getAttribute('aria-valuenow')).toBe('3');
-    expect(bar?.getAttribute('aria-valuemax')).toBe('4');
+    const el = container.querySelector('[data-slot="password-strength"]');
+    expect(el?.className).toContain('text-warn');
+    expect(el?.textContent).toBe('보안 보통');
+  });
+
+  it('weak 는 text-danger 텍스트로 렌더', () => {
+    const { container } = render(<PasswordStrength password="abc" />);
+    const el = container.querySelector('[data-slot="password-strength"]');
+    expect(el?.className).toContain('text-danger');
+    expect(el?.textContent).toBe('보안 약함');
   });
 });
