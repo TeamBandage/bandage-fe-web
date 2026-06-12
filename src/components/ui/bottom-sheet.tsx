@@ -38,7 +38,7 @@ export const BottomSheetContent = forwardRef<ElementRef<typeof Content>, BottomS
           ref={ref}
           className={cn(
             'bg-card text-foreground border-border fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-xl border border-b-0 shadow-lg outline-none',
-            'animate-[toast-in_var(--duration-normal)_var(--ease-default)]',
+            'animate-[sheet-in_var(--duration-normal)_var(--ease-default)]',
             className,
           )}
           {...props}

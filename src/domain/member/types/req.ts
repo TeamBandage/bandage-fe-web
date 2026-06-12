@@ -2,7 +2,7 @@ export interface JoinRequest {
   email: string;
   password: string;
   name: string;
-  contact: string;
+  contact?: string;
 }
 
 export interface UpdateMeRequest {

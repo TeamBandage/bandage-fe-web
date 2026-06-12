@@ -20,7 +20,7 @@ export function Field({ label, hint, error, required, htmlFor, className, childr
   const describedBy = error ? errorId : hint ? hintId : undefined;
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className={cn('flex flex-col gap-2.5', className)}>
       {label && (
         <label htmlFor={inputId} className="text-foreground text-sm font-medium">
           {label}
