@@ -3,7 +3,7 @@
 import { Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
@@ -12,16 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BandCreateModal } from '@/domain/band/components/BandCreateModal.client';
 import { BandRoleBadge } from '@/domain/band/components/BandRoleBadge';
 import { useBandList } from '@/domain/band/hooks/useBandList';
+import { useBandSearch } from '@/domain/band/hooks/useBandSearch';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
 import type { BandInfoResponse, MyBandInfoResponse } from '@/domain/band/types';
 import { ROUTES } from '@/global/config/routes';
-import { useDiscoverySearch } from '@/hooks/useDiscoverySearch';
 import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
 
 const BandIcon = DOMAIN_ICONS.band;
-
-const accessor = (b: BandInfoResponse) => `${b.bandName} ${b.description ?? ''}`;
 
 type Tab = 'mine' | 'discover';
 
@@ -76,19 +74,25 @@ export function BandsListPane() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams?.get('tab') === 'discover' ? 'discover' : 'mine') as Tab;
   const [tab, setTab] = useState<Tab>(initialTab);
-
-  // Discover (전체 목록)
-  const { data: discoverData, isLoading: discoverLoading } = useBandList();
-  const discoverBands = discoverData?.pages.flatMap((p) => p.content) ?? [];
-  const accessorRef = useCallback(accessor, []);
-  const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(discoverBands, accessorRef);
+  const [query, setQuery] = useState('');
 
   // Mine (내 소속) — API_SPEC §3-3-1 /bands/me (myRole 포함)
   const { data: myBands, isLoading: myLoading } = useMyBands(20);
 
+  // Discover: 기본 전체 목록 / 검색어 있으면 API 검색으로 전환
+  const hasQuery = query.trim().length > 0;
+  const { data: allBandsData, isLoading: allLoading } = useBandList(20);
+  const allBands = allBandsData?.pages.flatMap((p) => p.content) ?? [];
+  const { data: searchData, isLoading: searchLoading } = useBandSearch(query, 20);
+  const searchResults = searchData?.pages.flatMap((p) => p.content) ?? [];
+
+  const discoverBands = hasQuery ? searchResults : allBands;
+  const discoverLoading = hasQuery ? searchLoading : allLoading;
+
   const onTabChange = (next: string) => {
     const t = next === 'discover' ? 'discover' : 'mine';
     setTab(t);
+    setQuery('');
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     params.set('tab', t);
     router.replace(`${pathname.startsWith('/bands') ? pathname : '/bands'}?${params.toString()}`, {
@@ -161,13 +165,13 @@ export function BandsListPane() {
           <div className="px-s-2 py-s-2 flex-1 overflow-y-auto">
             {discoverLoading ? (
               <p className="text-foreground-muted p-s-3 text-caption">불러오는 중…</p>
-            ) : filtered.length === 0 ? (
+            ) : discoverBands.length === 0 ? (
               <p className="text-foreground-muted p-s-3 text-caption">
-                {isFiltering ? '검색 결과가 없습니다.' : '등록된 밴드가 없습니다.'}
+                {hasQuery ? '검색 결과가 없습니다.' : '등록된 밴드가 없습니다.'}
               </p>
             ) : (
               <ul className="gap-s-1 flex flex-col">
-                {filtered.map((b) => {
+                {discoverBands.map((b) => {
                   const myEntry = myBands?.find((mb) => mb.bandId === b.bandId);
                   return (
                     <BandRow
