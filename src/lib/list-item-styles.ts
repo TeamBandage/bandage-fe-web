@@ -1,7 +1,7 @@
 import { cn } from './cn';
 
 const BASE =
-  'flex gap-s-3 p-s-3 rounded-lg border border-transparent bg-transparent transition-colors duration-fast cursor-pointer';
+  'flex gap-s-3 p-s-3 rounded-lg border border-transparent bg-transparent transition-colors duration-fast cursor-pointer no-underline hover:no-underline';
 const HOVER = 'hover:bg-card hover:border-border-hi';
 
 const SELECTED = {

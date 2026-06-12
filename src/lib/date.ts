@@ -1,11 +1,12 @@
 import { differenceInMinutes, format, isToday, isYesterday, parse } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 export const KST = 'Asia/Seoul';
 export const KST_FORMAT = 'yyyy-MM-dd HH:mm';
 
 export function formatKst(date: Date, pattern: string = KST_FORMAT): string {
-  return format(toZonedTime(date, KST), pattern);
+  return format(toZonedTime(date, KST), pattern, { locale: ko });
 }
 
 export function parseKst(dateString: string, pattern: string = KST_FORMAT): Date {

@@ -3,7 +3,7 @@ import type { HTMLAttributes } from 'react';
 
 import { cn } from '@/lib/cn';
 
-export type StatCardAccent = 'accent' | 'success' | 'amber' | 'warn' | 'danger';
+export type StatCardAccent = 'accent' | 'success' | 'amber' | 'warn' | 'blue' | 'danger';
 
 export interface StatCardProps extends HTMLAttributes<HTMLDivElement> {
   icon: LucideIcon;
@@ -17,6 +17,7 @@ const ICON_BG: Record<StatCardAccent, string> = {
   success: 'bg-success-dim text-success',
   amber: 'bg-amber-dim text-amber',
   warn: 'bg-warn-dim text-warn',
+  blue: 'bg-blue-dim text-blue',
   danger: 'bg-danger-dim text-danger',
 };
 

@@ -1,4 +1,4 @@
-import { Clock3, Guitar, ListMusic, Music2, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Guitar, ListMusic, Music, type LucideIcon } from 'lucide-react';
 
 import type { IconTileTone } from '@/components/ui/icon-tile';
 import type { ListItemSelectedTone } from '@/lib/list-item-styles';
@@ -7,15 +7,15 @@ export type DomainType = 'band' | 'practice' | 'performance' | 'setlist-meeting'
 
 export const DOMAIN_ICONS: Record<DomainType, LucideIcon> = {
   band: Guitar,
-  practice: Clock3,
-  performance: Music2,
+  practice: Music,
+  performance: CalendarDays,
   'setlist-meeting': ListMusic,
 };
 
 export const DOMAIN_TONES: Record<DomainType, IconTileTone> = {
   band: 'accent',
   practice: 'success',
-  performance: 'amber',
+  performance: 'blue',
   'setlist-meeting': 'accent',
 };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, Music, Music2, Users } from 'lucide-react';
+import { CalendarDays, Guitar, Music, Users } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatCard } from '@/components/ui/stat-card';
@@ -45,10 +45,10 @@ export function HomeStatCards() {
           icon={CalendarDays}
           label="예정 공연"
           value={performances.data?.length ?? 0}
-          accent="amber"
+          accent="blue"
         />
       )}
-      <StatCard icon={Music2} label="참여 세션" value="—" accent="warn" />
+      <StatCard icon={Guitar} label="참여 세션" value="—" accent="warn" />
     </div>
   );
 }
