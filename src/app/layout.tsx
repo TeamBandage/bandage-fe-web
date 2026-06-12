@@ -16,6 +16,7 @@ const notoSansKr = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: 'Bandage',
   description: '밴드 합주·공연 매니저',
+  icons: { icon: '/brand/bandage_wave_favicon_1.5.png' },
 };
 
 export default function RootLayout({

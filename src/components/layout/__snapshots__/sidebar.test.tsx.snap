@@ -4,12 +4,35 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
 <DocumentFragment>
   <aside
     aria-label="주 탐색"
-    class="bg-surface border-border py-s-4 px-s-3 gap-s-1 hidden shrink-0 flex-col border-r lg:flex"
+    class="bg-surface border-border py-s-4 gap-s-1 relative hidden shrink-0 flex-col border-r lg:flex transition-[width] duration-200 ease-in-out px-s-3"
     data-slot="sidebar"
     style="width: var(--sidebar-w);"
   >
+    <button
+      aria-label="사이드바 접기"
+      class="bg-surface border-border absolute top-[17px] -right-3.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-md text-foreground-muted hover:text-foreground transition-colors focus-visible:ring-accent focus-visible:ring-2 focus-visible:outline-none"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-chevron-left h-3.5 w-3.5"
+        fill="none"
+        height="24"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="m15 18-6-6 6-6"
+        />
+      </svg>
+    </button>
     <div
-      class="border-border mb-s-2 pb-s-4 px-s-2 pt-s-1 flex items-center border-b"
+      class="border-border mb-s-2 pb-s-4 pt-s-1 flex items-center border-b px-s-2"
     >
       <img
         alt="Bandage"
@@ -23,7 +46,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       />
     </div>
     <div
-      class="text-foreground-muted px-s-3 pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase"
+      class="text-foreground-muted pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase px-s-3"
     >
       Navigation
     </div>
@@ -31,12 +54,12 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       class="gap-s-1 flex flex-1 flex-col"
     >
       <a
-        class="gap-s-3 px-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium no-underline transition-colors hover:no-underline focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+        class="gap-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground px-s-3 no-underline hover:no-underline"
         href="/home"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-house h-[13px] w-[13px] shrink-0"
+          class="lucide lucide-house h-3.25 w-3.25 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -62,12 +85,12 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       </a>
       <a
         aria-current="page"
-        class="gap-s-3 px-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] no-underline transition-colors hover:no-underline focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none bg-nav-active/30 hover:bg-nav-active/55 font-bold text-white hover:text-white"
+        class="gap-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none bg-nav-active/30 hover:bg-nav-active/55 font-bold text-white hover:text-white px-s-3 no-underline hover:no-underline"
         href="/bands"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-users h-[13px] w-[13px] shrink-0"
+          class="lucide lucide-users h-3.25 w-3.25 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -102,12 +125,12 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       <div>
         <button
           aria-expanded="false"
-          class="gap-s-3 px-s-3 py-s-2 flex w-full items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+          class="gap-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground px-s-3 w-full"
           type="button"
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-music h-[13px] w-[13px] shrink-0"
+            class="lucide lucide-music h-3.25 w-3.25 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -159,12 +182,12 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       <div>
         <button
           aria-expanded="false"
-          class="gap-s-3 px-s-3 py-s-2 flex w-full items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+          class="gap-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground px-s-3 w-full"
           type="button"
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-calendar-days h-[13px] w-[13px] shrink-0"
+            class="lucide lucide-calendar-days h-3.25 w-3.25 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -237,12 +260,12 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       <div>
         <button
           aria-expanded="false"
-          class="gap-s-3 px-s-3 py-s-2 flex w-full items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+          class="gap-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground px-s-3 w-full"
           type="button"
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-list-music h-[13px] w-[13px] shrink-0"
+            class="lucide lucide-list-music h-3.25 w-3.25 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -296,12 +319,12 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
         </button>
       </div>
       <a
-        class="gap-s-3 px-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium no-underline transition-colors hover:no-underline focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground"
+        class="gap-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground px-s-3 no-underline hover:no-underline"
         href="/me"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-user h-[13px] w-[13px] shrink-0"
+          class="lucide lucide-user h-3.25 w-3.25 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -335,7 +358,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
         class="gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center"
       >
         <span
-          class="bg-card-hover text-foreground-sub rounded-pill inline-flex items-center justify-center overflow-hidden font-semibold select-none h-[30px] w-[30px] shrink-0 text-xs"
+          class="bg-card-hover text-foreground-sub rounded-pill inline-flex items-center justify-center overflow-hidden font-semibold select-none h-7.5 w-7.5 shrink-0 text-xs"
         >
           <span
             aria-label="수연"
