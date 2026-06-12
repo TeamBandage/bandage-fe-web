@@ -18,7 +18,7 @@ function ViewAllLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="text-accent hover:text-accent-hi text-micro font-semibold"
+      className="text-accent hover:text-accent-hi text-micro font-semibold no-underline hover:no-underline"
       aria-label={label}
     >
       전체 보기 →
@@ -28,7 +28,7 @@ function ViewAllLink({ href, label }: { href: string; label: string }) {
 
 export default function HomePage() {
   return (
-    <div className="space-y-s-8 lg:p-s-10 lg:mx-auto lg:h-[calc(100vh-0px)] lg:w-full lg:max-w-5xl lg:overflow-y-auto">
+    <div className="space-y-s-8 lg:p-s-10 lg:w-full">
       <HomeGreeting />
 
       <HomeStatCards />
