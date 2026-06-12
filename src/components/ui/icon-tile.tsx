@@ -3,7 +3,7 @@ import { type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 export type IconTileSize = 'sm' | 'md' | 'lg';
-export type IconTileTone = 'accent' | 'success' | 'amber' | 'warn' | 'card';
+export type IconTileTone = 'accent' | 'success' | 'amber' | 'warn' | 'blue' | 'card';
 
 export interface IconTileProps extends HTMLAttributes<HTMLSpanElement> {
   icon: ReactNode;
@@ -22,6 +22,7 @@ const toneClasses: Record<IconTileTone, string> = {
   success: 'bg-success-dim text-success',
   amber: 'bg-amber-dim text-amber',
   warn: 'bg-warn-dim text-warn',
+  blue: 'bg-blue-dim text-blue',
   card: 'bg-card text-foreground-sub',
 };
 

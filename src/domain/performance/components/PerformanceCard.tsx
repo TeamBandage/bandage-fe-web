@@ -46,7 +46,7 @@ export function PerformanceCard({
           <PerformanceDday startAt={performance.startAt} />
         </div>
         <div className="text-foreground-sub flex flex-wrap items-center gap-3 text-xs">
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center gap-1 rounded bg-white/8 px-1.5 py-0.5">
             <CalendarDays className="h-3 w-3" aria-hidden="true" />
             {label} ({performance.durationMinutes}분)
           </span>

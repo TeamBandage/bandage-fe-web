@@ -35,6 +35,8 @@
   --color-amber-dim: oklch(0.72 0.18 48 / 0.15);
   --color-danger: oklch(0.65 0.23 25);
   --color-danger-dim: oklch(0.65 0.23 25 / 0.15);
+  --color-blue: oklch(0.62 0.22 250);
+  --color-blue-dim: oklch(0.62 0.22 250 / 0.15);
 
   /* Role colors */
   --color-role-leader: oklch(0.72 0.18 48);

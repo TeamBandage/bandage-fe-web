@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 
 import { SectionTitle } from '@/components/ui/section-title';
@@ -18,44 +19,48 @@ function ViewAllLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="text-accent hover:text-accent-hi text-micro font-semibold"
       aria-label={label}
+      className="group inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold text-white/80 transition-colors ![text-decoration:none] hover:bg-white hover:text-black"
     >
-      전체 보기 →
+      <span>전체 보기</span>
+      <ArrowUpRight
+        className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100"
+        aria-hidden="true"
+      />
     </Link>
   );
 }
 
 export default function HomePage() {
   return (
-    <div className="space-y-s-8 lg:p-s-10 lg:mx-auto lg:h-[calc(100vh-0px)] lg:w-full lg:max-w-5xl lg:overflow-y-auto">
+    <div className="space-y-s-8 lg:p-s-10 lg:w-full">
       <HomeGreeting />
 
       <HomeStatCards />
 
       <div className="gap-s-6 grid grid-cols-1 lg:grid-cols-2">
-        <section aria-labelledby="home-my-bands">
-          <SectionTitle
-            title="내 밴드"
-            action={<ViewAllLink href={ROUTES.BANDS} label="전체 밴드 보기" />}
-          />
+        <section aria-labelledby="home-my-bands" className="flex flex-col">
+          <SectionTitle title="내 밴드" />
           <MyBands limit={3} />
+          <div className="pt-s-2 mt-auto flex justify-end">
+            <ViewAllLink href={ROUTES.BANDS} label="전체 밴드 보기" />
+          </div>
         </section>
-        <section aria-labelledby="home-upcoming-practices">
-          <SectionTitle
-            title="다가오는 합주"
-            action={<ViewAllLink href={ROUTES.PRACTICES} label="전체 합주 보기" />}
-          />
+        <section aria-labelledby="home-upcoming-practices" className="flex flex-col">
+          <SectionTitle title="다가오는 합주" />
           <UpcomingPractices limit={3} />
+          <div className="pt-s-2 mt-auto flex justify-end">
+            <ViewAllLink href={ROUTES.PRACTICES} label="전체 합주 보기" />
+          </div>
         </section>
       </div>
 
       <section aria-labelledby="home-upcoming-performances">
-        <SectionTitle
-          title="다가오는 공연"
-          action={<ViewAllLink href={ROUTES.PERFORMANCES} label="전체 공연 보기" />}
-        />
+        <SectionTitle title="다가오는 공연" />
         <UpcomingPerformances limit={3} />
+        <div className="mt-s-2 flex justify-end">
+          <ViewAllLink href={ROUTES.PERFORMANCES} label="전체 공연 보기" />
+        </div>
       </section>
     </div>
   );

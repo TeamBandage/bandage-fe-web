@@ -60,11 +60,11 @@ exports[`공용 컴포넌트 신규 / 보정 > RoleBadge(LEADER) 1`] = `
 exports[`공용 컴포넌트 신규 / 보정 > SectionTitle with action 1`] = `
 <DocumentFragment>
   <div
-    class="mb-s-3 gap-s-3 flex items-center justify-between"
+    class="mb-s-3 gap-s-3 border-border pb-s-2 flex items-center justify-between border-b"
     data-slot="section-title"
   >
     <h2
-      class="text-foreground-muted text-micro font-bold tracking-wider uppercase"
+      class="text-foreground-muted text-caption font-bold tracking-wider uppercase"
     >
       내 밴드
     </h2>
@@ -84,7 +84,7 @@ exports[`공용 컴포넌트 신규 / 보정 > SectionTitle with action 1`] = `
 exports[`공용 컴포넌트 신규 / 보정 > StatCard 1`] = `
 <DocumentFragment>
   <div
-    class="bg-card border-border p-s-4 gap-s-3 flex items-center rounded-lg border"
+    class="relative rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-lg shadow-[0_0_20px_rgba(96,165,250,0.12),0_0_40px_rgba(96,165,250,0.06),inset_0_1px_0_rgba(255,255,255,0.12)] p-s-4 gap-s-3 flex items-center"
     data-slot="stat-card"
   >
     <div

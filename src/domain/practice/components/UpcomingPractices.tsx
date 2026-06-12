@@ -9,12 +9,49 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { pickUpcoming } from '@/lib/home-feed';
 
 import { useUpcomingPractices } from '../hooks/useUpcomingPractices';
+import type { PracticeListItemResponse } from '../types';
 
 import { PracticeCard } from './PracticeCard';
+
+// [BD-90] MOCK_MODE — UI 확인용, 실제 연동 후 제거
+const MOCK_MODE = true;
+const MOCK_PRACTICES: PracticeListItemResponse[] = [
+  {
+    practiceId: '1',
+    title: '6월 정기 합주',
+    startAt: '2026-06-14 15:00',
+    durationMinutes: 120,
+    venue: '홍대 스튜디오 A',
+  },
+  {
+    practiceId: '2',
+    title: '공연 준비 합주',
+    startAt: '2026-06-18 19:00',
+    durationMinutes: 180,
+    venue: '강남 연습실',
+    song: { songId: 's1', title: "Don't Look Back in Anger", artist: 'Oasis' },
+  },
+  {
+    practiceId: '3',
+    title: '신곡 연습',
+    startAt: '2026-06-22 14:00',
+    durationMinutes: 90,
+  },
+];
 
 export function UpcomingPractices({ limit = 3 }: { limit?: number }) {
   // limit+1 fetch 로 hasMore 판정. 백엔드 정렬은 ID 기준이라 본인 파일에서 startAt asc 재정렬 + 과거 제외.
   const { data, isLoading, isError, refetch } = useUpcomingPractices(limit + 1);
+
+  if (MOCK_MODE) {
+    return (
+      <div className="space-y-3">
+        {MOCK_PRACTICES.slice(0, limit).map((p) => (
+          <PracticeCard key={p.practiceId} practice={p} />
+        ))}
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
