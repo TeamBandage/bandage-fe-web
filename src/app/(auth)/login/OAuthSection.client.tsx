@@ -63,10 +63,11 @@ export function OAuthSection() {
       toast.error('구글 로그인이 설정되지 않았습니다.');
       return;
     }
-    // 화면 밖에 숨겨진 Google renderButton 을 프로그래밍적으로 클릭.
-    // 사용자 클릭 이벤트 핸들러 내부이므로 팝업 차단 없이 동작.
-    const btn = googleButtonRef.current?.querySelector<HTMLElement>('div[role=button]');
-    btn?.click();
+    // renderButton 클릭 방식은 데스크톱 Chrome에서 팝업 창을 열려 할 때 팝업 차단에 걸린다.
+    // prompt()는 팝업 창 없이 페이지 내 오버레이 UI를 사용하므로 차단되지 않는다.
+    // (BD-110 억제 이슈는 페이지 로드 시 자동 호출에서 발생한 것이며,
+    //  사용자 클릭 핸들러에서 호출하면 브라우저가 억제하지 않는다.)
+    window.google?.accounts?.id?.prompt();
   }
 
   return (
