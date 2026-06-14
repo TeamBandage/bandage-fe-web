@@ -58,12 +58,13 @@ export async function renderGoogleButton(
       context: 'signin',
     });
     isInitialized = true;
-    google.accounts.id.renderButton(element, {
-      type: 'standard',
-      size: 'large',
-      theme: 'outline',
-      text: 'signin_with',
-      shape: 'rectangular',
-    });
   }
+
+  google.accounts.id.renderButton(element, {
+    type: 'standard',
+    size: 'large',
+    theme: 'outline',
+    text: 'signin_with',
+    shape: 'rectangular',
+  });
 }
