@@ -67,7 +67,7 @@ export function OAuthSection() {
         redirect 모드에서는 GIS iframe이 직접 사용자 클릭을 받아야 리다이렉트가 트리거된다.
         programmatic .click()은 cross-origin iframe에 전달되지 않으므로 overlay 방식을 사용.
       */}
-      <div className="relative">
+      <div className="relative cursor-pointer">
         <OAuthButton provider="google" className="pointer-events-none rounded-[5px]" />
         <div
           ref={googleButtonRef}

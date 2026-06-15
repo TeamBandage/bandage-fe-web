@@ -12,6 +12,8 @@ const optionalNonEmpty = z
 const envSchema = z.object({
   NEXT_PUBLIC_API_BASE_URL: z.string().url(),
   NEXT_PUBLIC_APP_ENV: z.enum(['local', 'dev', 'prod']),
+  /** 프론트엔드 앱의 퍼블릭 URL. GIS login_uri 등 절대 경로 생성에 사용. */
+  NEXT_PUBLIC_APP_URL: z.string().url(),
   /** Kakao JavaScript SDK 키 (REST API/Admin 키 아님). 미설정 시 카카오 로그인 비활성화. */
   NEXT_PUBLIC_KAKAO_JS_KEY: optionalNonEmpty,
   /** Google OAuth Web Client ID. BE GOOGLE_OAUTH_CLIENT_ID 와 동일 값이어야 audience 검증 통과. */
@@ -21,6 +23,7 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse({
   NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_KAKAO_JS_KEY: process.env.NEXT_PUBLIC_KAKAO_JS_KEY,
   NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
 });

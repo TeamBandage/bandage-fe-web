@@ -49,16 +49,19 @@ export async function renderGoogleButton(element: HTMLElement): Promise<void> {
       cancel_on_tap_outside: true,
       context: 'signin',
       ux_mode: 'redirect',
-      login_uri: `${window.location.origin}/api/oauth/google/callback`,
+      login_uri: `${env.NEXT_PUBLIC_APP_URL}/api/oauth/google/callback`,
     });
     isInitialized = true;
   }
 
+  // GIS iframe이 버튼 전체 너비를 채우도록 컨테이너 width를 전달 (최대 400px)
+  const width = Math.min(element.offsetWidth || 400, 400);
   google.accounts.id.renderButton(element, {
     type: 'standard',
     size: 'large',
     theme: 'outline',
     text: 'signin_with',
     shape: 'rectangular',
+    width,
   });
 }
