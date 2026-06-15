@@ -35,15 +35,6 @@ export function OAuthSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [googleEnabled]);
 
-  function handleGoogle() {
-    if (!googleEnabled) {
-      toast.error('구글 로그인이 설정되지 않았습니다.');
-      return;
-    }
-    const btn = googleButtonRef.current?.querySelector<HTMLElement>('div[role=button]');
-    btn?.click();
-  }
-
   return (
     <section aria-label="OAuth 로그인" className="space-y-s-3" data-slot="oauth-section">
       {/*
@@ -71,14 +62,19 @@ export function OAuthSection() {
         <OAuthButton provider="apple" onClick={notReady} />
       */}
 
-      {/* GIS renderButton 마운트 대상 — 화면 밖에 숨겨 시각적으로 노출하지 않음 */}
-      <div
-        ref={googleButtonRef}
-        aria-hidden="true"
-        style={{ position: 'fixed', top: -9999, left: -9999 }}
-      />
-
-      <OAuthButton provider="google" onClick={handleGoogle} className="rounded-[5px]" />
+      {/*
+        GIS iframe을 커스텀 버튼 위에 투명 overlay로 마운트.
+        redirect 모드에서는 GIS iframe이 직접 사용자 클릭을 받아야 리다이렉트가 트리거된다.
+        programmatic .click()은 cross-origin iframe에 전달되지 않으므로 overlay 방식을 사용.
+      */}
+      <div className="relative">
+        <OAuthButton provider="google" className="pointer-events-none rounded-[5px]" />
+        <div
+          ref={googleButtonRef}
+          aria-hidden="true"
+          className="absolute inset-0 overflow-hidden opacity-0"
+        />
+      </div>
     </section>
   );
 }
