@@ -3,7 +3,6 @@ import { env } from '@/global/config/env';
 const SDK_URL = 'https://accounts.google.com/gsi/client';
 
 let loadPromise: Promise<NonNullable<Window['google']>> | null = null;
-let currentCallback: ((idToken: string) => void) | null = null;
 let isInitialized = false;
 
 export async function loadGoogleGis(): Promise<NonNullable<Window['google']>> {
@@ -32,33 +31,25 @@ export async function loadGoogleGis(): Promise<NonNullable<Window['google']>> {
 }
 
 /**
- * GIS renderButton 을 사용해 element 에 Google 로그인 버튼을 렌더링한다.
- * prompt()(One Tap)와 달리 브라우저 억제(suppression)가 없어 항상 계정 선택 팝업을 연다.
+ * GIS renderButton 을 ux_mode:'redirect' 로 초기화한다.
  *
- * initialize()는 페이지 세션당 한 번만 호출한다 — 복수 호출 시 GIS 내부 상태가 꼬여
- * renderButton으로 그린 버튼 클릭 시 팝업이 열리지 않는 버그가 발생한다.
- * callback은 모듈 수준 currentCallback 포인터로 위임해 컴포넌트 재마운트 시에도 최신 핸들러를 유지한다.
+ * 버튼 클릭 시 Google 인증 페이지로 리다이렉트되며, 인증 완료 후 Google 이
+ * login_uri(Route Handler)로 credential 을 POST 한다.
+ * FedCM / 쿨다운 / Chrome 팝업 차단 등 브라우저 정책의 영향을 받지 않는다.
+ *
+ * initialize()는 페이지 세션당 한 번만 호출한다.
  */
-export async function renderGoogleButton(
-  element: HTMLElement,
-  onIdToken: (idToken: string) => void,
-): Promise<void> {
-  currentCallback = onIdToken;
-
+export async function renderGoogleButton(element: HTMLElement): Promise<void> {
   const google = await loadGoogleGis();
 
   if (!isInitialized) {
     google.accounts.id.initialize({
       client_id: env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-      callback: (response) => {
-        if (response.credential) currentCallback?.(response.credential);
-      },
       auto_select: false,
       cancel_on_tap_outside: true,
       context: 'signin',
-      // FedCM 비활성화: Chrome의 FedCM 쿨다운(One Tap 닫기 후 지수적 억제)을 우회해
-      // 전통적인 OAuth 팝업 방식으로 항상 계정 선택창을 열 수 있게 한다.
-      use_fedcm_for_prompt: false,
+      ux_mode: 'redirect',
+      login_uri: `${window.location.origin}/api/oauth/google/callback`,
     });
     isInitialized = true;
   }
