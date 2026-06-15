@@ -3,6 +3,7 @@ export const ROUTES = {
   JOIN: '/join',
   PASSWORD_CHANGE: '/password-change',
   OAUTH_CALLBACK_KAKAO: '/oauth/callback/kakao',
+  OAUTH_CALLBACK_GOOGLE: '/oauth/callback/google',
 
   HOME: '/home',
 

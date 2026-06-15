@@ -4,13 +4,15 @@
  */
 interface GoogleIdConfiguration {
   client_id: string;
-  callback: (response: GoogleCredentialResponse) => void;
+  /** popup 모드에서 credential 수신 콜백. redirect 모드에서는 사용되지 않음. */
+  callback?: (response: GoogleCredentialResponse) => void;
   auto_select?: boolean;
   cancel_on_tap_outside?: boolean;
-  /** FedCM 사용 (Chrome third-party cookie 정책 회피). default true (권장). */
   use_fedcm_for_prompt?: boolean;
   context?: 'signin' | 'signup' | 'use';
   ux_mode?: 'popup' | 'redirect';
+  /** redirect 모드에서 Google 이 credential 을 POST 할 URI. */
+  login_uri?: string;
 }
 
 interface GoogleCredentialResponse {
