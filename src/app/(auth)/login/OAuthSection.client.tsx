@@ -63,11 +63,10 @@ export function OAuthSection() {
       toast.error('구글 로그인이 설정되지 않았습니다.');
       return;
     }
-    // renderButton 클릭 방식은 데스크톱 Chrome에서 팝업 창을 열려 할 때 팝업 차단에 걸린다.
-    // prompt()는 팝업 창 없이 페이지 내 오버레이 UI를 사용하므로 차단되지 않는다.
-    // (BD-110 억제 이슈는 페이지 로드 시 자동 호출에서 발생한 것이며,
-    //  사용자 클릭 핸들러에서 호출하면 브라우저가 억제하지 않는다.)
-    window.google?.accounts?.id?.prompt();
+    // use_fedcm_for_prompt: false 로 FedCM을 비활성화했으므로
+    // renderButton 클릭이 전통적인 OAuth 팝업으로 열린다 (FedCM 쿨다운 무관).
+    const btn = googleButtonRef.current?.querySelector<HTMLElement>('div[role=button]');
+    btn?.click();
   }
 
   return (
