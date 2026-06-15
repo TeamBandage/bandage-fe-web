@@ -56,6 +56,9 @@ export async function renderGoogleButton(
       auto_select: false,
       cancel_on_tap_outside: true,
       context: 'signin',
+      // FedCM 비활성화: Chrome의 FedCM 쿨다운(One Tap 닫기 후 지수적 억제)을 우회해
+      // 전통적인 OAuth 팝업 방식으로 항상 계정 선택창을 열 수 있게 한다.
+      use_fedcm_for_prompt: false,
     });
     isInitialized = true;
   }
