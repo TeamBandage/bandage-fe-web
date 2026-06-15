@@ -72,6 +72,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_BASE_URL=${{ secrets.DEV_API_BASE_URL }}
             NEXT_PUBLIC_APP_ENV=dev
+            NEXT_PUBLIC_APP_URL=${{ secrets.DEV_APP_URL }}
             NEXT_PUBLIC_KAKAO_JS_KEY=${{ secrets.DEV_KAKAO_JS_KEY }}
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.DEV_GOOGLE_CLIENT_ID }}
             NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
