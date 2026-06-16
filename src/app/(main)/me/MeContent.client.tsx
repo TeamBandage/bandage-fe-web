@@ -31,6 +31,7 @@ import { useUpdateMe } from '@/domain/member/hooks/useUpdateMe';
 import { useWithdraw } from '@/domain/member/hooks/useWithdraw';
 import {
   updateMeSchema,
+  type AvailabilityExceptionRequest,
   type MemberInfoResponse,
   type UpdateMeSchema,
   type WeeklyRuleRequest,
@@ -64,8 +65,12 @@ export function MeContent() {
     onError: (err) => toast.error(err.message || '스케줄 저장에 실패했습니다.'),
   });
 
-  const handleSaveSchedule = (weeklyRules: WeeklyRuleRequest[], note: string) => {
-    updateAvailabilityMutation.mutate({ weeklyRules, note });
+  const handleSaveSchedule = (
+    weeklyRules: WeeklyRuleRequest[],
+    note: string,
+    exceptions: AvailabilityExceptionRequest[],
+  ) => {
+    updateAvailabilityMutation.mutate({ weeklyRules, exceptions, note });
   };
 
   const logoutMutation = useLogout({

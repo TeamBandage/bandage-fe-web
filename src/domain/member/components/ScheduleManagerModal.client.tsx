@@ -1,16 +1,22 @@
 'use client';
 
-import { addDays, format, startOfWeek } from 'date-fns';
-import { X } from 'lucide-react';
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
+import { Plus, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { KST } from '@/lib/date';
 import { cn } from '@/lib/cn';
-import { toZonedTime } from 'date-fns-tz';
 
-import type { DayOfWeek, MemberAvailabilityResponse, WeeklyRuleRequest } from '../types';
+import type {
+  AvailabilityExceptionRequest,
+  AvailabilityKind,
+  DayOfWeek,
+  MemberAvailabilityResponse,
+  WeeklyRuleRequest,
+} from '../types';
 
 const DAY_OF_WEEK_KEYS: DayOfWeek[] = [
   'MONDAY',
@@ -23,12 +29,10 @@ const DAY_OF_WEEK_KEYS: DayOfWeek[] = [
 ];
 const DAY_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
-// 모달 표시 범위: 9:00(slot 18) ~ 22:00(slot 44)
 const START_SLOT = 18;
 const END_SLOT = 44;
-const SLOT_COUNT = END_SLOT - START_SLOT; // 26슬롯
-
-const CELL_HEIGHT = 22; // px
+const SLOT_COUNT = END_SLOT - START_SLOT;
+const CELL_HEIGHT = 22;
 
 function slotToTimeLabel(slot: number): string {
   const h = Math.floor(slot / 2);
@@ -36,7 +40,19 @@ function slotToTimeLabel(slot: number): string {
   return `${h}:${m}`;
 }
 
-/** [dayIdx][slotIdx] = selected? */
+function timeToSlot(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return (h ?? 0) * 2 + ((m ?? 0) >= 30 ? 1 : 0);
+}
+
+function slotToTime(slot: number): string {
+  const h = Math.floor(slot / 2)
+    .toString()
+    .padStart(2, '0');
+  const m = slot % 2 === 0 ? '00' : '30';
+  return `${h}:${m}`;
+}
+
 type GridState = boolean[][];
 
 function emptyGrid(): GridState {
@@ -47,19 +63,9 @@ function availabilityToGrid(availability: MemberAvailabilityResponse | undefined
   const grid = emptyGrid();
   if (!availability) return grid;
 
-  const now = toZonedTime(new Date(), KST);
-  const monday = startOfWeek(now, { weekStartsOn: 1 });
-  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  const weekDateStrs = weekDates.map((d) => format(d, 'yyyy-MM-dd'));
-
   for (const rule of availability.weeklyRules) {
     const dayIdx = DAY_OF_WEEK_KEYS.indexOf(rule.dayOfWeek);
     if (dayIdx === -1) continue;
-    const dateStr = weekDateStrs[dayIdx];
-    if (!dateStr) continue;
-    if (rule.effectiveTo && dateStr > rule.effectiveTo) continue;
-    if (dateStr < rule.effectiveFrom) continue;
-
     for (let s = rule.startSlot; s < rule.endSlot; s++) {
       const idx = s - START_SLOT;
       if (idx >= 0 && idx < SLOT_COUNT) grid[dayIdx]![idx] = true;
@@ -68,18 +74,16 @@ function availabilityToGrid(availability: MemberAvailabilityResponse | undefined
   return grid;
 }
 
-function gridToWeeklyRules(grid: GridState): WeeklyRuleRequest[] {
+function gridToWeeklyRules(
+  grid: GridState,
+  effectiveFrom: string,
+  effectiveTo: string,
+): WeeklyRuleRequest[] {
   const rules: WeeklyRuleRequest[] = [];
-  const now = toZonedTime(new Date(), KST);
-  const monday = startOfWeek(now, { weekStartsOn: 1 });
-
   for (let d = 0; d < 7; d++) {
     const dayOfWeek = DAY_OF_WEEK_KEYS[d];
     if (!dayOfWeek) continue;
-    const dayDate = addDays(monday, d);
-    const effectiveFrom = format(dayDate, 'yyyy-MM-dd');
     const daySlots = grid[d]!;
-
     let i = 0;
     while (i < SLOT_COUNT) {
       if (daySlots[i]) {
@@ -90,6 +94,7 @@ function gridToWeeklyRules(grid: GridState): WeeklyRuleRequest[] {
           startSlot: start + START_SLOT,
           endSlot: i + START_SLOT,
           effectiveFrom,
+          effectiveTo: effectiveTo || undefined,
         });
       } else {
         i++;
@@ -107,30 +112,52 @@ type Props = {
   open: boolean;
   onClose: () => void;
   availability: MemberAvailabilityResponse | undefined;
-  onSave: (weeklyRules: WeeklyRuleRequest[], note: string) => void;
+  onSave: (
+    weeklyRules: WeeklyRuleRequest[],
+    note: string,
+    exceptions: AvailabilityExceptionRequest[],
+  ) => void;
   isSaving?: boolean;
 };
 
 export function ScheduleManagerModal({ open, onClose, availability, onSave, isSaving }: Props) {
-  const [step, setStep] = useState<1 | 2>(1);
+  const today = format(toZonedTime(new Date(), KST), 'yyyy-MM-dd');
+
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [effectiveFrom, setEffectiveFrom] = useState(today);
+  const [effectiveTo, setEffectiveTo] = useState('');
   const [grid, setGrid] = useState<GridState>(emptyGrid);
+  const [exceptions, setExceptions] = useState<AvailabilityExceptionRequest[]>([]);
   const [note, setNote] = useState('');
 
-  // 드래그 상태
+  const [newExcDate, setNewExcDate] = useState('');
+  const [newExcKind, setNewExcKind] = useState<AvailabilityKind>('BLOCKED');
+  const [newExcAllDay, setNewExcAllDay] = useState(true);
+  const [newExcStartTime, setNewExcStartTime] = useState('09:00');
+  const [newExcEndTime, setNewExcEndTime] = useState('18:00');
+
   const dragState = useRef<{
     active: boolean;
     dayIdx: number;
-    painting: boolean; // true=선택, false=해제
-    startSlot: number;
+    painting: boolean;
   } | null>(null);
 
   useEffect(() => {
     if (open) {
       setStep(1);
+      const firstRule = availability?.weeklyRules[0];
+      setEffectiveFrom(firstRule?.effectiveFrom ?? today);
+      setEffectiveTo(firstRule?.effectiveTo ?? '');
       setGrid(availabilityToGrid(availability));
+      setExceptions(availability?.exceptions ?? []);
       setNote(availability?.note ?? '');
+      setNewExcDate('');
+      setNewExcKind('BLOCKED');
+      setNewExcAllDay(true);
+      setNewExcStartTime('09:00');
+      setNewExcEndTime('18:00');
     }
-  }, [open, availability]);
+  }, [open, availability, today]);
 
   const toggleSlot = useCallback((dayIdx: number, slotIdx: number, paint: boolean) => {
     setGrid((prev) => {
@@ -142,7 +169,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
 
   const handlePointerDown = (dayIdx: number, slotIdx: number) => {
     const painting = !grid[dayIdx]![slotIdx];
-    dragState.current = { active: true, dayIdx, painting, startSlot: slotIdx };
+    dragState.current = { active: true, dayIdx, painting };
     toggleSlot(dayIdx, slotIdx, painting);
   };
 
@@ -155,13 +182,21 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
     if (dragState.current) dragState.current.active = false;
   };
 
-  const handleReset = () => setGrid(emptyGrid());
-
-  const handleNext = () => setStep(2);
+  const handleAddException = () => {
+    if (!newExcDate) return;
+    const exc: AvailabilityExceptionRequest = {
+      date: newExcDate,
+      kind: newExcKind,
+      ...(newExcAllDay
+        ? {}
+        : { startSlot: timeToSlot(newExcStartTime), endSlot: timeToSlot(newExcEndTime) }),
+    };
+    setExceptions((prev) => [...prev.filter((e) => e.date !== newExcDate), exc]);
+    setNewExcDate('');
+  };
 
   const handleSave = () => {
-    const rules = gridToWeeklyRules(grid);
-    onSave(rules, note);
+    onSave(gridToWeeklyRules(grid, effectiveFrom, effectiveTo), note, exceptions);
   };
 
   if (!open) return null;
@@ -179,9 +214,8 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
         className="bg-card relative mx-4 flex w-full max-w-lg flex-col overflow-hidden rounded-xl shadow-xl"
         style={{ maxHeight: '90vh' }}
       >
-        {/* 헤더 — 고정 */}
+        {/* 헤더 */}
         <div className="shrink-0 px-5 pt-5">
-          {/* 닫기 버튼 */}
           <button
             type="button"
             onClick={onClose}
@@ -190,17 +224,64 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
           >
             <X className="h-5 w-5" />
           </button>
-
-          {/* 제목 */}
           <h3 className="text-foreground mb-1 text-[17px] font-bold">
             나의 스케줄 관리{' '}
-            <span className="text-foreground-muted text-[13px] font-normal">({step}/2)</span>
+            <span className="text-foreground-muted text-caption font-normal">({step}/4)</span>
           </h3>
         </div>
 
-        {step === 1 ? (
+        {/* Step 1: 기간 선택 */}
+        {step === 1 && (
           <>
-            {/* 설명 + 초기화 — 고정 */}
+            <div className="flex-1 overflow-y-auto px-5 pt-1 pb-2">
+              <p className="text-foreground-sub mb-4 text-[12px]">
+                이 스케줄이 적용될 기간을 선택해주세요
+              </p>
+              <div className="space-y-3">
+                <div className="grid grid-cols-[64px_1fr] items-center gap-3">
+                  <span className="text-foreground-sub text-[13px]">시작일</span>
+                  <input
+                    type="date"
+                    value={effectiveFrom}
+                    min={today}
+                    onChange={(e) => setEffectiveFrom(e.target.value)}
+                    className="border-border bg-surface text-foreground rounded-md border px-3 py-2 text-[13px]"
+                  />
+                </div>
+                <div className="grid grid-cols-[64px_1fr] items-center gap-3">
+                  <span className="text-foreground-sub text-[13px]">종료일</span>
+                  <input
+                    type="date"
+                    value={effectiveTo}
+                    min={effectiveFrom || today}
+                    onChange={(e) => setEffectiveTo(e.target.value)}
+                    className="border-border bg-surface text-foreground rounded-md border px-3 py-2 text-[13px]"
+                  />
+                </div>
+                <p className="text-foreground-muted text-micro">
+                  {effectiveTo
+                    ? `* ${effectiveFrom} ~ ${effectiveTo} 기간에 적용됩니다`
+                    : '* 종료일 미입력 시 무기한 적용됩니다'}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 justify-end px-5 pt-3 pb-5">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setStep(2)}
+                disabled={!effectiveFrom}
+                className="rounded-[5px]"
+              >
+                다음
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* Step 2: 주간 타임테이블 */}
+        {step === 2 && (
+          <>
             <div className="shrink-0 px-5 pt-1">
               <p className="text-foreground-sub mb-3 text-[12px]">
                 주간 가능 시간대를 모두 채워주세요
@@ -208,19 +289,17 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
               <div className="mb-2 flex justify-end">
                 <button
                   type="button"
-                  onClick={handleReset}
-                  className="text-foreground-sub border-border rounded border px-2 py-0.5 text-[11px]"
+                  onClick={() => setGrid(emptyGrid())}
+                  className="text-foreground-sub border-border text-micro rounded border px-2 py-0.5"
                 >
                   스케줄 초기화
                 </button>
               </div>
             </div>
 
-            {/* 선택 그리드 — 내부 스크롤 */}
             <div className="min-h-0 flex-1 overflow-y-auto px-5">
               <div className="overflow-x-auto select-none" onPointerLeave={handlePointerUp}>
                 <div className="min-w-[320px]">
-                  {/* 요일 헤더 */}
                   <div className="grid" style={{ gridTemplateColumns: '36px repeat(7, 1fr)' }}>
                     <div />
                     {DAY_SHORT.map((day, i) => (
@@ -230,12 +309,10 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                     ))}
                   </div>
 
-                  {/* 슬롯 그리드 */}
                   <div
                     className="relative grid"
                     style={{ gridTemplateColumns: '36px repeat(7, 1fr)' }}
                   >
-                    {/* 시간 레이블 */}
                     <div className="relative">
                       {hourSlots.map((slotIdx) => (
                         <span
@@ -258,14 +335,12 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                       <div style={{ height: SLOT_COUNT * CELL_HEIGHT }} />
                     </div>
 
-                    {/* 요일별 슬롯 */}
                     {Array.from({ length: 7 }, (_, dayIdx) => (
                       <div
                         key={dayIdx}
                         className="border-border relative border-l"
                         style={{ height: SLOT_COUNT * CELL_HEIGHT }}
                       >
-                        {/* 수평 구분선 */}
                         {hourSlots.map((slotIdx) => (
                           <div
                             key={slotIdx}
@@ -273,8 +348,6 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                             style={{ top: slotIdx * CELL_HEIGHT }}
                           />
                         ))}
-
-                        {/* 슬롯 셀 */}
                         {Array.from({ length: SLOT_COUNT }, (_, slotIdx) => (
                           <div
                             key={slotIdx}
@@ -282,10 +355,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                               'absolute right-0 left-0 cursor-pointer transition-colors',
                               grid[dayIdx]![slotIdx] ? 'bg-[#e8856a]' : 'hover:bg-[#e8856a]/20',
                             )}
-                            style={{
-                              top: slotIdx * CELL_HEIGHT,
-                              height: CELL_HEIGHT,
-                            }}
+                            style={{ top: slotIdx * CELL_HEIGHT, height: CELL_HEIGHT }}
                             onPointerDown={(e) => {
                               e.preventDefault();
                               handlePointerDown(dayIdx, slotIdx);
@@ -300,19 +370,24 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
               </div>
             </div>
 
-            {/* 푸터 — 고정 */}
             <div className="shrink-0 px-5 pb-5">
-              <p className="text-foreground-muted mt-2.5 text-[11px]">
-                * 셀 1칸 당 30분 단위입니다
-              </p>
-              <p className="text-foreground-muted text-[11px]">
+              <p className="text-foreground-muted text-micro mt-2.5">* 셀 1칸 당 30분 단위입니다</p>
+              <p className="text-foreground-muted text-micro">
                 * 입력한 주간 가능 시간대는 향후 전 주 동일 적용됩니다
               </p>
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStep(1)}
+                  className="rounded-[5px]"
+                >
+                  이전
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={handleNext}
+                  onClick={() => setStep(3)}
                   disabled={!hasAnySelected(grid)}
                   className="rounded-[5px]"
                 >
@@ -321,11 +396,163 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
               </div>
             </div>
           </>
-        ) : (
+        )}
+
+        {/* Step 3: 예외 날짜 */}
+        {step === 3 && (
+          <>
+            <div className="flex-1 space-y-4 overflow-y-auto px-5 pt-1 pb-2">
+              <p className="text-foreground-sub text-[12px]">
+                위 규칙과 다른 날짜가 있으면 추가해주세요 (선택)
+              </p>
+
+              {/* 추가 폼 */}
+              <div className="border-border space-y-3 rounded-md border p-3">
+                <div className="grid grid-cols-[52px_1fr] items-center gap-2">
+                  <span className="text-foreground-sub text-[12px]">날짜</span>
+                  <input
+                    type="date"
+                    value={newExcDate}
+                    min={effectiveFrom}
+                    max={effectiveTo || undefined}
+                    onChange={(e) => setNewExcDate(e.target.value)}
+                    className="border-border bg-surface text-foreground rounded-md border px-2 py-1.5 text-[12px]"
+                  />
+                </div>
+                <div className="grid grid-cols-[52px_1fr] items-center gap-2">
+                  <span className="text-foreground-sub text-[12px]">종류</span>
+                  <div className="flex gap-4">
+                    {(['AVAILABLE', 'BLOCKED'] as AvailabilityKind[]).map((k) => (
+                      <label key={k} className="flex cursor-pointer items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="excKind"
+                          value={k}
+                          checked={newExcKind === k}
+                          onChange={() => setNewExcKind(k)}
+                          className="accent-[#e8856a]"
+                        />
+                        <span className="text-foreground text-[12px]">
+                          {k === 'AVAILABLE' ? '가능' : '불가'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-[52px_1fr] items-center gap-2">
+                  <span className="text-foreground-sub text-[12px]">시간</span>
+                  <label className="flex cursor-pointer items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={newExcAllDay}
+                      onChange={(e) => setNewExcAllDay(e.target.checked)}
+                      className="accent-[#e8856a]"
+                    />
+                    <span className="text-foreground text-[12px]">하루 종일</span>
+                  </label>
+                </div>
+                {!newExcAllDay && (
+                  <div className="grid grid-cols-[52px_1fr] items-center gap-2">
+                    <div />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={newExcStartTime}
+                        step={1800}
+                        onChange={(e) => setNewExcStartTime(e.target.value)}
+                        className="border-border bg-surface text-foreground rounded-md border px-2 py-1.5 text-[12px]"
+                      />
+                      <span className="text-foreground-muted text-[12px]">~</span>
+                      <input
+                        type="time"
+                        value={newExcEndTime}
+                        step={1800}
+                        onChange={(e) => setNewExcEndTime(e.target.value)}
+                        className="border-border bg-surface text-foreground rounded-md border px-2 py-1.5 text-[12px]"
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleAddException}
+                    disabled={!newExcDate}
+                    className="gap-1 rounded-[5px]"
+                  >
+                    <Plus className="h-3 w-3" />
+                    추가
+                  </Button>
+                </div>
+              </div>
+
+              {/* 예외 목록 */}
+              {exceptions.length > 0 && (
+                <ul className="space-y-2">
+                  {exceptions.map((exc) => (
+                    <li
+                      key={exc.date}
+                      className="border-border flex items-center justify-between rounded-md border px-3 py-2"
+                    >
+                      <div>
+                        <span className="text-foreground text-[13px] font-medium">{exc.date}</span>
+                        <span
+                          className={cn(
+                            'ml-2 text-[11px]',
+                            exc.kind === 'AVAILABLE' ? 'text-[#e8856a]' : 'text-foreground-muted',
+                          )}
+                        >
+                          {exc.kind === 'AVAILABLE' ? '가능' : '불가'}
+                        </span>
+                        {exc.startSlot != null && exc.endSlot != null && (
+                          <span className="text-foreground-muted ml-1 text-[11px]">
+                            {slotToTime(exc.startSlot)}~{slotToTime(exc.endSlot)}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExceptions((prev) => prev.filter((e) => e.date !== exc.date))
+                        }
+                        className="text-foreground-muted hover:text-foreground"
+                        aria-label="삭제"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="flex shrink-0 justify-between px-5 pt-3 pb-5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStep(2)}
+                className="rounded-[5px]"
+              >
+                이전
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setStep(4)}
+                className="rounded-[5px]"
+              >
+                다음
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* Step 4: 특이사항 */}
+        {step === 4 && (
           <>
             <div className="px-5 pb-5">
               <p className="text-foreground-sub mb-3 text-[12px]">특이사항을 적어주세요</p>
-
               <Textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -333,8 +560,15 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                 className="h-40 resize-none"
                 maxLength={500}
               />
-
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStep(3)}
+                  className="rounded-[5px]"
+                >
+                  이전
+                </Button>
                 <Button
                   variant="secondary"
                   size="sm"
