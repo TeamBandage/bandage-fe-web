@@ -19,10 +19,12 @@ interface Props {
  *
  * 동작 순서
  * 1. 마운트 시 401 핸들러 등록 (refresh 실패 → /login 라우팅 + 토스트).
- * 2. accessToken 이 메모리에 없으면 refresh 한 번 시도 (refreshToken 쿠키 기반).
+ * 2. Zustand persist 하이드레이션 완료 대기 (sessionStorage → 메모리 복원).
+ * 3. 하이드레이션 후 accessToken 이 있으면 bootstrap 스킵.
+ *    없으면 refreshToken 쿠키로 POST /auth/refresh 한 번 시도.
  *    - 성공 → useMe 가 활성화되어 children 렌더 가능.
  *    - 실패 → /login 으로 라우팅.
- * 3. 부트스트랩 진행 중에는 Skeleton 으로 children 가드 → /home 깜빡임 방지.
+ * 4. 부트스트랩 진행 중에는 Skeleton 으로 children 가드 → /home 깜빡임 방지.
  */
 export function AuthBootstrapper({ children }: Props) {
   const router = useRouter();
@@ -31,7 +33,8 @@ export function AuthBootstrapper({ children }: Props) {
   const authenticated = useAuthStore((s) => s.accessToken !== null);
   const handlerInstalled = useRef(false);
   const bootstrapTried = useRef(false);
-  const [bootstrapping, setBootstrapping] = useState(!authenticated);
+  const [bootstrapping, setBootstrapping] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
 
   // 401 핸들러 등록.
   useEffect(() => {
@@ -45,8 +48,20 @@ export function AuthBootstrapper({ children }: Props) {
     });
   }, [router, toast]);
 
-  // accessToken 부트스트랩.
+  // Zustand persist 하이드레이션 완료 감지 (클라이언트 전용).
+  // useState(false)로 초기화해야 SSR의 noopStorage가 hasHydrated()=true를 반환하는 것을 방지.
   useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  // 하이드레이션 완료 후 accessToken 여부에 따라 bootstrap 결정.
+  // sessionStorage에 유효한 토큰이 있으면 bootstrap 스킵 — 불필요한 /refresh 호출 방지.
+  useEffect(() => {
+    if (!hydrated) return;
     if (bootstrapTried.current) return;
     bootstrapTried.current = true;
     if (authenticated) {
@@ -56,13 +71,12 @@ export function AuthBootstrapper({ children }: Props) {
     bootstrapAccessToken()
       .then(() => setBootstrapping(false))
       .catch(() => {
-        // refresh 실패 → /login 으로 (handleAuthFailure 가 이미 처리하지만 안전망).
         setBootstrapping(false);
         const from = searchParams?.toString();
         const url = from ? `${ROUTES.LOGIN}?from=${encodeURIComponent(from)}` : ROUTES.LOGIN;
         router.replace(url);
       });
-  }, [authenticated, router, searchParams]);
+  }, [hydrated, authenticated, router, searchParams]);
 
   // useMe 는 인증 후에만 자연스럽게 동작 — 깜빡임 가드는 부트스트랩 완료까지만.
   const me = useMe();
