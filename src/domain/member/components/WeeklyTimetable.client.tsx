@@ -3,6 +3,8 @@
 import { addDays, format, startOfWeek } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { toZonedTime } from 'date-fns-tz';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 import type { PerformanceListItemResponse } from '@/domain/performance/types';
 import type { PracticeListItemResponse } from '@/domain/practice/types';
@@ -42,20 +44,36 @@ function startAtToSlot(startAt: string): number {
 
 function buildAvailabilityMatrix(
   rules: MemberAvailabilityResponse['weeklyRules'],
+  exceptions: MemberAvailabilityResponse['exceptions'],
   weekDates: Date[],
 ): boolean[][] {
   const matrix: boolean[][] = Array.from({ length: 7 }, () =>
     new Array<boolean>(SLOT_COUNT).fill(false),
   );
 
+  const weekDateStrs = weekDates.map((d) => format(d, 'yyyy-MM-dd'));
+
+  // effectiveFrom 이전 날짜는 빈 셀(가능/미설정)로 표시
+  const earliestFrom = rules.reduce<string | null>(
+    (min, r) =>
+      r.effectiveFrom && (min === null || r.effectiveFrom < min) ? r.effectiveFrom : min,
+    null,
+  );
+  if (earliestFrom) {
+    for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
+      const dateStr = weekDateStrs[dayIdx];
+      if (dateStr && dateStr < earliestFrom) matrix[dayIdx]!.fill(true);
+    }
+  }
+
+  // weeklyRules 적용
   for (const rule of rules) {
     const dayIdx = DAY_OF_WEEK_KEYS.indexOf(rule.dayOfWeek);
     if (dayIdx === -1) continue;
-    const weekDate = weekDates[dayIdx];
-    if (!weekDate) continue;
-    const dateStr = format(weekDate, 'yyyy-MM-dd');
+    const dateStr = weekDateStrs[dayIdx];
+    if (!dateStr) continue;
+    if (!rule.effectiveFrom || dateStr < rule.effectiveFrom) continue;
     if (rule.effectiveTo && dateStr > rule.effectiveTo) continue;
-    if (dateStr < rule.effectiveFrom) continue;
 
     const row = matrix[dayIdx]!;
     for (let s = rule.startSlot; s < rule.endSlot; s++) {
@@ -63,6 +81,26 @@ function buildAvailabilityMatrix(
       if (idx >= 0 && idx < SLOT_COUNT) row[idx] = true;
     }
   }
+
+  // exceptions 적용 (weeklyRules 위에 덮어쓰기)
+  for (const exc of exceptions) {
+    const dayIdx = weekDateStrs.indexOf(exc.date);
+    if (dayIdx === -1) continue;
+
+    const row = matrix[dayIdx]!;
+    const isAvailable = exc.kind === 'AVAILABLE';
+    const isAllDay = exc.startSlot == null || exc.endSlot == null || exc.startSlot >= exc.endSlot;
+
+    if (isAllDay) {
+      row.fill(isAvailable);
+    } else {
+      for (let s = exc.startSlot!; s < exc.endSlot!; s++) {
+        const idx = s - START_SLOT;
+        if (idx >= 0 && idx < SLOT_COUNT) row[idx] = isAvailable;
+      }
+    }
+  }
+
   return matrix;
 }
 
@@ -72,6 +110,14 @@ type TimetableEvent = {
   startSlot: number;
   slotSpan: number;
   dayIdx: number;
+};
+
+type MockEvent = {
+  id: number;
+  type: 'practice' | 'performance';
+  dayIdx: number;
+  startSlot: number;
+  slotSpan: number;
 };
 
 function buildEvents(
@@ -133,8 +179,37 @@ export function WeeklyTimetable({
   performances,
   onManageSchedule,
 }: Props) {
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [paintPractice, setPaintPractice] = useState(false);
+  const [paintPerformance, setPaintPerformance] = useState(false);
+  const [mockEvents, setMockEvents] = useState<MockEvent[]>([]);
+  const mockIdRef = useRef(0);
+
+  const handleCellClick = (dayIdx: number, e: React.MouseEvent<HTMLDivElement>) => {
+    if (!paintPractice && !paintPerformance) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const slot = Math.floor((e.clientY - rect.top) / CELL_HEIGHT);
+    if (slot < 0 || slot >= SLOT_COUNT) return;
+    setMockEvents((prev) => {
+      let next = [...prev];
+      for (const type of (['practice', 'performance'] as const).filter(
+        (t) => (t === 'practice' && paintPractice) || (t === 'performance' && paintPerformance),
+      )) {
+        const existing = next.find(
+          (m) => m.dayIdx === dayIdx && m.startSlot === slot && m.type === type,
+        );
+        if (existing) {
+          next = next.filter((m) => m.id !== existing.id);
+        } else {
+          next = [...next, { id: mockIdRef.current++, type, dayIdx, startSlot: slot, slotSpan: 1 }];
+        }
+      }
+      return next;
+    });
+  };
+
   const now = toZonedTime(new Date(), KST);
-  const monday = startOfWeek(now, { weekStartsOn: 1 });
+  const monday = addDays(startOfWeek(now, { weekStartsOn: 1 }), weekOffset * 7);
   const weekDates: Date[] = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 
   const weekLabel =
@@ -142,7 +217,11 @@ export function WeeklyTimetable({
     ' ~ ' +
     format(weekDates[6]!, 'MM-dd (EEE)', { locale: ko });
 
-  const availMatrix = buildAvailabilityMatrix(availability?.weeklyRules ?? [], weekDates);
+  const availMatrix = buildAvailabilityMatrix(
+    availability?.weeklyRules ?? [],
+    availability?.exceptions ?? [],
+    weekDates,
+  );
   const events = buildEvents(practices, performances, weekDates);
 
   const eventsByDay: TimetableEvent[][] = Array.from({ length: 7 }, () => []);
@@ -154,12 +233,30 @@ export function WeeklyTimetable({
 
   return (
     <section className="mt-15">
-      <div className="mb-s-3 flex items-center justify-between">
-        <p className="text-foreground-sub text-[13px]">{weekLabel}</p>
+      <div className="mb-s-3 relative flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o - 1)}
+            className="text-foreground-sub hover:text-foreground"
+            aria-label="이전 주"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <p className="text-foreground-sub text-sm">{weekLabel}</p>
+          <button
+            type="button"
+            onClick={() => setWeekOffset((o) => o + 1)}
+            className="text-foreground-sub hover:text-foreground"
+            aria-label="다음 주"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
         <button
           type="button"
           onClick={onManageSchedule}
-          className="text-foreground border-border shrink-0 rounded-[5px] border px-3 py-1 text-sm font-medium"
+          className="text-foreground border-border absolute right-0 shrink-0 rounded-[5px] border px-3 py-1 text-sm font-medium"
         >
           나의 스케줄 관리
         </button>
@@ -213,8 +310,12 @@ export function WeeklyTimetable({
             {weekDates.map((_, dayIdx) => (
               <div
                 key={dayIdx}
-                className="border-border relative border-r last:border-r-0"
+                className={cn(
+                  'border-border relative border-r last:border-r-0',
+                  paintPractice || paintPerformance ? 'cursor-crosshair' : 'cursor-default',
+                )}
                 style={{ height: SLOT_COUNT * CELL_HEIGHT }}
+                onClick={(e) => handleCellClick(dayIdx, e)}
               >
                 {hourSlots.map((slotIdx) => (
                   <div
@@ -228,7 +329,7 @@ export function WeeklyTimetable({
                 {buildUnavailableBlocks(availMatrix[dayIdx]!).map((block, bi) => (
                   <div
                     key={bi}
-                    className="bg-surface/70 absolute right-0 left-0"
+                    className="bg-foreground-sub/80 absolute right-0 left-0"
                     style={{
                       top: block.start * CELL_HEIGHT,
                       height: block.length * CELL_HEIGHT,
@@ -244,11 +345,12 @@ export function WeeklyTimetable({
                   return (
                     <div
                       key={ei}
+                      onClick={(e) => e.stopPropagation()}
                       className={cn(
                         'absolute right-0 left-0 overflow-hidden rounded-sm px-1 py-0.5',
                         ev.type === 'practice'
-                          ? 'bg-[#e8e8c0] text-[#4a4a20]'
-                          : 'bg-[#7a9e8c] text-white',
+                          ? 'bg-[#4ade80]/20 text-[#4ade80]'
+                          : 'bg-[#60a5fa]/20 text-[#60a5fa]',
                       )}
                       style={{ top: clippedStart * CELL_HEIGHT, height }}
                     >
@@ -259,10 +361,60 @@ export function WeeklyTimetable({
                     </div>
                   );
                 })}
+
+                {/* 임시 이벤트 블록 */}
+                {mockEvents
+                  .filter(
+                    (me) =>
+                      me.dayIdx === dayIdx &&
+                      ((me.type === 'practice' && paintPractice) ||
+                        (me.type === 'performance' && paintPerformance)),
+                  )
+                  .map((me) => (
+                    <div
+                      key={me.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMockEvents((prev) => prev.filter((m) => m.id !== me.id));
+                      }}
+                      className={cn(
+                        'absolute right-0 left-0 cursor-pointer overflow-hidden',
+                        me.type === 'practice' ? 'bg-[#4ade80]/60' : 'bg-[#60a5fa]/60',
+                      )}
+                      style={{ top: me.startSlot * CELL_HEIGHT, height: me.slotSpan * CELL_HEIGHT }}
+                    />
+                  ))}
               </div>
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setPaintPractice((v) => !v)}
+          className={cn(
+            'rounded-full border px-3.5 py-1 text-sm font-medium transition-colors',
+            paintPractice
+              ? 'border-[#4ade80] bg-[#4ade80]/10 text-[#4ade80]'
+              : 'border-border text-foreground-muted',
+          )}
+        >
+          합주 표시
+        </button>
+        <button
+          type="button"
+          onClick={() => setPaintPerformance((v) => !v)}
+          className={cn(
+            'rounded-full border px-3.5 py-1 text-sm font-medium transition-colors',
+            paintPerformance
+              ? 'border-[#60a5fa] bg-[#60a5fa]/10 text-[#60a5fa]'
+              : 'border-border text-foreground-muted',
+          )}
+        >
+          공연 표시
+        </button>
       </div>
     </section>
   );
