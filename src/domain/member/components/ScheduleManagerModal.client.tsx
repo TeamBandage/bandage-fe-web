@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Check, Plus, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -245,7 +245,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                     value={effectiveFrom}
                     min={today}
                     onChange={(e) => setEffectiveFrom(e.target.value)}
-                    className="border-border bg-surface text-foreground rounded-md border px-3 py-2 text-[13px]"
+                    className="border-border bg-surface rounded-md border px-3 py-2 text-[13px] text-[#d1d5db]"
                   />
                 </div>
                 <div className="grid grid-cols-[64px_1fr] items-center gap-3">
@@ -255,7 +255,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                     value={effectiveTo}
                     min={effectiveFrom || today}
                     onChange={(e) => setEffectiveTo(e.target.value)}
-                    className="border-border bg-surface text-foreground rounded-md border px-3 py-2 text-[13px]"
+                    className="border-border bg-surface rounded-md border px-3 py-2 text-[13px] text-[#d1d5db]"
                   />
                 </div>
                 <p className="text-foreground-muted text-micro">
@@ -416,7 +416,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                     min={effectiveFrom}
                     max={effectiveTo || undefined}
                     onChange={(e) => setNewExcDate(e.target.value)}
-                    className="border-border bg-surface text-foreground rounded-md border px-2 py-1.5 text-[12px]"
+                    className="border-border bg-surface rounded-md border px-2 py-1.5 text-[12px] text-[#d1d5db]"
                   />
                 </div>
                 <div className="grid grid-cols-[52px_1fr] items-center gap-2">
@@ -430,9 +430,24 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                           value={k}
                           checked={newExcKind === k}
                           onChange={() => setNewExcKind(k)}
-                          className="accent-[#e8856a]"
+                          className="sr-only"
                         />
-                        <span className="text-foreground text-[12px]">
+                        <span
+                          className={cn(
+                            'flex h-4 w-4 items-center justify-center rounded-full border-2',
+                            newExcKind === k ? 'border-[#d1d5db]' : 'border-[#6b7280]',
+                          )}
+                        >
+                          {newExcKind === k && (
+                            <span className="h-2 w-2 rounded-full bg-[#d1d5db]" />
+                          )}
+                        </span>
+                        <span
+                          className={cn(
+                            'text-[12px]',
+                            newExcKind === k ? 'text-[#d1d5db]' : 'text-[#6b7280]',
+                          )}
+                        >
                           {k === 'AVAILABLE' ? '가능' : '불가'}
                         </span>
                       </label>
@@ -446,30 +461,63 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                       type="checkbox"
                       checked={newExcAllDay}
                       onChange={(e) => setNewExcAllDay(e.target.checked)}
-                      className="accent-[#e8856a]"
+                      className="sr-only"
                     />
-                    <span className="text-foreground text-[12px]">하루 종일</span>
+                    <span
+                      className={cn(
+                        'flex h-4 w-4 items-center justify-center rounded border-2',
+                        newExcAllDay ? 'border-[#d1d5db] bg-[#d1d5db]' : 'border-[#6b7280]',
+                      )}
+                    >
+                      {newExcAllDay && <Check className="h-3 w-3 text-black" strokeWidth={3} />}
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[12px]',
+                        newExcAllDay ? 'text-[#d1d5db]' : 'text-foreground',
+                      )}
+                    >
+                      하루 종일
+                    </span>
                   </label>
                 </div>
                 {!newExcAllDay && (
                   <div className="grid grid-cols-[52px_1fr] items-center gap-2">
                     <div />
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="time"
-                        value={newExcStartTime}
-                        step={1800}
-                        onChange={(e) => setNewExcStartTime(e.target.value)}
-                        className="border-border bg-surface text-foreground rounded-md border px-2 py-1.5 text-[12px]"
-                      />
-                      <span className="text-foreground-muted text-[12px]">~</span>
-                      <input
-                        type="time"
-                        value={newExcEndTime}
-                        step={1800}
-                        onChange={(e) => setNewExcEndTime(e.target.value)}
-                        className="border-border bg-surface text-foreground rounded-md border px-2 py-1.5 text-[12px]"
-                      />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          value={newExcStartTime}
+                          min="09:00"
+                          max="22:00"
+                          step={1800}
+                          onChange={(e) => setNewExcStartTime(e.target.value)}
+                          className="border-border bg-surface rounded-md border px-2 py-1.5 text-[12px] text-[#d1d5db]"
+                        />
+                        <span className="text-foreground-muted text-[12px]">~</span>
+                        <input
+                          type="time"
+                          value={newExcEndTime}
+                          min="09:00"
+                          max="22:00"
+                          step={1800}
+                          onChange={(e) => setNewExcEndTime(e.target.value)}
+                          className="border-border bg-surface rounded-md border px-2 py-1.5 text-[12px] text-[#d1d5db]"
+                        />
+                      </div>
+                      <p className="text-foreground-muted text-[10px]">
+                        * 09:00~22:00 범위 내에서만 선택 가능합니다
+                      </p>
+                      {(newExcStartTime < '09:00' ||
+                        newExcEndTime > '22:00' ||
+                        newExcStartTime >= newExcEndTime) && (
+                        <p className="text-[10px] text-red-400">
+                          {newExcStartTime >= newExcEndTime
+                            ? '* 시작 시간은 종료 시간보다 빨라야 합니다'
+                            : '* 09:00~22:00 범위를 벗어난 시간입니다'}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -478,7 +526,13 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                     variant="secondary"
                     size="sm"
                     onClick={handleAddException}
-                    disabled={!newExcDate}
+                    disabled={
+                      !newExcDate ||
+                      (!newExcAllDay &&
+                        (newExcStartTime < '09:00' ||
+                          newExcEndTime > '22:00' ||
+                          newExcStartTime >= newExcEndTime))
+                    }
                     className="gap-1 rounded-[5px]"
                   >
                     <Plus className="h-3 w-3" />
@@ -500,7 +554,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                         <span
                           className={cn(
                             'ml-2 text-[11px]',
-                            exc.kind === 'AVAILABLE' ? 'text-[#e8856a]' : 'text-foreground-muted',
+                            exc.kind === 'AVAILABLE' ? 'text-[#d1d5db]' : 'text-foreground-muted',
                           )}
                         >
                           {exc.kind === 'AVAILABLE' ? '가능' : '불가'}
@@ -556,11 +610,12 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
               <Textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="평일 저녁만, 주말은 1시 이후부터 가능합니다."
-                className="h-40 resize-none"
+                placeholder="ex) 평일 저녁만, 주말은 1시 이후부터 가능합니다."
+                className="placeholder:text-foreground-muted focus-visible:border-foreground-muted h-40 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 maxLength={500}
               />
-              <div className="mt-4 flex justify-between">
+              <p className="text-foreground-muted mt-1 text-right text-[12px]">(500자 이내)</p>
+              <div className="mt-3 flex justify-between">
                 <Button
                   variant="ghost"
                   size="sm"
