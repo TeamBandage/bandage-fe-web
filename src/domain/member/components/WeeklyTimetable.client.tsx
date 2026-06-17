@@ -4,7 +4,7 @@ import { addDays, format, startOfWeek } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { toZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { PerformanceListItemResponse } from '@/domain/performance/types';
 import type { PracticeListItemResponse } from '@/domain/practice/types';
@@ -112,6 +112,14 @@ type TimetableEvent = {
   dayIdx: number;
 };
 
+type MockEvent = {
+  id: number;
+  type: 'practice' | 'performance';
+  dayIdx: number;
+  startSlot: number;
+  slotSpan: number;
+};
+
 function buildEvents(
   practices: PracticeListItemResponse[],
   performances: PerformanceListItemResponse[],
@@ -172,6 +180,33 @@ export function WeeklyTimetable({
   onManageSchedule,
 }: Props) {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [paintPractice, setPaintPractice] = useState(false);
+  const [paintPerformance, setPaintPerformance] = useState(false);
+  const [mockEvents, setMockEvents] = useState<MockEvent[]>([]);
+  const mockIdRef = useRef(0);
+
+  const handleCellClick = (dayIdx: number, e: React.MouseEvent<HTMLDivElement>) => {
+    if (!paintPractice && !paintPerformance) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const slot = Math.floor((e.clientY - rect.top) / CELL_HEIGHT);
+    if (slot < 0 || slot >= SLOT_COUNT) return;
+    setMockEvents((prev) => {
+      let next = [...prev];
+      for (const type of (['practice', 'performance'] as const).filter(
+        (t) => (t === 'practice' && paintPractice) || (t === 'performance' && paintPerformance),
+      )) {
+        const existing = next.find(
+          (m) => m.dayIdx === dayIdx && m.startSlot === slot && m.type === type,
+        );
+        if (existing) {
+          next = next.filter((m) => m.id !== existing.id);
+        } else {
+          next = [...next, { id: mockIdRef.current++, type, dayIdx, startSlot: slot, slotSpan: 1 }];
+        }
+      }
+      return next;
+    });
+  };
 
   const now = toZonedTime(new Date(), KST);
   const monday = addDays(startOfWeek(now, { weekStartsOn: 1 }), weekOffset * 7);
@@ -275,8 +310,12 @@ export function WeeklyTimetable({
             {weekDates.map((_, dayIdx) => (
               <div
                 key={dayIdx}
-                className="border-border relative border-r last:border-r-0"
+                className={cn(
+                  'border-border relative border-r last:border-r-0',
+                  paintPractice || paintPerformance ? 'cursor-crosshair' : 'cursor-default',
+                )}
                 style={{ height: SLOT_COUNT * CELL_HEIGHT }}
+                onClick={(e) => handleCellClick(dayIdx, e)}
               >
                 {hourSlots.map((slotIdx) => (
                   <div
@@ -306,11 +345,12 @@ export function WeeklyTimetable({
                   return (
                     <div
                       key={ei}
+                      onClick={(e) => e.stopPropagation()}
                       className={cn(
                         'absolute right-0 left-0 overflow-hidden rounded-sm px-1 py-0.5',
                         ev.type === 'practice'
-                          ? 'bg-[#e8e8c0] text-[#4a4a20]'
-                          : 'bg-[#7a9e8c] text-white',
+                          ? 'bg-[#4ade80]/20 text-[#4ade80]'
+                          : 'bg-[#60a5fa]/20 text-[#60a5fa]',
                       )}
                       style={{ top: clippedStart * CELL_HEIGHT, height }}
                     >
@@ -321,10 +361,60 @@ export function WeeklyTimetable({
                     </div>
                   );
                 })}
+
+                {/* 임시 이벤트 블록 */}
+                {mockEvents
+                  .filter(
+                    (me) =>
+                      me.dayIdx === dayIdx &&
+                      ((me.type === 'practice' && paintPractice) ||
+                        (me.type === 'performance' && paintPerformance)),
+                  )
+                  .map((me) => (
+                    <div
+                      key={me.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMockEvents((prev) => prev.filter((m) => m.id !== me.id));
+                      }}
+                      className={cn(
+                        'absolute right-0 left-0 cursor-pointer overflow-hidden',
+                        me.type === 'practice' ? 'bg-[#4ade80]/60' : 'bg-[#60a5fa]/60',
+                      )}
+                      style={{ top: me.startSlot * CELL_HEIGHT, height: me.slotSpan * CELL_HEIGHT }}
+                    />
+                  ))}
               </div>
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setPaintPractice((v) => !v)}
+          className={cn(
+            'rounded-full border px-3.5 py-1 text-sm font-medium transition-colors',
+            paintPractice
+              ? 'border-[#4ade80] bg-[#4ade80]/10 text-[#4ade80]'
+              : 'border-border text-foreground-muted',
+          )}
+        >
+          합주 표시
+        </button>
+        <button
+          type="button"
+          onClick={() => setPaintPerformance((v) => !v)}
+          className={cn(
+            'rounded-full border px-3.5 py-1 text-sm font-medium transition-colors',
+            paintPerformance
+              ? 'border-[#60a5fa] bg-[#60a5fa]/10 text-[#60a5fa]'
+              : 'border-border text-foreground-muted',
+          )}
+        >
+          공연 표시
+        </button>
       </div>
     </section>
   );
