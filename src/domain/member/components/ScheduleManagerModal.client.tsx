@@ -6,6 +6,7 @@ import { Check, Plus, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { KST } from '@/lib/date';
 import { cn } from '@/lib/cn';
@@ -240,22 +241,20 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
               <div className="space-y-3">
                 <div className="grid grid-cols-[64px_1fr] items-center gap-3">
                   <span className="text-foreground-sub text-[13px]">시작일</span>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={effectiveFrom}
                     min={today}
-                    onChange={(e) => setEffectiveFrom(e.target.value)}
-                    className="border-border bg-surface rounded-md border px-3 py-2 text-[13px] text-[#d1d5db]"
+                    onChange={setEffectiveFrom}
+                    placeholder="시작일 선택"
                   />
                 </div>
                 <div className="grid grid-cols-[64px_1fr] items-center gap-3">
                   <span className="text-foreground-sub text-[13px]">종료일</span>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={effectiveTo}
                     min={effectiveFrom || today}
-                    onChange={(e) => setEffectiveTo(e.target.value)}
-                    className="border-border bg-surface rounded-md border px-3 py-2 text-[13px] text-[#d1d5db]"
+                    onChange={setEffectiveTo}
+                    placeholder="종료일 선택 (선택)"
                   />
                 </div>
                 <p className="text-foreground-muted text-micro">
@@ -410,13 +409,12 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
               <div className="border-border space-y-3 rounded-md border p-3">
                 <div className="grid grid-cols-[52px_1fr] items-center gap-2">
                   <span className="text-foreground-sub text-[12px]">날짜</span>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={newExcDate}
                     min={effectiveFrom}
                     max={effectiveTo || undefined}
-                    onChange={(e) => setNewExcDate(e.target.value)}
-                    className="border-border bg-surface rounded-md border px-2 py-1.5 text-[12px] text-[#d1d5db]"
+                    onChange={setNewExcDate}
+                    placeholder="날짜 선택"
                   />
                 </div>
                 <div className="grid grid-cols-[52px_1fr] items-center gap-2">
