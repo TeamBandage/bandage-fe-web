@@ -217,11 +217,11 @@ export function WeeklyTimetable({
     ' ~ ' +
     format(weekDates[6]!, 'MM-dd (EEE)', { locale: ko });
 
-  const availMatrix = buildAvailabilityMatrix(
-    availability?.weeklyRules ?? [],
-    availability?.exceptions ?? [],
-    weekDates,
-  );
+  // updatedAt이 null이거나 availability 미로드 시 한 번도 설정한 적 없는 상태 → 전 슬롯 공백
+  const neverSet = !availability || availability.updatedAt === null;
+  const availMatrix = neverSet
+    ? Array.from({ length: 7 }, () => new Array<boolean>(SLOT_COUNT).fill(true))
+    : buildAvailabilityMatrix(availability.weeklyRules, availability.exceptions, weekDates);
   const events = buildEvents(practices, performances, weekDates);
 
   const eventsByDay: TimetableEvent[][] = Array.from({ length: 7 }, () => []);
