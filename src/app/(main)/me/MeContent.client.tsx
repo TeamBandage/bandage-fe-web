@@ -27,6 +27,7 @@ import { WeeklyTimetable } from '@/domain/member/components/WeeklyTimetable.clie
 import { useMe } from '@/domain/member/hooks/useMe';
 import { useMyAvailability } from '@/domain/member/hooks/useMyAvailability';
 import { useUpdateMyAvailability } from '@/domain/member/hooks/useUpdateMyAvailability';
+import { useDeleteMyProfileImage } from '@/domain/member/hooks/useDeleteMyProfileImage';
 import { useUpdateMe } from '@/domain/member/hooks/useUpdateMe';
 import { useWithdraw } from '@/domain/member/hooks/useWithdraw';
 import {
@@ -262,6 +263,11 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
     onError: (err) => toast.error(err.message || '프로필 이미지 변경에 실패했습니다.'),
   });
 
+  const deleteImgMutation = useDeleteMyProfileImage({
+    onSuccess: () => toast.success('프로필 이미지가 삭제되었습니다.'),
+    onError: (err) => toast.error(err.message || '프로필 이미지 삭제에 실패했습니다.'),
+  });
+
   return (
     <Card padding="none" className="overflow-visible rounded-md border-[3px]">
       <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>
@@ -277,7 +283,7 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
               disabled={imgMutation.isPending}
               imageClassName="rounded-[100px]"
               showButton={false}
-              onDelete={() => {}}
+              onDelete={() => deleteImgMutation.mutate()}
             />
           </div>
 
