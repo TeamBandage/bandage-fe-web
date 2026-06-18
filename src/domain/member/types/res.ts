@@ -9,7 +9,6 @@ export interface MemberInfoResponse {
   memberId?: number;
   email: string;
   name: string;
-  contact: string;
   /** 프로필 이미지 URL. 미설정 시 null. */
   profileImg?: string | null;
   createdAt?: string;

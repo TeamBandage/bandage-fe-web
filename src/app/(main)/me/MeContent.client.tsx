@@ -40,7 +40,6 @@ import { useMyPerformances } from '@/domain/performance/hooks/useMyPerformances'
 import { useMyPractices } from '@/domain/practice/hooks/useMyPractices';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
-import { formatPhone } from '@/lib/phone';
 
 export function MeContent() {
   const router = useRouter();
@@ -146,7 +145,6 @@ export function MeContent() {
               <div className="space-y-1 pt-0.5">
                 <div className="text-foreground text-lg font-semibold">{me.name}</div>
                 <div className="text-foreground-sub text-sm">{me.email}</div>
-                {me.contact && <div className="text-foreground-muted text-xs">{me.contact}</div>}
               </div>
             </div>
           </Card>
@@ -246,7 +244,7 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
   const toast = useToast();
   const form = useForm<UpdateMeSchema>({
     resolver: zodResolver(updateMeSchema),
-    defaultValues: { name: member.name, contact: member.contact },
+    defaultValues: { name: member.name },
   });
 
   const mutation = useUpdateMe({
@@ -297,19 +295,7 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
               <span className="text-foreground-sub text-sm">이메일</span>
               <Input value={member.email} disabled readOnly className="focus-visible:ring-white" />
             </div>
-            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-              <span className="text-foreground-sub text-sm">연락처</span>
-              <Input
-                error={form.formState.errors.contact?.message}
-                className="focus-visible:ring-white"
-                {...form.register('contact')}
-                onChange={(e) => {
-                  const formatted = formatPhone(e.target.value);
-                  e.target.value = formatted;
-                  void form.register('contact').onChange(e);
-                }}
-              />
-            </div>
+
             <div className="flex justify-end">
               <Button
                 type="submit"
