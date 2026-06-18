@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ErrorState } from '@/components/feedback/error-state';
@@ -19,9 +19,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { PasswordStrength } from '@/components/ui/password-strength';
 import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useChangePassword } from '@/domain/auth/hooks/useChangePassword';
 import { useLogout } from '@/domain/auth/hooks/useLogout';
+import { passwordChangeSchema, type PasswordChangeSchema } from '@/domain/auth/types/schema';
 import { ScheduleManagerModal } from '@/domain/member/components/ScheduleManagerModal.client';
 import { WeeklyTimetable } from '@/domain/member/components/WeeklyTimetable.client';
 import { useMe } from '@/domain/member/hooks/useMe';
@@ -56,6 +59,15 @@ export function MeContent() {
   const [isEditing, setEditing] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+
+  const editContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isEditing) return;
+    const id = requestAnimationFrame(() => {
+      (document.activeElement as HTMLElement)?.blur();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isEditing]);
 
   const updateAvailabilityMutation = useUpdateMyAvailability({
     onSuccess: () => {
@@ -104,7 +116,7 @@ export function MeContent() {
   }
 
   return (
-    <div className="space-y-s-6">
+    <div ref={editContainerRef} tabIndex={-1} className="space-y-s-6 outline-none">
       {/* 프로필 정보 섹션 */}
       <section>
         <div className="mb-s-3 relative flex min-h-8 items-center">
@@ -160,6 +172,14 @@ export function MeContent() {
           performances={performances}
           onManageSchedule={() => setScheduleModalOpen(true)}
         />
+      )}
+
+      {/* 비밀번호 변경 — 편집 모드에서만 표시 */}
+      {isEditing && (
+        <section className="mt-[60px]">
+          <h2 className="text-foreground mb-s-3 text-[16px] font-bold">비밀번호 변경</h2>
+          <PasswordChangeCard />
+        </section>
       )}
 
       {/* 계정 탈퇴 — 편집 모드에서만 표시 */}
@@ -293,7 +313,7 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
               <span className="text-foreground-sub text-sm">이름</span>
               <Input
                 error={form.formState.errors.name?.message}
-                className="focus-visible:ring-white"
+                className={EDIT_INPUT_CLASS}
                 {...form.register('name')}
               />
             </div>
@@ -313,6 +333,99 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
                 수정 완료
               </Button>
             </div>
+          </div>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+const EDIT_INPUT_CLASS =
+  'rounded-[5px] border-white/20 hover:border-white/35 focus-visible:ring-0 focus-visible:border-white/70';
+
+const PASSWORD_INPUT_CLASS =
+  'rounded-[5px] border-white/20 hover:border-white/35 focus-visible:ring-0 focus-visible:border-white/70 not-placeholder-shown:border-white/70';
+
+function PasswordChangeCard() {
+  const toast = useToast();
+  const form = useForm<PasswordChangeSchema>({
+    resolver: zodResolver(passwordChangeSchema),
+    mode: 'onChange',
+    defaultValues: { originalPassword: '', newPassword: '', confirmPassword: '' },
+  });
+
+  const mutation = useChangePassword({
+    onSuccess: () => {
+      toast.success('비밀번호가 변경되었습니다.');
+      form.reset();
+    },
+    onError: (err) => toast.error(err.message || '비밀번호 변경에 실패했습니다.'),
+  });
+
+  return (
+    <Card padding="none" className="overflow-visible rounded-md border-[3px]">
+      <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>
+        <div className="gap-s-4 p-s-6 flex flex-col">
+          <div className="flex items-start gap-6">
+            <span className="text-foreground-sub w-36 shrink-0 pt-2.5 text-sm whitespace-nowrap">
+              현재 비밀번호
+            </span>
+            <div className="min-w-0 flex-1">
+              <Input
+                type="password"
+                placeholder="현재 비밀번호 입력"
+                error={form.formState.errors.originalPassword?.message}
+                className={PASSWORD_INPUT_CLASS}
+                {...form.register('originalPassword')}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start gap-6">
+              <span className="text-foreground-sub w-36 shrink-0 pt-2.5 text-sm whitespace-nowrap">
+                새 비밀번호
+              </span>
+              <div className="min-w-0 flex-1">
+                <Input
+                  type="password"
+                  placeholder="새 비밀번호 입력"
+                  error={form.formState.errors.newPassword?.message}
+                  className={PASSWORD_INPUT_CLASS}
+                  {...form.register('newPassword')}
+                />
+              </div>
+            </div>
+            {form.watch('newPassword') && (
+              <div className="flex items-start gap-6">
+                <span className="w-36 shrink-0" aria-hidden="true" />
+                <PasswordStrength password={form.watch('newPassword')} className="flex-1" />
+              </div>
+            )}
+          </div>
+          <div className="flex items-start gap-6">
+            <span className="text-foreground-sub w-36 shrink-0 pt-2.5 text-sm whitespace-nowrap">
+              새 비밀번호 확인
+            </span>
+            <div className="min-w-0 flex-1">
+              <Input
+                type="password"
+                placeholder="새 비밀번호 재입력"
+                error={form.formState.errors.confirmPassword?.message}
+                className={PASSWORD_INPUT_CLASS}
+                {...form.register('confirmPassword')}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              variant="secondary"
+              size="sm"
+              loading={mutation.isPending}
+              className="rounded-[5px]"
+            >
+              변경하기
+            </Button>
           </div>
         </div>
       </form>
