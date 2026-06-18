@@ -167,7 +167,7 @@ export function MeContent() {
           <h2 className="text-foreground mb-s-3 text-[16px] font-bold">계정 탈퇴</h2>
           <Card padding="lg" className="border-foreground-sub bg-bg">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-foreground-sub text-[12px]">
+              <p className="text-foreground-sub text-[14px]">
                 탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를
                 진행하시겠습니까?
               </p>
@@ -265,13 +265,13 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
       <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>
         <div className="flex">
           {/* 좌측: 프로필 이미지 */}
-          <div className="py-s-6 flex w-[220px] shrink-0 items-center justify-center">
+          <div className="py-s-6 flex w-[180px] shrink-0 items-center justify-center">
             <ProfileImageUpload
               value={member.profileImg ?? null}
               onChange={(objectKey) => imgMutation.mutate({ profileImg: objectKey })}
               domain="MEMBER"
               label=""
-              size={150}
+              size={120}
               disabled={imgMutation.isPending}
               imageClassName="rounded-[100px]"
               showButton={false}
