@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronLeft, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ErrorState } from '@/components/feedback/error-state';
@@ -19,9 +19,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { PasswordStrength } from '@/components/ui/password-strength';
 import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useChangePassword } from '@/domain/auth/hooks/useChangePassword';
 import { useLogout } from '@/domain/auth/hooks/useLogout';
+import { passwordChangeSchema, type PasswordChangeSchema } from '@/domain/auth/types/schema';
 import { ScheduleManagerModal } from '@/domain/member/components/ScheduleManagerModal.client';
 import { WeeklyTimetable } from '@/domain/member/components/WeeklyTimetable.client';
 import { useMe } from '@/domain/member/hooks/useMe';
@@ -41,7 +44,6 @@ import { useMyPerformances } from '@/domain/performance/hooks/useMyPerformances'
 import { useMyPractices } from '@/domain/practice/hooks/useMyPractices';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
-import { formatPhone } from '@/lib/phone';
 
 export function MeContent() {
   const router = useRouter();
@@ -57,6 +59,15 @@ export function MeContent() {
   const [isEditing, setEditing] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+
+  const editContainerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isEditing) return;
+    const id = requestAnimationFrame(() => {
+      (document.activeElement as HTMLElement)?.blur();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isEditing]);
 
   const updateAvailabilityMutation = useUpdateMyAvailability({
     onSuccess: () => {
@@ -105,7 +116,7 @@ export function MeContent() {
   }
 
   return (
-    <div className="space-y-s-6">
+    <div ref={editContainerRef} tabIndex={-1} className="space-y-s-6 outline-none">
       {/* 프로필 정보 섹션 */}
       <section>
         <div className="mb-s-3 relative flex min-h-8 items-center">
@@ -147,7 +158,6 @@ export function MeContent() {
               <div className="space-y-1 pt-0.5">
                 <div className="text-foreground text-lg font-semibold">{me.name}</div>
                 <div className="text-foreground-sub text-sm">{me.email}</div>
-                {me.contact && <div className="text-foreground-muted text-xs">{me.contact}</div>}
               </div>
             </div>
           </Card>
@@ -164,13 +174,21 @@ export function MeContent() {
         />
       )}
 
+      {/* 비밀번호 변경 — 편집 모드에서만 표시 */}
+      {isEditing && (
+        <section className="mt-[60px]">
+          <h2 className="text-foreground mb-s-3 text-[16px] font-bold">비밀번호 변경</h2>
+          <PasswordChangeCard />
+        </section>
+      )}
+
       {/* 계정 탈퇴 — 편집 모드에서만 표시 */}
       {isEditing && (
         <section className="mt-[60px]">
           <h2 className="text-foreground mb-s-3 text-[16px] font-bold">계정 탈퇴</h2>
           <Card padding="lg" className="border-foreground-sub bg-bg">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-foreground-sub text-[12px]">
+              <p className="text-foreground-sub text-[14px]">
                 탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를
                 진행하시겠습니까?
               </p>
@@ -247,7 +265,7 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
   const toast = useToast();
   const form = useForm<UpdateMeSchema>({
     resolver: zodResolver(updateMeSchema),
-    defaultValues: { name: member.name, contact: member.contact },
+    defaultValues: { name: member.name },
   });
 
   const mutation = useUpdateMe({
@@ -273,13 +291,13 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
       <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>
         <div className="flex">
           {/* 좌측: 프로필 이미지 */}
-          <div className="py-s-6 flex w-[220px] shrink-0 items-center justify-center">
+          <div className="py-s-6 flex w-[180px] shrink-0 items-center justify-center">
             <ProfileImageUpload
               value={member.profileImg ?? null}
               onChange={(objectKey) => imgMutation.mutate({ profileImg: objectKey })}
               domain="MEMBER"
               label=""
-              size={150}
+              size={120}
               disabled={imgMutation.isPending}
               imageClassName="rounded-[100px]"
               showButton={false}
@@ -295,7 +313,7 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
               <span className="text-foreground-sub text-sm">이름</span>
               <Input
                 error={form.formState.errors.name?.message}
-                className="focus-visible:ring-white"
+                className={EDIT_INPUT_CLASS}
                 {...form.register('name')}
               />
             </div>
@@ -303,19 +321,7 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
               <span className="text-foreground-sub text-sm">이메일</span>
               <Input value={member.email} disabled readOnly className="focus-visible:ring-white" />
             </div>
-            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-              <span className="text-foreground-sub text-sm">연락처</span>
-              <Input
-                error={form.formState.errors.contact?.message}
-                className="focus-visible:ring-white"
-                {...form.register('contact')}
-                onChange={(e) => {
-                  const formatted = formatPhone(e.target.value);
-                  e.target.value = formatted;
-                  void form.register('contact').onChange(e);
-                }}
-              />
-            </div>
+
             <div className="flex justify-end">
               <Button
                 type="submit"
@@ -327,6 +333,99 @@ function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: ()
                 수정 완료
               </Button>
             </div>
+          </div>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+const EDIT_INPUT_CLASS =
+  'rounded-[5px] border-white/20 hover:border-white/35 focus-visible:ring-0 focus-visible:border-white/70';
+
+const PASSWORD_INPUT_CLASS =
+  'rounded-[5px] border-white/20 hover:border-white/35 focus-visible:ring-0 focus-visible:border-white/70 not-placeholder-shown:border-white/70';
+
+function PasswordChangeCard() {
+  const toast = useToast();
+  const form = useForm<PasswordChangeSchema>({
+    resolver: zodResolver(passwordChangeSchema),
+    mode: 'onChange',
+    defaultValues: { originalPassword: '', newPassword: '', confirmPassword: '' },
+  });
+
+  const mutation = useChangePassword({
+    onSuccess: () => {
+      toast.success('비밀번호가 변경되었습니다.');
+      form.reset();
+    },
+    onError: (err) => toast.error(err.message || '비밀번호 변경에 실패했습니다.'),
+  });
+
+  return (
+    <Card padding="none" className="overflow-visible rounded-md border-[3px]">
+      <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>
+        <div className="gap-s-4 p-s-6 flex flex-col">
+          <div className="flex items-start gap-6">
+            <span className="text-foreground-sub w-36 shrink-0 pt-2.5 text-sm whitespace-nowrap">
+              현재 비밀번호
+            </span>
+            <div className="min-w-0 flex-1">
+              <Input
+                type="password"
+                placeholder="현재 비밀번호 입력"
+                error={form.formState.errors.originalPassword?.message}
+                className={PASSWORD_INPUT_CLASS}
+                {...form.register('originalPassword')}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-start gap-6">
+              <span className="text-foreground-sub w-36 shrink-0 pt-2.5 text-sm whitespace-nowrap">
+                새 비밀번호
+              </span>
+              <div className="min-w-0 flex-1">
+                <Input
+                  type="password"
+                  placeholder="새 비밀번호 입력"
+                  error={form.formState.errors.newPassword?.message}
+                  className={PASSWORD_INPUT_CLASS}
+                  {...form.register('newPassword')}
+                />
+              </div>
+            </div>
+            {form.watch('newPassword') && (
+              <div className="flex items-start gap-6">
+                <span className="w-36 shrink-0" aria-hidden="true" />
+                <PasswordStrength password={form.watch('newPassword')} className="flex-1" />
+              </div>
+            )}
+          </div>
+          <div className="flex items-start gap-6">
+            <span className="text-foreground-sub w-36 shrink-0 pt-2.5 text-sm whitespace-nowrap">
+              새 비밀번호 확인
+            </span>
+            <div className="min-w-0 flex-1">
+              <Input
+                type="password"
+                placeholder="새 비밀번호 재입력"
+                error={form.formState.errors.confirmPassword?.message}
+                className={PASSWORD_INPUT_CLASS}
+                {...form.register('confirmPassword')}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              variant="secondary"
+              size="sm"
+              loading={mutation.isPending}
+              className="rounded-[5px]"
+            >
+              변경하기
+            </Button>
           </div>
         </div>
       </form>
