@@ -29,6 +29,7 @@ import { useBandApplications } from '@/domain/band/hooks/useBandApplications';
 import { useBandDetail } from '@/domain/band/hooks/useBandDetail';
 import { useBandMembers } from '@/domain/band/hooks/useBandMembers';
 import { useDeleteBand } from '@/domain/band/hooks/useDeleteBand';
+import { useDeleteBandProfileImage } from '@/domain/band/hooks/useDeleteBandProfileImage';
 import { useLeaveBand } from '@/domain/band/hooks/useLeaveBand';
 import { useUpdateBand } from '@/domain/band/hooks/useUpdateBand';
 import { hasRole } from '@/global/auth/RoleGuard';
@@ -98,6 +99,8 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
           {!isMember && (
             <Button
               size="sm"
+              variant="secondary"
+              className="rounded-[5px] border-white text-white hover:border-transparent hover:bg-white hover:text-neutral-900 active:border-transparent active:bg-neutral-200 active:text-neutral-900"
               onClick={() => applyMutation.mutate()}
               loading={applyMutation.isPending}
             >
@@ -109,7 +112,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
             <Button
               size="sm"
               variant="secondary"
-              className="text-danger"
+              className="rounded-[5px] border-white text-white hover:border-transparent hover:bg-white hover:text-neutral-900 active:border-transparent active:bg-neutral-200 active:text-neutral-900"
               onClick={() => setLeaveOpen(true)}
             >
               <LogOut className="h-4 w-4" />
@@ -123,10 +126,34 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
         {/* Tab bar — 48px height, 32px horizontal padding */}
         <div className="px-s-5 lg:px-8">
           <TabsList aria-label="밴드 상세 탭">
-            <TabsTrigger value="info">정보</TabsTrigger>
-            <TabsTrigger value="members">멤버</TabsTrigger>
-            {isLeader && <TabsTrigger value="applications">신청 현황</TabsTrigger>}
-            {isLeader && <TabsTrigger value="settings">설정</TabsTrigger>}
+            <TabsTrigger
+              value="info"
+              className="data-[state=active]:text-foreground data-[state=active]:border-foreground"
+            >
+              정보
+            </TabsTrigger>
+            <TabsTrigger
+              value="members"
+              className="data-[state=active]:text-foreground data-[state=active]:border-foreground"
+            >
+              멤버
+            </TabsTrigger>
+            {isLeader && (
+              <TabsTrigger
+                value="applications"
+                className="data-[state=active]:text-foreground data-[state=active]:border-foreground"
+              >
+                신청 현황
+              </TabsTrigger>
+            )}
+            {isLeader && (
+              <TabsTrigger
+                value="settings"
+                className="data-[state=active]:text-foreground data-[state=active]:border-foreground"
+              >
+                설정
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -165,23 +192,30 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
 
       <Dialog open={leaveOpen} onOpenChange={setLeaveOpen}>
         <DialogContent>
-          <DialogHeader>
+          <DialogHeader className="border-b-0 pb-2">
             <DialogTitle>밴드에서 탈퇴하시겠어요?</DialogTitle>
             <DialogDescription>
               탈퇴 후에는 밴드의 합주 · 공연 · 신청 이력에 접근할 수 없습니다.
             </DialogDescription>
           </DialogHeader>
+          <div className="border-border mx-5 border-b" />
           <DialogBody>
             <p className="text-foreground-sub text-sm">
-              LEADER 인 경우 먼저 리더 권한을 다른 멤버에게 위임해야 할 수 있습니다.
+              <span className="text-nav-active font-bold">밴드 리더</span> 인 경우 먼저 리더 권한을
+              다른 멤버에게 위임해야 합니다.
             </p>
           </DialogBody>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setLeaveOpen(false)}>
+          <DialogFooter className="border-t-0">
+            <Button
+              variant="ghost"
+              className="h-8 rounded-[5px]"
+              onClick={() => setLeaveOpen(false)}
+            >
               취소
             </Button>
             <Button
               variant="danger"
+              className="h-8 rounded-[5px] px-2"
               loading={leaveMutation.isPending}
               onClick={() => leaveMutation.mutate()}
             >
@@ -227,7 +261,6 @@ function InfoTab({
       </div>
 
       <div className="space-y-s-2 max-w-[720px]">
-        <h2 className="text-foreground text-title font-extrabold">{bandName}</h2>
         <p className="text-foreground-sub text-body leading-relaxed">
           {description ?? '소개가 등록되지 않았습니다.'}
         </p>
@@ -275,7 +308,7 @@ function MembersTab({ bandId }: { bandId: string }) {
 const STATUS_FILTERS: { value: ApplicationStatus; label: string }[] = [
   { value: 'PENDING', label: '대기중' },
   { value: 'APPROVED', label: '승인됨' },
-  { value: 'REJECTED', label: '거부됨' },
+  { value: 'REJECTED', label: '거절됨' },
 ];
 
 function ApplicationsTab({ bandId }: { bandId: string }) {
@@ -295,6 +328,7 @@ function ApplicationsTab({ bandId }: { bandId: string }) {
             interactive
             selected={status === f.value}
             onClick={() => setStatus(f.value)}
+            className={status === f.value ? 'bg-foreground text-bg border-foreground ring-0' : ''}
           >
             {f.label}
           </Chip>
@@ -305,11 +339,18 @@ function ApplicationsTab({ bandId }: { bandId: string }) {
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
       ) : apps.length === 0 ? (
-        <EmptyState title={`${currentLabel} 상태 신청이 없습니다`} />
+        <p className="text-foreground-muted py-s-6 text-center text-sm">
+          {currentLabel} 상태 신청이 없습니다
+        </p>
       ) : (
         <div className="space-y-s-2">
           {apps.map((a) => (
-            <BandApplicationRow key={a.bandApplicationId} bandId={bandId} application={a} />
+            <BandApplicationRow
+              key={a.bandApplicationId}
+              bandId={bandId}
+              application={a}
+              onDecide={() => setStatus('PENDING')}
+            />
           ))}
           {hasNextPage && (
             <div className="flex justify-center">
@@ -352,6 +393,11 @@ function SettingsTab({
     onError: (err) => toast.error(err.message || '저장에 실패했습니다.'),
   });
 
+  const deleteImageMutation = useDeleteBandProfileImage(bandId, {
+    onSuccess: () => toast.success('이미지를 삭제했습니다.'),
+    onError: (err) => toast.error(err.message || '이미지 삭제에 실패했습니다.'),
+  });
+
   const deleteMutation = useDeleteBand(bandId, {
     onSuccess: () => {
       toast.success('밴드를 삭제했습니다.');
@@ -361,16 +407,25 @@ function SettingsTab({
   });
 
   return (
-    <div className="space-y-s-4 max-w-lg">
+    <div className="space-y-s-4 mx-auto w-full max-w-lg">
       <Tabs value={tab} onValueChange={(v) => setTab(v as 'info' | 'image' | 'delete')}>
         <TabsList className="mb-s-4 w-full">
-          <TabsTrigger value="info" className="flex-1">
+          <TabsTrigger
+            value="info"
+            className="flex-1 transition-all active:scale-95 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+          >
             정보
           </TabsTrigger>
-          <TabsTrigger value="image" className="flex-1">
-            사진
+          <TabsTrigger
+            value="image"
+            className="flex-1 transition-all active:scale-95 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+          >
+            이미지
           </TabsTrigger>
-          <TabsTrigger value="delete" className="flex-1">
+          <TabsTrigger
+            value="delete"
+            className="flex-1 transition-all active:scale-95 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+          >
             삭제
           </TabsTrigger>
         </TabsList>
@@ -380,48 +435,74 @@ function SettingsTab({
             label="밴드 이름"
             required
             value={name}
+            placeholder="밴드 이름을 입력하세요"
+            hint={<span className="block text-right">{name.length}/50자</span>}
             onChange={(e) => setName(e.target.value)}
+            className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
           />
-          <Textarea label="소개 (선택)" value={desc} onChange={(e) => setDesc(e.target.value)} />
-          <Button
-            onClick={() =>
-              updateMutation.mutate({ name: name.trim(), description: desc.trim() || undefined })
-            }
-            loading={updateMutation.isPending}
-          >
-            저장
-          </Button>
+          <Textarea
+            label="소개"
+            required
+            value={desc}
+            placeholder="밴드 소개글을 입력하세요"
+            hint={<span className="block text-right">{desc.length}/200자</span>}
+            onChange={(e) => setDesc(e.target.value)}
+            className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
+          />
+          <div className="flex justify-end">
+            <Button
+              variant="secondary"
+              className="h-8 rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:border-neutral-100 hover:bg-neutral-100 active:border-neutral-200 active:bg-neutral-200"
+              disabled={!name.trim() || !desc.trim()}
+              onClick={() =>
+                updateMutation.mutate({ name: name.trim(), description: desc.trim() || undefined })
+              }
+              loading={updateMutation.isPending}
+            >
+              저장
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="image" className="mt-0">
           <ProfileImageUpload
             value={profileImg ?? null}
             onChange={(objectKey) => updateMutation.mutate({ profileImg: objectKey })}
+            onDelete={() => deleteImageMutation.mutate()}
             domain="BAND"
             bandId={bandId}
-            hint="JPEG / PNG / WEBP, 5MB 이하. 리더만 변경할 수 있습니다."
+            label=""
+            imageClassName="w-full h-[220px] rounded-2xl"
+            showButton={false}
+            hint="JPEG / PNG / WEBP, 5MB 이하"
             disabled={updateMutation.isPending}
           />
         </TabsContent>
 
         <TabsContent value="delete" className="space-y-s-3 mt-0">
-          <p className="text-foreground-sub text-sm">
+          <p className="text-foreground-sub text-xs">
             밴드를 삭제하면 모든 멤버·합주·공연 연결이 함께 제거되며 복구할 수 없습니다.
           </p>
-          <Input
-            label={`밴드 이름(${bandName})을 그대로 입력해 주세요`}
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            placeholder={bandName}
-          />
-          <Button
-            variant="danger"
-            onClick={() => deleteMutation.mutate()}
-            disabled={confirmText !== bandName}
-            loading={deleteMutation.isPending}
-          >
-            삭제
-          </Button>
+          <div className="mt-s-5">
+            <Input
+              label={`밴드 이름(${bandName})을 그대로 입력해 주세요`}
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={bandName}
+              className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="danger"
+              className="h-8 rounded-[5px] px-3"
+              onClick={() => deleteMutation.mutate()}
+              disabled={confirmText !== bandName}
+              loading={deleteMutation.isPending}
+            >
+              삭제
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

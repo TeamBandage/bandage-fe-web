@@ -27,7 +27,7 @@ interface Props {
   hint?: string;
   /** 외부에서 disable. 업로드 중 자체 disable 은 별개. */
   disabled?: boolean;
-  /** 미리보기 이미지 크기. default 96px. */
+  /** 미리보기 이미지 크기(px). 미지정 시 imageClassName 의 크기를 따름. */
   size?: number;
   /** 이미지 버튼에 추가할 className (rounded-full 등 오버라이드용). */
   imageClassName?: string;
@@ -52,7 +52,7 @@ export function ProfileImageUpload({
   label = '프로필 이미지',
   hint,
   disabled,
-  size = 96,
+  size,
   imageClassName,
   showButton = true,
   onDelete,
@@ -135,8 +135,8 @@ export function ProfileImageUpload({
           {label}
         </label>
       )}
-      <div className="flex items-center gap-3">
-        <div ref={containerRef} className="relative">
+      <div className={cn('flex items-center gap-3', !showButton && 'w-full')}>
+        <div ref={containerRef} className={cn('relative', !showButton && 'w-full')}>
           <button
             type="button"
             id={id}
@@ -148,7 +148,7 @@ export function ProfileImageUpload({
               isDisabled ? 'cursor-not-allowed opacity-50' : 'group cursor-pointer',
               imageClassName,
             )}
-            style={{ width: size, height: size }}
+            style={size ? { width: size, height: size } : undefined}
           >
             {display ? (
               // eslint-disable-next-line @next/next/no-img-element -- CloudFront/Blob/외부 OAuth provider URL 모두 허용
@@ -186,7 +186,7 @@ export function ProfileImageUpload({
 
           {/* 변경/삭제 토글 메뉴 */}
           {menuOpen && (
-            <div className="bg-card border-border absolute top-full left-1/2 z-20 mt-2 min-w-30 -translate-x-1/2 overflow-hidden rounded-md border shadow-md">
+            <div className="bg-card border-border absolute top-full left-1/2 z-20 mt-2 w-[110px] -translate-x-1/2 overflow-hidden rounded-md border shadow-md">
               {display ? (
                 <>
                   <button
@@ -194,7 +194,7 @@ export function ProfileImageUpload({
                     onClick={handleMenuChange}
                     className="text-foreground hover:bg-card-hover w-full px-4 py-2.5 text-center text-sm transition-colors"
                   >
-                    이미지 변경
+                    이미지 교체
                   </button>
                   <button
                     type="button"

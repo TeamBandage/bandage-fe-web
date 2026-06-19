@@ -116,6 +116,7 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
                 onChange={handleImageUploaded}
                 domain="BAND"
                 bandId={band.bandId}
+                size={96}
                 hint="JPEG / PNG / WEBP, 5MB 이하. 리더만 변경할 수 있습니다."
                 disabled={updateMutation.isPending}
               />

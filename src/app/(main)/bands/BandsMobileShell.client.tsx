@@ -221,13 +221,13 @@ export function BandsMobileShell() {
             <Content
               className={cn(
                 'bg-card text-foreground border-border',
-                'fixed inset-y-0 right-0 z-50 flex w-105 flex-col border-l shadow-lg outline-none',
+                'fixed inset-y-0 right-0 z-50 flex w-140 flex-col border-l shadow-lg outline-none',
                 'animate-[slide-in-right_var(--duration-normal)_var(--ease-default)]',
                 'data-[state=closed]:animate-[slide-out-right_var(--duration-normal)_var(--ease-default)]',
               )}
             >
               <Title className="sr-only">밴드 상세</Title>
-              <div className="flex shrink-0 items-center justify-end px-4 py-3">
+              <div className="flex shrink-0 items-center justify-end px-4 py-5">
                 <Close
                   aria-label="닫기"
                   className="text-foreground-sub hover:text-foreground focus-visible:ring-accent focus-visible:ring-offset-bg rounded-sm p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -246,7 +246,7 @@ export function BandsMobileShell() {
           open={!!selectedBandId}
           onOpenChange={(open) => !open && setSelectedBandId(null)}
         >
-          <BottomSheetContent>
+          <BottomSheetContent className="h-dvh">
             <BottomSheetTitle className="sr-only">밴드 상세</BottomSheetTitle>
             <div className="flex-1 overflow-y-auto">
               {selectedBandId && <BandDetailContent bandId={selectedBandId} />}

@@ -612,7 +612,9 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                 className="placeholder:text-foreground-muted focus-visible:border-foreground-muted h-40 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 maxLength={500}
               />
-              <p className="text-foreground-muted mt-1 text-right text-[12px]">(500자 이내)</p>
+              <p className="text-foreground-muted mt-1 text-right text-[12px]">
+                {note.length}/500자
+              </p>
               <div className="mt-3 flex justify-between">
                 <Button
                   variant="ghost"

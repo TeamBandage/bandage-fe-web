@@ -46,6 +46,7 @@ export function BandCreateForm() {
       />
       <Textarea
         label="소개"
+        required
         placeholder="밴드 소개를 입력하세요 (최대 200자)"
         error={form.formState.errors.description?.message}
         {...form.register('description')}
