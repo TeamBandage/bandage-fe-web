@@ -54,7 +54,7 @@ const mainNav: NavItem[] = [
     label: '공연',
     icon: CalendarDays,
     subs: [
-      { href: ROUTES.PERFORMANCES, label: '나의 공연' },
+      { href: ROUTES.PERFORMANCES, label: '공연 목록' },
       { href: ROUTES.PERFORMANCE_NEW, label: '공연 생성' },
     ],
   },
@@ -63,7 +63,7 @@ const mainNav: NavItem[] = [
     label: '선곡 회의',
     icon: ListMusic,
     subs: [
-      { href: `${ROUTES.SETLIST_MEETINGS}?listOpen=1`, label: '나의 선곡 회의' },
+      { href: `${ROUTES.SETLIST_MEETINGS}?listOpen=1`, label: '선곡 회의 목록' },
       { href: ROUTES.SETLIST_MEETING_NEW, label: '선곡 회의 생성' },
       { href: ROUTES.SETLIST_SCHEDULING, label: '합주 일정 조율' },
     ],
