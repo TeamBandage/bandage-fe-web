@@ -25,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false
 
       - name: Configure AWS Credentials
         # ECR 한정 권한을 가진 IAM 사용자 키 — S3 / 기타 권한과 분리되어 있다.
