@@ -82,9 +82,9 @@ export function PracticesListPane() {
     >
       <div className="border-border px-s-3 py-s-3 flex items-center justify-between border-b">
         <h2 className="text-body font-bold">합주 탐색</h2>
-        <Button asChild size="sm" variant="accent-outline" aria-label="합주 시작하기">
+        <Button asChild size="sm" variant="accent-outline" aria-label="합주 생성">
           <Link href={ROUTES.PRACTICE_NEW}>
-            <Plus className="h-4 w-4" /> 합주 시작하기
+            <Plus className="h-4 w-4" /> 합주 생성
           </Link>
         </Button>
       </div>

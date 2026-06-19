@@ -54,7 +54,7 @@ export function BandCreateForm() {
         프로필 이미지는 밴드 생성 후 [밴드 설정 → 사진] 에서 업로드할 수 있습니다.
       </p>
       <Button type="submit" className="w-full" loading={mutation.isPending}>
-        밴드 만들기
+        밴드 생성
       </Button>
     </form>
   );

@@ -83,8 +83,8 @@ export function BandsMobileShell() {
         <h2 className="text-body font-bold">밴드 탐색</h2>
         <BandCreateModal
           trigger={
-            <Button size="sm" variant="accent-outline" aria-label="새 밴드 만들기">
-              <Plus className="h-4 w-4" /> 밴드 만들기
+            <Button size="sm" variant="accent-outline" aria-label="밴드 생성">
+              <Plus className="h-4 w-4" /> 밴드 생성
             </Button>
           }
         />

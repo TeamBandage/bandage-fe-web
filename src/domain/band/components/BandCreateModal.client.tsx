@@ -55,7 +55,7 @@ export function BandCreateModal({ trigger }: { trigger: ReactNode }) {
       <ResponsiveSheetTrigger asChild>{trigger}</ResponsiveSheetTrigger>
       <ResponsiveSheetContent>
         <ResponsiveSheetHeader>
-          <ResponsiveSheetTitle>새 밴드 만들기</ResponsiveSheetTitle>
+          <ResponsiveSheetTitle>밴드 생성</ResponsiveSheetTitle>
         </ResponsiveSheetHeader>
         <ResponsiveSheetBody>
           <form
@@ -89,7 +89,7 @@ export function BandCreateModal({ trigger }: { trigger: ReactNode }) {
             </Button>
           </ResponsiveSheetClose>
           <Button type="submit" form="band-create-form" loading={mutation.isPending}>
-            밴드 만들기
+            밴드 생성
           </Button>
         </ResponsiveSheetFooter>
       </ResponsiveSheetContent>
