@@ -1,6 +1,6 @@
 'use client';
 
-import { Camera, LogOut, Settings, UserPlus } from 'lucide-react';
+import { Camera, LogOut, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -19,14 +19,18 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
+import { Textarea } from '@/components/ui/textarea';
 import { BandApplicationRow } from '@/domain/band/components/BandApplicationRow';
 import { BandMemberRow } from '@/domain/band/components/BandMemberRow';
-import { BandSettingsModal } from '@/domain/band/components/BandSettingsModal.client';
 import { useApplyBand } from '@/domain/band/hooks/useApplyBand';
 import { useBandApplications } from '@/domain/band/hooks/useBandApplications';
 import { useBandDetail } from '@/domain/band/hooks/useBandDetail';
 import { useBandMembers } from '@/domain/band/hooks/useBandMembers';
+import { useDeleteBand } from '@/domain/band/hooks/useDeleteBand';
 import { useLeaveBand } from '@/domain/band/hooks/useLeaveBand';
+import { useUpdateBand } from '@/domain/band/hooks/useUpdateBand';
 import { hasRole } from '@/global/auth/RoleGuard';
 import { useBandRole } from '@/global/auth/useBandRole';
 import { ROUTES } from '@/global/config/routes';
@@ -40,7 +44,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
   const router = useRouter();
   const toast = useToast();
   const [leaveOpen, setLeaveOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('info');
 
   const { data: band, isLoading, isError, refetch } = useBandDetail(bandId);
   const { data: myRole } = useBandRole(bandId);
@@ -82,11 +86,10 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
     <div data-slot="band-detail">
       {/* TopBar — 72px height, 32px horizontal padding, bottom 1px border */}
       <header
-        className="border-border px-s-5 flex h-[72px] items-center justify-between gap-3 border-b lg:px-8"
+        className="px-s-5 flex h-[72px] items-center justify-between gap-3 lg:px-8"
         data-slot="band-detail-topbar"
       >
         <div className="min-w-0">
-          <p className="text-foreground-muted text-caption">밴드 탐색</p>
           <h1 className="text-foreground truncate text-[22px] leading-snug font-bold">
             {band.bandName}
           </h1>
@@ -113,22 +116,17 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
               밴드 탈퇴
             </Button>
           )}
-          {isLeader && (
-            <Button size="sm" variant="secondary" onClick={() => setSettingsOpen(true)}>
-              <Settings className="h-4 w-4" />
-              밴드 설정
-            </Button>
-          )}
         </div>
       </header>
 
-      <Tabs defaultValue="info" variant="underline">
+      <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">
         {/* Tab bar — 48px height, 32px horizontal padding */}
         <div className="px-s-5 lg:px-8">
           <TabsList aria-label="밴드 상세 탭">
             <TabsTrigger value="info">정보</TabsTrigger>
             <TabsTrigger value="members">멤버</TabsTrigger>
             {isLeader && <TabsTrigger value="applications">신청 현황</TabsTrigger>}
+            {isLeader && <TabsTrigger value="settings">설정</TabsTrigger>}
           </TabsList>
         </div>
 
@@ -152,19 +150,18 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
               <ApplicationsTab bandId={bandId} />
             </TabsContent>
           )}
+          {isLeader && (
+            <TabsContent value="settings" className="mt-0">
+              <SettingsTab
+                bandId={band.bandId}
+                bandName={band.bandName}
+                description={band.description}
+                profileImg={band.profileImg}
+              />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
-
-      <BandSettingsModal
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        band={{
-          bandId: band.bandId,
-          bandName: band.bandName,
-          description: band.description,
-          profileImg: band.profileImg,
-        }}
-      />
 
       <Dialog open={leaveOpen} onOpenChange={setLeaveOpen}>
         <DialogContent>
@@ -328,6 +325,105 @@ function ApplicationsTab({ bandId }: { bandId: string }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function SettingsTab({
+  bandId,
+  bandName,
+  description,
+  profileImg,
+}: {
+  bandId: string;
+  bandName: string;
+  description?: string;
+  profileImg?: string;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const [tab, setTab] = useState<'info' | 'image' | 'delete'>('info');
+  const [name, setName] = useState(bandName);
+  const [desc, setDesc] = useState(description ?? '');
+  const [confirmText, setConfirmText] = useState('');
+
+  const updateMutation = useUpdateBand(bandId, {
+    onSuccess: () => toast.success('밴드 정보를 저장했습니다.'),
+    onError: (err) => toast.error(err.message || '저장에 실패했습니다.'),
+  });
+
+  const deleteMutation = useDeleteBand(bandId, {
+    onSuccess: () => {
+      toast.success('밴드를 삭제했습니다.');
+      router.replace(ROUTES.BANDS);
+    },
+    onError: (err) => toast.error(err.message || '삭제에 실패했습니다.'),
+  });
+
+  return (
+    <div className="space-y-s-4 max-w-lg">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as 'info' | 'image' | 'delete')}>
+        <TabsList className="mb-s-4 w-full">
+          <TabsTrigger value="info" className="flex-1">
+            정보
+          </TabsTrigger>
+          <TabsTrigger value="image" className="flex-1">
+            사진
+          </TabsTrigger>
+          <TabsTrigger value="delete" className="flex-1">
+            삭제
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="info" className="space-y-s-3 mt-0">
+          <Input
+            label="밴드 이름"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Textarea label="소개 (선택)" value={desc} onChange={(e) => setDesc(e.target.value)} />
+          <Button
+            onClick={() =>
+              updateMutation.mutate({ name: name.trim(), description: desc.trim() || undefined })
+            }
+            loading={updateMutation.isPending}
+          >
+            저장
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="image" className="mt-0">
+          <ProfileImageUpload
+            value={profileImg ?? null}
+            onChange={(objectKey) => updateMutation.mutate({ profileImg: objectKey })}
+            domain="BAND"
+            bandId={bandId}
+            hint="JPEG / PNG / WEBP, 5MB 이하. 리더만 변경할 수 있습니다."
+            disabled={updateMutation.isPending}
+          />
+        </TabsContent>
+
+        <TabsContent value="delete" className="space-y-s-3 mt-0">
+          <p className="text-foreground-sub text-sm">
+            밴드를 삭제하면 모든 멤버·합주·공연 연결이 함께 제거되며 복구할 수 없습니다.
+          </p>
+          <Input
+            label={`밴드 이름(${bandName})을 그대로 입력해 주세요`}
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder={bandName}
+          />
+          <Button
+            variant="danger"
+            onClick={() => deleteMutation.mutate()}
+            disabled={confirmText !== bandName}
+            loading={deleteMutation.isPending}
+          >
+            삭제
+          </Button>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
