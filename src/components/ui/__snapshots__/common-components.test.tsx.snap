@@ -48,7 +48,7 @@ exports[`공용 컴포넌트 신규 / 보정 > EmptyPane 1`] = `
 exports[`공용 컴포넌트 신규 / 보정 > RoleBadge(LEADER) 1`] = `
 <DocumentFragment>
   <span
-    class="rounded-pill inline-flex items-center border px-2 py-0.5 font-semibold bg-amber-dim text-amber border-transparent"
+    class="rounded-pill text-micro inline-flex items-center border px-2 py-0.5 font-semibold bg-amber-dim text-amber border-transparent"
     data-role="LEADER"
     data-slot="role-badge"
   >

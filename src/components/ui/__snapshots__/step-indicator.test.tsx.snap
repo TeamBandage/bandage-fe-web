@@ -16,12 +16,12 @@ exports[`StepIndicator > current=0: 첫 단계 active, 두번째 pending 1`] = `
       >
         <span
           aria-label="1단계 (진행 중)"
-          class="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200 bg-accent border-accent text-foreground"
+          class="text-caption flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200 bg-accent border-accent text-foreground"
         >
           1
         </span>
         <span
-          class="whitespace-nowrap text-foreground font-semibold"
+          class="text-caption whitespace-nowrap text-foreground font-semibold"
         >
           기본 정보
         </span>
@@ -39,12 +39,12 @@ exports[`StepIndicator > current=0: 첫 단계 active, 두번째 pending 1`] = `
       >
         <span
           aria-label="2단계"
-          class="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200 bg-card border-border text-foreground-muted"
+          class="text-caption flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200 bg-card border-border text-foreground-muted"
         >
           2
         </span>
         <span
-          class="whitespace-nowrap text-foreground-muted"
+          class="text-caption whitespace-nowrap text-foreground-muted"
         >
           계정 설정
         </span>
@@ -69,7 +69,7 @@ exports[`StepIndicator > current=1: 첫 단계 done(체크), 두번째 active 1`
       >
         <span
           aria-label="1단계 (완료)"
-          class="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200 bg-accent-dim border-accent text-accent"
+          class="text-caption flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200 bg-accent-dim border-accent text-accent"
         >
           <svg
             aria-hidden="true"
@@ -90,7 +90,7 @@ exports[`StepIndicator > current=1: 첫 단계 done(체크), 두번째 active 1`
           </svg>
         </span>
         <span
-          class="whitespace-nowrap text-foreground-muted"
+          class="text-caption whitespace-nowrap text-foreground-muted"
         >
           기본 정보
         </span>
@@ -109,12 +109,12 @@ exports[`StepIndicator > current=1: 첫 단계 done(체크), 두번째 active 1`
       >
         <span
           aria-label="2단계 (진행 중)"
-          class="flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200 bg-accent border-accent text-foreground"
+          class="text-caption flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200 bg-accent border-accent text-foreground"
         >
           2
         </span>
         <span
-          class="whitespace-nowrap text-foreground font-semibold"
+          class="text-caption whitespace-nowrap text-foreground font-semibold"
         >
           계정 설정
         </span>
