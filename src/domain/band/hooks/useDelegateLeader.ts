@@ -18,6 +18,8 @@ export function useDelegateLeader(bandId: string, options?: UseDelegateLeaderOpt
     onSuccess: (_, bandMemberId) => {
       queryClient.invalidateQueries({ queryKey: [...queryKeys.band.members(bandId)] });
       queryClient.invalidateQueries({ queryKey: [...queryKeys.band.detail(bandId)] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.band.my() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.band.list() });
       options?.onSuccess?.(bandMemberId);
     },
     onError: options?.onError,

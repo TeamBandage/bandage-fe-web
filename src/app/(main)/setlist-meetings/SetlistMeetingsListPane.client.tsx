@@ -122,8 +122,8 @@ export function SetlistMeetingsListPane({
         <div className="gap-s-1 flex items-center">
           <MeetingCreateModal
             trigger={
-              <Button size="sm" variant="accent-outline" aria-label="새 선곡 회의 만들기">
-                <Plus className="h-4 w-4" /> 회의 만들기
+              <Button size="sm" variant="accent-outline" aria-label="선곡 회의 생성">
+                <Plus className="h-4 w-4" /> 선곡 회의 생성
               </Button>
             }
           />

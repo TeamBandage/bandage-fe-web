@@ -14,6 +14,10 @@ const roleVariant: Record<BandRole, BadgeVariant> = {
   MEMBER: 'default',
 };
 
-export function BandRoleBadge({ role }: { role: BandRole }) {
-  return <Badge variant={roleVariant[role]}>{roleLabel[role]}</Badge>;
+export function BandRoleBadge({ role, className }: { role: BandRole; className?: string }) {
+  return (
+    <Badge variant={roleVariant[role]} className={className}>
+      {roleLabel[role]}
+    </Badge>
+  );
 }

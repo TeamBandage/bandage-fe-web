@@ -46,7 +46,7 @@ const mainNav: NavItem[] = [
     icon: Music,
     subs: [
       { href: ROUTES.PRACTICES, label: '나의 합주' },
-      { href: ROUTES.PRACTICE_NEW, label: '합주 시작하기' },
+      { href: ROUTES.PRACTICE_NEW, label: '합주 생성' },
     ],
   },
   {
@@ -64,7 +64,7 @@ const mainNav: NavItem[] = [
     icon: ListMusic,
     subs: [
       { href: `${ROUTES.SETLIST_MEETINGS}?listOpen=1`, label: '나의 선곡 회의' },
-      { href: ROUTES.SETLIST_MEETING_NEW, label: '회의 만들기' },
+      { href: ROUTES.SETLIST_MEETING_NEW, label: '선곡 회의 생성' },
       { href: ROUTES.SETLIST_SCHEDULING, label: '합주 일정 조율' },
     ],
   },

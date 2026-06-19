@@ -49,7 +49,7 @@ export function BandsList() {
           icon={Users}
           title="아직 밴드가 없습니다"
           description="첫 번째 밴드를 만들어 보세요."
-          action={{ label: '밴드 만들기', onClick: () => undefined }}
+          action={{ label: '밴드 생성', onClick: () => undefined }}
         />
       ) : (
         <>
@@ -65,7 +65,7 @@ export function BandsList() {
 
       <Link
         href={ROUTES.BAND_NEW}
-        aria-label="밴드 만들기"
+        aria-label="밴드 생성"
         className="bg-accent text-foreground hover:bg-accent-hi focus-visible:ring-accent focus-visible:ring-offset-bg rounded-pill fixed right-4 bottom-20 z-10 flex h-14 w-14 items-center justify-center shadow-lg transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       >
         <Plus className="h-6 w-6" />

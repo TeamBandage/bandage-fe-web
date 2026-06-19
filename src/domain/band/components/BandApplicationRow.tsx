@@ -12,6 +12,7 @@ import type { BandApplicationInfoResponse } from '../types';
 type Props = {
   bandId: string;
   application: BandApplicationInfoResponse;
+  onDecide?: () => void;
 };
 
 const STATUS_LABEL: Record<BandApplicationInfoResponse['status'], string> = {
@@ -22,11 +23,13 @@ const STATUS_LABEL: Record<BandApplicationInfoResponse['status'], string> = {
   LEAVED: '탈퇴',
 };
 
-export function BandApplicationRow({ bandId, application }: Props) {
+export function BandApplicationRow({ bandId, application, onDecide }: Props) {
   const toast = useToast();
   const mutation = useDecideApplication(bandId, {
-    onSuccess: (vars) =>
-      toast.success(vars.decision === 'APPROVED' ? '가입을 승인했습니다.' : '가입을 거절했습니다.'),
+    onSuccess: (vars) => {
+      toast.success(vars.decision === 'APPROVED' ? '가입을 승인했습니다.' : '가입을 거절했습니다.');
+      onDecide?.();
+    },
     onError: (err) => toast.error(err.message || '처리에 실패했습니다.'),
   });
 
@@ -44,14 +47,14 @@ export function BandApplicationRow({ bandId, application }: Props) {
       <Avatar size="lg" fallback={displayName} />
       <div className="min-w-0 flex-1">
         <p className="text-foreground truncate text-sm font-semibold">{displayName}</p>
-        <p className="text-foreground-muted text-caption mt-0.5">
-          {isPending ? '신청 대기 중' : STATUS_LABEL[application.status]}
-        </p>
+        {isPending && <p className="text-foreground-muted text-caption mt-0.5">신청 대기 중</p>}
       </div>
       {isPending ? (
         <div className="flex items-center gap-2">
           <Button
             size="sm"
+            variant="primary"
+            className="bg-blue hover:bg-blue/80 border-blue hover:border-blue/80 rounded-[5px]"
             onClick={() =>
               mutation.mutate({
                 applicationId: application.bandApplicationId,
@@ -65,6 +68,7 @@ export function BandApplicationRow({ bandId, application }: Props) {
           <Button
             size="sm"
             variant="danger"
+            className="rounded-[5px]"
             onClick={() =>
               mutation.mutate({
                 applicationId: application.bandApplicationId,
@@ -77,7 +81,7 @@ export function BandApplicationRow({ bandId, application }: Props) {
           </Button>
         </div>
       ) : (
-        <Badge variant={application.status === 'APPROVED' ? 'success' : 'danger'}>
+        <Badge variant={application.status === 'APPROVED' ? 'blue' : 'danger'}>
           {STATUS_LABEL[application.status]}
         </Badge>
       )}

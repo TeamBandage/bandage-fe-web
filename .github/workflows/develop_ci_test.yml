@@ -27,7 +27,7 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false
 
       - name: Setup pnpm
         # 버전은 package.json 의 "packageManager" 필드(해시 pin) 를 단일 소스로 사용.

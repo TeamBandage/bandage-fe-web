@@ -5522,7 +5522,7 @@
   "BD-64-create-performance-ui": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "공연 생성 위저드 Step2 셋리스트 피커 교체",
         "description": "PerformanceCreateWizard의 Step2 '참여 밴드'를 '셋리스트' 단계로 교체. SetlistPickerModal 신규 구현, CreatePerformanceRequest에 setlistMeetingIds 필드 추가, 위저드 submit 로직 업데이트.",
         "details": "",
@@ -5593,6 +5593,34 @@
       "completedCount": 1,
       "tags": [
         "BD-64-create-performance-ui"
+      ],
+      "created": "2026-06-12T17:21:53.211Z",
+      "description": "Tasks for BD-64-create-performance-ui context",
+      "updated": "2026-06-12T17:21:53.211Z"
+    }
+  },
+  "BD-92-band-detail-ui": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "밴드 목록 풀스크린 + 상세 카드/바텀시트 전환",
+        "description": "1. 모바일: BandsListPane 탭 목록을 풀스크린으로 노출 (BandsMobileShell). 밴드 클릭 시 바텀시트로 BandDetailContent 표시.\n2. 데스크탑: 기존 좌측 BandsListPane + 우측 BandDetailContent 카드 유지.\n3. BandsListPane 탐색탭: 기본 useBandList(전체), 검색어 입력 시 useBandSearch(API 검색)로 전환.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2026-06-12T17:32:03.858Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-06-12T17:32:03.858Z",
+      "taskCount": 1,
+      "completedCount": 1,
+      "tags": [
+        "BD-92-band-detail-ui"
       ]
     }
   }
