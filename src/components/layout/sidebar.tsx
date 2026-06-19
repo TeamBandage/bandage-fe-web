@@ -41,12 +41,12 @@ const mainNav: NavItem[] = [
   { href: ROUTES.HOME, label: '홈', icon: Home },
   { href: ROUTES.BANDS, label: '밴드', icon: Users },
   {
-    href: ROUTES.PRACTICES,
+    href: ROUTES.JAMS,
     label: '합주',
     icon: Music,
     subs: [
-      { href: ROUTES.PRACTICES, label: '나의 합주' },
-      { href: ROUTES.PRACTICE_NEW, label: '합주 생성' },
+      { href: ROUTES.JAMS, label: '합주 목록' },
+      { href: ROUTES.JAM_NEW, label: '합주 생성' },
     ],
   },
   {
@@ -78,7 +78,7 @@ function isActive(pathname: string, href: string) {
 
 function isSubActive(pathname: string, href: string) {
   const hrefPath = href.split('?')[0];
-  if (hrefPath === ROUTES.PRACTICES) return pathname === ROUTES.PRACTICES;
+  if (hrefPath === ROUTES.JAMS) return pathname === ROUTES.JAMS;
   if (hrefPath === ROUTES.PERFORMANCES) return pathname === ROUTES.PERFORMANCES;
   if (hrefPath === ROUTES.SETLIST_MEETINGS) {
     if (!pathname.startsWith(ROUTES.SETLIST_MEETINGS)) return false;
