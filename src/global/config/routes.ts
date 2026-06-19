@@ -11,9 +11,9 @@ export const ROUTES = {
   BAND_NEW: '/bands/new',
   BAND_DETAIL: (bandId: string) => `/bands/${bandId}`,
 
-  PRACTICES: '/practices',
-  PRACTICE_NEW: '/practices/new',
-  PRACTICE_DETAIL: (id: string) => `/practices/${id}`,
+  JAMS: '/jams',
+  JAM_NEW: '/jams/new',
+  JAM_DETAIL: (id: string) => `/jams/${id}`,
 
   PERFORMANCES: '/performances',
   PERFORMANCE_NEW: '/performances/new',

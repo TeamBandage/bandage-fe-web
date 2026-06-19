@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatCard } from '@/components/ui/stat-card';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
 import { useUpcomingPerformances } from '@/domain/performance/hooks/useUpcomingPerformances';
-import { useUpcomingPractices } from '@/domain/practice/hooks/useUpcomingPractices';
+import { useUpcomingJams } from '@/domain/jam/hooks/useUpcomingJams';
 
 function Stub() {
   return <Skeleton className="h-[84px] w-full" rounded="lg" />;
@@ -18,7 +18,7 @@ function Stub() {
  */
 export function HomeStatCards() {
   const bands = useMyBands();
-  const practices = useUpcomingPractices();
+  const practices = useUpcomingJams();
   const performances = useUpcomingPerformances();
 
   return (

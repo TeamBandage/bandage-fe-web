@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PROTECTED_PREFIXES = ['/home', '/bands', '/practices', '/performances', '/me'];
+const PROTECTED_PREFIXES = ['/home', '/bands', '/jams', '/performances', '/me'];
 const REFRESH_COOKIE = 'refreshToken';
 
 /**

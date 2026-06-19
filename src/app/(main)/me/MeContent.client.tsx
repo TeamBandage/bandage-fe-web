@@ -41,7 +41,7 @@ import {
   type WeeklyRuleRequest,
 } from '@/domain/member/types';
 import { useMyPerformances } from '@/domain/performance/hooks/useMyPerformances';
-import { useMyPractices } from '@/domain/practice/hooks/useMyPractices';
+import { useMyJams } from '@/domain/jam/hooks/useMyJams';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 
@@ -50,7 +50,7 @@ export function MeContent() {
   const toast = useToast();
   const { data: me, isLoading, isError, refetch } = useMe();
   const { data: availability } = useMyAvailability();
-  const { data: practicesData } = useMyPractices(100);
+  const { data: practicesData } = useMyJams(100);
   const { data: performancesData } = useMyPerformances(100);
 
   const practices = practicesData?.pages.flatMap((p) => p.content) ?? [];

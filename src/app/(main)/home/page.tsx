@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { SectionTitle } from '@/components/ui/section-title';
 import { MyBands } from '@/domain/band/components/MyBands';
 import { UpcomingPerformances } from '@/domain/performance/components/UpcomingPerformances';
-import { UpcomingPractices } from '@/domain/practice/components/UpcomingPractices';
+import { UpcomingJams } from '@/domain/jam/components/UpcomingJams';
 import { ROUTES } from '@/global/config/routes';
 
 import { HomeGreeting } from './HomeGreeting.client';
@@ -48,9 +48,9 @@ export default function HomePage() {
         </section>
         <section aria-labelledby="home-upcoming-practices" className="flex flex-col">
           <SectionTitle title="다가오는 합주" />
-          <UpcomingPractices limit={3} />
+          <UpcomingJams limit={3} />
           <div className="pt-s-2 mt-auto flex justify-end">
-            <ViewAllLink href={ROUTES.PRACTICES} label="전체 합주 보기" />
+            <ViewAllLink href={ROUTES.JAMS} label="전체 합주 보기" />
           </div>
         </section>
       </div>

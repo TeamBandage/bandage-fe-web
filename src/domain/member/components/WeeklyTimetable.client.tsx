@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import type { PerformanceListItemResponse } from '@/domain/performance/types';
-import type { PracticeListItemResponse } from '@/domain/practice/types';
+import type { JamListItemResponse } from '@/domain/jam/types';
 import { cn } from '@/lib/cn';
 import { KST } from '@/lib/date';
 
@@ -121,7 +121,7 @@ type MockEvent = {
 };
 
 function buildEvents(
-  practices: PracticeListItemResponse[],
+  practices: JamListItemResponse[],
   performances: PerformanceListItemResponse[],
   weekDates: Date[],
 ): TimetableEvent[] {
@@ -168,7 +168,7 @@ function buildUnavailableBlocks(available: boolean[]): { start: number; length: 
 
 type Props = {
   availability: MemberAvailabilityResponse | undefined;
-  practices: PracticeListItemResponse[];
+  practices: JamListItemResponse[];
   performances: PerformanceListItemResponse[];
   onManageSchedule: () => void;
 };
