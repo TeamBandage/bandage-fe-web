@@ -18,14 +18,14 @@ export const queryKeys = {
     applications: (id: string, status?: string) =>
       [...queryKeys.band.all, id, 'applications', status ?? null] as const,
   },
-  practice: {
-    all: ['practice'] as const,
-    list: (bandId?: string) => [...queryKeys.practice.all, 'list', bandId ?? null] as const,
-    my: () => [...queryKeys.practice.all, 'my'] as const,
-    mySearch: (keyword: string) => [...queryKeys.practice.all, 'my', 'search', keyword] as const,
-    upcoming: (limit: number) => [...queryKeys.practice.all, 'upcoming', limit] as const,
-    detail: (id: string) => [...queryKeys.practice.all, id] as const,
-    songs: (id: string) => [...queryKeys.practice.all, id, 'songs'] as const,
+  jam: {
+    all: ['jam'] as const,
+    list: (bandId?: string) => [...queryKeys.jam.all, 'list', bandId ?? null] as const,
+    my: () => [...queryKeys.jam.all, 'my'] as const,
+    mySearch: (keyword: string) => [...queryKeys.jam.all, 'my', 'search', keyword] as const,
+    upcoming: (limit: number) => [...queryKeys.jam.all, 'upcoming', limit] as const,
+    detail: (id: string) => [...queryKeys.jam.all, id] as const,
+    songs: (id: string) => [...queryKeys.jam.all, id, 'songs'] as const,
   },
   performance: {
     all: ['performance'] as const,

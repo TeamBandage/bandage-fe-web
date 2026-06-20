@@ -25,7 +25,7 @@ export function PerformancePracticeRow({ performanceId, practiceId }: Props) {
   return (
     <div className="border-border flex items-center justify-between gap-3 border-b py-3 last:border-b-0">
       <Link
-        href={ROUTES.PRACTICE_DETAIL(practiceId)}
+        href={ROUTES.JAM_DETAIL(practiceId)}
         className="text-foreground inline-flex min-w-0 items-center gap-2 text-sm hover:underline"
       >
         <Music className="text-foreground-muted h-4 w-4" aria-hidden="true" />
