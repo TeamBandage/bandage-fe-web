@@ -71,6 +71,13 @@
       "notes": "일부 화면이 mock 데이터(domain/setlist-meeting/mock)와 병존한다. 영향 조회 시 mock 구간은 BE 미연동으로 간주."
     },
     {
+      "id": "notification",
+      "label": "알림",
+      "routes": ["/notifications"],
+      "endpointPrefixes": ["/api/v1/notifications"],
+      "status": "active"
+    },
+    {
       "id": "schedule-coordination",
       "label": "일정 조율",
       "routes": ["/setlist-meetings/scheduling"],
