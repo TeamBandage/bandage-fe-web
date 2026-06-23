@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useJams } from '@/domain/jam/hooks/useJams';
 import { useMyJams } from '@/domain/jam/hooks/useMyJams';
 import type { JamListItemResponse } from '@/domain/jam/types';
 import { ROUTES } from '@/global/config/routes';
@@ -63,10 +64,13 @@ export function JamsMobileShell() {
   const [selectedJamId, setSelectedPracticeId] = useState<string | null>(null);
   const isDesktop = useIsDesktop();
 
-  const { data, isLoading } = useMyJams(50);
-  const all = data?.pages.flatMap((p) => p.content) ?? [];
+  const { data: myData, isLoading: myLoading } = useMyJams(50);
+  const myJams = myData?.pages.flatMap((p) => p.content) ?? [];
+
+  const { data: allData, isLoading: allLoading } = useJams(undefined, 50);
+  const allJams = allData?.pages.flatMap((p) => p.content) ?? [];
   const accessorRef = useCallback(accessor, []);
-  const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(all, accessorRef);
+  const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(allJams, accessorRef);
 
   return (
     <>
@@ -120,19 +124,19 @@ export function JamsMobileShell() {
         </div>
 
         <TabsContent value="mine">
-          {isLoading ? (
+          {myLoading ? (
             <div className="space-y-s-2">
               <Skeleton className="h-14 w-full" rounded="md" />
               <Skeleton className="h-14 w-full" rounded="md" />
               <Skeleton className="h-14 w-full" rounded="md" />
             </div>
-          ) : all.length === 0 ? (
+          ) : myJams.length === 0 ? (
             <p className="text-foreground-muted py-s-6 text-center text-sm">
               예정된 합주가 없습니다.
             </p>
           ) : (
             <ul className="gap-s-1 flex flex-col">
-              {all.map((p) => (
+              {myJams.map((p) => (
                 <PracticeSelectRow
                   key={p.jamId}
                   practice={p}
@@ -157,7 +161,7 @@ export function JamsMobileShell() {
             />
           </div>
 
-          {isLoading ? (
+          {allLoading ? (
             <div className="space-y-s-2">
               <Skeleton className="h-14 w-full" rounded="md" />
               <Skeleton className="h-14 w-full" rounded="md" />

@@ -30,8 +30,10 @@ import { SessionRow } from '@/domain/jam/components/SessionRow';
 import { useAddParticipant } from '@/domain/jam/hooks/useAddParticipant';
 import { useDeleteJam } from '@/domain/jam/hooks/useDeleteJam';
 import { useJam } from '@/domain/jam/hooks/useJam';
+import { useUpdateParticipantSession } from '@/domain/jam/hooks/useUpdateParticipantSession';
 import { useUpdateSchedule } from '@/domain/jam/hooks/useUpdateSchedule';
 import { addParticipantSchema, type AddParticipantSchema } from '@/domain/jam/types';
+import type { JamSessionResponse } from '@/domain/jam/types';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 
@@ -80,6 +82,12 @@ export function JamDetailContent({
     onError: (err) => toast.error(err.message || '합주 삭제에 실패했습니다.'),
   });
 
+  const [sessionAssignTarget, setSessionAssignTarget] = useState<{
+    participantId: string;
+    memberId: number;
+  } | null>(null);
+  const [assignSessionId, setAssignSessionId] = useState('');
+
   const addParticipantForm = useForm<AddParticipantSchema>({
     resolver: zodResolver(addParticipantSchema),
     defaultValues: { memberId: undefined as unknown as number, sessionId: '' },
@@ -87,9 +95,18 @@ export function JamDetailContent({
   const addParticipantMutation = useAddParticipant(jamId, {
     onSuccess: () => {
       toast.success('참여자가 추가되었습니다.');
-      addParticipantForm.reset({ memberId: undefined as unknown as number });
+      addParticipantForm.reset({ memberId: undefined as unknown as number, sessionId: '' });
     },
     onError: (err) => toast.error(err.message || '참여자 추가에 실패했습니다.'),
+  });
+
+  const updateSessionMutation = useUpdateParticipantSession(jamId, {
+    onSuccess: () => {
+      toast.success('세션이 배정되었습니다.');
+      setSessionAssignTarget(null);
+      setAssignSessionId('');
+    },
+    onError: (err) => toast.error(err.message || '세션 배정에 실패했습니다.'),
   });
 
   if (isLoading) {
@@ -196,27 +213,55 @@ export function JamDetailContent({
           <Card header="참여자" padding="md">
             <div className="space-y-4">
               <form
-                className="flex flex-wrap items-end gap-2"
+                className="space-y-3"
                 onSubmit={addParticipantForm.handleSubmit((values) =>
                   addParticipantMutation.mutate(values),
                 )}
                 noValidate
               >
-                <Input
-                  label="멤버 ID"
-                  type="number"
-                  placeholder="예: 3"
-                  className="max-w-xs"
-                  error={addParticipantForm.formState.errors.memberId?.message}
-                  {...addParticipantForm.register('memberId', { valueAsNumber: true })}
-                />
-                <Input
-                  label="세션 ID"
-                  placeholder="예: GUITAR"
-                  className="max-w-xs"
-                  error={addParticipantForm.formState.errors.sessionId?.message}
-                  {...addParticipantForm.register('sessionId')}
-                />
+                <div className="flex flex-wrap items-end gap-2">
+                  <Input
+                    label="멤버 ID"
+                    type="number"
+                    placeholder="예: 3"
+                    className="max-w-xs"
+                    error={addParticipantForm.formState.errors.memberId?.message}
+                    {...addParticipantForm.register('memberId', { valueAsNumber: true })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-foreground-sub text-sm font-medium">세션 선택</p>
+                  {practice.sessions.length === 0 ? (
+                    <p className="text-foreground-muted text-xs">먼저 세션을 등록해 주세요.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {practice.sessions.map((s: JamSessionResponse) => {
+                        const selected = addParticipantForm.watch('sessionId') === s.sessionId;
+                        return (
+                          <button
+                            key={s.sessionId}
+                            type="button"
+                            onClick={() =>
+                              addParticipantForm.setValue('sessionId', s.sessionId, {
+                                shouldValidate: true,
+                              })
+                            }
+                            className={`border-border rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                              selected ? 'bg-accent border-transparent text-white' : 'hover:bg-card'
+                            }`}
+                          >
+                            {s.short} · {s.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {addParticipantForm.formState.errors.sessionId && (
+                    <p className="text-danger text-xs">
+                      {addParticipantForm.formState.errors.sessionId.message}
+                    </p>
+                  )}
+                </div>
                 <Button type="submit" loading={addParticipantMutation.isPending}>
                   <UserPlus className="h-4 w-4" />
                   추가
@@ -225,12 +270,36 @@ export function JamDetailContent({
               {practice.participants.length === 0 ? (
                 <EmptyState title="참여자가 없습니다" />
               ) : (
-                <ul className="space-y-2">
-                  {practice.participants.map((p) => (
-                    <li key={p.participantId} className="text-foreground-sub text-sm">
-                      멤버 {p.memberId} · {p.sessionId}
-                    </li>
-                  ))}
+                <ul className="divide-border divide-y">
+                  {practice.participants.map((p) => {
+                    const session = practice.sessions.find((s) => s.sessionId === p.sessionId);
+                    return (
+                      <li
+                        key={p.participantId}
+                        className="py-s-2 flex items-center justify-between gap-3"
+                      >
+                        <span className="text-foreground-sub text-sm">
+                          멤버 {p.memberId}
+                          {session && (
+                            <span className="text-foreground-muted ml-2">· {session.label}</span>
+                          )}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSessionAssignTarget({
+                              participantId: p.participantId,
+                              memberId: p.memberId,
+                            });
+                            setAssignSessionId(p.sessionId ?? '');
+                          }}
+                        >
+                          {p.sessionId ? '세션 변경' : '세션 배정'}
+                        </Button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
@@ -277,6 +346,73 @@ export function JamDetailContent({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={sessionAssignTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSessionAssignTarget(null);
+            setAssignSessionId('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>세션 배정</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <div className="space-y-3">
+              <p className="text-foreground-muted text-sm">
+                멤버 {sessionAssignTarget?.memberId}에게 세션을 배정합니다.
+              </p>
+              {practice.sessions.length === 0 ? (
+                <p className="text-foreground-muted text-sm">등록된 세션이 없습니다.</p>
+              ) : (
+                <div className="gap-s-2 flex flex-wrap">
+                  {practice.sessions.map((s: JamSessionResponse) => (
+                    <button
+                      key={s.sessionId}
+                      type="button"
+                      onClick={() => setAssignSessionId(s.sessionId)}
+                      className={`border-border rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                        assignSessionId === s.sessionId
+                          ? 'bg-accent border-transparent text-white'
+                          : 'hover:bg-card'
+                      }`}
+                    >
+                      {s.short} · {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSessionAssignTarget(null);
+                setAssignSessionId('');
+              }}
+            >
+              취소
+            </Button>
+            <Button
+              disabled={!assignSessionId}
+              loading={updateSessionMutation.isPending}
+              onClick={() => {
+                if (!sessionAssignTarget || !assignSessionId) return;
+                updateSessionMutation.mutate({
+                  participantId: sessionAssignTarget.participantId,
+                  req: { sessionId: assignSessionId },
+                });
+              }}
+            >
+              배정
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

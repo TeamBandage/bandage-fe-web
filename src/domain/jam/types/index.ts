@@ -6,6 +6,7 @@ export type {
   UpdateVenueRequest,
   UpdateSessionsRequest,
   AddParticipantRequest,
+  UpdateParticipantSessionRequest,
 } from './req';
 export type {
   TrackInfoResponse,
