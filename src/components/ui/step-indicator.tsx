@@ -7,6 +7,8 @@ export interface StepIndicatorProps {
   /** 0-based current step index. */
   current: number;
   className?: string;
+  /** 'accent'(default): 오렌지 포인트. 'white': 흰색 포인트. */
+  colorScheme?: 'accent' | 'white';
 }
 
 /**
@@ -17,7 +19,13 @@ export interface StepIndicatorProps {
  * - 완료: bg-accent-dim / border-accent / text-accent + check 아이콘
  * - 단계 사이 bar: 완료된 경계는 bg-accent, 그 외 bg-border
  */
-export function StepIndicator({ steps, current, className }: StepIndicatorProps) {
+export function StepIndicator({
+  steps,
+  current,
+  className,
+  colorScheme = 'accent',
+}: StepIndicatorProps) {
+  const white = colorScheme === 'white';
   return (
     <ol
       className={cn('gap-s-2 mb-s-6 flex items-center', className)}
@@ -37,8 +45,10 @@ export function StepIndicator({ steps, current, className }: StepIndicatorProps)
                 className={cn(
                   'text-caption flex h-[26px] w-[26px] items-center justify-center rounded-full border-[1.5px] font-bold transition-all duration-200',
                   state === 'pending' && 'bg-card border-border text-foreground-muted',
-                  state === 'active' && 'bg-accent border-accent text-foreground',
-                  state === 'done' && 'bg-accent-dim border-accent text-accent',
+                  state === 'active' && !white && 'bg-accent border-accent text-foreground',
+                  state === 'active' && white && 'border-white bg-white text-neutral-900',
+                  state === 'done' && !white && 'bg-accent-dim border-accent text-accent',
+                  state === 'done' && white && 'border-white/60 bg-white/20 text-white',
                 )}
                 aria-label={`${i + 1}단계${state === 'done' ? ' (완료)' : state === 'active' ? ' (진행 중)' : ''}`}
               >
@@ -55,9 +65,17 @@ export function StepIndicator({ steps, current, className }: StepIndicatorProps)
             </div>
             {i < steps.length - 1 && (
               <span
-                className={cn('h-[2px] flex-1 rounded-sm', i < current ? 'bg-accent' : 'bg-border')}
+                className="bg-border relative h-0.5 flex-1 overflow-hidden rounded-sm"
                 aria-hidden="true"
-              />
+              >
+                <span
+                  className={cn(
+                    'absolute inset-y-0 left-0 rounded-sm transition-[width] duration-500 ease-in-out',
+                    white ? 'bg-white/60' : 'bg-accent',
+                    i < current ? 'w-full' : 'w-0',
+                  )}
+                />
+              </span>
             )}
           </li>
         );

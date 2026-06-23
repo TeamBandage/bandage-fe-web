@@ -182,7 +182,7 @@ export function DateTimePicker({
         data-slot="date-time-picker-trigger"
         className={cn(
           'bg-card border-border px-s-3 py-s-2 text-body flex w-full items-center justify-between gap-2 rounded-md border-[1.5px] text-left',
-          'focus-visible:border-accent focus-visible:outline-none',
+          'focus-visible:border-white/80 focus-visible:outline-none',
           'disabled:cursor-not-allowed disabled:opacity-50',
           parsed ? 'text-foreground font-semibold' : 'text-foreground-muted font-normal',
           className,
@@ -203,13 +203,40 @@ export function DateTimePicker({
         >
           {/* 빠른 선택 칩 */}
           <div className="border-border gap-s-2 px-s-5 py-s-3 flex flex-wrap border-b">
-            <Chip interactive selected={sameDay(draft, today)} onClick={() => quickDay(0)}>
+            <Chip
+              interactive
+              selected={sameDay(draft, today)}
+              onClick={() => quickDay(0)}
+              className={
+                sameDay(draft, today)
+                  ? 'border-white/60 ring-white focus-visible:ring-white'
+                  : 'focus-visible:ring-white'
+              }
+            >
               오늘
             </Chip>
-            <Chip interactive selected={sameDay(draft, tomorrow)} onClick={() => quickDay(1)}>
+            <Chip
+              interactive
+              selected={sameDay(draft, tomorrow)}
+              onClick={() => quickDay(1)}
+              className={
+                sameDay(draft, tomorrow)
+                  ? 'border-white/60 ring-white focus-visible:ring-white'
+                  : 'focus-visible:ring-white'
+              }
+            >
               내일
             </Chip>
-            <Chip interactive selected={sameDay(draft, nextWeek)} onClick={() => quickDay(7)}>
+            <Chip
+              interactive
+              selected={sameDay(draft, nextWeek)}
+              onClick={() => quickDay(7)}
+              className={
+                sameDay(draft, nextWeek)
+                  ? 'border-white/60 ring-white focus-visible:ring-white'
+                  : 'focus-visible:ring-white'
+              }
+            >
               다음 주
             </Chip>
           </div>
@@ -240,7 +267,7 @@ export function DateTimePicker({
                     const h = Math.max(0, Math.min(23, Number(e.target.value) || 0));
                     setDraft((prev) => ({ ...prev, h }));
                   }}
-                  className="bg-card border-border text-foreground text-title focus-visible:border-accent w-16 rounded-md border-2 px-2 py-1 text-center font-bold tabular-nums outline-none"
+                  className="bg-card border-border text-foreground text-title w-16 rounded-md border-2 px-2 py-1 text-center font-bold tabular-nums outline-none focus-visible:border-white"
                   aria-label="시 직접 입력"
                 />
                 <span className="text-foreground-sub text-title font-bold">:</span>
@@ -253,7 +280,7 @@ export function DateTimePicker({
                     const mi = Math.max(0, Math.min(59, Number(e.target.value) || 0));
                     setDraft((prev) => ({ ...prev, mi }));
                   }}
-                  className="bg-card border-border text-foreground text-title focus-visible:border-accent w-16 rounded-md border-2 px-2 py-1 text-center font-bold tabular-nums outline-none"
+                  className="bg-card border-border text-foreground text-title w-16 rounded-md border-2 px-2 py-1 text-center font-bold tabular-nums outline-none focus-visible:border-white"
                   aria-label="분 직접 입력"
                 />
               </div>
@@ -284,7 +311,11 @@ export function DateTimePicker({
                   취소
                 </Button>
               </DialogClose>
-              <Button size="sm" onClick={confirm}>
+              <Button
+                size="sm"
+                onClick={confirm}
+                className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100"
+              >
                 확인
               </Button>
             </div>
@@ -340,7 +371,7 @@ function Calendar({
           <button
             type="button"
             onClick={() => onSetYM && setYmOpen((v) => !v)}
-            className="text-foreground text-body hover:text-accent inline-flex items-center gap-1 font-bold transition-colors"
+            className="text-foreground text-body inline-flex items-center gap-1 font-bold transition-colors hover:text-white/70"
             aria-haspopup="dialog"
             aria-expanded={ymOpen}
             aria-label="연도와 월 빠른 선택 열기"
@@ -399,8 +430,8 @@ function Calendar({
               onClick={() => onPick(cellP)}
               className={cn(
                 'text-body relative flex aspect-square items-center justify-center rounded-md transition-colors',
-                isSel && 'bg-accent text-foreground font-bold',
-                !isSel && isToday && 'bg-accent-soft font-bold',
+                isSel && 'bg-white font-bold text-neutral-900',
+                !isSel && isToday && 'bg-white/20 font-bold',
                 !isSel && !isToday && dayColor,
                 !isSel && !isPast && 'hover:bg-card-hover',
                 isPast && 'text-foreground-muted cursor-not-allowed opacity-40',
@@ -411,7 +442,7 @@ function Calendar({
             >
               {d}
               {isToday && !isSel && (
-                <span className="bg-accent absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full" />
+                <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-white" />
               )}
             </button>
           );
@@ -482,7 +513,7 @@ function Wheel({ label, values, value, onChange }: WheelProps) {
       <div className="bg-card border-border relative overflow-hidden rounded-md border">
         {/* 중앙 하이라이트 밴드 */}
         <div
-          className="border-accent bg-accent-dim pointer-events-none absolute right-0 left-0 z-10 border-y"
+          className="pointer-events-none absolute right-0 left-0 z-10 border-y border-white/40 bg-white/10"
           style={{ top: ITEM_H * 2, height: ITEM_H }}
           aria-hidden="true"
         />
@@ -493,7 +524,7 @@ function Wheel({ label, values, value, onChange }: WheelProps) {
           aria-label={label}
           onScroll={onScroll}
           onKeyDown={onKey}
-          className="scrollbar-hide focus-visible:ring-accent focus-visible:rounded-md focus-visible:ring-2 focus-visible:outline-none"
+          className="scrollbar-hide focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
           style={{
             height: ITEM_H * 5,
             overflowY: 'scroll',
@@ -510,7 +541,7 @@ function Wheel({ label, values, value, onChange }: WheelProps) {
               aria-selected={v === value}
               className={cn(
                 'flex items-center justify-center text-base font-semibold',
-                v === value ? 'text-accent' : 'text-foreground-sub',
+                v === value ? 'text-white' : 'text-foreground-sub',
               )}
               style={{ height: ITEM_H, scrollSnapAlign: 'center' }}
             >

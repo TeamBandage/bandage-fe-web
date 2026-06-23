@@ -130,7 +130,7 @@ export function MeContent() {
               <ChevronLeft className="h-6 w-6" />
             </button>
           )}
-          <h2 className="text-foreground flex-1 text-[18px] font-bold">
+          <h2 className="text-foreground text-title flex-1 font-bold">
             {isEditing ? '프로필 정보 관리' : '프로필 정보'}
           </h2>
           {!isEditing && (

@@ -34,7 +34,7 @@ export function WizardSummaryCard({ sections, className }: WizardSummaryCardProp
           key={i}
           className={cn(
             'gap-s-3 flex items-start justify-between',
-            s.emphasized && 'border-accent/30 bg-accent-dim/30 p-s-3 -mx-s-2 rounded-md border',
+            s.emphasized && 'p-s-3 -mx-s-2 rounded-md border border-white/20 bg-white/5',
           )}
         >
           <div className="min-w-0 flex-1">
@@ -43,7 +43,7 @@ export function WizardSummaryCard({ sections, className }: WizardSummaryCardProp
             </p>
             <div
               className={cn(
-                s.emphasized ? 'text-accent text-subtitle font-bold' : 'text-foreground text-body',
+                s.emphasized ? 'text-subtitle font-bold text-white' : 'text-foreground text-body',
               )}
             >
               {s.value}
@@ -53,7 +53,7 @@ export function WizardSummaryCard({ sections, className }: WizardSummaryCardProp
             <button
               type="button"
               onClick={s.onEdit}
-              className="text-foreground-muted hover:text-accent text-micro inline-flex shrink-0 items-center gap-1 font-semibold"
+              className="text-foreground-muted text-micro inline-flex shrink-0 items-center gap-1 font-semibold hover:text-white"
               aria-label={`${s.label} 수정`}
             >
               <Pencil className="h-3 w-3" aria-hidden="true" />
