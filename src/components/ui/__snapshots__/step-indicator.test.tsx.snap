@@ -28,8 +28,12 @@ exports[`StepIndicator > current=0: 첫 단계 active, 두번째 pending 1`] = `
       </div>
       <span
         aria-hidden="true"
-        class="h-[2px] flex-1 rounded-sm bg-border"
-      />
+        class="relative h-0.5 flex-1 overflow-hidden rounded-sm bg-border"
+      >
+        <span
+          class="absolute inset-y-0 left-0 rounded-sm transition-[width] duration-500 ease-in-out bg-accent w-0"
+        />
+      </span>
     </li>
     <li
       class="gap-s-2 flex items-center [&:not(:last-child)]:flex-1"
@@ -97,8 +101,12 @@ exports[`StepIndicator > current=1: 첫 단계 done(체크), 두번째 active 1`
       </div>
       <span
         aria-hidden="true"
-        class="h-[2px] flex-1 rounded-sm bg-accent"
-      />
+        class="relative h-0.5 flex-1 overflow-hidden rounded-sm bg-border"
+      >
+        <span
+          class="absolute inset-y-0 left-0 rounded-sm transition-[width] duration-500 ease-in-out bg-accent w-full"
+        />
+      </span>
     </li>
     <li
       class="gap-s-2 flex items-center [&:not(:last-child)]:flex-1"
