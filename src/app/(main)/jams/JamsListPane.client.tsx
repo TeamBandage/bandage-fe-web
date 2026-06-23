@@ -9,6 +9,7 @@ import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useJams } from '@/domain/jam/hooks/useJams';
 import { useMyJams } from '@/domain/jam/hooks/useMyJams';
 import type { JamListItemResponse } from '@/domain/jam/types';
 import { ROUTES } from '@/global/config/routes';
@@ -58,11 +59,13 @@ export function JamsListPane() {
   const initialTab = (searchParams?.get('tab') === 'discover' ? 'discover' : 'mine') as Tab;
   const [tab, setTab] = useState<Tab>(initialTab);
 
-  // 내가 속하지 않은 합주는 노출하지 않음 (사용자 정책 — 디자인 컨펌 대기 후 검색 탭은 useSearchMyJams 로 이관 예정)
-  const { data, isLoading } = useMyJams(20);
-  const all = data?.pages.flatMap((p) => p.content) ?? [];
+  const { data: myData, isLoading: myLoading } = useMyJams(20);
+  const myJams = myData?.pages.flatMap((p) => p.content) ?? [];
+
+  const { data: allData, isLoading: allLoading } = useJams(undefined, 20);
+  const allJams = allData?.pages.flatMap((p) => p.content) ?? [];
   const accessorRef = useCallback(accessor, []);
-  const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(all, accessorRef);
+  const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(allJams, accessorRef);
 
   const onTabChange = (next: string) => {
     const t = next === 'discover' ? 'discover' : 'mine';
@@ -103,13 +106,13 @@ export function JamsListPane() {
           </TabsList>
         </div>
         <TabsContent value="mine" className="px-s-2 py-s-2 flex-1 overflow-y-auto">
-          {isLoading ? (
+          {myLoading ? (
             <p className="text-foreground-muted p-s-3 text-caption">불러오는 중…</p>
-          ) : all.length === 0 ? (
+          ) : myJams.length === 0 ? (
             <p className="text-foreground-muted p-s-3 text-caption">예정된 합주가 없습니다.</p>
           ) : (
             <ul className="gap-s-1 flex flex-col">
-              {all.map((p) => (
+              {myJams.map((p) => (
                 <PracticeRow key={p.jamId} p={p} pathname={pathname} />
               ))}
             </ul>
@@ -130,7 +133,7 @@ export function JamsListPane() {
             </div>
           </div>
           <div className="px-s-2 py-s-2 flex-1 overflow-y-auto">
-            {isLoading ? (
+            {allLoading ? (
               <p className="text-foreground-muted p-s-3 text-caption">불러오는 중…</p>
             ) : filtered.length === 0 ? (
               <p className="text-foreground-muted p-s-3 text-caption">

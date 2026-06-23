@@ -18,7 +18,7 @@ export interface JamSessionResponse {
 export interface JamParticipantResponse {
   participantId: string;
   memberId: number;
-  sessionId: string;
+  sessionId: string | null;
 }
 
 export interface JamDetailResponse {
