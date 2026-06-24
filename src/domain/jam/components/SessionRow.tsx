@@ -40,7 +40,7 @@ export function SessionRow({ jamId, session }: Props) {
   return (
     <div className="border-border flex items-center justify-between gap-3 border-b py-3 last:border-b-0">
       <div className="flex min-w-0 items-center gap-3">
-        <Chip>{session.short}</Chip>
+        <Chip className="rounded-[5px] border-white/30">{session.short}</Chip>
         <div className="min-w-0">
           <span className="text-foreground truncate text-sm font-medium">{session.label}</span>
           <span className="text-foreground-muted ml-2 text-xs">
@@ -53,7 +53,7 @@ export function SessionRow({ jamId, session }: Props) {
         size="sm"
         variant="ghost"
         aria-label="세션 삭제"
-        className="text-danger hover:opacity-80"
+        className="text-foreground-muted hover:text-foreground"
         onClick={() => setConfirmDelete(true)}
       >
         <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -61,24 +61,30 @@ export function SessionRow({ jamId, session }: Props) {
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>세션 삭제</DialogTitle>
+          <DialogHeader className="border-b-0 pb-2">
+            <DialogTitle>세션을 삭제하시겠어요?</DialogTitle>
           </DialogHeader>
-          <DialogBody>
+          <div className="border-border mx-5 border-b" />
+          <DialogBody className="pt-2">
             <p className="text-foreground-sub text-sm">
-              &apos;{session.label}&apos; 세션을 삭제합니다.
+              &apos;{session.label}&apos; 세션은 복구할 수 없습니다.
             </p>
           </DialogBody>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
+          <DialogFooter className="border-t-0">
+            <Button
+              variant="ghost"
+              className="h-8 rounded-[5px]"
+              onClick={() => setConfirmDelete(false)}
+            >
               취소
             </Button>
             <Button
               variant="danger"
+              className="h-8 rounded-[5px] px-2"
               loading={deleteMutation.isPending}
               onClick={() => deleteMutation.mutate(session.sessionId)}
             >
-              삭제
+              삭제하기
             </Button>
           </DialogFooter>
         </DialogContent>

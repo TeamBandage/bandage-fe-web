@@ -24,7 +24,7 @@ export function SessionCreateForm({ jamId, onCreated }: { jamId: string; onCreat
     onError: (err) => toast.error(err.message || '세션 추가에 실패했습니다.'),
   });
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!label.trim()) return toast.error('세션 이름을 입력해 주세요.');
     if (!short.trim()) return toast.error('약어를 입력해 주세요.');
@@ -38,38 +38,42 @@ export function SessionCreateForm({ jamId, onCreated }: { jamId: string; onCreat
   }
 
   return (
-    <form
-      className="flex flex-col gap-3 sm:flex-row sm:items-end"
-      onSubmit={handleSubmit}
-      noValidate
-    >
-      <Input
-        label="세션 이름"
-        placeholder="예: Guitar 2"
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-        className="sm:flex-1"
-      />
-      <Input
-        label="약어"
-        placeholder="예: G2"
-        value={short}
-        onChange={(e) => setShort(e.target.value)}
-        className="sm:w-24"
-        maxLength={3}
-      />
-      <Input
-        label="정원"
-        type="number"
-        min={1}
-        max={20}
-        value={need}
-        onChange={(e) => setNeed(Number(e.target.value) || 1)}
-        className="sm:w-20"
-      />
-      <Button type="submit" loading={mutation.isPending}>
-        추가
-      </Button>
+    <form onSubmit={handleSubmit} noValidate>
+      <div className="grid gap-x-3 gap-y-1.5" style={{ gridTemplateColumns: '2fr 1fr 1fr auto' }}>
+        <span className="text-foreground text-xs font-medium">세션 이름</span>
+        <span className="text-foreground text-xs font-medium">약어</span>
+        <span className="text-foreground text-xs font-medium">정원</span>
+        <span />
+        <Input
+          placeholder="예: Guitar 2"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
+        />
+        <Input
+          placeholder="예: G2"
+          value={short}
+          onChange={(e) => setShort(e.target.value)}
+          maxLength={3}
+          className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
+        />
+        <Input
+          type="number"
+          min={1}
+          max={20}
+          value={need}
+          onChange={(e) => setNeed(Number(e.target.value) || 1)}
+          className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
+        />
+        <Button
+          type="submit"
+          variant="secondary"
+          className="h-8 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
+          loading={mutation.isPending}
+        >
+          추가
+        </Button>
+      </div>
     </form>
   );
 }

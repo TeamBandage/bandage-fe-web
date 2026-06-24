@@ -55,7 +55,7 @@ export function JamCreateWizard() {
   });
 
   const trackReady = !!trackTitle.trim() && !!trackArtist.trim();
-  const scheduleReady = !!startAt && durationMinutes >= 15;
+  const scheduleReady = !!startAt && durationMinutes >= 5;
 
   const canNext =
     step === 0
@@ -210,9 +210,9 @@ export function JamCreateWizard() {
               <div className="mt-s-2">
                 <input
                   type="number"
-                  min={15}
+                  min={5}
                   max={480}
-                  step={15}
+                  step={5}
                   required
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(Number(e.target.value) || 0)}
