@@ -4,7 +4,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
 <DocumentFragment>
   <aside
     aria-label="주 탐색"
-    class="bg-surface border-border py-s-4 gap-s-1 relative hidden shrink-0 flex-col border-r lg:flex transition-[width] duration-200 ease-in-out px-s-3"
+    class="bg-surface border-border py-s-4 gap-s-1 relative z-30 hidden shrink-0 flex-col border-r lg:flex transition-[width] duration-200 ease-in-out px-s-3"
     data-slot="sidebar"
     style="width: var(--sidebar-w);"
   >
@@ -355,30 +355,17 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       class="border-border mt-s-3 pt-s-3 gap-s-1 flex flex-col border-t"
     >
       <div
-        class="gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center"
+        class="px-s-4 py-s-1 min-w-0"
       >
-        <span
-          class="bg-card-hover text-foreground-sub rounded-pill inline-flex items-center justify-center overflow-hidden font-semibold select-none h-7.5 w-7.5 shrink-0 text-xs"
-        >
-          <span
-            aria-label="수연"
-          >
-            수연
-          </span>
-        </span>
         <div
-          class="min-w-0 flex-1"
+          class="text-foreground text-caption truncate font-semibold"
         >
-          <div
-            class="text-foreground text-caption truncate font-semibold"
-          >
-            수연
-          </div>
-          <div
-            class="text-foreground-muted text-micro truncate"
-          >
-            sooyeon@example.com
-          </div>
+          수연
+        </div>
+        <div
+          class="text-foreground-muted text-micro truncate"
+        >
+          sooyeon@example.com
         </div>
       </div>
       <button
