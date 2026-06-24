@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from 'react';
 import { LeaveConfirmDialog } from '@/components/feedback/leave-confirm-dialog';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { Container } from '@/components/layout/container';
+import { GlobalTopbar } from '@/components/layout/global-topbar.client';
 import { Shell } from '@/components/layout/shell';
 import { Sidebar } from '@/components/layout/sidebar';
 import { AuthBootstrapper } from '@/global/auth/AuthBootstrapper.client';
@@ -27,16 +28,18 @@ export default function MainLayout({ children }: { children: ReactNode }) {
     <Suspense fallback={null}>
       <AuthBootstrapper>
         <DirtyFormProvider>
+          <GlobalTopbar />
+
           {/* Desktop */}
           <div className="hidden lg:block">
             <Shell>
               <Sidebar />
-              <main className="flex flex-1 flex-col overflow-y-auto">{children}</main>
+              <main className="flex flex-1 flex-col overflow-y-auto pt-14">{children}</main>
             </Shell>
           </div>
 
           {/* Mobile */}
-          <div className="min-h-screen pb-16 lg:hidden">
+          <div className="min-h-screen pt-14 pb-16 lg:hidden">
             <Container maxWidth="xl" padding className="py-s-6">
               {children}
             </Container>
