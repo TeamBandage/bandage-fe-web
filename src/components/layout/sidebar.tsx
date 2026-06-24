@@ -23,7 +23,6 @@ import { ROUTES } from '@/global/config/routes';
 import { useUiStore } from '@/global/store/uiStore';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
-import { Avatar } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
@@ -102,8 +101,8 @@ export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname() ?? '';
   const router = useRouter();
   const toast = useToast();
-  const { data: me, isLoading: meLoading } = useMe();
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
+  const { data: me, isLoading: meLoading } = useMe();
 
   const logoutMutation = useLogout({
     onSuccess: () => {
@@ -118,7 +117,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'bg-surface border-border py-s-4 gap-s-1 relative hidden shrink-0 flex-col border-r lg:flex',
+        'bg-surface border-border py-s-4 gap-s-1 relative z-30 hidden shrink-0 flex-col border-r lg:flex',
         'transition-[width] duration-200 ease-in-out',
         collapsed ? 'px-s-2' : 'px-s-3',
         className,
@@ -185,38 +184,14 @@ export function Sidebar({ className }: SidebarProps) {
       </nav>
 
       <div className="border-border mt-s-3 pt-s-3 gap-s-1 flex flex-col border-t">
-        {collapsed ? (
-          <div className="flex justify-center py-1">
-            {meLoading ? (
-              <Skeleton rounded="pill" className="h-8 w-8 shrink-0" />
-            ) : (
-              <Avatar
-                src={me?.profileImg ?? undefined}
-                fallback={me?.name ?? me?.email ?? '게스트'}
-                className="h-7.5 w-7.5 shrink-0 text-xs"
-                title={me?.name ?? '게스트'}
-              />
-            )}
-          </div>
-        ) : meLoading ? (
-          <div
-            className="gap-s-2 px-s-2 py-s-2 flex min-w-0 items-center"
-            aria-label="사용자 정보 로딩 중"
-          >
-            <Skeleton rounded="pill" className="h-8 w-8 shrink-0" />
-            <div className="min-w-0 flex-1 space-y-1">
+        {!collapsed &&
+          (meLoading ? (
+            <div className="px-s-4 py-s-1 space-y-1">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-2.5 w-28" />
             </div>
-          </div>
-        ) : (
-          <div className="gap-s-2 px-s-2 py-s-1 flex min-w-0 items-center">
-            <Avatar
-              src={me?.profileImg ?? undefined}
-              fallback={me?.name ?? me?.email ?? '게스트'}
-              className="h-7.5 w-7.5 shrink-0 text-xs"
-            />
-            <div className="min-w-0 flex-1">
+          ) : (
+            <div className="px-s-4 py-s-1 min-w-0">
               <div className="text-foreground text-caption truncate font-semibold">
                 {me?.name ?? '게스트'}
               </div>
@@ -224,8 +199,7 @@ export function Sidebar({ className }: SidebarProps) {
                 {me?.email ?? '로그인이 필요합니다'}
               </div>
             </div>
-          </div>
-        )}
+          ))}
         {!collapsed && (
           <Button
             variant="secondary"

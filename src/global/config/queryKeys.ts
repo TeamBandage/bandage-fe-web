@@ -27,6 +27,11 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.jam.all, id] as const,
     songs: (id: string) => [...queryKeys.jam.all, id, 'songs'] as const,
   },
+  notification: {
+    all: ['notification'] as const,
+    list: () => [...queryKeys.notification.all, 'list'] as const,
+    unreadCount: () => [...queryKeys.notification.all, 'unread-count'] as const,
+  },
   performance: {
     all: ['performance'] as const,
     list: (bandId?: string) => [...queryKeys.performance.all, 'list', bandId ?? null] as const,

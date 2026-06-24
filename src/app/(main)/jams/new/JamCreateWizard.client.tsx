@@ -121,7 +121,7 @@ export function JamCreateWizard() {
   }
 
   return (
-    <div className="p-s-4 mx-auto w-full max-w-3xl lg:py-15" data-slot="jam-create-wizard">
+    <div className="p-s-4 mx-auto w-full max-w-3xl lg:py-10" data-slot="jam-create-wizard">
       <header className="mb-s-6">
         <h1 className="text-title font-bold">합주 생성</h1>
       </header>
