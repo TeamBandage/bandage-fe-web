@@ -33,7 +33,7 @@ function ViewAllLink({ href, label }: { href: string; label: string }) {
 
 export default function HomePage() {
   return (
-    <div className="space-y-s-8 lg:p-s-10 lg:w-full">
+    <div className="space-y-s-8 lg:px-s-10 lg:pb-s-10 lg:w-full lg:pt-7.5">
       <HomeGreeting />
 
       <HomeStatCards />

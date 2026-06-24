@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function PracticesPage() {
   return (
     <Suspense fallback={null}>
-      <div className="p-s-4 lg:pt-15">
+      <div className="p-s-4 lg:pt-10">
         <JamsMobileShell />
       </div>
     </Suspense>
