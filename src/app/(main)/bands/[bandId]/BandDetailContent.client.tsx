@@ -1,8 +1,8 @@
 'use client';
 
 import { Camera, LogOut, UserPlus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
@@ -43,9 +43,14 @@ import { useToast } from '@/hooks/useToast';
  */
 export function BandDetailContent({ bandId }: { bandId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const [leaveOpen, setLeaveOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'info');
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') ?? 'info');
+  }, [searchParams]);
 
   const { data: band, isLoading, isError, refetch } = useBandDetail(bandId);
   const { data: myRole } = useBandRole(bandId);
@@ -108,7 +113,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
               가입 신청
             </Button>
           )}
-          {isMember && !isLeader && (
+          {isMember && (
             <Button
               size="sm"
               variant="secondary"
@@ -199,12 +204,14 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
             </DialogDescription>
           </DialogHeader>
           <div className="border-border mx-5 border-b" />
-          <DialogBody>
-            <p className="text-foreground-sub text-sm">
-              <span className="text-nav-active font-bold">밴드 리더</span> 인 경우 먼저 리더 권한을
-              다른 멤버에게 위임해야 합니다.
-            </p>
-          </DialogBody>
+          {isLeader && (
+            <DialogBody>
+              <p className="text-foreground-sub text-sm">
+                <span className="text-nav-active font-bold">리더 권한</span>은 탈퇴 시 다른 멤버에게
+                자동으로 위임됩니다.
+              </p>
+            </DialogBody>
+          )}
           <DialogFooter className="border-t-0">
             <Button
               variant="ghost"

@@ -1,10 +1,16 @@
 'use client';
 
 import { Root, Portal, Overlay, Content, Title, Close } from '@radix-ui/react-dialog';
-import { Plus, Search, Users, X } from 'lucide-react';
+import { Maximize2, Plus, Search, Users, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
+import {
+  BottomSheet,
+  BottomSheetClose,
+  BottomSheetContent,
+  BottomSheetTitle,
+} from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { MyItemMarker } from '@/components/ui/my-item-marker';
@@ -18,6 +24,7 @@ import { useMyBands } from '@/domain/band/hooks/useMyBands';
 import type { BandInfoResponse, MyBandInfoResponse } from '@/domain/band/types';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { cn } from '@/lib/cn';
+import { ROUTES } from '@/global/config/routes';
 import { DOMAIN_TONES } from '@/lib/domain-icons';
 
 import { BandDetailContent } from './[bandId]/BandDetailContent.client';
@@ -74,9 +81,16 @@ function BandSelectRow({
 }
 
 export function BandsMobileShell() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [selectedBandId, setSelectedBandId] = useState<string | null>(null);
   const isDesktop = useIsDesktop();
+
+  function handleExpand() {
+    if (!selectedBandId) return;
+    setSelectedBandId(null);
+    router.push(ROUTES.BAND_DETAIL(selectedBandId));
+  }
 
   const { data: myBandsData, isLoading: myLoading } = useMyBands(50);
   const myBands = myBandsData ?? [];
@@ -227,7 +241,15 @@ export function BandsMobileShell() {
               )}
             >
               <Title className="sr-only">밴드 상세</Title>
-              <div className="flex shrink-0 items-center justify-end px-4 py-5">
+              <div className="flex shrink-0 items-center justify-between px-4 py-5">
+                <button
+                  type="button"
+                  onClick={handleExpand}
+                  aria-label="전체 화면으로 보기"
+                  className="text-foreground-sub hover:text-foreground focus-visible:ring-accent focus-visible:ring-offset-bg rounded-sm p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                </button>
                 <Close
                   aria-label="닫기"
                   className="text-foreground-sub hover:text-foreground focus-visible:ring-accent focus-visible:ring-offset-bg rounded-sm p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -248,6 +270,22 @@ export function BandsMobileShell() {
         >
           <BottomSheetContent className="h-dvh">
             <BottomSheetTitle className="sr-only">밴드 상세</BottomSheetTitle>
+            <div className="flex shrink-0 items-center justify-between px-4 py-3">
+              <button
+                type="button"
+                onClick={handleExpand}
+                aria-label="전체 화면으로 보기"
+                className="text-foreground-sub hover:text-foreground rounded-sm p-1 transition-colors"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </button>
+              <BottomSheetClose
+                aria-label="닫기"
+                className="text-foreground-sub hover:text-foreground rounded-sm p-1 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </BottomSheetClose>
+            </div>
             <div className="flex-1 overflow-y-auto">
               {selectedBandId && <BandDetailContent bandId={selectedBandId} />}
             </div>

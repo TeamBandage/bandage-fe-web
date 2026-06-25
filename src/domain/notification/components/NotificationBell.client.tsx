@@ -21,9 +21,11 @@ interface Props {
 function resolveHref(category: NotifyCategory, referenceId: string): string | null {
   switch (category) {
     case 'BAND_APPLICATION':
+      return `${ROUTES.BAND_DETAIL(referenceId)}?tab=applications`;
     case 'BAND_APPLICATION_RESULT':
-    case 'AUTHORITY_PROMOTION':
       return ROUTES.BAND_DETAIL(referenceId);
+    case 'AUTHORITY_PROMOTION':
+      return `${ROUTES.BAND_DETAIL(referenceId)}?tab=members`;
     case 'JAM_UPCOMING':
       return ROUTES.JAM_DETAIL(referenceId);
     default:
