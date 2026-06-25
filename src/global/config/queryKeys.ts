@@ -44,6 +44,11 @@ export const queryKeys = {
     upcoming: (limit: number) => [...queryKeys.performance.all, 'upcoming', limit] as const,
     detail: (id: string) => [...queryKeys.performance.all, id] as const,
   },
+  performancePoster: {
+    all: ['performance-poster'] as const,
+    list: (performanceId: string) => [...queryKeys.performancePoster.all, performanceId] as const,
+    detail: (posterId: string) => [...queryKeys.performancePoster.all, 'detail', posterId] as const,
+  },
 } as const;
 
 export type QueryKeys = typeof queryKeys;

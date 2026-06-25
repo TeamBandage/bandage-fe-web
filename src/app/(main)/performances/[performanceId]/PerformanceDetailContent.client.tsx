@@ -1,9 +1,18 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarDays, ListMusic, MapPin, Pencil, Trash2 } from 'lucide-react';
+import {
+  CalendarDays,
+  ImagePlus,
+  ListMusic,
+  Loader2,
+  MapPin,
+  Pencil,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { EmptyState } from '@/components/feedback/empty-state';
@@ -26,8 +35,23 @@ import { useDeletePerformance } from '@/domain/performance/hooks/useDeletePerfor
 import { usePerformanceDetail } from '@/domain/performance/hooks/usePerformanceDetail';
 import { useUpdatePerformance } from '@/domain/performance/hooks/useUpdatePerformance';
 import { updatePerformanceSchema, type UpdatePerformanceSchema } from '@/domain/performance/types';
+import {
+  createPerformancePoster,
+  deletePerformancePoster,
+  issuePerformancePosterPresignedUrl,
+} from '@/domain/performance-poster/api';
+import { usePerformancePosters } from '@/domain/performance-poster/hooks/usePerformancePosters';
 import { useIsPerformanceManager } from '@/global/auth/useIsPerformanceManager';
 import { ROUTES } from '@/global/config/routes';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/global/config/queryKeys';
+import {
+  ALLOWED_IMAGE_ACCEPT,
+  MAX_IMAGE_SIZE_BYTES,
+  extFromMime,
+  isAllowedImageMime,
+} from '@/global/upload/constants';
+import { uploadToPresignedUrl } from '@/global/upload/uploadToPresignedUrl';
 import { formatKst, parseKst } from '@/lib/date';
 import { useToast } from '@/hooks/useToast';
 
@@ -41,12 +65,72 @@ function fromDatetimeLocal(dt: string) {
 export function PerformanceDetailContent({ performanceId }: { performanceId: string }) {
   const router = useRouter();
   const toast = useToast();
+  const queryClient = useQueryClient();
+  const posterInputRef = useRef<HTMLInputElement>(null);
+  const posterInputId = useId();
 
   const { data: perf, isLoading, isError, refetch } = usePerformanceDetail(performanceId);
   const { isManager } = useIsPerformanceManager(performanceId);
+  const { data: posters = [] } = usePerformancePosters(performanceId);
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [localPosterPreview, setLocalPosterPreview] = useState<string | null>(null);
+  const [posterUploading, setPosterUploading] = useState(false);
+
+  const existingPoster = posters[0] ?? null;
+  const posterSrc = localPosterPreview ?? existingPoster?.imageUrl ?? null;
+
+  async function handlePosterFile(file: File) {
+    if (!isAllowedImageMime(file.type)) {
+      toast.error('JPEG / PNG / WEBP 형식만 업로드할 수 있습니다.');
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error('이미지 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+    if (localPosterPreview) URL.revokeObjectURL(localPosterPreview);
+    setLocalPosterPreview(URL.createObjectURL(file));
+    setPosterUploading(true);
+    try {
+      const ext = extFromMime(file.type);
+      if (!ext) throw new Error('지원하지 않는 이미지 형식입니다.');
+      const presign = await issuePerformancePosterPresignedUrl({
+        contentType: file.type,
+        contentLength: file.size,
+        ext,
+      });
+      await uploadToPresignedUrl(presign.uploadUrl, file);
+      await createPerformancePoster({ performanceId, objectKey: presign.objectKey });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.performancePoster.list(performanceId),
+      });
+      toast.success('포스터를 등록했습니다.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '포스터 업로드에 실패했습니다.';
+      toast.error(message);
+      setLocalPosterPreview(null);
+    } finally {
+      setPosterUploading(false);
+    }
+  }
+
+  async function handleDeletePoster() {
+    if (!existingPoster) return;
+    try {
+      await deletePerformancePoster(existingPoster.posterId);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.performancePoster.list(performanceId),
+      });
+      if (localPosterPreview) URL.revokeObjectURL(localPosterPreview);
+      setLocalPosterPreview(null);
+      toast.success('포스터를 삭제했습니다.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '포스터 삭제에 실패했습니다.';
+      toast.error(message);
+    }
+  }
 
   const deleteMutation = useDeletePerformance(performanceId, {
     onSuccess: () => {
@@ -137,6 +221,81 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
               </li>
             ))}
           </ul>
+        )}
+      </Card>
+
+      {/* 포스터 카드 */}
+      <Card
+        header={
+          <span className="inline-flex items-center gap-2">
+            <ImagePlus className="h-4 w-4" aria-hidden="true" />
+            공연 포스터
+          </span>
+        }
+        padding="md"
+      >
+        {posterSrc ? (
+          <div className="space-y-s-3">
+            <div className="relative mx-auto w-fit">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={posterSrc}
+                alt="공연 포스터"
+                className="max-h-72 rounded-[5px] object-contain"
+              />
+              {isManager && !posterUploading && (
+                <button
+                  type="button"
+                  aria-label="포스터 삭제"
+                  onClick={handleDeletePoster}
+                  className="bg-surface border-border absolute -top-2 -right-2 rounded-full border p-0.5 text-white/70 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              {posterUploading && (
+                <span className="absolute inset-0 flex items-center justify-center rounded-[5px] bg-black/50">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </span>
+              )}
+            </div>
+            {isManager && !posterUploading && (
+              <button
+                type="button"
+                onClick={() => posterInputRef.current?.click()}
+                className="text-foreground-sub text-caption hover:text-foreground underline"
+              >
+                다른 이미지로 변경
+              </button>
+            )}
+          </div>
+        ) : isManager ? (
+          <label
+            htmlFor={posterInputId}
+            className="flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-[5px] border border-dashed border-white/20 bg-white/5 transition-colors hover:border-white/40 hover:bg-white/10"
+          >
+            <ImagePlus className="h-8 w-8 text-white/50" />
+            <span className="text-sm font-medium text-white/60">클릭하여 포스터 이미지 선택</span>
+            <span className="text-xs text-white/40">JPEG · PNG · WEBP · 최대 5MB</span>
+          </label>
+        ) : (
+          <p className="text-foreground-muted text-caption py-4 text-center">
+            등록된 포스터가 없습니다.
+          </p>
+        )}
+        {isManager && (
+          <input
+            ref={posterInputRef}
+            id={posterInputId}
+            type="file"
+            accept={ALLOWED_IMAGE_ACCEPT}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) void handlePosterFile(file);
+            }}
+          />
         )}
       </Card>
 

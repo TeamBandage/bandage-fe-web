@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, X } from 'lucide-react';
+import { CalendarDays, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -10,8 +10,8 @@ import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
 import { SetlistSelectorSheet } from '@/domain/performance/components/SetlistSelectorSheet.client';
+import { createPerformance } from '@/domain/performance/api/createPerformance';
 import type { SetlistResponse } from '@/domain/setlist/types/res';
-import { useCreatePerformance } from '@/domain/performance/hooks/useCreatePerformance';
 import { ROUTES } from '@/global/config/routes';
 import { useRegisterDirtyForm } from '@/global/navigation/dirty-form-context';
 import { useToast } from '@/hooks/useToast';
@@ -24,6 +24,7 @@ export function PerformanceCreateWizard() {
   const router = useRouter();
   const toast = useToast();
   const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [isPending, setIsPending] = useState(false);
 
   // Step 0
   const [title, setTitle] = useState('');
@@ -38,14 +39,6 @@ export function PerformanceCreateWizard() {
   const dirty =
     step > 0 || title.length > 0 || venue.length > 0 || !!startAt || selectedSetlists.length > 0;
   useRegisterDirtyForm('performance-create-wizard', dirty);
-
-  const mutation = useCreatePerformance({
-    onSuccess: (data) => {
-      toast.resourceCreated('공연', { name: title });
-      router.replace(ROUTES.PERFORMANCE_DETAIL(data.performanceId));
-    },
-    onError: (err) => toast.error(err.message || '공연 생성에 실패했습니다.'),
-  });
 
   const canNext =
     step === 0 ? !!title && !!startAt && durationMinutes >= 30 : step === 1 ? true : false;
@@ -63,15 +56,25 @@ export function PerformanceCreateWizard() {
     if (step > 0) setStep((step - 1) as 0 | 1 | 2);
   }
 
-  function submit() {
-    if (!title || !startAt) return;
-    mutation.mutate({
-      title,
-      setlistIds: selectedSetlists.map((s) => s.setlistId),
-      startAt,
-      durationMinutes,
-      venue: venue || undefined,
-    });
+  async function submit() {
+    if (!title || !startAt || isPending) return;
+    setIsPending(true);
+    try {
+      const perf = await createPerformance({
+        title,
+        setlistIds: selectedSetlists.map((s) => s.setlistId),
+        startAt,
+        durationMinutes,
+        venue: venue || undefined,
+      });
+      toast.resourceCreated('공연', { name: title });
+      router.replace(ROUTES.PERFORMANCE_DETAIL(perf.performanceId));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '공연 생성에 실패했습니다.';
+      toast.error(message);
+    } finally {
+      setIsPending(false);
+    }
   }
 
   return (
@@ -233,7 +236,13 @@ export function PerformanceCreateWizard() {
 
       <footer className="gap-s-3 mt-6.75 flex items-center justify-between">
         {step > 0 ? (
-          <Button size="sm" variant="ghost" onClick={back} className="rounded-[5px]">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={back}
+            disabled={isPending}
+            className="rounded-[5px]"
+          >
             이전
           </Button>
         ) : (
@@ -252,10 +261,17 @@ export function PerformanceCreateWizard() {
           <Button
             size="sm"
             onClick={submit}
-            loading={mutation.isPending}
+            disabled={isPending}
             className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
           >
-            공연 만들기
+            {isPending ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                생성 중…
+              </span>
+            ) : (
+              '공연 만들기'
+            )}
           </Button>
         )}
       </footer>

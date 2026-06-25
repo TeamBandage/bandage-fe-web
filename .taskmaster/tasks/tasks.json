@@ -5630,7 +5630,7 @@
   "BD-93-create-performance-ui": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "공연 생성 페이지 UI 개선 및 셋리스트 API 연동",
         "description": "합주 생성 페이지(JamCreateWizard) UI 스타일을 참고하여 공연 생성 페이지(PerformanceCreateWizard) UI를 개선한다. 주황색 버튼 등 기존 강조색을 흰색 포인트로 교체하고, GET /api/v1/setlists/me API를 연동하여 셋리스트 목록을 실제 데이터로 보여준다. setlistMeetingIds 대신 setlistIds를 사용하도록 CreatePerformanceRequest도 수정한다.",
         "details": "",
@@ -5701,10 +5701,10 @@
             "updatedAt": "2026-06-25T14:25:43.787Z"
           }
         ],
-        "updatedAt": "2026-06-25T14:25:43.787Z"
+        "updatedAt": "2026-06-25T15:35:22.781Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Performance 도메인 API 정렬 및 fe-areas.json 정비",
         "description": "openapi.json 기준으로 performance 도메인 타입·API 파일 업데이트, 구 practice 관련 파일 제거, fe-areas.json 영역 정비(setlist·performance-poster 추가, practice knownGap 제거, specPending 지원)",
         "details": "",
@@ -5779,12 +5779,35 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-06-25T15:14:07.225Z",
+      "lastModified": "2026-06-25T15:35:22.781Z",
       "taskCount": 2,
       "completedCount": 2,
       "tags": [
         "BD-93-create-performance-ui"
-      ]
+      ],
+      "created": "2026-06-25T15:39:44.214Z",
+      "description": "Tasks for BD-93-create-performance-ui context",
+      "updated": "2026-06-25T15:39:44.214Z"
+    }
+  },
+  "BD-164-performance-poster-api": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "공연 포스터 도메인 구현",
+        "description": "MCP 확인된 6개 엔드포인트 기반으로 performance-poster 도메인 타입·API·훅 구현 및 fe-areas.json specPending 해제",
+        "details": "",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2026-06-25T15:33:04.788Z",
+      "updated": "2026-06-25T15:33:06.168Z",
+      "description": "Tag created on 6/26/2026"
     }
   }
 }

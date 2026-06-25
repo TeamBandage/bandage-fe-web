@@ -1,8 +1,8 @@
 'use client';
 
-import { Camera, LogOut, UserPlus } from 'lucide-react';
+import { ImagePlus, Loader2, LogOut, UserPlus, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
@@ -20,8 +20,13 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  ALLOWED_IMAGE_ACCEPT,
+  MAX_IMAGE_SIZE_BYTES,
+  isAllowedImageMime,
+} from '@/global/upload/constants';
+import { uploadProfileImage } from '@/global/upload/uploadProfileImage';
 import { BandApplicationRow } from '@/domain/band/components/BandApplicationRow';
 import { BandMemberRow } from '@/domain/band/components/BandMemberRow';
 import { useApplyBand } from '@/domain/band/hooks/useApplyBand';
@@ -260,9 +265,9 @@ function InfoTab({
           // eslint-disable-next-line @next/next/no-img-element -- 외부 origin 허용 위해 native img
           <img src={profileImg} alt={`${bandName} 커버`} className="h-full w-full object-cover" />
         ) : (
-          <div className="text-foreground-muted gap-s-2 flex flex-col items-center text-xs">
-            <Camera className="h-7 w-7" aria-hidden="true" />
-            band cover image
+          <div className="text-foreground-muted gap-s-2 flex flex-col items-center">
+            <ImagePlus className="h-8 w-8" aria-hidden="true" />
+            <span className="text-xs">커버 이미지 없음</span>
           </div>
         )}
       </div>
@@ -390,10 +395,49 @@ function SettingsTab({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const imageInputId = useId();
   const [tab, setTab] = useState<'info' | 'image' | 'delete'>('info');
   const [name, setName] = useState(bandName);
   const [desc, setDesc] = useState(description ?? '');
   const [confirmText, setConfirmText] = useState('');
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+
+  async function handleImageFile(file: File) {
+    if (!isAllowedImageMime(file.type)) {
+      toast.error('JPEG / PNG / WEBP 형식만 업로드할 수 있습니다.');
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error('이미지 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+    if (localPreview) URL.revokeObjectURL(localPreview);
+    setLocalPreview(URL.createObjectURL(file));
+    setImageUploading(true);
+    try {
+      const objectKey = await uploadProfileImage({ file, domain: 'BAND', bandId });
+      updateMutation.mutate({ profileImg: objectKey });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.';
+      toast.error(message);
+      setLocalPreview(null);
+    } finally {
+      setImageUploading(false);
+    }
+  }
+
+  function handleDeleteImage() {
+    if (localPreview) {
+      URL.revokeObjectURL(localPreview);
+      setLocalPreview(null);
+    } else {
+      deleteImageMutation.mutate();
+    }
+  }
+
+  const currentImg = localPreview ?? profileImg ?? null;
 
   const updateMutation = useUpdateBand(bandId, {
     onSuccess: () => toast.success('밴드 정보를 저장했습니다.'),
@@ -414,7 +458,7 @@ function SettingsTab({
   });
 
   return (
-    <div className="space-y-s-4 mx-auto w-full max-w-lg">
+    <div className="space-y-s-4 w-full">
       <Tabs value={tab} onValueChange={(v) => setTab(v as 'info' | 'image' | 'delete')}>
         <TabsList className="mb-s-4 w-full">
           <TabsTrigger
@@ -471,19 +515,62 @@ function SettingsTab({
           </div>
         </TabsContent>
 
-        <TabsContent value="image" className="mt-0">
-          <ProfileImageUpload
-            value={profileImg ?? null}
-            onChange={(objectKey) => updateMutation.mutate({ profileImg: objectKey })}
-            onDelete={() => deleteImageMutation.mutate()}
-            domain="BAND"
-            bandId={bandId}
-            label=""
-            imageClassName="w-full h-[220px] rounded-2xl"
-            showButton={false}
-            hint="JPEG / PNG / WEBP, 5MB 이하"
-            disabled={updateMutation.isPending}
+        <TabsContent value="image" className="space-y-s-3 mt-0">
+          {currentImg ? (
+            <div className="relative mx-auto w-fit">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentImg}
+                alt="밴드 프로필 이미지"
+                className="h-[220px] w-full rounded-2xl object-cover"
+              />
+              {!imageUploading && (
+                <button
+                  type="button"
+                  aria-label="이미지 제거"
+                  onClick={handleDeleteImage}
+                  className="bg-surface border-border absolute -top-2 -right-2 rounded-full border p-0.5 text-white/70 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              {imageUploading && (
+                <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </span>
+              )}
+            </div>
+          ) : (
+            <label
+              htmlFor={imageInputId}
+              className="flex h-[220px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/20 bg-white/5 transition-colors hover:border-white/40 hover:bg-white/10"
+            >
+              <ImagePlus className="h-8 w-8 text-white/50" />
+              <span className="text-sm font-medium text-white/60">클릭하여 이미지 선택</span>
+              <span className="text-xs text-white/40">JPEG · PNG · WEBP · 최대 5MB</span>
+            </label>
+          )}
+          <input
+            ref={imageInputRef}
+            id={imageInputId}
+            type="file"
+            accept={ALLOWED_IMAGE_ACCEPT}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) void handleImageFile(file);
+            }}
           />
+          {currentImg && !imageUploading && (
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              className="text-foreground-sub text-caption hover:text-foreground underline"
+            >
+              다른 이미지로 변경
+            </button>
+          )}
         </TabsContent>
 
         <TabsContent value="delete" className="space-y-s-3 mt-0">

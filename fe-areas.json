@@ -78,13 +78,22 @@
       "status": "active"
     },
     {
+      "id": "band-application",
+      "label": "밴드 가입 신청",
+      "routes": ["/bands"],
+      "endpointPrefixes": ["/api/v1/band-applications"],
+      "status": "active",
+      "specPending": true,
+      "notes": "BD-164 작업 시점에 BE develop에 추가됐으나 openapi.json 스냅샷에 미반영. specPending=true로 MAP↔SPEC 체크 생략. MCP 확인 후 갱신 필요."
+    },
+    {
       "id": "performance-poster",
       "label": "공연 포스터",
       "routes": ["/performances"],
       "endpointPrefixes": ["/api/v1/performance-posters"],
       "status": "active",
       "specPending": true,
-      "notes": "BE 구현 완료이나 openapi.json 스냅샷에 미반영. MCP 비교 후 타입·API 파일 작성 예정."
+      "notes": "BD-164. openapi.json 스냅샷에 미반영이나 MCP(develop)로 6개 엔드포인트 확인 완료. FE 도메인 구현됨."
     },
     {
       "id": "notification",
