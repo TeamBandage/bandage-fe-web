@@ -84,7 +84,7 @@
       "endpointPrefixes": ["/api/v1/performance-posters"],
       "status": "active",
       "specPending": true,
-      "notes": "BE 구현 완료이나 openapi.json 스냅샷에 미반영. MCP 비교 후 타입·API 파일 작성 예정."
+      "notes": "BD-164. openapi.json 스냅샷에 미반영이나 MCP(develop)로 6개 엔드포인트 확인 완료. FE 도메인 구현됨."
     },
     {
       "id": "notification",
