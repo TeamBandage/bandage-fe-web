@@ -12,5 +12,9 @@ type PageProps = {
 
 export default async function JamDetailPage({ params }: PageProps) {
   const { jamId } = await params;
-  return <JamDetailContent jamId={jamId} />;
+  return (
+    <div className="px-5 py-4 lg:px-8 lg:py-6">
+      <JamDetailContent jamId={jamId} />
+    </div>
+  );
 }

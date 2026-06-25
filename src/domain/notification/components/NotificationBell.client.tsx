@@ -18,14 +18,14 @@ interface Props {
   placement?: 'sidebar' | 'topbar';
 }
 
-function resolveHref(category: NotifyCategory): string | null {
+function resolveHref(category: NotifyCategory, referenceId: string): string | null {
   switch (category) {
     case 'BAND_APPLICATION':
     case 'BAND_APPLICATION_RESULT':
     case 'AUTHORITY_PROMOTION':
-      return ROUTES.BANDS;
+      return ROUTES.BAND_DETAIL(referenceId);
     case 'JAM_UPCOMING':
-      return ROUTES.JAMS;
+      return ROUTES.JAM_DETAIL(referenceId);
     default:
       return null;
   }
@@ -56,10 +56,11 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
   function handleNotificationClick(
     notificationId: string,
     category: NotifyCategory,
+    referenceId: string,
     read: boolean,
   ) {
     if (!read) markAsRead.mutate(notificationId);
-    const href = resolveHref(category);
+    const href = resolveHref(category, referenceId);
     if (href) {
       setOpen(false);
       router.push(href);
@@ -139,12 +140,14 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
               </li>
             ) : (
               notifications.map((n) => {
-                const href = resolveHref(n.category);
+                const href = resolveHref(n.category, n.referenceId);
                 return (
                   <li key={n.id}>
                     <button
                       type="button"
-                      onClick={() => handleNotificationClick(n.id, n.category, n.read)}
+                      onClick={() =>
+                        handleNotificationClick(n.id, n.category, n.referenceId, n.read)
+                      }
                       className={cn(
                         'border-border flex w-full items-start gap-3 border-b px-4 py-3 text-left last:border-b-0',
                         'hover:bg-card-hover transition-colors',
