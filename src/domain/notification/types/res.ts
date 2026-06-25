@@ -1,10 +1,18 @@
-export type NotificationType = string;
+export type NotifyCategory =
+  | 'BAND_APPLICATION'
+  | 'BAND_APPLICATION_RESULT'
+  | 'AUTHORITY_PROMOTION'
+  | 'JAM_UPCOMING'
+  | (string & {});
 
 export interface NotificationResponse {
-  notificationId: number;
-  type: NotificationType;
+  id: string;
+  category: NotifyCategory;
+  title: string;
   message: string;
-  isRead: boolean;
+  referenceId: string;
+  read: boolean;
+  readAt: string | null;
   createdAt: string;
 }
 

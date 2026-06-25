@@ -1,5 +1,5 @@
 import { apiClient } from '@/global/api/apiClient';
 
-export async function markAsRead(notificationId: number): Promise<void> {
+export async function markAsRead(notificationId: string): Promise<void> {
   await apiClient.patch(`/api/v1/notifications/${notificationId}/read`);
 }

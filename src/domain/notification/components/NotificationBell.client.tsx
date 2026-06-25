@@ -1,31 +1,48 @@
 'use client';
 
-import { Bell, Check, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/lib/cn';
 import { formatRelative } from '@/lib/date';
+import { ROUTES } from '@/global/config/routes';
 
 import { useMarkAllAsRead } from '../hooks/useMarkAllAsRead';
 import { useMarkAsRead } from '../hooks/useMarkAsRead';
 import { useMyNotifications } from '../hooks/useMyNotifications';
-import { useUnreadCount } from '../hooks/useUnreadCount';
+import type { NotifyCategory } from '../types/res';
 
 interface Props {
   collapsed: boolean;
   placement?: 'sidebar' | 'topbar';
 }
 
+function resolveHref(category: NotifyCategory, referenceId: string): string | null {
+  switch (category) {
+    case 'BAND_APPLICATION':
+      return `${ROUTES.BAND_DETAIL(referenceId)}?tab=applications`;
+    case 'BAND_APPLICATION_RESULT':
+      return ROUTES.BAND_DETAIL(referenceId);
+    case 'AUTHORITY_PROMOTION':
+      return `${ROUTES.BAND_DETAIL(referenceId)}?tab=members`;
+    case 'JAM_UPCOMING':
+      return ROUTES.JAM_DETAIL(referenceId);
+    default:
+      return null;
+  }
+}
+
 export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-  const { data: unreadData } = useUnreadCount();
   const { data: notifications = [], isLoading } = useMyNotifications();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
-  const unreadCount = unreadData?.count ?? 0;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     if (!open) return;
@@ -37,6 +54,20 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
+
+  function handleNotificationClick(
+    notificationId: string,
+    category: NotifyCategory,
+    referenceId: string,
+    read: boolean,
+  ) {
+    if (!read) markAsRead.mutate(notificationId);
+    const href = resolveHref(category, referenceId);
+    if (href) {
+      setOpen(false);
+      router.push(href);
+    }
+  }
 
   return (
     <div ref={containerRef} className="relative">
@@ -65,7 +96,7 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
             aria-hidden="true"
           />
           {unreadCount > 0 && (
-            <span className="bg-accent text-accent-foreground absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] leading-none font-bold">
+            <span className="bg-accent absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] leading-none font-bold text-white">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -110,46 +141,49 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
                 알림이 없습니다.
               </li>
             ) : (
-              notifications.map((n) => (
-                <li
-                  key={n.notificationId}
-                  className={cn(
-                    'border-border flex items-start gap-3 border-b px-4 py-3 last:border-b-0',
-                    !n.isRead && 'bg-surface',
-                  )}
-                >
-                  <div className="mt-0.5 shrink-0">
-                    {!n.isRead && (
-                      <span className="bg-accent block h-2 w-2 rounded-full" aria-hidden="true" />
-                    )}
-                    {n.isRead && <span className="block h-2 w-2" aria-hidden="true" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        'text-sm leading-snug',
-                        n.isRead ? 'text-foreground-muted' : 'text-foreground',
-                      )}
-                    >
-                      {n.message}
-                    </p>
-                    <p className="text-foreground-muted mt-0.5 text-xs">
-                      {formatRelative(new Date(n.createdAt))}
-                    </p>
-                  </div>
-                  {!n.isRead && (
+              notifications.map((n) => {
+                const href = resolveHref(n.category, n.referenceId);
+                return (
+                  <li key={n.id}>
                     <button
                       type="button"
-                      onClick={() => markAsRead.mutate(n.notificationId)}
-                      disabled={markAsRead.isPending}
-                      aria-label="읽음 처리"
-                      className="text-foreground-muted hover:text-foreground mt-0.5 shrink-0 transition-colors disabled:opacity-50"
+                      onClick={() =>
+                        handleNotificationClick(n.id, n.category, n.referenceId, n.read)
+                      }
+                      className={cn(
+                        'border-border flex w-full items-start gap-3 border-b px-4 py-3 text-left last:border-b-0',
+                        'hover:bg-card-hover transition-colors',
+                        !n.read && 'bg-surface',
+                        href ? 'cursor-pointer' : 'cursor-default',
+                      )}
                     >
-                      <Check className="h-3.5 w-3.5" />
+                      <div className="mt-1.5 shrink-0">
+                        {!n.read ? (
+                          <span
+                            className="bg-accent block h-2 w-2 rounded-full"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <span className="block h-2 w-2" aria-hidden="true" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={cn(
+                            'text-sm leading-snug',
+                            n.read ? 'text-foreground-muted' : 'text-foreground',
+                          )}
+                        >
+                          {n.message}
+                        </p>
+                        <p className="text-foreground-muted mt-0.5 text-xs">
+                          {formatRelative(new Date(n.createdAt))}
+                        </p>
+                      </div>
                     </button>
-                  )}
-                </li>
-              ))
+                  </li>
+                );
+              })
             )}
           </ul>
         </div>

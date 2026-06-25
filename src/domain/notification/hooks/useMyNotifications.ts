@@ -15,5 +15,6 @@ export function useMyNotifications() {
     queryFn: getMyNotifications,
     enabled: authenticated,
     staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
   });
 }
