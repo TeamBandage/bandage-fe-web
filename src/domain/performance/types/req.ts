@@ -1,7 +1,7 @@
 export interface CreatePerformanceRequest {
   title: string;
   bandIds?: string[];
-  setlistMeetingIds?: string[];
+  setlistIds?: string[];
   startAt: string;
   durationMinutes: number;
   venue?: string;

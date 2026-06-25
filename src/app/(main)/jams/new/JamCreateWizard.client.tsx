@@ -168,6 +168,7 @@ export function JamCreateWizard() {
       {/* Step 1 — 일정 설정 */}
       {step === 1 && (
         <section className="space-y-s-4">
+          <h2 className="text-foreground-sub text-base font-semibold">일정을 설정하세요</h2>
           <Input
             label="합주 제목 (선택)"
             placeholder="예: TuNA 정기공연 1주차 합주"
