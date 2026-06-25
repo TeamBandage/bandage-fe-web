@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarDays, Link2, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CalendarDays, ListMusic, MapPin, Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -20,23 +20,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import { PerformanceBandChips } from '@/domain/performance/components/PerformanceBandChips';
 import { PerformanceDday } from '@/domain/performance/components/PerformanceDday';
-import { PerformancePracticeRow } from '@/domain/performance/components/PerformancePracticeRow';
-import { useAddPerformancePractice } from '@/domain/performance/hooks/useAddPerformancePractice';
-import { useBatchAddPerformancePractices } from '@/domain/performance/hooks/useBatchAddPerformancePractices';
 import { useDeletePerformance } from '@/domain/performance/hooks/useDeletePerformance';
 import { usePerformanceDetail } from '@/domain/performance/hooks/usePerformanceDetail';
 import { useUpdatePerformance } from '@/domain/performance/hooks/useUpdatePerformance';
-import {
-  addPerformancePracticeSchema,
-  updatePerformanceSchema,
-  type AddPerformancePracticeSchema,
-  type UpdatePerformanceSchema,
-} from '@/domain/performance/types';
-import { BandPickerModal } from '@/domain/band/components/BandPickerModal.client';
+import { updatePerformanceSchema, type UpdatePerformanceSchema } from '@/domain/performance/types';
 import { useIsPerformanceManager } from '@/global/auth/useIsPerformanceManager';
 import { ROUTES } from '@/global/config/routes';
 import { formatKst, parseKst } from '@/lib/date';
@@ -58,8 +47,6 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [attachOpen, setAttachOpen] = useState(false);
-  const [bandPickerOpen, setBandPickerOpen] = useState(false);
 
   const deleteMutation = useDeletePerformance(performanceId, {
     onSuccess: () => {
@@ -130,62 +117,28 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
         </div>
       </Card>
 
-      <Tabs defaultValue="bands">
-        <TabsList>
-          <TabsTrigger value="bands">참여 밴드</TabsTrigger>
-          <TabsTrigger value="practices">연결 합주 ({perf.practices.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="bands">
-          <Card
-            header={
-              <div className="flex items-center justify-between">
-                <span>참여 밴드 ({perf.bands.length})</span>
-                {isManager && (
-                  <Button size="sm" onClick={() => setBandPickerOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                    참여 밴드 추가
-                  </Button>
-                )}
-              </div>
-            }
-            padding="md"
-          >
-            <PerformanceBandChips bands={perf.bands} />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="practices">
-          <Card
-            header={
-              <div className="flex items-center justify-between">
-                <span>연결된 합주 ({perf.practices.length})</span>
-                {isManager && (
-                  <Button size="sm" onClick={() => setAttachOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                    합주 연결
-                  </Button>
-                )}
-              </div>
-            }
-            padding="md"
-          >
-            {perf.practices.length === 0 ? (
-              <EmptyState title="연결된 합주가 없습니다" />
-            ) : (
-              <div>
-                {perf.practices.map((p) => (
-                  <PerformancePracticeRow
-                    key={p.practiceId}
-                    performanceId={performanceId}
-                    practiceId={p.practiceId}
-                  />
-                ))}
-              </div>
-            )}
-          </Card>
-        </TabsContent>
-      </Tabs>
+      <Card
+        header={
+          <span className="inline-flex items-center gap-2">
+            <ListMusic className="h-4 w-4" aria-hidden="true" />
+            참여 셋리스트 ({perf.setlists.length})
+          </span>
+        }
+        padding="md"
+      >
+        {perf.setlists.length === 0 ? (
+          <EmptyState title="연결된 셋리스트가 없습니다" />
+        ) : (
+          <ul className="divide-border divide-y">
+            {perf.setlists.map((s) => (
+              <li key={s.setlistId} className="py-s-3 space-y-1">
+                <p className="text-body font-semibold">{s.title}</p>
+                {s.bands.length > 0 && <PerformanceBandChips bands={s.bands} />}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <EditDialog
         open={editOpen}
@@ -199,31 +152,13 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
         }}
       />
 
-      <AttachDialog open={attachOpen} onOpenChange={setAttachOpen} performanceId={performanceId} />
-
-      <BandPickerModal
-        open={bandPickerOpen}
-        onOpenChange={setBandPickerOpen}
-        multiple
-        title="참여 밴드 추가"
-        onConfirm={(bands) => {
-          // FE-API-017 — 백엔드에 POST /performances/{id}/bands/batch 엔드포인트가
-          // 추가될 때까지 mock toast 로 안내. 본 라운드 UI 검증용.
-          toast.info(
-            `${bands.length}개 밴드를 선택했습니다 — 백엔드 연동(FE-API-017) 후 자동 반영됩니다.`,
-          );
-        }}
-      />
-
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>공연 삭제</DialogTitle>
           </DialogHeader>
           <DialogBody>
-            <p className="text-foreground-sub text-sm">
-              삭제된 공연은 복구할 수 없으며, 신규 생성으로 연결된 합주도 함께 제거됩니다.
-            </p>
+            <p className="text-foreground-sub text-sm">삭제된 공연은 복구할 수 없습니다.</p>
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
@@ -314,7 +249,7 @@ function EditDialog({
                 type="number"
                 min={30}
                 max={600}
-                step={30}
+                step={10}
                 error={form.formState.errors.durationMinutes?.message}
                 {...form.register('durationMinutes', { valueAsNumber: true })}
               />
@@ -334,154 +269,6 @@ function EditDialog({
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function AttachDialog({
-  open,
-  onOpenChange,
-  performanceId,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  performanceId: string;
-}) {
-  const toast = useToast();
-  const [mode, setMode] = useState<'batch' | 'new'>('batch');
-  const [practiceIdsRaw, setPracticeIdsRaw] = useState('');
-
-  const batchMutation = useBatchAddPerformancePractices(performanceId, {
-    onSuccess: () => {
-      toast.success('합주를 일괄 연결했습니다.');
-      setPracticeIdsRaw('');
-      onOpenChange(false);
-    },
-    onError: (err) => toast.error(err.message || '합주 연결에 실패했습니다.'),
-  });
-
-  const newForm = useForm<AddPerformancePracticeSchema>({
-    resolver: zodResolver(addPerformancePracticeSchema),
-    defaultValues: {
-      title: '',
-      songId: '',
-      startAt: '',
-      durationMinutes: 60,
-      venue: '',
-    },
-  });
-
-  const newMutation = useAddPerformancePractice(performanceId, {
-    onSuccess: () => {
-      toast.success('합주를 생성하고 연결했습니다.');
-      newForm.reset();
-      onOpenChange(false);
-    },
-    onError: (err) => toast.error(err.message || '합주 생성에 실패했습니다.'),
-  });
-
-  const attachExisting = () => {
-    const ids = practiceIdsRaw
-      .split(/[\s,]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (ids.length === 0) {
-      toast.warn('최소 1개 이상의 practiceId 를 입력해 주세요.');
-      return;
-    }
-    batchMutation.mutate({ practiceIds: ids });
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            <Link2 className="mr-1 inline h-4 w-4" />
-            합주 연결
-          </DialogTitle>
-        </DialogHeader>
-        <DialogBody>
-          <Tabs value={mode} onValueChange={(v) => setMode(v as 'batch' | 'new')}>
-            <TabsList>
-              <TabsTrigger value="batch">기존 합주 연결</TabsTrigger>
-              <TabsTrigger value="new">신규 합주 생성</TabsTrigger>
-            </TabsList>
-            <TabsContent value="batch">
-              <div className="space-y-3">
-                <Textarea
-                  label="Practice ID 목록"
-                  placeholder="practiceId 를 쉼표 또는 줄바꿈으로 구분해 입력"
-                  hint="기존에 생성된 합주 UUID 를 붙여넣습니다. 백엔드 합주 검색 UI 도입 시 드롭다운으로 교체 예정."
-                  value={practiceIdsRaw}
-                  onChange={(e) => setPracticeIdsRaw(e.target.value)}
-                />
-                <Button onClick={attachExisting} loading={batchMutation.isPending}>
-                  일괄 연결
-                </Button>
-              </div>
-            </TabsContent>
-            <TabsContent value="new">
-              <form
-                className="space-y-3"
-                onSubmit={newForm.handleSubmit((values) =>
-                  newMutation.mutate({
-                    title: values.title,
-                    songId: values.songId,
-                    startAt: fromDatetimeLocal(values.startAt),
-                    durationMinutes: values.durationMinutes,
-                    venue: values.venue,
-                  }),
-                )}
-                noValidate
-              >
-                <Input
-                  label="제목 (선택)"
-                  error={newForm.formState.errors.title?.message}
-                  {...newForm.register('title')}
-                />
-                <Input
-                  label="합주곡 ID"
-                  placeholder="songId (UUID)"
-                  required
-                  error={newForm.formState.errors.songId?.message}
-                  {...newForm.register('songId')}
-                />
-                <Input
-                  label="시작 시각"
-                  type="datetime-local"
-                  required
-                  error={newForm.formState.errors.startAt?.message}
-                  {...newForm.register('startAt')}
-                />
-                <Input
-                  label="소요 시간 (분)"
-                  type="number"
-                  min={15}
-                  max={480}
-                  step={15}
-                  required
-                  error={newForm.formState.errors.durationMinutes?.message}
-                  {...newForm.register('durationMinutes', { valueAsNumber: true })}
-                />
-                <Input
-                  label="장소 (선택)"
-                  error={newForm.formState.errors.venue?.message}
-                  {...newForm.register('venue')}
-                />
-                <Button type="submit" loading={newMutation.isPending}>
-                  생성 + 연결
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            닫기
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

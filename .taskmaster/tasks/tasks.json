@@ -5602,7 +5602,7 @@
   "BD-92-band-detail-ui": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "밴드 목록 풀스크린 + 상세 카드/바텀시트 전환",
         "description": "1. 모바일: BandsListPane 탭 목록을 풀스크린으로 노출 (BandsMobileShell). 밴드 클릭 시 바텀시트로 BandDetailContent 표시.\n2. 데스크탑: 기존 좌측 BandsListPane + 우측 BandDetailContent 카드 유지.\n3. BandsListPane 탐색탭: 기본 useBandList(전체), 검색어 입력 시 useBandSearch(API 검색)로 전환.",
         "details": "",
@@ -5621,6 +5621,169 @@
       "completedCount": 1,
       "tags": [
         "BD-92-band-detail-ui"
+      ],
+      "created": "2026-06-25T14:14:22.398Z",
+      "description": "Tasks for BD-92-band-detail-ui context",
+      "updated": "2026-06-25T14:14:22.398Z"
+    }
+  },
+  "BD-93-create-performance-ui": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "공연 생성 페이지 UI 개선 및 셋리스트 API 연동",
+        "description": "합주 생성 페이지(JamCreateWizard) UI 스타일을 참고하여 공연 생성 페이지(PerformanceCreateWizard) UI를 개선한다. 주황색 버튼 등 기존 강조색을 흰색 포인트로 교체하고, GET /api/v1/setlists/me API를 연동하여 셋리스트 목록을 실제 데이터로 보여준다. setlistMeetingIds 대신 setlistIds를 사용하도록 CreatePerformanceRequest도 수정한다.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "PerformanceCreateWizard UI 스타일을 JamCreateWizard 흰색 테마로 개선",
+            "description": "공연 생성 마법사의 스타일링을 합주 생성 마법사의 흰색 포인트 UI로 통일합니다.",
+            "dependencies": [],
+            "details": "PerformanceCreateWizard.client.tsx에서 다음 작업 수행:\n- StepIndicator에 colorScheme=\"white\" prop 추가\n- inputCls 상수 정의 및 Input 컴포넌트에 rounded-[5px] hover:border-white/30 focus-visible:border-white/80 focus-visible:ring-0 클래스 적용\n- Button 컴포넌트의 '다음', '공연 만들기' 버튼을 bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30 rounded-[5px] 스타일로 변경\n- footer의 이전 버튼 스타일에 rounded-[5px] 추가\n- 시작 시각 및 소요 시간 입력 영역을 JamCreateWizard처럼 bg-surface border border-white/20 rounded-[5px] 카드 스타일로 개선",
+            "status": "done",
+            "testStrategy": "pnpm dev로 /performances/new 페이지 접근 후 UI가 JamCreateWizard와 동일한 흰색 포인트 스타일로 표시되는지 시각적 확인. 버튼 hover/active/disabled 상태 검증.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-25T14:25:38.365Z"
+          },
+          {
+            "id": 2,
+            "title": "Setlist 도메인 API 함수 및 타입 정의 추가",
+            "description": "GET /api/v1/setlists/me API 호출을 위한 fetcher 함수와 SetlistResponse 타입을 정의합니다.",
+            "dependencies": [],
+            "details": "src/domain/setlist/ 디렉토리 구조 생성:\n- types/res.ts: BE schema.d.ts의 SetlistResponse 타입 정의 (setlistId, title, managerId, trackSelectionId, createdAt, updatedAt)\n- types/index.ts: 타입 re-export\n- api/getMySetlists.ts: apiClient.get<CursorResponse<SetlistResponse, string>>('/api/v1/setlists/me', { query: { lastId, pageSize } }) fetcher 함수 구현\n- api/index.ts: API 함수 re-export\n- hooks/useMySetlists.ts: TanStack Query useInfiniteQuery 래퍼 훅 구현 (queryKey: ['setlists', 'me'])",
+            "status": "done",
+            "testStrategy": "pnpm typecheck로 타입 에러 없음 확인. API 함수가 올바른 엔드포인트와 파라미터로 호출되는지 코드 리뷰.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-25T14:25:39.746Z"
+          },
+          {
+            "id": 3,
+            "title": "SetlistPickerModal을 실제 API 데이터로 전환",
+            "description": "SetlistPickerModal 컴포넌트가 mock store 대신 GET /api/v1/setlists/me API를 호출하도록 수정합니다.",
+            "dependencies": [
+              2
+            ],
+            "details": "SetlistPickerModal.client.tsx 수정:\n- useSetlistStore 대신 useMySetlists 훅 사용\n- Meeting 타입 대신 SetlistResponse 타입 기반으로 selection 상태 관리\n- filtered 로직: SetlistResponse의 title 필드로 검색\n- songCount/confirmedCount 관련 로직 제거 또는 간소화 (BE SetlistResponse에 해당 정보 없음)\n- 리스트 아이템 UI를 SetlistResponse 필드(title, createdAt, updatedAt)로 렌더링\n- 무한 스크롤 지원: useMySetlists의 fetchNextPage 연동\n- Props 변경: Meeting[] → SetlistResponse[]로 onConfirm, initialSelection 타입 수정",
+            "status": "done",
+            "testStrategy": "pnpm dev로 공연 생성 → 셋리스트 추가 모달에서 실제 API 데이터 표시 확인. 검색 필터링, 선택/해제, 무한 스크롤 동작 검증.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-25T14:25:41.067Z"
+          },
+          {
+            "id": 4,
+            "title": "CreatePerformanceRequest 타입 수정 (setlistMeetingIds → setlistIds)",
+            "description": "FE의 CreatePerformanceRequest 타입을 BE 스펙과 일치하도록 setlistIds 필드로 수정합니다.",
+            "dependencies": [],
+            "details": "src/domain/performance/types/req.ts 수정:\n- setlistMeetingIds?: string[] 필드를 setlistIds?: string[]로 변경\n- bandIds 필드 제거 (BE 스펙에 없음)\n\n관련 파일 연쇄 수정:\n- useCreatePerformance.ts: mutation 호출 시 타입 확인\n- createPerformance.ts: 변경된 타입 사용 확인",
+            "status": "done",
+            "testStrategy": "pnpm typecheck로 타입 에러 없음 확인. 기존에 setlistMeetingIds를 사용하던 코드가 setlistIds로 올바르게 변경되었는지 확인.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-25T14:25:42.430Z"
+          },
+          {
+            "id": 5,
+            "title": "PerformanceCreateWizard에서 setlistIds로 API 연동 완성",
+            "description": "PerformanceCreateWizard가 SetlistResponse 기반으로 셋리스트를 선택하고 setlistIds로 공연 생성 API를 호출하도록 통합합니다.",
+            "dependencies": [
+              1,
+              3,
+              4
+            ],
+            "details": "PerformanceCreateWizard.client.tsx 최종 통합:\n- import 변경: Meeting → SetlistResponse (domain/setlist/types)\n- selectedMeetings 상태 타입을 SetlistResponse[]로 변경\n- SetlistPickerModal의 onConfirm 콜백에서 SetlistResponse[] 수신\n- submit 함수에서 mutation.mutate 호출 시 setlistIds: selectedMeetings.map(s => s.setlistId) 사용\n- Step 2 셋리스트 표시: SetlistResponse의 title 필드 사용\n- Step 3 검토 섹션의 셋리스트 요약: selectedMeetings.map(s => s.title).join(', ')\n- 불필요한 Meeting 타입 import 제거",
+            "status": "done",
+            "testStrategy": "pnpm dev 후 전체 공연 생성 플로우 E2E 테스트: Step 1 기본 정보 입력 → Step 2 셋리스트 선택 → Step 3 검토 → 공연 만들기 버튼 클릭 시 API 요청 payload에 setlistIds가 올바르게 포함되는지 Network 탭에서 확인.",
+            "parentId": "undefined",
+            "updatedAt": "2026-06-25T14:25:43.787Z"
+          }
+        ],
+        "updatedAt": "2026-06-25T14:25:43.787Z"
+      },
+      {
+        "id": "2",
+        "title": "Performance 도메인 API 정렬 및 fe-areas.json 정비",
+        "description": "openapi.json 기준으로 performance 도메인 타입·API 파일 업데이트, 구 practice 관련 파일 제거, fe-areas.json 영역 정비(setlist·performance-poster 추가, practice knownGap 제거, specPending 지원)",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Performance 도메인 응답 타입(res.ts) BE 스펙 정렬",
+            "description": "openapi.json의 Performance 관련 응답 스키마와 FE 타입을 1:1 정렬한다. PerformanceBandSummary에 members 필드 추가, PerformanceBandMemberSummary 타입 신규 정의, 기타 응답 타입 필드 정합성 검증 및 수정.",
+            "dependencies": [],
+            "details": "1. src/domain/performance/types/res.ts 수정:\n   - PerformanceBandMemberSummary 타입 신규 추가 (userId: number, name: string, profileImg?: string, role: 'LEADER'|'ADMIN'|'MEMBER')\n   - PerformanceBandSummary에 members: PerformanceBandMemberSummary[] 필드 추가\n   - PerformanceListItemResponse → PerformanceListResponse로 타입명 변경 (BE 스펙 일치)\n   - setlists: PerformanceSetlistSummary[] 필드 추가\n   - CreatePerformanceResponse → PerformanceResponse로 타입명 변경 (BE 스펙 일치)\n2. PerformanceInvitationResponse의 invitedMemberName/invitedMemberProfileImg를 optional에서 제거(BE에서 non-required)",
+            "status": "pending",
+            "testStrategy": "pnpm typecheck 통과 확인, 기존 컴포넌트에서 타입 에러 발생 시 해당 컴포넌트도 함께 수정",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Performance 도메인 요청 타입(req.ts) BE 스펙 정렬",
+            "description": "openapi.json의 Performance 관련 요청 스키마와 FE 타입을 정렬한다. CreatePerformanceRequest에서 불필요한 bandIds 제거, 스키마(schema.ts)도 함께 수정.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. src/domain/performance/types/req.ts 수정:\n   - CreatePerformanceRequest에서 bandIds?: string[] 필드 제거 (BE 스펙에 없음)\n   - BE 스펙 필수 필드 확인: title(required), startAt(required), durationMinutes(required), setlistIds(optional), venue(optional)\n2. src/domain/performance/types/schema.ts 수정:\n   - createPerformanceSchema에서 bandIds 관련 스키마 라인 제거\n3. src/domain/performance/types/index.ts 수정 (필요시):\n   - export 목록이 변경된 타입명과 일치하는지 확인",
+            "status": "pending",
+            "testStrategy": "pnpm typecheck 통과 확인, createPerformance 호출부에서 bandIds 사용 여부 확인 후 제거",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Performance 도메인 구 practice 관련 파일 삭제 확정",
+            "description": "git status에서 D(삭제) 표시된 practice 관련 API/hooks/components 파일들의 삭제를 git에 반영하고, 관련 export 및 import 정리.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. 삭제 대상 파일 확인 (git status D 표시):\n   - src/domain/performance/api/addPerformancePractice.ts\n   - src/domain/performance/api/batchAddPerformancePractices.ts\n   - src/domain/performance/api/removePerformancePractice.ts\n   - src/domain/performance/components/PerformancePracticeRow.tsx\n   - src/domain/performance/hooks/useAddPerformancePractice.ts\n   - src/domain/performance/hooks/useBatchAddPerformancePractices.ts\n   - src/domain/performance/hooks/useRemovePerformancePractice.ts\n2. 해당 파일들 import/export 정리:\n   - 다른 파일에서 위 모듈을 import하는 곳이 있으면 제거\n   - barrel export(index.ts 등)에서 해당 export 제거\n3. 삭제된 setlist/api/getMySetlists.ts는 setlist/api/index.ts로 통합되었으므로 확인만",
+            "status": "pending",
+            "testStrategy": "pnpm lint && pnpm typecheck 통과 확인, 삭제된 모듈 참조로 인한 빌드 에러 없음 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "fe-areas.json specPending 영역 정비 및 검증 스크립트 실행",
+            "description": "performance-poster 영역의 specPending 상태 유지 확인, setlist 영역 operationIds 보강, verify-fe-areas 스크립트로 MAP↔SPEC/CODE↔MAP 정합성 검증.",
+            "dependencies": [
+              3
+            ],
+            "details": "1. fe-areas.json 검토 및 수정:\n   - setlist 영역에 operationIds 추가 (openapi.json 기준): createSetlist, getMySetlists, getSetlistByTitle, getSetlist, updateSetlist, createJamsFromSetlist, getSetlistTracks, getSetlistTrack, updateSetlistTrack, deleteSetlistTrack\n   - performance-poster: specPending=true 유지 (BE 구현 완료이나 openapi.json 스냅샷 미반영 상태)\n   - notification: specPending=true 유지 (동일 사유)\n2. performance 영역 operationIds 보강 (현재 미설정):\n   - getPerformances, createPerformance, getMyPerformances, searchPerformances, getPerformance, updatePerformance, deletePerformance, getMyInvitations, getPerformanceInvitations, sendInvitation, respondInvitation 등\n3. pnpm verify:fe-areas 실행하여 PASS 확인",
+            "status": "pending",
+            "testStrategy": "pnpm verify:fe-areas 실행 결과 '✅ PASS — 맵이 스펙과 정합, 미해결 uncovered 없음' 출력 확인",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Performance/Setlist API 함수 BE 스펙 정렬 및 타입 적용",
+            "description": "Performance 도메인의 API 함수들이 수정된 타입을 올바르게 사용하는지 검증하고, 필요시 API 함수 시그니처 수정. Setlist API 함수도 res.ts 타입과 정합성 확인.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "1. src/domain/performance/api/*.ts 검토:\n   - createPerformance.ts: CreatePerformanceRequest → bandIds 없이 호출하는지 확인\n   - getPerformances.ts, getMyPerformances.ts: 반환 타입이 CursorResponse<PerformanceListResponse, string>과 일치하는지 확인\n   - getPerformanceDetail.ts: 반환 타입이 PerformanceDetailResponse와 일치하는지 확인\n2. src/domain/setlist/api/index.ts 검토:\n   - 기존 getMySetlists가 제대로 export되고 있는지 확인 (삭제된 별도 파일 대체)\n   - 모든 함수의 반환 타입이 setlist/types/res.ts와 일치하는지 확인\n3. hooks에서 API 함수를 올바르게 사용하는지 검토 (usePerformanceList, useMyPerformances 등)",
+            "status": "pending",
+            "testStrategy": "pnpm typecheck && pnpm lint 통과 확인, 런타임 테스트는 BE 연동 후 수행",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-06-25T15:14:07.225Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-06-25T15:14:07.225Z",
+      "taskCount": 2,
+      "completedCount": 2,
+      "tags": [
+        "BD-93-create-performance-ui"
       ]
     }
   }

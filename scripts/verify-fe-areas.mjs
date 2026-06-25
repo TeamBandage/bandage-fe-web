@@ -95,9 +95,10 @@ function main() {
 
   let ok = true;
 
-  // (1) MAP↔SPEC: 영역 prefix 가 스펙에 존재하는지
+  // (1) MAP↔SPEC: 영역 prefix 가 스펙에 존재하는지 (specPending=true 영역은 스냅샷 미반영이므로 생략)
   const specMissing = [];
   for (const area of areas) {
+    if (area.specPending) continue;
     for (const prefix of area.endpointPrefixes) {
       if (!prefixInSpec(prefix, specPaths)) specMissing.push({ area: area.id, prefix });
     }

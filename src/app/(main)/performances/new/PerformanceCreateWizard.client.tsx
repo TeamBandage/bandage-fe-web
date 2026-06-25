@@ -9,32 +9,34 @@ import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
-import { SetlistPickerModal } from '@/domain/setlist-meeting/components/SetlistPickerModal.client';
-import type { Meeting } from '@/domain/setlist-meeting/types';
+import { SetlistSelectorSheet } from '@/domain/performance/components/SetlistSelectorSheet.client';
+import type { SetlistResponse } from '@/domain/setlist/types/res';
 import { useCreatePerformance } from '@/domain/performance/hooks/useCreatePerformance';
 import { ROUTES } from '@/global/config/routes';
 import { useRegisterDirtyForm } from '@/global/navigation/dirty-form-context';
 import { useToast } from '@/hooks/useToast';
 
-const STEPS = ['기본 정보', '셋리스트', '검토'] as const;
+const STEPS = ['기본 정보', '셋리스트 추가', '검토'] as const;
+const inputCls =
+  'rounded-[5px] hover:border-white/30 focus-visible:border-white/80 focus-visible:ring-0';
 
 export function PerformanceCreateWizard() {
   const router = useRouter();
   const toast = useToast();
   const [step, setStep] = useState<0 | 1 | 2>(0);
 
-  // Step 1
+  // Step 0
   const [title, setTitle] = useState('');
   const [venue, setVenue] = useState('');
   const [startAt, setStartAt] = useState('');
   const [durationMinutes, setDurationMinutes] = useState<number>(120);
 
-  // Step 2
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [selectedMeetings, setSelectedMeetings] = useState<Meeting[]>([]);
+  // Step 1
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [selectedSetlists, setSelectedSetlists] = useState<SetlistResponse[]>([]);
 
   const dirty =
-    step > 0 || title.length > 0 || venue.length > 0 || !!startAt || selectedMeetings.length > 0;
+    step > 0 || title.length > 0 || venue.length > 0 || !!startAt || selectedSetlists.length > 0;
   useRegisterDirtyForm('performance-create-wizard', dirty);
 
   const mutation = useCreatePerformance({
@@ -44,6 +46,9 @@ export function PerformanceCreateWizard() {
     },
     onError: (err) => toast.error(err.message || '공연 생성에 실패했습니다.'),
   });
+
+  const canNext =
+    step === 0 ? !!title && !!startAt && durationMinutes >= 30 : step === 1 ? true : false;
 
   function next() {
     if (step === 0) {
@@ -62,7 +67,7 @@ export function PerformanceCreateWizard() {
     if (!title || !startAt) return;
     mutation.mutate({
       title,
-      setlistMeetingIds: selectedMeetings.map((m) => m.id),
+      setlistIds: selectedSetlists.map((s) => s.setlistId),
       startAt,
       durationMinutes,
       venue: venue || undefined,
@@ -70,78 +75,97 @@ export function PerformanceCreateWizard() {
   }
 
   return (
-    <div
-      className="px-s-5 py-s-6 lg:px-s-8 lg:py-s-8 mx-auto max-w-3xl"
-      data-slot="performance-create-wizard"
-    >
-      <header className="mb-s-6 flex items-baseline justify-between gap-3">
+    <div className="p-s-4 mx-auto w-full max-w-3xl lg:py-10" data-slot="performance-create-wizard">
+      <header className="mb-s-6">
         <h1 className="text-title font-bold">공연 생성</h1>
       </header>
 
-      <StepIndicator steps={STEPS} current={step} />
+      <StepIndicator steps={STEPS} current={step} colorScheme="white" />
 
-      {/* Step 1 */}
+      {/* Step 0 — 기본 정보 */}
       {step === 0 && (
-        <section data-slot="wizard-step-meta" className="space-y-s-4">
+        <section className="space-y-s-3">
+          <h2 className="text-foreground-sub text-base font-semibold">공연 정보를 입력하세요</h2>
           <Input
             label="공연 제목"
             required
             placeholder="예: TuNA 정기공연"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            className={inputCls}
           />
           <Input
             label="장소 (선택)"
             placeholder="예: Club FF"
             value={venue}
             onChange={(e) => setVenue(e.target.value)}
+            className={inputCls}
           />
-          <div className="space-y-s-2">
-            <label className="text-foreground text-caption font-semibold">
-              시작 시각 <span className="text-danger">*</span>
-            </label>
-            <DateTimePicker
-              value={startAt}
-              onChange={setStartAt}
-              aria-label="공연 시작 시각"
-              required
-              futureOnly
-            />
+          <div className="gap-s-3 grid grid-cols-1 sm:grid-cols-2">
+            <div className="bg-surface px-s-4 pt-s-2 pb-s-3 rounded-[5px] border border-white/20">
+              <label className="text-foreground-sub text-caption font-bold">
+                시작 시각{' '}
+                <span aria-hidden="true" className="text-danger">
+                  *
+                </span>
+              </label>
+              <div className="mt-s-2">
+                <DateTimePicker
+                  value={startAt}
+                  onChange={setStartAt}
+                  aria-label="공연 시작 시각"
+                  required
+                  futureOnly
+                />
+              </div>
+            </div>
+            <div className="bg-surface px-s-4 pt-s-2 pb-s-3 rounded-[5px] border border-white/20">
+              <label className="text-foreground-sub text-caption font-bold">
+                소요 시간 (분){' '}
+                <span aria-hidden="true" className="text-danger">
+                  *
+                </span>
+              </label>
+              <div className="mt-s-2">
+                <input
+                  type="number"
+                  min={30}
+                  max={600}
+                  step={10}
+                  required
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(Number(e.target.value) || 0)}
+                  className="text-foreground text-title w-full border-0 bg-transparent font-bold outline-none"
+                />
+              </div>
+            </div>
           </div>
-          <Input
-            label="소요 시간 (분)"
-            type="number"
-            min={30}
-            max={600}
-            step={30}
-            required
-            value={durationMinutes}
-            onChange={(e) => setDurationMinutes(Number(e.target.value) || 0)}
-          />
         </section>
       )}
 
-      {/* Step 2 */}
+      {/* Step 1 — 셋리스트 */}
       {step === 1 && (
-        <section data-slot="wizard-step-setlists" className="space-y-s-4">
-          <h2 className="text-subtitle font-semibold">셋리스트를 추가하세요 (선택)</h2>
-          {selectedMeetings.length === 0 ? (
-            <p className="text-foreground-muted text-caption">
-              추가하지 않으면 셋리스트 없이 공연이 생성됩니다.
-            </p>
-          ) : (
+        <section className="space-y-s-4">
+          <h2 className="text-foreground-sub text-base font-semibold">
+            셋리스트를 추가하세요{' '}
+            <span className="text-foreground-muted text-caption font-normal">(선택)</span>
+          </h2>
+
+          {selectedSetlists.length > 0 && (
             <ul className="gap-s-2 flex flex-wrap">
-              {selectedMeetings.map((m) => (
+              {selectedSetlists.map((s) => (
                 <li
-                  key={m.id}
-                  className="bg-card border-border gap-s-2 px-s-3 py-s-1 inline-flex items-center rounded-full border"
+                  key={s.setlistId}
+                  className="gap-s-2 px-s-3 py-s-1 inline-flex items-center rounded-full border border-white/20 bg-white/10"
                 >
-                  <span className="text-caption">{m.title}</span>
+                  <span className="text-caption">{s.title}</span>
                   <button
                     type="button"
-                    aria-label={`${m.title} 제거`}
+                    aria-label={`${s.title} 제거`}
                     className="text-foreground-muted hover:text-foreground"
-                    onClick={() => setSelectedMeetings((prev) => prev.filter((x) => x.id !== m.id))}
+                    onClick={() =>
+                      setSelectedSetlists((prev) => prev.filter((x) => x.setlistId !== s.setlistId))
+                    }
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -149,21 +173,27 @@ export function PerformanceCreateWizard() {
               ))}
             </ul>
           )}
+
+          {selectedSetlists.length === 0 && (
+            <p className="text-foreground-muted text-caption">
+              추가하지 않으면 셋리스트 없이 공연이 생성됩니다.
+            </p>
+          )}
+
           <Button
             type="button"
-            variant="secondary"
-            onClick={() => setPickerOpen(true)}
-            className="w-full"
+            onClick={() => setSelectorOpen(true)}
+            className="w-full rounded-[5px] bg-white/70 text-neutral-900 transition-transform hover:bg-white/85 active:scale-95 active:bg-white"
           >
-            셋리스트 검색해서 추가
+            셋리스트 선택
           </Button>
         </section>
       )}
 
-      {/* Step 3 — 검토 */}
+      {/* Step 2 — 검토 */}
       {step === 2 && (
-        <section data-slot="wizard-step-review" className="space-y-s-4">
-          <h2 className="text-subtitle font-semibold">아래 내용을 확인해주세요</h2>
+        <section className="space-y-s-4">
+          <h2 className="text-foreground-sub text-base font-semibold">아래 내용을 확인해주세요</h2>
           <WizardSummaryCard
             sections={[
               { label: '제목', value: title || '—', onEdit: () => setStep(0) },
@@ -188,9 +218,9 @@ export function PerformanceCreateWizard() {
               {
                 label: '셋리스트',
                 value:
-                  selectedMeetings.length === 0
+                  selectedSetlists.length === 0
                     ? '없음'
-                    : selectedMeetings.map((m) => m.title).join(', '),
+                    : selectedSetlists.map((s) => s.title).join(', '),
                 onEdit: () => setStep(1),
               },
             ]}
@@ -201,24 +231,40 @@ export function PerformanceCreateWizard() {
         </section>
       )}
 
-      <footer className="mt-s-6 gap-s-3 flex items-center justify-between">
-        <Button variant="ghost" onClick={back} disabled={step === 0}>
-          이전
-        </Button>
-        {step < 2 ? (
-          <Button onClick={next}>다음</Button>
+      <footer className="gap-s-3 mt-6.75 flex items-center justify-between">
+        {step > 0 ? (
+          <Button size="sm" variant="ghost" onClick={back} className="rounded-[5px]">
+            이전
+          </Button>
         ) : (
-          <Button onClick={submit} loading={mutation.isPending}>
+          <span />
+        )}
+        {step < 2 ? (
+          <Button
+            size="sm"
+            onClick={next}
+            disabled={!canNext}
+            className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+          >
+            다음
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            onClick={submit}
+            loading={mutation.isPending}
+            className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+          >
             공연 만들기
           </Button>
         )}
       </footer>
 
-      <SetlistPickerModal
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        initialSelection={selectedMeetings}
-        onConfirm={(meetings) => setSelectedMeetings(meetings)}
+      <SetlistSelectorSheet
+        open={selectorOpen}
+        onOpenChange={setSelectorOpen}
+        initialSelection={selectedSetlists}
+        onConfirm={(setlists) => setSelectedSetlists(setlists)}
       />
     </div>
   );

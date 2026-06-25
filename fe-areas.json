@@ -15,7 +15,7 @@
       "id": "member",
       "label": "회원",
       "routes": ["/me"],
-      "endpointPrefixes": ["/api/v1/members"],
+      "endpointPrefixes": ["/api/v1/members", "/api/v1/me"],
       "status": "active"
     },
     {
@@ -45,7 +45,7 @@
         "createJamsFromSetlist"
       ],
       "status": "active",
-      "notes": "BD-70에서 practice→jam 도메인 재구조화(PracticeSong 제거, TrackInfo 임베디드, participant/session 모델 변경). BE source of truth는 /api/v1/jams이며 /api/v1/practices는 폐기됨. FE 라우트(/practices)·호출 코드(src/domain/practice)는 아직 legacy practices를 사용 → 계약 불일치는 docs/mcp-impact/known-contract-gaps.md 참조. createJamsFromSetlist는 /api/v1/setlists/{setlistId}/jams 경유(별도 nested 경로)."
+      "notes": "BD-70에서 practice→jam 도메인 재구조화. BE source of truth는 /api/v1/jams. createJamsFromSetlist는 /api/v1/setlists/{setlistId}/jams 경유(별도 nested 경로)."
     },
     {
       "id": "performance",
@@ -71,11 +71,29 @@
       "notes": "일부 화면이 mock 데이터(domain/setlist-meeting/mock)와 병존한다. 영향 조회 시 mock 구간은 BE 미연동으로 간주."
     },
     {
+      "id": "setlist",
+      "label": "셋리스트",
+      "routes": ["/setlists"],
+      "endpointPrefixes": ["/api/v1/setlists"],
+      "status": "active"
+    },
+    {
+      "id": "performance-poster",
+      "label": "공연 포스터",
+      "routes": ["/performances"],
+      "endpointPrefixes": ["/api/v1/performance-posters"],
+      "status": "active",
+      "specPending": true,
+      "notes": "BE 구현 완료이나 openapi.json 스냅샷에 미반영. MCP 비교 후 타입·API 파일 작성 예정."
+    },
+    {
       "id": "notification",
       "label": "알림",
       "routes": ["/notifications"],
       "endpointPrefixes": ["/api/v1/notifications"],
-      "status": "active"
+      "status": "active",
+      "specPending": true,
+      "notes": "BE 구현 완료(BD-126)이나 openapi.json 스냅샷에 미반영. specPending=true로 MAP↔SPEC 체크 생략."
     },
     {
       "id": "schedule-coordination",
@@ -86,13 +104,5 @@
       "notes": "BE 미연동(api/ 폴더 없음, 전량 mock). endpoint 매핑 없음 → 영향 조회 대상에서 제외하거나 '미연동'으로 표시."
     }
   ],
-  "knownGaps": [
-    {
-      "area": "jam",
-      "deprecatedPrefixes": ["/api/v1/practices", "/api/v1/practice-songs"],
-      "status": "unaligned",
-      "doc": "docs/mcp-impact/known-contract-gaps.md",
-      "reason": "BD-70 practice→jam 도메인 재구조화로 /api/v1/practices·/api/v1/practice-songs 폐기. FE 호출 코드(src/domain/practice, src/domain/practice-song)가 아직 폐기 경로를 호출 — 개발자 코드 정렬 영역. 검증에서 uncovered가 아닌 known-gap으로 분류한다."
-    }
-  ]
+  "knownGaps": []
 }
