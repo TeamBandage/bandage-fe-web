@@ -14,14 +14,10 @@ export interface UpdatePerformanceRequest {
   venue?: string;
 }
 
-export interface AddPerformancePracticeRequest {
-  title?: string;
-  songId: string;
-  startAt: string;
-  durationMinutes: number;
-  venue?: string;
+export interface PerformanceSetlistAddRequest {
+  setlistIds: string[];
 }
 
-export interface BatchAddPerformancePracticeRequest {
-  practiceIds: string[];
+export interface PerformanceInvitationCreateRequest {
+  memberId: number;
 }

@@ -18,6 +18,8 @@ BD-93 공연 생성 페이지 UI 개선 및 셋리스트 API 연동. 기존 `Per
 - 공연 생성 이후 셋리스트 추가/제거 API 연동 (`/api/v1/performances/{id}/setlists`)
 - 셋리스트 검색/필터 기능
 - 공연 생성 폼 zod 스키마에 setlistIds 검증 추가
+- performance/schedule-boards 엔드포인트 FE 구현 (별도 태스크)
+- performance-poster 도메인 FE 구현 (별도 태스크, openapi 스냅샷 반영 후 진행)
 
 # Existing architecture (재사용 대상)
 - `src/components/ui/responsive-sheet.tsx` — 모바일 BottomSheet / 데스크톱 Dialog 자동 전환
@@ -62,6 +64,49 @@ BD-93 공연 생성 페이지 UI 개선 및 셋리스트 API 연동. 기존 `Per
 ### JamCreateWizard 보완
 - `src/app/(main)/jams/new/JamCreateWizard.client.tsx` Step 1에 `<h2>일정을 설정하세요</h2>` 소제목 추가
 
+## Task 2 — Performance 도메인 API 정렬 및 fe-areas.json 정비
+
+### 2.1 Performance 도메인 타입 업데이트 (openapi.json 기준)
+- `PerformanceDetailResponse`: `bands`·`practices` 필드 제거 → `setlists: PerformanceSetlistSummary[]` 추가
+- 신규 타입: `PerformanceBandSummary`, `PerformanceSetlistSummary`, `PerformanceSetlistResponse`
+- 신규 타입: `PerformanceInvitationResponse`, `PerformanceInvitationStatus`
+- 신규 req 타입: `PerformanceSetlistAddRequest`, `PerformanceInvitationCreateRequest`
+- 제거: `AddPerformancePracticeRequest`, `BatchAddPerformancePracticeRequest`(구 practice 관련 req), `PerformancePracticeSummary`, `PerformancePracticeResponse`
+
+### 2.2 구 practice 관련 파일 제거
+- 삭제: `api/addPerformancePractice.ts`, `batchAddPerformancePractices.ts`, `removePerformancePractice.ts`
+- 삭제: `hooks/useAddPerformancePractice.ts`, `useBatchAddPerformancePractices.ts`, `useRemovePerformancePractice.ts`
+- 삭제: `components/PerformancePracticeRow.tsx`
+- `types/schema.ts`에서 `addPerformancePracticeSchema`, `batchAddPerformancePracticeSchema` 제거
+
+### 2.3 신규 Performance API 파일 추가
+- `api/getMyPerformanceInvitations.ts` — `GET /api/v1/performances/invitations/me`
+- `api/getPerformanceInvitations.ts` — `GET /api/v1/performances/{id}/invitations`
+- `api/sendPerformanceInvitation.ts` — `POST /api/v1/performances/{id}/invitations`
+- `api/decidePerformanceInvitation.ts` — `PATCH /api/v1/performances/{id}/invitations/{invitationId}`
+- `api/batchAddPerformanceSetlists.ts` — `POST /api/v1/performances/{id}/setlists/batch`
+- `api/removePerformanceSetlist.ts` — `DELETE /api/v1/performances/{id}/setlists/{setlistId}`
+
+### 2.4 PerformanceDetailContent 리팩터
+- `bands`·`practices` 탭 제거 → 참여 셋리스트 카드(`setlists: PerformanceSetlistSummary[]`) 로 교체
+- `addPerformancePracticeSchema` import 및 관련 AttachDialog 제거
+
+### 2.5 setlist 도메인 확장 (1개 → 10개 API 함수)
+- `src/domain/setlist/api/index.ts` 에 10개 함수 통합
+  (createSetlist, getMySetlists, getSetlistByTitle, getSetlist, updateSetlist, createJamsFromSetlist, getSetlistTracks, getSetlistTrack, updateSetlistTrack, deleteSetlistTrack)
+- 신규 타입: `SetlistCreateRequest`, `SetlistUpdateRequest`, `SetlistTrackUpdateRequest`, `SetlistToJamRequest`
+- `SetlistTrackSessionResponse`, `SetlistTrackResponse` res 타입 추가
+
+### 2.6 fe-areas.json 정비
+- `band`·`jam`·`performance` ID 단수 유지 (MCP 도구 자체 매핑과 일치 확인)
+- `practice` knownGap 항목 제거 (FE 코드 정렬 완료)
+- 신규 영역 추가: `setlist` (`/api/v1/setlists`)
+- `member` 영역에 `/api/v1/me` prefix 추가 (availability 엔드포인트 커버)
+- `notification` 영역 `specPending: true` 추가 (openapi.json 스냅샷 미반영)
+- 신규 영역 추가: `performance-poster` (`/api/v1/performance-posters`, `specPending: true`)
+- `verify-fe-areas.mjs`: `specPending: true` 영역은 MAP↔SPEC 체크 생략 처리
+- `src/domain/jam/api/getJams.ts`: 구 `/api/v1/practices` 언급 JSDoc 제거 및 파라미터 타입명 정리
+
 # Test Strategy
 - 공연 생성 Step 0: 제목 필수 입력, 시작 시각 필수, 소요 시간 30분 미만 시 에러 토스트
 - 공연 생성 Step 1: "셋리스트 선택" 버튼 클릭 → API 호출 → 셋리스트 목록 표시
@@ -70,4 +115,10 @@ BD-93 공연 생성 페이지 UI 개선 및 셋리스트 API 연동. 기존 `Per
 - Step 2 검토: 선택한 셋리스트 제목 콤마 구분 표시
 - "공연 만들기" → `POST /api/v1/performances` body에 `setlistIds` 배열 포함 확인
 - 합주 생성 Step 1에 "일정을 설정하세요" 소제목 노출 확인
+
+## Task 2 검증
+- `pnpm typecheck` — 0 errors
+- `pnpm verify:fe-areas` — ✅ PASS
+- MCP `check_impacting_changes(fe_area="performance")` — breaking 변경 없음 확인
+- 제거된 practice 관련 import가 남아있지 않음 확인
 </PRD>

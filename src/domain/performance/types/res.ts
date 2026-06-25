@@ -11,16 +11,15 @@ export interface PerformanceListItemResponse {
   venue?: string | null;
 }
 
-/** API_SPEC §6-3 (2026-04-26) — bands/practices 가 평면 ID 배열에서 요약 객체 배열로 확장. */
 export interface PerformanceBandSummary {
   bandId: string;
   bandName: string;
 }
 
-export interface PerformancePracticeSummary {
-  practiceId: string;
+export interface PerformanceSetlistSummary {
+  setlistId: string;
   title: string;
-  startAt: string;
+  bands: PerformanceBandSummary[];
 }
 
 export interface PerformanceDetailResponse {
@@ -29,12 +28,24 @@ export interface PerformanceDetailResponse {
   startAt: string;
   durationMinutes: number;
   venue?: string | null;
-  bands: PerformanceBandSummary[];
   managerIds: number[];
-  practices: PerformancePracticeSummary[];
+  setlists: PerformanceSetlistSummary[];
 }
 
-export interface PerformancePracticeResponse {
-  performancePracticeId: string;
-  practiceId: string;
+export interface PerformanceSetlistResponse {
+  performanceSetlistId: string;
+  setlistId: string;
+}
+
+export type PerformanceInvitationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELED';
+
+export interface PerformanceInvitationResponse {
+  invitationId: string;
+  performanceId: string;
+  performanceTitle: string;
+  invitedMemberId: number;
+  invitedMemberName?: string;
+  invitedMemberProfileImg?: string;
+  status: PerformanceInvitationStatus;
+  createdAt: string;
 }

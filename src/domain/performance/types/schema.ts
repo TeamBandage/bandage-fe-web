@@ -38,25 +38,3 @@ export const updatePerformanceSchema = z
     { message: '수정할 항목을 하나 이상 입력해 주세요.' },
   );
 export type UpdatePerformanceSchema = z.infer<typeof updatePerformanceSchema>;
-
-export const addPerformancePracticeSchema = z.object({
-  title: z
-    .string()
-    .max(100)
-    .optional()
-    .or(z.literal('').transform(() => undefined)),
-  songId: z.string().min(1, 'songId 를 입력해 주세요.'),
-  startAt: z.string().regex(KST_DATETIME, '시작 시각은 yyyy-MM-dd HH:mm 형식이어야 합니다.'),
-  durationMinutes: z.number().int().min(15).max(480),
-  venue: z
-    .string()
-    .max(200)
-    .optional()
-    .or(z.literal('').transform(() => undefined)),
-});
-export type AddPerformancePracticeSchema = z.infer<typeof addPerformancePracticeSchema>;
-
-export const batchAddPerformancePracticeSchema = z.object({
-  practiceIds: z.array(z.string().min(1)).min(1, '최소 1개 이상의 합주를 선택해 주세요.'),
-});
-export type BatchAddPerformancePracticeSchema = z.infer<typeof batchAddPerformancePracticeSchema>;
