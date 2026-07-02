@@ -77,7 +77,7 @@ export function PerformancesListPane() {
       <div className="border-border px-s-3 py-s-3 flex items-center justify-between border-b">
         <h2 className="text-body font-bold">공연 탐색</h2>
         <Button asChild size="sm" variant="accent-outline" aria-label="공연 생성">
-          <Link href={ROUTES.PERFORMANCE_NEW}>
+          <Link href={ROUTES.PERFORMANCE_CREATE}>
             <Plus className="h-4 w-4" /> 공연 생성
           </Link>
         </Button>

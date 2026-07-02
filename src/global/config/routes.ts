@@ -17,6 +17,7 @@ export const ROUTES = {
 
   PERFORMANCES: '/performances',
   PERFORMANCE_NEW: '/performances/new',
+  PERFORMANCE_CREATE: '/performances/create',
   PERFORMANCE_DETAIL: (id: string) => `/performances/${id}`,
 
   ME: '/me',
