@@ -4,7 +4,7 @@ import { Root, Portal, Overlay, Content, Title, Close } from '@radix-ui/react-di
 import { formatInTimeZone } from 'date-fns-tz';
 import { Maximize2, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 import {
   BottomSheet,
@@ -15,13 +15,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useJams } from '@/domain/jam/hooks/useJams';
 import { useMyJams } from '@/domain/jam/hooks/useMyJams';
+import { useSearchMyJams } from '@/domain/jam/hooks/useSearchMyJams';
 import type { JamListItemResponse } from '@/domain/jam/types';
 import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
-import { useDiscoverySearch } from '@/hooks/useDiscoverySearch';
 import { cn } from '@/lib/cn';
 import { useRouter } from 'next/navigation';
 import { DOMAIN_ICONS, DOMAIN_TONES } from '@/lib/domain-icons';
@@ -29,8 +27,6 @@ import { DOMAIN_ICONS, DOMAIN_TONES } from '@/lib/domain-icons';
 import { JamDetailContent } from './[jamId]/JamDetailContent.client';
 
 const PracticeIcon = DOMAIN_ICONS.practice;
-
-const accessor = (p: JamListItemResponse) => `${p.title} ${p.venue ?? ''}`;
 
 function PracticeSelectRow({
   practice,
@@ -69,6 +65,7 @@ function PracticeSelectRow({
 export function JamsMobileShell() {
   const router = useRouter();
   const [selectedJamId, setSelectedPracticeId] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const isDesktop = useIsDesktop();
 
   function handleExpand() {
@@ -77,127 +74,68 @@ export function JamsMobileShell() {
     router.push(ROUTES.JAM_DETAIL(selectedJamId));
   }
 
+  const isSearching = query.trim().length > 0;
+
   const { data: myData, isLoading: myLoading } = useMyJams(50);
   const myJams = myData?.pages.flatMap((p) => p.content) ?? [];
 
-  const { data: allData, isLoading: allLoading } = useJams(undefined, 50);
-  const allJams = allData?.pages.flatMap((p) => p.content) ?? [];
-  const accessorRef = useCallback(accessor, []);
-  const { query, setQuery, filtered, isFiltering } = useDiscoverySearch(allJams, accessorRef);
+  const { data: searchData, isLoading: searchLoading } = useSearchMyJams(query, 50);
+  const searchJams = searchData?.pages.flatMap((p) => p.content) ?? [];
+
+  const jams = isSearching ? searchJams : myJams;
+  const isLoading = isSearching ? searchLoading : myLoading;
 
   return (
     <>
-      <Tabs defaultValue="mine" onValueChange={() => setQuery('')}>
-        <div className="border-border mb-s-3 pb-s-2 pt-s-1 flex items-center justify-between border-b">
-          <div className="flex items-center gap-4">
-            <h2 className="text-foreground pl-2.5 text-2xl font-bold lg:text-3xl">합주</h2>
-            <TabsList className="hidden w-37.5 lg:inline-flex">
-              <TabsTrigger
-                value="mine"
-                className="text-foreground flex-1 transition-all active:scale-95 data-[state=active]:bg-neutral-100 data-[state=active]:text-neutral-900"
-              >
-                내 합주
-              </TabsTrigger>
-              <TabsTrigger
-                value="discover"
-                className="text-foreground flex-1 transition-all active:scale-95 data-[state=active]:bg-neutral-100 data-[state=active]:text-neutral-900"
-              >
-                탐색
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <Button
-            asChild
-            size="sm"
-            variant="accent-outline"
-            aria-label="합주 생성"
-            className="rounded-[5px] border-white text-white hover:border-transparent hover:bg-white hover:text-neutral-900 active:border-transparent active:bg-neutral-200 active:text-neutral-900"
-          >
-            <Link href={ROUTES.JAM_CREATE}>
-              <Plus className="h-4 w-4" /> 합주 생성
-            </Link>
-          </Button>
+      <div className="border-border mb-s-3 pb-s-2 pt-s-1 flex items-center justify-between border-b">
+        <h2 className="text-foreground pl-2.5 text-2xl font-bold lg:text-3xl">내 합주</h2>
+        <Button
+          asChild
+          size="sm"
+          variant="accent-outline"
+          aria-label="합주 생성"
+          className="rounded-[5px] border-white text-white hover:border-transparent hover:bg-white hover:text-neutral-900 active:border-transparent active:bg-neutral-200 active:text-neutral-900"
+        >
+          <Link href={ROUTES.JAM_CREATE}>
+            <Plus className="h-4 w-4" /> 합주 생성
+          </Link>
+        </Button>
+      </div>
+
+      <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 mb-s-3 flex items-center rounded-[5px] border">
+        <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="제목·곡 검색…"
+          aria-label="내 합주 검색"
+          className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-s-2">
+          <Skeleton className="h-14 w-full" rounded="md" />
+          <Skeleton className="h-14 w-full" rounded="md" />
+          <Skeleton className="h-14 w-full" rounded="md" />
         </div>
-
-        <div className="mb-s-3 lg:hidden">
-          <TabsList className="w-full">
-            <TabsTrigger
-              value="mine"
-              className="text-foreground flex-1 transition-all active:scale-95 data-[state=active]:bg-neutral-100 data-[state=active]:text-neutral-900"
-            >
-              내 합주
-            </TabsTrigger>
-            <TabsTrigger
-              value="discover"
-              className="text-foreground flex-1 transition-all active:scale-95 data-[state=active]:bg-neutral-100 data-[state=active]:text-neutral-900"
-            >
-              탐색
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="mine">
-          {myLoading ? (
-            <div className="space-y-s-2">
-              <Skeleton className="h-14 w-full" rounded="md" />
-              <Skeleton className="h-14 w-full" rounded="md" />
-              <Skeleton className="h-14 w-full" rounded="md" />
-            </div>
-          ) : myJams.length === 0 ? (
-            <p className="text-foreground-muted py-s-6 text-center text-sm">
-              예정된 합주가 없습니다.
-            </p>
-          ) : (
-            <ul className="gap-s-1 flex flex-col">
-              {myJams.map((p) => (
-                <PracticeSelectRow
-                  key={p.jamId}
-                  practice={p}
-                  isSelected={selectedJamId === p.jamId}
-                  onClick={() => setSelectedPracticeId(p.jamId)}
-                />
-              ))}
-            </ul>
-          )}
-        </TabsContent>
-
-        <TabsContent value="discover">
-          <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 mb-s-3 flex items-center rounded-[5px] border">
-            <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="제목·장소·곡 검색…"
-              aria-label="합주 검색"
-              className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+      ) : jams.length === 0 ? (
+        <p className="text-foreground-muted py-s-6 text-center text-sm">
+          {isSearching ? '검색 결과가 없습니다.' : '예정된 합주가 없습니다.'}
+        </p>
+      ) : (
+        <ul className="gap-s-1 flex flex-col">
+          {jams.map((p) => (
+            <PracticeSelectRow
+              key={p.jamId}
+              practice={p}
+              isSelected={selectedJamId === p.jamId}
+              onClick={() => setSelectedPracticeId(p.jamId)}
             />
-          </div>
-
-          {allLoading ? (
-            <div className="space-y-s-2">
-              <Skeleton className="h-14 w-full" rounded="md" />
-              <Skeleton className="h-14 w-full" rounded="md" />
-              <Skeleton className="h-14 w-full" rounded="md" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <p className="text-foreground-muted py-s-6 text-center text-sm">
-              {isFiltering ? '검색 결과가 없습니다.' : '등록된 합주가 없습니다.'}
-            </p>
-          ) : (
-            <ul className="gap-s-1 flex flex-col">
-              {filtered.map((p) => (
-                <PracticeSelectRow
-                  key={p.jamId}
-                  practice={p}
-                  isSelected={selectedJamId === p.jamId}
-                  onClick={() => setSelectedPracticeId(p.jamId)}
-                />
-              ))}
-            </ul>
-          )}
-        </TabsContent>
-      </Tabs>
+          ))}
+        </ul>
+      )}
 
       {isDesktop ? (
         <Root open={!!selectedJamId} onOpenChange={(open) => !open && setSelectedPracticeId(null)}>
