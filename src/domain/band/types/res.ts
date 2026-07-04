@@ -37,3 +37,13 @@ export interface BandApplicationInfoResponse {
   /** 신청 일시. 동일 사유. */
   appliedAt?: string;
 }
+
+/** GET /api/v1/band-applications/me 응답 항목 — 내 밴드 가입 신청 목록 */
+export interface MyBandApplicationResponse {
+  bandApplicationId: string;
+  bandId: string;
+  bandName: string;
+  bandProfileImg?: string;
+  status: ApplicationStatus;
+  appliedAt?: string;
+}

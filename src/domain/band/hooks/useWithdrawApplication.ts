@@ -17,6 +17,8 @@ export function useWithdrawApplication(bandId: string, options?: UseWithdrawAppl
     mutationFn: () => withdrawApplication(bandId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...queryKeys.band.detail(bandId)] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.band.myApplication(bandId) });
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.band.all, 'my-applications'] });
       options?.onSuccess?.();
     },
     onError: options?.onError,

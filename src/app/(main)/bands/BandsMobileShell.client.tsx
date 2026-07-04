@@ -1,7 +1,7 @@
 'use client';
 
 import { Root, Portal, Overlay, Content, Title, Close } from '@radix-ui/react-dialog';
-import { Maximize2, Plus, Search, Users, X } from 'lucide-react';
+import { ClipboardList, Maximize2, Plus, Search, Users, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BandCreateModal } from '@/domain/band/components/BandCreateModal.client';
 import { BandRoleBadge } from '@/domain/band/components/BandRoleBadge';
+import { MyBandApplicationsSheet } from '@/domain/band/components/MyBandApplicationsSheet.client';
 import { useBandList } from '@/domain/band/hooks/useBandList';
 import { useBandSearch } from '@/domain/band/hooks/useBandSearch';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
@@ -126,6 +127,13 @@ export function BandsMobileShell() {
                 탐색
               </TabsTrigger>
             </TabsList>
+            <MyBandApplicationsSheet
+              trigger={
+                <Button size="sm" variant="ghost" className="hidden lg:inline-flex">
+                  가입 신청 내역
+                </Button>
+              }
+            />
           </div>
           <BandCreateModal
             trigger={
@@ -141,9 +149,9 @@ export function BandsMobileShell() {
           />
         </div>
 
-        {/* 모바일: 헤더 아래 풀너비 토글 */}
-        <div className="mb-s-3 lg:hidden">
-          <TabsList className="w-full">
+        {/* 모바일: 헤더 아래 탭 + 가입 신청 내역 버튼 */}
+        <div className="gap-s-2 mb-s-3 flex items-center lg:hidden">
+          <TabsList className="flex-1">
             <TabsTrigger
               value="mine"
               className="text-foreground flex-1 transition-all active:scale-95 data-[state=active]:bg-neutral-100 data-[state=active]:text-neutral-900"
@@ -157,6 +165,13 @@ export function BandsMobileShell() {
               탐색
             </TabsTrigger>
           </TabsList>
+          <MyBandApplicationsSheet
+            trigger={
+              <Button size="sm" variant="ghost" className="shrink-0" aria-label="가입 신청 내역">
+                <ClipboardList className="h-4 w-4" />
+              </Button>
+            }
+          />
         </div>
 
         <TabsContent value="mine">

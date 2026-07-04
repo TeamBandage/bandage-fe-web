@@ -22,9 +22,8 @@ export function useDecideApplication(bandId: string, options?: UseDecideApplicat
   return useMutation<void, Error, Variables>({
     mutationFn: ({ applicationId, decision }) => decideApplication(bandId, applicationId, decision),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: [...queryKeys.band.detail(bandId), 'applications'],
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.band.applications(bandId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.band.myApplication(bandId) });
       queryClient.invalidateQueries({ queryKey: [...queryKeys.band.members(bandId)] });
       options?.onSuccess?.(variables);
     },
