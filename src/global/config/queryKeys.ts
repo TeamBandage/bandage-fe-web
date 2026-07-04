@@ -65,6 +65,12 @@ export const queryKeys = {
     list: (performanceId: string) => [...queryKeys.performancePoster.all, performanceId] as const,
     detail: (posterId: string) => [...queryKeys.performancePoster.all, 'detail', posterId] as const,
   },
+  performanceInvitation: {
+    all: ['performance-invitation'] as const,
+    sent: (performanceId: string) =>
+      [...queryKeys.performanceInvitation.all, 'sent', performanceId] as const,
+    my: () => [...queryKeys.performanceInvitation.all, 'my'] as const,
+  },
 } as const;
 
 export type QueryKeys = typeof queryKeys;

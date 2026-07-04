@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PerformanceDday } from '@/domain/performance/components/PerformanceDday';
+import { PerformanceInvitationsPanel } from '@/domain/performance/components/PerformanceInvitationsPanel.client';
 import { SetlistSelectorSheet } from '@/domain/performance/components/SetlistSelectorSheet.client';
 import { useBatchAddPerformanceSetlists } from '@/domain/performance/hooks/useBatchAddPerformanceSetlists';
 import { useDeletePerformance } from '@/domain/performance/hooks/useDeletePerformance';
@@ -259,7 +260,7 @@ export function PerformanceDetailContent({
               셋리스트
             </TabsTrigger>
             <TabsTrigger value="invitations" className={outerTriggerCls}>
-              초대 목록
+              {isManager ? '초대 목록' : '초대 요청'}
             </TabsTrigger>
             {isManager && (
               <TabsTrigger value="settings" className={outerTriggerCls}>
@@ -396,9 +397,9 @@ export function PerformanceDetailContent({
             </Dialog>
           </TabsContent>
 
-          {/* 초대 목록 탭 */}
+          {/* 초대 목록/초대 요청 탭 */}
           <TabsContent value="invitations" className="mt-0">
-            <EmptyState title="초대 목록이 없습니다" compact />
+            <PerformanceInvitationsPanel performanceId={performanceId} isManager={isManager} />
           </TabsContent>
 
           {/* 설정 탭 (매니저 전용) */}
