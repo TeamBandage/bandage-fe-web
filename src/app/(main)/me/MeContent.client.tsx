@@ -81,8 +81,16 @@ export function MeContent() {
     weeklyRules: WeeklyRuleRequest[],
     note: string,
     exceptions: AvailabilityExceptionRequest[],
+    effectiveFrom: string,
+    effectiveTo: string,
   ) => {
-    updateAvailabilityMutation.mutate({ weeklyRules, exceptions, note });
+    updateAvailabilityMutation.mutate({
+      weeklyRules,
+      exceptions,
+      note,
+      effectiveFrom,
+      effectiveTo: effectiveTo || null,
+    });
   };
 
   const logoutMutation = useLogout({
@@ -261,8 +269,16 @@ export function MeContent() {
   );
 }
 
-function EditCard({ member, onSaved }: { member: MemberInfoResponse; onSaved: () => void }) {
+function EditCard({
+  member: initialMember,
+  onSaved,
+}: {
+  member: MemberInfoResponse;
+  onSaved: () => void;
+}) {
   const toast = useToast();
+  const { data: liveMe } = useMe();
+  const member = liveMe ?? initialMember;
   const form = useForm<UpdateMeSchema>({
     resolver: zodResolver(updateMeSchema),
     defaultValues: { name: member.name },
