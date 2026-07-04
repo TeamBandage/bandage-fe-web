@@ -8,25 +8,28 @@ export const ROUTES = {
   HOME: '/home',
 
   BANDS: '/bands',
-  BAND_NEW: '/bands/new',
+  BAND_CREATE: '/bands/create',
   BAND_DETAIL: (bandId: string) => `/bands/${bandId}`,
 
   JAMS: '/jams',
-  JAM_NEW: '/jams/new',
+  JAM_CREATE: '/jams/create',
   JAM_DETAIL: (id: string) => `/jams/${id}`,
 
   PERFORMANCES: '/performances',
-  PERFORMANCE_NEW: '/performances/new',
+  PERFORMANCE_CREATE: '/performances/create',
   PERFORMANCE_DETAIL: (id: string) => `/performances/${id}`,
 
   ME: '/me',
   ME_EDIT: '/me/edit',
 
-  SETLIST_MEETINGS: '/setlist-meetings',
-  SETLIST_MEETING_NEW: '/setlist-meetings/new',
-  SETLIST_MEETING_DETAIL: (id: string) => `/setlist-meetings/${id}`,
-  SETLIST_SCHEDULING: '/setlist-meetings/scheduling',
-  SETLIST_SCHEDULING_DETAIL: (id: string) => `/setlist-meetings/scheduling/${id}`,
+  SETLISTS: '/setlists',
+  SETLIST_DETAIL: (id: string) => `/setlists/${id}`,
+
+  TRACK_SELECTIONS: '/track-selections',
+  TRACK_SELECTION_CREATE: '/track-selections/create',
+  TRACK_SELECTION_DETAIL: (id: string) => `/track-selections/${id}`,
+  TRACK_SELECTION_SCHEDULING: '/track-selections/scheduling',
+  TRACK_SELECTION_SCHEDULING_DETAIL: (id: string) => `/track-selections/scheduling/${id}`,
 } as const;
 
 export type AppRoutes = typeof ROUTES;

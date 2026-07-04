@@ -297,7 +297,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           <span
             class="flex-1 truncate text-left"
           >
-            선곡 회의
+            선곡 조율
           </span>
           <svg
             aria-hidden="true"
@@ -369,7 +369,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
         </div>
       </div>
       <button
-        class="inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:pointer-events-none bg-surface text-foreground border border-border hover:bg-card-hover h-8 px-3 text-sm w-full rounded-[5px]"
+        class="inline-flex items-center justify-center gap-2 font-medium transition-colors no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:pointer-events-none bg-surface text-foreground border border-border hover:bg-card-hover h-8 px-3 text-sm w-full rounded-[5px]"
         type="button"
       >
         로그아웃

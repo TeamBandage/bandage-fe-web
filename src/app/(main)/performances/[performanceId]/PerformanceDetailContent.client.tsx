@@ -3,33 +3,24 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   CalendarDays,
+  ChevronDown,
+  ChevronUp,
   ImagePlus,
-  ListMusic,
   Loader2,
   MapPin,
-  Pencil,
-  Trash2,
+  Music,
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PerformanceBandChips } from '@/domain/performance/components/PerformanceBandChips';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PerformanceDday } from '@/domain/performance/components/PerformanceDday';
 import { useDeletePerformance } from '@/domain/performance/hooks/useDeletePerformance';
 import { usePerformanceDetail } from '@/domain/performance/hooks/usePerformanceDetail';
@@ -41,10 +32,12 @@ import {
   issuePerformancePosterPresignedUrl,
 } from '@/domain/performance-poster/api';
 import { usePerformancePosters } from '@/domain/performance-poster/hooks/usePerformancePosters';
+import { useUpdatePerformancePoster } from '@/domain/performance-poster/hooks/useUpdatePerformancePoster';
+import type { PerformanceSetlistSummary } from '@/domain/performance/types/res';
+import { useSetlistTracks } from '@/domain/setlist/hooks/useSetlistTracks';
 import { useIsPerformanceManager } from '@/global/auth/useIsPerformanceManager';
-import { ROUTES } from '@/global/config/routes';
-import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/global/config/queryKeys';
+import { ROUTES } from '@/global/config/routes';
 import {
   ALLOWED_IMAGE_ACCEPT,
   MAX_IMAGE_SIZE_BYTES,
@@ -52,8 +45,9 @@ import {
   isAllowedImageMime,
 } from '@/global/upload/constants';
 import { uploadToPresignedUrl } from '@/global/upload/uploadToPresignedUrl';
-import { formatKst, parseKst } from '@/lib/date';
 import { useToast } from '@/hooks/useToast';
+import { formatKst, parseKst } from '@/lib/date';
+import { useQueryClient } from '@tanstack/react-query';
 
 function toDatetimeLocal(kst: string) {
   return kst.replace(' ', 'T');
@@ -62,7 +56,13 @@ function fromDatetimeLocal(dt: string) {
   return dt.replace('T', ' ').slice(0, 16);
 }
 
-export function PerformanceDetailContent({ performanceId }: { performanceId: string }) {
+export function PerformanceDetailContent({
+  performanceId,
+  onDeleted,
+}: {
+  performanceId: string;
+  onDeleted?: () => void;
+}) {
   const router = useRouter();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -73,13 +73,47 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
   const { isManager } = useIsPerformanceManager(performanceId);
   const { data: posters = [] } = usePerformancePosters(performanceId);
 
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [localPosterPreview, setLocalPosterPreview] = useState<string | null>(null);
   const [posterUploading, setPosterUploading] = useState(false);
+  const [posterDescription, setPosterDescription] = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+  const editForm = useForm<UpdatePerformanceSchema>({
+    resolver: zodResolver(updatePerformanceSchema),
+    defaultValues: {
+      title: '',
+      startAt: '',
+      durationMinutes: 120,
+      venue: '',
+    },
+  });
+
+  useEffect(() => {
+    if (perf) {
+      editForm.reset({
+        title: perf.title,
+        startAt: toDatetimeLocal(perf.startAt),
+        durationMinutes: perf.durationMinutes,
+        venue: perf.venue ?? '',
+      });
+    }
+  }, [perf, editForm]);
 
   const existingPoster = posters[0] ?? null;
   const posterSrc = localPosterPreview ?? existingPoster?.imageUrl ?? null;
+
+  useEffect(() => {
+    setPosterDescription(existingPoster?.description ?? '');
+  }, [existingPoster]);
+
+  const updatePosterMutation = useUpdatePerformancePoster(
+    performanceId,
+    existingPoster?.posterId ?? '',
+    {
+      onSuccess: () => toast.success('포스터 설명을 저장했습니다.'),
+      onError: (err) => toast.error(err.message || '저장에 실패했습니다.'),
+    },
+  );
 
   async function handlePosterFile(file: File) {
     if (!isAllowedImageMime(file.type)) {
@@ -132,10 +166,19 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
     }
   }
 
+  const editMutation = useUpdatePerformance(performanceId, {
+    onSuccess: () => toast.success('공연 정보가 수정되었습니다.'),
+    onError: (err) => toast.error(err.message || '수정에 실패했습니다.'),
+  });
+
   const deleteMutation = useDeletePerformance(performanceId, {
     onSuccess: () => {
       toast.success('공연을 삭제했습니다.');
-      router.replace(ROUTES.PERFORMANCES);
+      if (onDeleted) {
+        onDeleted();
+      } else {
+        router.replace(ROUTES.PERFORMANCES);
+      }
     },
     onError: (err) => toast.error(err.message || '삭제에 실패했습니다.'),
   });
@@ -160,275 +203,334 @@ export function PerformanceDetailContent({ performanceId }: { performanceId: str
     /* keep raw */
   }
 
+  const outerTriggerCls =
+    'data-[state=active]:text-foreground data-[state=active]:border-foreground';
+
   return (
-    <div className="space-y-6">
-      <Card padding="lg">
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <h1 className="text-foreground text-xl font-bold">{perf.title}</h1>
-              <PerformanceDday startAt={perf.startAt} />
-            </div>
-            {isManager && (
-              <div className="flex gap-2">
-                <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
-                  <Pencil className="h-4 w-4" />
-                  수정
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-danger hover:opacity-80"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="text-foreground-sub flex flex-wrap items-center gap-3 text-sm">
-            <span className="inline-flex items-center gap-1">
-              <CalendarDays className="h-4 w-4" aria-hidden="true" />
-              {scheduleLabel} ({perf.durationMinutes}분)
-            </span>
-            {perf.venue && (
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-4 w-4" aria-hidden="true" />
-                {perf.venue}
-              </span>
-            )}
-          </div>
+    <div>
+      {/* 헤더 */}
+      <div className="px-s-5 pb-s-3 pt-s-4 lg:px-8">
+        <div className="flex items-center gap-2">
+          <h1 className="text-foreground text-[22px] leading-snug font-bold">{perf.title}</h1>
+          <PerformanceDday startAt={perf.startAt} />
         </div>
-      </Card>
+      </div>
 
-      <Card
-        header={
-          <span className="inline-flex items-center gap-2">
-            <ListMusic className="h-4 w-4" aria-hidden="true" />
-            참여 셋리스트 ({perf.setlists.length})
-          </span>
-        }
-        padding="md"
-      >
-        {perf.setlists.length === 0 ? (
-          <EmptyState title="연결된 셋리스트가 없습니다" />
-        ) : (
-          <ul className="divide-border divide-y">
-            {perf.setlists.map((s) => (
-              <li key={s.setlistId} className="py-s-3 space-y-1">
-                <p className="text-body font-semibold">{s.title}</p>
-                {s.bands.length > 0 && <PerformanceBandChips bands={s.bands} />}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <Tabs defaultValue="info" variant="underline">
+        <div className="px-s-5 lg:px-8">
+          <TabsList aria-label="공연 상세 탭">
+            <TabsTrigger value="info" className={outerTriggerCls}>
+              정보
+            </TabsTrigger>
+            <TabsTrigger value="invitations" className={outerTriggerCls}>
+              초대 목록
+            </TabsTrigger>
+            {isManager && (
+              <TabsTrigger value="settings" className={outerTriggerCls}>
+                설정
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
-      {/* 포스터 카드 */}
-      <Card
-        header={
-          <span className="inline-flex items-center gap-2">
-            <ImagePlus className="h-4 w-4" aria-hidden="true" />
-            공연 포스터
-          </span>
-        }
-        padding="md"
-      >
-        {posterSrc ? (
-          <div className="space-y-s-3">
-            <div className="relative mx-auto w-fit">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={posterSrc}
-                alt="공연 포스터"
-                className="max-h-72 rounded-[5px] object-contain"
-              />
-              {isManager && !posterUploading && (
-                <button
-                  type="button"
-                  aria-label="포스터 삭제"
-                  onClick={handleDeletePoster}
-                  className="bg-surface border-border absolute -top-2 -right-2 rounded-full border p-0.5 text-white/70 hover:text-white"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+        <div className="px-s-5 py-s-6 lg:px-8">
+          {/* 정보 탭: 포스터 → 날짜/장소 → 셋리스트 */}
+          <TabsContent value="info" className="space-y-s-4 mt-0">
+            <div
+              className="bg-card border-border relative flex h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border"
+              aria-label="공연 포스터"
+            >
+              {posterSrc ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={posterSrc} alt="공연 포스터" className="h-full w-full object-cover" />
+                  {posterUploading && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                      <Loader2 className="h-6 w-6 animate-spin text-white" />
+                    </span>
+                  )}
+                </>
+              ) : (
+                <div className="text-foreground-muted gap-s-2 flex flex-col items-center">
+                  <ImagePlus className="h-8 w-8" aria-hidden="true" />
+                  <span className="text-xs">공연 포스터 이미지 없음</span>
+                </div>
               )}
-              {posterUploading && (
-                <span className="absolute inset-0 flex items-center justify-center rounded-[5px] bg-black/50">
-                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+            </div>
+
+            <div className="text-foreground-sub flex flex-wrap items-center gap-3 text-sm">
+              <span className="inline-flex items-center gap-1">
+                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                {scheduleLabel} ({perf.durationMinutes}분)
+              </span>
+              {perf.venue && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-4 w-4" aria-hidden="true" />
+                  {perf.venue}
                 </span>
               )}
             </div>
-            {isManager && !posterUploading && (
-              <button
-                type="button"
-                onClick={() => posterInputRef.current?.click()}
-                className="text-foreground-sub text-caption hover:text-foreground underline"
-              >
-                다른 이미지로 변경
-              </button>
-            )}
-          </div>
-        ) : isManager ? (
-          <label
-            htmlFor={posterInputId}
-            className="flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-[5px] border border-dashed border-white/20 bg-white/5 transition-colors hover:border-white/40 hover:bg-white/10"
-          >
-            <ImagePlus className="h-8 w-8 text-white/50" />
-            <span className="text-sm font-medium text-white/60">클릭하여 포스터 이미지 선택</span>
-            <span className="text-xs text-white/40">JPEG · PNG · WEBP · 최대 5MB</span>
-          </label>
-        ) : (
-          <p className="text-foreground-muted text-caption py-4 text-center">
-            등록된 포스터가 없습니다.
-          </p>
-        )}
-        {isManager && (
-          <input
-            ref={posterInputRef}
-            id={posterInputId}
-            type="file"
-            accept={ALLOWED_IMAGE_ACCEPT}
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = '';
-              if (file) void handlePosterFile(file);
-            }}
-          />
-        )}
-      </Card>
 
-      <EditDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        performanceId={performanceId}
-        initial={{
-          title: perf.title,
-          startAt: perf.startAt,
-          durationMinutes: perf.durationMinutes,
-          venue: perf.venue ?? undefined,
-        }}
-      />
+            <div className="space-y-s-2">
+              <p className="text-foreground pt-s-2 text-base font-semibold">참여 셋리스트</p>
+              {perf.setlists.length === 0 ? (
+                <EmptyState title="연결된 셋리스트가 없습니다" compact />
+              ) : (
+                <div className="space-y-s-2">
+                  {perf.setlists.map((s) => (
+                    <SetlistCard key={s.setlistId} setlist={s} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>공연 삭제</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <p className="text-foreground-sub text-sm">삭제된 공연은 복구할 수 없습니다.</p>
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
-              취소
-            </Button>
-            <Button
-              variant="danger"
-              loading={deleteMutation.isPending}
-              onClick={() => deleteMutation.mutate()}
-            >
-              삭제
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {/* 초대 목록 탭 */}
+          <TabsContent value="invitations" className="mt-0">
+            <EmptyState title="초대 목록이 없습니다" compact />
+          </TabsContent>
+
+          {/* 설정 탭 (매니저 전용) */}
+          {isManager && (
+            <TabsContent value="settings" className="mt-0">
+              <Tabs defaultValue="edit-info">
+                <TabsList className="mb-s-4 w-full">
+                  <TabsTrigger
+                    value="edit-info"
+                    className="flex-1 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                  >
+                    정보
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="edit-poster"
+                    className="flex-1 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                  >
+                    포스터
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="delete"
+                    className="flex-1 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                  >
+                    삭제
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* 정보 수정 */}
+                <TabsContent value="edit-info" className="mt-0">
+                  <form
+                    onSubmit={editForm.handleSubmit((values) =>
+                      editMutation.mutate({
+                        title: values.title,
+                        startAt: values.startAt ? fromDatetimeLocal(values.startAt) : undefined,
+                        durationMinutes: values.durationMinutes,
+                        venue: values.venue,
+                      }),
+                    )}
+                    noValidate
+                    className="space-y-3"
+                  >
+                    <Input
+                      label="제목"
+                      error={editForm.formState.errors.title?.message}
+                      {...editForm.register('title')}
+                    />
+                    <Input
+                      label="시작 시각"
+                      type="datetime-local"
+                      error={editForm.formState.errors.startAt?.message}
+                      className="[&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:invert"
+                      {...editForm.register('startAt')}
+                    />
+                    <Input
+                      label="소요 시간 (분)"
+                      type="number"
+                      min={30}
+                      max={600}
+                      step={10}
+                      error={editForm.formState.errors.durationMinutes?.message}
+                      {...editForm.register('durationMinutes', { valueAsNumber: true })}
+                    />
+                    <Input
+                      label="장소"
+                      error={editForm.formState.errors.venue?.message}
+                      {...editForm.register('venue')}
+                    />
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        type="submit"
+                        size="sm"
+                        loading={editMutation.isPending}
+                        className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200"
+                      >
+                        저장
+                      </Button>
+                    </div>
+                  </form>
+                </TabsContent>
+
+                {/* 포스터 수정 */}
+                <TabsContent value="edit-poster" className="mt-0">
+                  {posterSrc ? (
+                    <div className="space-y-s-3">
+                      <div className="relative mx-auto w-fit">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={posterSrc}
+                          alt="공연 포스터"
+                          className="max-h-72 rounded-[5px] object-contain"
+                        />
+                        {!posterUploading && (
+                          <button
+                            type="button"
+                            aria-label="포스터 삭제"
+                            onClick={handleDeletePoster}
+                            className="bg-surface border-border absolute -top-2 -right-2 rounded-full border p-0.5 text-white/70 hover:text-white"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                        {posterUploading && (
+                          <span className="absolute inset-0 flex items-center justify-center rounded-[5px] bg-black/50">
+                            <Loader2 className="h-6 w-6 animate-spin text-white" />
+                          </span>
+                        )}
+                      </div>
+                      {!posterUploading && (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => posterInputRef.current?.click()}
+                            className="text-foreground-sub text-caption hover:text-foreground underline"
+                          >
+                            다른 이미지로 변경
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor={posterInputId}
+                      className="flex h-48 cursor-pointer flex-col items-center justify-center gap-2 rounded-[5px] border border-dashed border-white/20 bg-white/5 transition-colors hover:border-white/40 hover:bg-white/10"
+                    >
+                      <ImagePlus className="h-8 w-8 text-white/50" />
+                      <span className="text-sm font-medium text-white/60">
+                        클릭하여 포스터 이미지 선택
+                      </span>
+                      <span className="text-xs text-white/40">JPEG · PNG · WEBP · 최대 5MB</span>
+                    </label>
+                  )}
+                  <input
+                    ref={posterInputRef}
+                    id={posterInputId}
+                    type="file"
+                    accept={ALLOWED_IMAGE_ACCEPT}
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = '';
+                      if (file) void handlePosterFile(file);
+                    }}
+                  />
+                  {existingPoster && (
+                    <div className="mt-s-4 flex items-end gap-2">
+                      <div className="flex-1">
+                        <Input
+                          label="포스터 설명 (선택)"
+                          placeholder="공연 포스터에 대한 설명을 입력하세요"
+                          value={posterDescription}
+                          onChange={(e) => setPosterDescription(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200"
+                        loading={updatePosterMutation.isPending}
+                        onClick={() =>
+                          updatePosterMutation.mutate({ description: posterDescription })
+                        }
+                      >
+                        저장
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* 삭제 */}
+                <TabsContent value="delete" className="mt-0">
+                  <div className="space-y-s-3">
+                    <p className="text-foreground-sub text-xs">
+                      공연을 삭제하면 모든 포스터·셋리스트 연결이 함께 제거되며 복구할 수 없습니다.
+                    </p>
+                    <Input
+                      label={`공연 이름(${perf.title})을 그대로 입력해 주세요`}
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder={perf.title}
+                    />
+                  </div>
+                  <div className="mt-s-4 flex justify-end">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="rounded-[5px]"
+                      disabled={deleteConfirmText !== perf.title}
+                      loading={deleteMutation.isPending}
+                      onClick={() => deleteMutation.mutate()}
+                    >
+                      삭제
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+          )}
+        </div>
+      </Tabs>
     </div>
   );
 }
 
-function EditDialog({
-  open,
-  onOpenChange,
-  performanceId,
-  initial,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  performanceId: string;
-  initial: {
-    title: string;
-    startAt: string;
-    durationMinutes: number;
-    venue?: string;
-  };
-}) {
-  const toast = useToast();
-  const form = useForm<UpdatePerformanceSchema>({
-    resolver: zodResolver(updatePerformanceSchema),
-    defaultValues: {
-      title: initial.title,
-      startAt: initial.startAt,
-      durationMinutes: initial.durationMinutes,
-      venue: initial.venue,
-    },
-  });
-
-  const mutation = useUpdatePerformance(performanceId, {
-    onSuccess: () => {
-      toast.success('공연 정보가 수정되었습니다.');
-      onOpenChange(false);
-    },
-    onError: (err) => toast.error(err.message || '수정에 실패했습니다.'),
-  });
+function SetlistCard({ setlist }: { setlist: PerformanceSetlistSummary }) {
+  const [open, setOpen] = useState(false);
+  const { data } = useSetlistTracks(setlist.setlistId);
+  const tracks = data?.content ?? [];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>공연 수정</DialogTitle>
-        </DialogHeader>
-        <form
-          onSubmit={form.handleSubmit((values) =>
-            mutation.mutate({
-              title: values.title,
-              startAt: values.startAt ? fromDatetimeLocal(values.startAt) : undefined,
-              durationMinutes: values.durationMinutes,
-              venue: values.venue,
-            }),
-          )}
-          noValidate
-        >
-          <DialogBody>
-            <div className="space-y-3">
-              <Input
-                label="제목"
-                error={form.formState.errors.title?.message}
-                {...form.register('title')}
-              />
-              <Input
-                label="시작 시각"
-                type="datetime-local"
-                defaultValue={toDatetimeLocal(initial.startAt)}
-                error={form.formState.errors.startAt?.message}
-                {...form.register('startAt')}
-              />
-              <Input
-                label="소요 시간 (분)"
-                type="number"
-                min={30}
-                max={600}
-                step={10}
-                error={form.formState.errors.durationMinutes?.message}
-                {...form.register('durationMinutes', { valueAsNumber: true })}
-              />
-              <Input
-                label="장소"
-                error={form.formState.errors.venue?.message}
-                {...form.register('venue')}
-              />
-            </div>
-          </DialogBody>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              취소
-            </Button>
-            <Button type="submit" loading={mutation.isPending}>
-              저장
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <div className="border-border overflow-hidden rounded-[5px] border">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="hover:bg-surface-hi flex w-full items-center justify-between px-3 py-2 transition-colors"
+        aria-expanded={open}
+      >
+        <span className="text-foreground text-sm font-semibold">{setlist.title}</span>
+        {open ? (
+          <ChevronUp className="text-foreground-muted h-3.5 w-3.5" aria-hidden="true" />
+        ) : (
+          <ChevronDown className="text-foreground-muted h-3.5 w-3.5" aria-hidden="true" />
+        )}
+      </button>
+      {open &&
+        (tracks.length === 0 ? (
+          <p className="text-foreground-muted border-border border-t px-3 py-2 text-xs">
+            트랙이 없습니다.
+          </p>
+        ) : (
+          <ul className="border-border border-t">
+            {tracks.map((track) => (
+              <li
+                key={track.setlistTrackId}
+                className="border-border flex items-center gap-2 border-b px-3 py-2 last:border-0"
+              >
+                <Music className="text-foreground-muted h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span className="text-foreground text-sm">{track.title}</span>
+                {track.artist && (
+                  <span className="text-foreground-muted text-xs">— {track.artist}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ))}
+    </div>
   );
 }

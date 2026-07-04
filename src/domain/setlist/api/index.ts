@@ -50,8 +50,12 @@ export function createJamsFromSetlist(setlistId: string, body: SetlistToJamReque
 }
 
 /** 셋리스트 트랙 목록 조회 */
-export function getSetlistTracks(setlistId: string): Promise<SetlistTrackResponse[]> {
-  return apiClient.get<SetlistTrackResponse[]>(`${PREFIX}/${setlistId}/tracks`);
+export function getSetlistTracks(
+  setlistId: string,
+): Promise<CursorResponse<SetlistTrackResponse, string>> {
+  return apiClient.get<CursorResponse<SetlistTrackResponse, string>>(
+    `${PREFIX}/${setlistId}/tracks`,
+  );
 }
 
 /** 셋리스트 트랙 단건 조회 */

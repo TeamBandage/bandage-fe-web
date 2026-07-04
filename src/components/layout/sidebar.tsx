@@ -44,8 +44,8 @@ const mainNav: NavItem[] = [
     label: '합주',
     icon: Music,
     subs: [
+      { href: ROUTES.JAM_CREATE, label: '합주 생성' },
       { href: ROUTES.JAMS, label: '합주 목록' },
-      { href: ROUTES.JAM_NEW, label: '합주 생성' },
     ],
   },
   {
@@ -53,18 +53,18 @@ const mainNav: NavItem[] = [
     label: '공연',
     icon: CalendarDays,
     subs: [
+      { href: ROUTES.PERFORMANCE_CREATE, label: '공연 생성' },
       { href: ROUTES.PERFORMANCES, label: '공연 목록' },
-      { href: ROUTES.PERFORMANCE_NEW, label: '공연 생성' },
     ],
   },
   {
-    href: ROUTES.SETLIST_MEETINGS,
-    label: '선곡 회의',
+    href: ROUTES.TRACK_SELECTIONS,
+    label: '선곡 조율',
     icon: ListMusic,
     subs: [
-      { href: `${ROUTES.SETLIST_MEETINGS}?listOpen=1`, label: '선곡 회의 목록' },
-      { href: ROUTES.SETLIST_MEETING_NEW, label: '선곡 회의 생성' },
-      { href: ROUTES.SETLIST_SCHEDULING, label: '합주 일정 조율' },
+      { href: ROUTES.TRACK_SELECTION_CREATE, label: '선곡 생성' },
+      { href: `${ROUTES.TRACK_SELECTIONS}?listOpen=1`, label: '선곡 목록' },
+      { href: ROUTES.SETLISTS, label: '셋리스트 목록' },
     ],
   },
   { href: ROUTES.ME, label: '마이페이지', icon: User },
@@ -79,11 +79,11 @@ function isSubActive(pathname: string, href: string) {
   const hrefPath = href.split('?')[0];
   if (hrefPath === ROUTES.JAMS) return pathname === ROUTES.JAMS;
   if (hrefPath === ROUTES.PERFORMANCES) return pathname === ROUTES.PERFORMANCES;
-  if (hrefPath === ROUTES.SETLIST_MEETINGS) {
-    if (!pathname.startsWith(ROUTES.SETLIST_MEETINGS)) return false;
+  if (hrefPath === ROUTES.TRACK_SELECTIONS) {
+    if (!pathname.startsWith(ROUTES.TRACK_SELECTIONS)) return false;
     return (
-      !pathname.startsWith(ROUTES.SETLIST_MEETING_NEW) &&
-      !pathname.startsWith(ROUTES.SETLIST_SCHEDULING)
+      !pathname.startsWith(ROUTES.TRACK_SELECTION_CREATE) &&
+      !pathname.startsWith(ROUTES.TRACK_SELECTION_SCHEDULING)
     );
   }
   return pathname === hrefPath || pathname.startsWith(`${hrefPath}/`);

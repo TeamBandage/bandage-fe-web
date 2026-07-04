@@ -11,8 +11,8 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
 }
 
 const baseInputClasses =
-  'h-10 w-full rounded-md border bg-surface px-3 text-sm text-foreground placeholder:text-foreground-muted ' +
-  'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg ' +
+  'h-10 w-full rounded-[5px] border bg-surface px-3 text-sm text-foreground placeholder:text-foreground-muted ' +
+  'transition-colors focus-visible:outline-none focus-visible:ring-0 focus-visible:border-white/70 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed';
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(

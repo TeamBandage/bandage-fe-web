@@ -68,7 +68,7 @@ export function JamsList() {
       )}
 
       <Link
-        href={ROUTES.JAM_NEW}
+        href={ROUTES.JAM_CREATE}
         aria-label="합주 만들기"
         className="bg-accent text-foreground hover:bg-accent-hi focus-visible:ring-accent focus-visible:ring-offset-bg rounded-pill fixed right-4 bottom-20 z-10 flex h-14 w-14 items-center justify-center shadow-lg transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       >

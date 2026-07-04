@@ -35,6 +35,8 @@ export const queryKeys = {
   setlist: {
     all: ['setlist'] as const,
     my: () => ['setlist', 'my'] as const,
+    detail: (setlistId: string) => ['setlist', setlistId] as const,
+    tracks: (setlistId: string) => ['setlist', setlistId, 'tracks'] as const,
   },
   performance: {
     all: ['performance'] as const,
@@ -43,6 +45,15 @@ export const queryKeys = {
     search: (keyword: string) => [...queryKeys.performance.all, 'search', keyword] as const,
     upcoming: (limit: number) => [...queryKeys.performance.all, 'upcoming', limit] as const,
     detail: (id: string) => [...queryKeys.performance.all, id] as const,
+  },
+  trackSelection: {
+    all: ['track-selection'] as const,
+    my: () => [...(['track-selection'] as const), 'my'] as const,
+    detail: (id: string) => [...(['track-selection'] as const), id] as const,
+    items: (selectionId: string) =>
+      [...(['track-selection'] as const), selectionId, 'items'] as const,
+    chat: (selectionId: string, itemId: string) =>
+      [...(['track-selection'] as const), selectionId, 'items', itemId, 'chat'] as const,
   },
   performancePoster: {
     all: ['performance-poster'] as const,
