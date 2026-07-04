@@ -54,7 +54,7 @@ export function MeetingCreateModal({ trigger }: MeetingCreateModalProps) {
     toast.success('선곡 회의가 만들어졌습니다.');
     setOpen(false);
     form.reset();
-    router.push(ROUTES.SETLIST_MEETING_DETAIL(id));
+    router.push(ROUTES.TRACK_SELECTION_DETAIL(id));
   });
 
   return (

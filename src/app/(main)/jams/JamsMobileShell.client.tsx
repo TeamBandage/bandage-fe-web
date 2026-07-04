@@ -113,7 +113,7 @@ export function JamsMobileShell() {
             aria-label="합주 생성"
             className="rounded-[5px] border-white text-white hover:border-transparent hover:bg-white hover:text-neutral-900 active:border-transparent active:bg-neutral-200 active:text-neutral-900"
           >
-            <Link href={ROUTES.JAM_NEW}>
+            <Link href={ROUTES.JAM_CREATE}>
               <Plus className="h-4 w-4" /> 합주 생성
             </Link>
           </Button>
