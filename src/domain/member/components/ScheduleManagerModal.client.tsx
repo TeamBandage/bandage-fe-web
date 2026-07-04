@@ -75,11 +75,7 @@ function availabilityToGrid(availability: MemberAvailabilityResponse | undefined
   return grid;
 }
 
-function gridToWeeklyRules(
-  grid: GridState,
-  effectiveFrom: string,
-  effectiveTo: string,
-): WeeklyRuleRequest[] {
+function gridToWeeklyRules(grid: GridState): WeeklyRuleRequest[] {
   const rules: WeeklyRuleRequest[] = [];
   for (let d = 0; d < 7; d++) {
     const dayOfWeek = DAY_OF_WEEK_KEYS[d];
@@ -90,13 +86,7 @@ function gridToWeeklyRules(
       if (daySlots[i]) {
         const start = i;
         while (i < SLOT_COUNT && daySlots[i]) i++;
-        rules.push({
-          dayOfWeek,
-          startSlot: start + START_SLOT,
-          endSlot: i + START_SLOT,
-          effectiveFrom,
-          effectiveTo: effectiveTo || undefined,
-        });
+        rules.push({ dayOfWeek, startSlot: start + START_SLOT, endSlot: i + START_SLOT });
       } else {
         i++;
       }
@@ -117,6 +107,8 @@ type Props = {
     weeklyRules: WeeklyRuleRequest[],
     note: string,
     exceptions: AvailabilityExceptionRequest[],
+    effectiveFrom: string,
+    effectiveTo: string,
   ) => void;
   isSaving?: boolean;
 };
@@ -197,7 +189,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
   };
 
   const handleSave = () => {
-    onSave(gridToWeeklyRules(grid, effectiveFrom, effectiveTo), note, exceptions);
+    onSave(gridToWeeklyRules(grid), note, exceptions, effectiveFrom, effectiveTo);
   };
 
   if (!open) return null;
