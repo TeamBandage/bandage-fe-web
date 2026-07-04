@@ -9,19 +9,35 @@ type EmptyStateProps = {
   description?: string;
   action?: { label: string; onClick: () => void };
   className?: string;
+  compact?: boolean;
 };
 
-export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  action,
+  className,
+  compact,
+}: EmptyStateProps) {
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-3 rounded-md py-12 text-center',
+        'flex flex-col items-center justify-center gap-3 rounded-md text-center',
+        compact ? 'py-4' : 'py-12',
         className,
       )}
     >
-      {Icon && <Icon className="text-foreground-muted h-12 w-12" aria-hidden="true" />}
+      {Icon && (
+        <Icon
+          className={cn('text-foreground-muted', compact ? 'h-6 w-6' : 'h-12 w-12')}
+          aria-hidden="true"
+        />
+      )}
       <div className="space-y-1">
-        <p className="text-foreground text-lg font-medium">{title}</p>
+        <p className={cn('text-foreground font-medium', compact ? 'text-sm' : 'text-lg')}>
+          {title}
+        </p>
         {description && <p className="text-foreground-sub text-sm">{description}</p>}
       </div>
       {action && (

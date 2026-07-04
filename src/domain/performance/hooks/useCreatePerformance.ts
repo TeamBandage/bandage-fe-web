@@ -17,7 +17,10 @@ export function useCreatePerformance(options?: Options) {
   return useMutation<CreatePerformanceResponse, Error, CreatePerformanceRequest>({
     mutationFn: createPerformance,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: [...queryKeys.performance.all] });
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.performance.all],
+        refetchType: 'all',
+      });
       options?.onSuccess?.(data);
     },
     onError: options?.onError,

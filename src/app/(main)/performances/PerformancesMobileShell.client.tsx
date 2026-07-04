@@ -53,7 +53,7 @@ function PerformanceSelectRow({
         className={cn(
           'gap-s-3 px-s-3 py-s-3 flex w-full items-center rounded-[5px] text-left transition-colors',
           'hover:bg-surface-hi focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-          isSelected ? 'border-l-[3px] border-l-amber-400/60' : '',
+          isSelected ? 'border-l-[3px] border-l-white/60' : '',
         )}
       >
         <IconTile icon={<CalendarDays />} size="sm" tone={DOMAIN_TONES.performance} />
@@ -105,8 +105,8 @@ export function PerformancesMobileShell() {
   const discoverLoading = hasQuery ? searchLoading : allLoading;
 
   const panelContent = selectedId ? (
-    <div className="px-4 pt-2 pb-6">
-      <PerformanceDetailContent performanceId={selectedId} />
+    <div className="pb-6">
+      <PerformanceDetailContent performanceId={selectedId} onDeleted={() => setSelectedId(null)} />
     </div>
   ) : null;
 

@@ -12,8 +12,10 @@ import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
 import { SetlistSelectorSheet } from '@/domain/performance/components/SetlistSelectorSheet.client';
 import { createPerformance } from '@/domain/performance/api/createPerformance';
 import type { SetlistResponse } from '@/domain/setlist/types/res';
+import { queryKeys } from '@/global/config/queryKeys';
 import { ROUTES } from '@/global/config/routes';
 import { useRegisterDirtyForm } from '@/global/navigation/dirty-form-context';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/useToast';
 
 const STEPS = ['기본 정보', '셋리스트 추가', '검토'] as const;
@@ -23,6 +25,7 @@ const inputCls =
 export function PerformanceCreateWizard() {
   const router = useRouter();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [isPending, setIsPending] = useState(false);
 
@@ -60,15 +63,19 @@ export function PerformanceCreateWizard() {
     if (!title || !startAt || isPending) return;
     setIsPending(true);
     try {
-      const perf = await createPerformance({
+      await createPerformance({
         title,
         setlistIds: selectedSetlists.map((s) => s.setlistId),
         startAt,
         durationMinutes,
         venue: venue || undefined,
       });
+      await queryClient.invalidateQueries({
+        queryKey: [...queryKeys.performance.all],
+        refetchType: 'all',
+      });
       toast.resourceCreated('공연', { name: title });
-      router.replace(ROUTES.PERFORMANCE_DETAIL(perf.performanceId));
+      router.replace(ROUTES.PERFORMANCES);
     } catch (err) {
       const message = err instanceof Error ? err.message : '공연 생성에 실패했습니다.';
       toast.error(message);

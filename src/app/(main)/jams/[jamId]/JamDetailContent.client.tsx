@@ -55,6 +55,7 @@ export function JamDetailContent({
   const toast = useToast();
   const { data: practice, isLoading, isError, refetch } = useJam(jamId);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const scheduleForm = useForm<{ startAt: string; durationMinutes: number }>({
     defaultValues: { startAt: '', durationMinutes: 60 },
@@ -100,7 +101,7 @@ export function JamDetailContent({
 
   const [sessionAssignTarget, setSessionAssignTarget] = useState<{
     participantId: string;
-    memberId: number;
+    displayName: string;
   } | null>(null);
   const [assignSessionId, setAssignSessionId] = useState('');
 
@@ -142,18 +143,7 @@ export function JamDetailContent({
     <div className="space-y-6">
       <Card padding="lg">
         <div className="space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <h1 className="text-foreground text-xl font-bold">{practice.title}</h1>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="rounded-[5px] border-white text-white hover:border-transparent hover:bg-white hover:text-neutral-900 active:border-transparent active:bg-neutral-200 active:text-neutral-900"
-              onClick={() => setDeleteOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              합주 삭제
-            </Button>
-          </div>
+          <h1 className="text-foreground text-xl font-bold">{practice.title}</h1>
 
           <div className="flex flex-wrap items-center gap-2">
             <JamScheduleBadge
@@ -293,7 +283,7 @@ export function JamDetailContent({
             <div className="space-y-4">
               <SessionCreateForm jamId={jamId} />
               {practice.sessions.length === 0 ? (
-                <EmptyState title="등록된 세션이 없습니다" />
+                <EmptyState title="등록된 세션이 없습니다" compact />
               ) : (
                 <div>
                   {practice.sessions.map((s) => (
@@ -359,7 +349,7 @@ export function JamDetailContent({
                 )}
               </form>
               {practice.participants.length === 0 ? (
-                <EmptyState title="참여자가 없습니다" />
+                <EmptyState title="참여자가 없습니다" compact />
               ) : (
                 <ul className="divide-border divide-y">
                   {practice.participants.map((p) => {
@@ -370,7 +360,7 @@ export function JamDetailContent({
                         className="py-s-2 flex items-center justify-between gap-3"
                       >
                         <span className="text-foreground-sub text-sm">
-                          멤버 {p.memberId}
+                          {p.member?.name ?? `멤버 #${p.member?.memberId ?? p.participantId}`}
                           {session && (
                             <span className="text-foreground-muted ml-2">· {session.label}</span>
                           )}
@@ -381,7 +371,8 @@ export function JamDetailContent({
                           onClick={() => {
                             setSessionAssignTarget({
                               participantId: p.participantId,
-                              memberId: p.memberId,
+                              displayName:
+                                p.member?.name ?? `멤버 #${p.member?.memberId ?? p.participantId}`,
                             });
                             setAssignSessionId(p.sessionId ?? '');
                           }}
@@ -414,7 +405,7 @@ export function JamDetailContent({
           <DialogBody>
             <div className="space-y-3">
               <p className="text-foreground-muted text-sm">
-                멤버 {sessionAssignTarget?.memberId}에게 세션을 배정합니다.
+                {sessionAssignTarget?.displayName}에게 세션을 배정합니다.
               </p>
               <Select
                 placeholder="세션을 선택하세요"
@@ -462,16 +453,40 @@ export function JamDetailContent({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <div className="flex justify-start">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-danger hover:opacity-80"
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash2 className="h-4 w-4" />
+          합주 삭제
+        </Button>
+      </div>
+
+      <Dialog
+        open={deleteOpen}
+        onOpenChange={(open) => {
+          setDeleteOpen(open);
+          if (!open) setDeleteConfirmText('');
+        }}
+      >
         <DialogContent>
           <DialogHeader className="border-b-0 pb-2">
             <DialogTitle>합주를 삭제하시겠어요?</DialogTitle>
           </DialogHeader>
           <div className="border-border mx-5 border-b" />
-          <DialogBody className="pt-2">
+          <DialogBody className="space-y-s-3 pt-2">
             <DialogDescription className="text-foreground-sub text-sm">
               삭제된 합주는 복구할 수 없습니다. 세션과 참여자 정보도 함께 제거됩니다.
             </DialogDescription>
+            <Input
+              label={`합주 이름(${practice.title})을 그대로 입력해 주세요`}
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={practice.title}
+            />
           </DialogBody>
           <DialogFooter className="border-t-0">
             <Button
@@ -484,6 +499,7 @@ export function JamDetailContent({
             <Button
               variant="danger"
               className="h-8 rounded-[5px] px-2"
+              disabled={deleteConfirmText !== practice.title}
               loading={deleteMutation.isPending}
               onClick={() => deleteMutation.mutate()}
             >

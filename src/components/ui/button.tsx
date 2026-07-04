@@ -16,7 +16,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const baseClasses =
-  'inline-flex items-center justify-center gap-2 font-medium rounded-md transition-colors ' +
+  'inline-flex items-center justify-center gap-2 font-medium rounded-md transition-colors no-underline ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg ' +
   'disabled:opacity-50 disabled:pointer-events-none';
 

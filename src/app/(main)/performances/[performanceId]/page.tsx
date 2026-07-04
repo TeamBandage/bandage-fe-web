@@ -25,7 +25,7 @@ export default async function PerformanceDetailPage({ params }: PageProps) {
           ← 공연 목록
         </Link>
       </div>
-      <div className="px-4 pb-6">
+      <div className="pb-6">
         <PerformanceDetailContent performanceId={performanceId} />
       </div>
     </>

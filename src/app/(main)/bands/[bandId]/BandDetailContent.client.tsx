@@ -267,7 +267,7 @@ function InfoTab({
         ) : (
           <div className="text-foreground-muted gap-s-2 flex flex-col items-center">
             <ImagePlus className="h-8 w-8" aria-hidden="true" />
-            <span className="text-xs">커버 이미지 없음</span>
+            <span className="text-xs">밴드 커버 이미지 없음</span>
           </div>
         )}
       </div>
@@ -563,13 +563,15 @@ function SettingsTab({
             }}
           />
           {currentImg && !imageUploading && (
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              className="text-foreground-sub text-caption hover:text-foreground underline"
-            >
-              다른 이미지로 변경
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="text-foreground-sub text-caption hover:text-foreground underline"
+              >
+                다른 이미지로 변경
+              </button>
+            </div>
           )}
         </TabsContent>
 
@@ -583,7 +585,6 @@ function SettingsTab({
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder={bandName}
-              className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
             />
           </div>
           <div className="flex justify-end">

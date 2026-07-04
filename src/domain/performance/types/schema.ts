@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 const KST_DATETIME = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/;
+// datetime-local input returns T-separated values; accept both for form validation
+const KST_DATETIME_FORM = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}$/;
 
 export const createPerformanceSchema = z.object({
   title: z
@@ -25,7 +27,7 @@ export type CreatePerformanceSchema = z.infer<typeof createPerformanceSchema>;
 export const updatePerformanceSchema = z
   .object({
     title: z.string().min(1).max(100).optional(),
-    startAt: z.string().regex(KST_DATETIME).optional(),
+    startAt: z.string().regex(KST_DATETIME_FORM).optional(),
     durationMinutes: z.number().int().min(30).max(600).optional(),
     venue: z.string().max(200).optional(),
   })
