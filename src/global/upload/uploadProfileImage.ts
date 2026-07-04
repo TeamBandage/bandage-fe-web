@@ -1,5 +1,5 @@
 import { extFromMime, isAllowedImageMime, MAX_IMAGE_SIZE_BYTES } from './constants';
-import { presignProfileImage } from './presignProfileImage';
+import { presignBandProfileImage, presignMemberProfileImage } from './presignProfileImage';
 import type { UploadDomain } from './types';
 import { uploadToPresignedUrl } from './uploadToPresignedUrl';
 
@@ -35,13 +35,11 @@ export async function uploadProfileImage({
     throw new Error('밴드 프로필 이미지 업로드에는 bandId 가 필요합니다.');
   }
 
-  const presign = await presignProfileImage({
-    domain,
-    bandId,
-    contentType: file.type,
-    ext,
-    contentLength: file.size,
-  });
+  const common = { contentType: file.type, ext, contentLength: file.size };
+  const presign =
+    domain === 'BAND'
+      ? await presignBandProfileImage({ bandId: bandId!, ...common })
+      : await presignMemberProfileImage(common);
   await uploadToPresignedUrl(presign.uploadUrl, file);
   return presign.objectKey;
 }

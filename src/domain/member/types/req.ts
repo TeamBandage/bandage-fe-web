@@ -14,8 +14,6 @@ export interface WeeklyRuleRequest {
   dayOfWeek: import('./res').DayOfWeek;
   startSlot: number;
   endSlot: number;
-  effectiveFrom: string;
-  effectiveTo?: string | null;
 }
 
 export interface AvailabilityExceptionRequest {
@@ -30,4 +28,6 @@ export interface UpdateMyAvailabilityRequest {
   weeklyRules: WeeklyRuleRequest[];
   exceptions: AvailabilityExceptionRequest[];
   note?: string | null;
+  effectiveFrom: string;
+  effectiveTo?: string | null;
 }

@@ -440,7 +440,10 @@ function SettingsTab({
   const currentImg = localPreview ?? profileImg ?? null;
 
   const updateMutation = useUpdateBand(bandId, {
-    onSuccess: () => toast.success('밴드 정보를 저장했습니다.'),
+    onSuccess: () => {
+      setLocalPreview(null);
+      toast.success('밴드 정보를 저장했습니다.');
+    },
     onError: (err) => toast.error(err.message || '저장에 실패했습니다.'),
   });
 
