@@ -11,6 +11,7 @@ import { MyItemMarker, myItemBorder } from '@/components/ui/my-item-marker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BandCreateModal } from '@/domain/band/components/BandCreateModal.client';
 import { BandRoleBadge } from '@/domain/band/components/BandRoleBadge';
+import { MyBandApplicationsSheet } from '@/domain/band/components/MyBandApplicationsSheet.client';
 import { useBandList } from '@/domain/band/hooks/useBandList';
 import { useBandSearch } from '@/domain/band/hooks/useBandSearch';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
@@ -123,8 +124,8 @@ export function BandsListPane() {
         onValueChange={onTabChange}
         className="flex flex-1 flex-col overflow-hidden"
       >
-        <div className="border-border px-s-4 py-s-3 border-b">
-          <TabsList className="w-full">
+        <div className="border-border px-s-4 py-s-3 gap-s-2 flex items-center border-b">
+          <TabsList className="flex-1">
             <TabsTrigger value="mine" className="flex-1">
               내 밴드
             </TabsTrigger>
@@ -132,6 +133,13 @@ export function BandsListPane() {
               탐색
             </TabsTrigger>
           </TabsList>
+          <MyBandApplicationsSheet
+            trigger={
+              <Button size="sm" variant="ghost" className="shrink-0">
+                가입 신청 내역
+              </Button>
+            }
+          />
         </div>
 
         <TabsContent value="mine" className="px-s-2 py-s-2 flex-1 overflow-y-auto">

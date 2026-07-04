@@ -5,6 +5,7 @@ export type {
   MyBandInfoResponse,
   BandMemberInfoResponse,
   BandApplicationInfoResponse,
+  MyBandApplicationResponse,
 } from './res';
 export { createBandSchema } from './schema';
 export type { CreateBandSchema } from './schema';
