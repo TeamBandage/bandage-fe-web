@@ -18,7 +18,7 @@ const tabs: Tab[] = [
   { href: ROUTES.BANDS, icon: Users, label: '밴드' },
   { href: ROUTES.JAMS, icon: Music, label: '합주' },
   { href: ROUTES.PERFORMANCES, icon: CalendarDays, label: '공연' },
-  { href: ROUTES.SETLIST_MEETINGS, icon: ListMusic, label: '선곡' },
+  { href: ROUTES.TRACK_SELECTIONS, icon: ListMusic, label: '선곡' },
   { href: ROUTES.ME, icon: User, label: 'MY' },
 ];
 
