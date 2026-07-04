@@ -6,9 +6,11 @@ import {
   ChevronDown,
   ChevronUp,
   ImagePlus,
+  ListPlus,
   Loader2,
   MapPin,
   Music,
+  Trash2,
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -18,12 +20,24 @@ import { useForm } from 'react-hook-form';
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PerformanceDday } from '@/domain/performance/components/PerformanceDday';
+import { PerformanceInvitationsPanel } from '@/domain/performance/components/PerformanceInvitationsPanel.client';
+import { SetlistSelectorSheet } from '@/domain/performance/components/SetlistSelectorSheet.client';
+import { useBatchAddPerformanceSetlists } from '@/domain/performance/hooks/useBatchAddPerformanceSetlists';
 import { useDeletePerformance } from '@/domain/performance/hooks/useDeletePerformance';
 import { usePerformanceDetail } from '@/domain/performance/hooks/usePerformanceDetail';
+import { useRemovePerformanceSetlist } from '@/domain/performance/hooks/useRemovePerformanceSetlist';
 import { useUpdatePerformance } from '@/domain/performance/hooks/useUpdatePerformance';
 import { updatePerformanceSchema, type UpdatePerformanceSchema } from '@/domain/performance/types';
 import {
@@ -77,6 +91,9 @@ export function PerformanceDetailContent({
   const [posterUploading, setPosterUploading] = useState(false);
   const [posterDescription, setPosterDescription] = useState('');
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [setlistSelectorOpen, setSetlistSelectorOpen] = useState(false);
+  const [pendingRemoveSetlist, setPendingRemoveSetlist] =
+    useState<PerformanceSetlistSummary | null>(null);
 
   const editForm = useForm<UpdatePerformanceSchema>({
     resolver: zodResolver(updatePerformanceSchema),
@@ -183,6 +200,23 @@ export function PerformanceDetailContent({
     onError: (err) => toast.error(err.message || '삭제에 실패했습니다.'),
   });
 
+  const addSetlistsMutation = useBatchAddPerformanceSetlists(performanceId, {
+    onSuccess: () => toast.success('셋리스트를 추가했습니다.'),
+    onError: (err) => toast.error(err.message || '셋리스트 추가에 실패했습니다.'),
+  });
+
+  const removeSetlistMutation = useRemovePerformanceSetlist(performanceId, {
+    onSuccess: () => toast.success('셋리스트를 제거했습니다.'),
+    onError: (err) => toast.error(err.message || '셋리스트 제거에 실패했습니다.'),
+  });
+
+  function handleRemoveSetlist() {
+    if (!pendingRemoveSetlist) return;
+    removeSetlistMutation.mutate(pendingRemoveSetlist.setlistId, {
+      onSettled: () => setPendingRemoveSetlist(null),
+    });
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -222,8 +256,11 @@ export function PerformanceDetailContent({
             <TabsTrigger value="info" className={outerTriggerCls}>
               정보
             </TabsTrigger>
+            <TabsTrigger value="setlists" className={outerTriggerCls}>
+              셋리스트
+            </TabsTrigger>
             <TabsTrigger value="invitations" className={outerTriggerCls}>
-              초대 목록
+              {isManager ? '초대 목록' : '초대 요청'}
             </TabsTrigger>
             {isManager && (
               <TabsTrigger value="settings" className={outerTriggerCls}>
@@ -270,24 +307,99 @@ export function PerformanceDetailContent({
                 </span>
               )}
             </div>
-
-            <div className="space-y-s-2">
-              <p className="text-foreground pt-s-2 text-base font-semibold">참여 셋리스트</p>
-              {perf.setlists.length === 0 ? (
-                <EmptyState title="연결된 셋리스트가 없습니다" compact />
-              ) : (
-                <div className="space-y-s-2">
-                  {perf.setlists.map((s) => (
-                    <SetlistCard key={s.setlistId} setlist={s} />
-                  ))}
-                </div>
-              )}
-            </div>
           </TabsContent>
 
-          {/* 초대 목록 탭 */}
+          {/* 셋리스트 탭 */}
+          <TabsContent value="setlists" className="space-y-s-3 mt-0">
+            <div className="flex items-center justify-between">
+              <p className="text-foreground text-base font-semibold">참여 셋리스트</p>
+              {isManager && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 gap-1 rounded-[5px] px-2"
+                  onClick={() => setSetlistSelectorOpen(true)}
+                >
+                  <ListPlus className="h-4 w-4" aria-hidden="true" />
+                  추가
+                </Button>
+              )}
+            </div>
+
+            {perf.setlists.length === 0 ? (
+              <EmptyState title="연결된 셋리스트가 없습니다" compact />
+            ) : (
+              <div className="space-y-s-2">
+                {perf.setlists.map((s) => (
+                  <div key={s.setlistId} className="flex items-center gap-2">
+                    <SetlistCard setlist={s} />
+                    {isManager && (
+                      <button
+                        type="button"
+                        onClick={() => setPendingRemoveSetlist(s)}
+                        aria-label={`${s.title} 셋리스트 제거`}
+                        className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <SetlistSelectorSheet
+              open={setlistSelectorOpen}
+              onOpenChange={setSetlistSelectorOpen}
+              excludeIds={perf.setlists.map((s) => s.setlistId)}
+              onConfirm={(selected) => {
+                if (selected.length === 0) return;
+                addSetlistsMutation.mutate({
+                  setlistIds: selected.map((s) => s.setlistId),
+                });
+              }}
+            />
+
+            <Dialog
+              open={pendingRemoveSetlist !== null}
+              onOpenChange={(o) => {
+                if (!o) setPendingRemoveSetlist(null);
+              }}
+            >
+              <DialogContent srOnlyTitle="셋리스트 제거">
+                <DialogHeader className="border-b-0 pb-2">
+                  <DialogTitle>셋리스트를 제거하시겠어요?</DialogTitle>
+                </DialogHeader>
+                <DialogBody>
+                  <p className="text-foreground-sub text-sm">
+                    <strong className="text-foreground">{pendingRemoveSetlist?.title}</strong>{' '}
+                    셋리스트를 공연에서 제거합니다.
+                  </p>
+                </DialogBody>
+                <DialogFooter className="border-t-0">
+                  <Button
+                    variant="ghost"
+                    className="h-8 rounded-[5px]"
+                    onClick={() => setPendingRemoveSetlist(null)}
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    variant="danger"
+                    className="h-8 rounded-[5px] px-2"
+                    loading={removeSetlistMutation.isPending}
+                    onClick={handleRemoveSetlist}
+                  >
+                    제거
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* 초대 목록/초대 요청 탭 */}
           <TabsContent value="invitations" className="mt-0">
-            <EmptyState title="초대 목록이 없습니다" compact />
+            <PerformanceInvitationsPanel performanceId={performanceId} isManager={isManager} />
           </TabsContent>
 
           {/* 설정 탭 (매니저 전용) */}
@@ -496,7 +608,7 @@ function SetlistCard({ setlist }: { setlist: PerformanceSetlistSummary }) {
   const tracks = data?.content ?? [];
 
   return (
-    <div className="border-border overflow-hidden rounded-[5px] border">
+    <div className="border-border min-w-0 flex-1 overflow-hidden rounded-[5px] border">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

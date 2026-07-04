@@ -20,6 +20,8 @@ export interface SetlistSelectorSheetProps {
   onOpenChange: (open: boolean) => void;
   initialSelection?: SetlistResponse[];
   onConfirm: (setlists: SetlistResponse[]) => void;
+  /** 이미 연결되어 선택 대상에서 제외할 setlistId 목록 */
+  excludeIds?: string[];
 }
 
 export function SetlistSelectorSheet({
@@ -27,9 +29,13 @@ export function SetlistSelectorSheet({
   onOpenChange,
   initialSelection = [],
   onConfirm,
+  excludeIds = [],
 }: SetlistSelectorSheetProps) {
   const { data, isLoading, isError } = useMySetlists();
-  const setlists = data?.content ?? [];
+  const setlists = useMemo(
+    () => (data?.content ?? []).filter((s) => !excludeIds.includes(s.setlistId)),
+    [data, excludeIds],
+  );
 
   const [selection, setSelection] = useState<SetlistResponse[]>(initialSelection);
   const [query, setQuery] = useState('');
