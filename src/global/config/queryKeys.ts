@@ -17,6 +17,7 @@ export const queryKeys = {
     members: (id: string) => [...queryKeys.band.all, id, 'members'] as const,
     applications: (id: string, status?: string) =>
       [...queryKeys.band.all, id, 'applications', status ?? null] as const,
+    myApplication: (id: string) => [...queryKeys.band.all, id, 'my-application'] as const,
   },
   jam: {
     all: ['jam'] as const,

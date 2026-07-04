@@ -17,6 +17,7 @@ export function useApplyBand(bandId: string, options?: UseApplyBandOptions) {
     mutationFn: () => applyBand(bandId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...queryKeys.band.detail(bandId)] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.band.myApplication(bandId) });
       options?.onSuccess?.();
     },
     onError: options?.onError,

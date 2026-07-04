@@ -1,6 +1,6 @@
 'use client';
 
-import { ImagePlus, Loader2, LogOut, UserPlus, X } from 'lucide-react';
+import { ImagePlus, Loader2, LogOut, UserMinus, UserPlus, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 
@@ -31,6 +31,8 @@ import { BandApplicationRow } from '@/domain/band/components/BandApplicationRow'
 import { BandMemberRow } from '@/domain/band/components/BandMemberRow';
 import { useApplyBand } from '@/domain/band/hooks/useApplyBand';
 import { useBandApplications } from '@/domain/band/hooks/useBandApplications';
+import { useMyApplicationForBand } from '@/domain/band/hooks/useMyApplicationForBand';
+import { useWithdrawApplication } from '@/domain/band/hooks/useWithdrawApplication';
 import { useBandDetail } from '@/domain/band/hooks/useBandDetail';
 import { useBandMembers } from '@/domain/band/hooks/useBandMembers';
 import { useDeleteBand } from '@/domain/band/hooks/useDeleteBand';
@@ -65,6 +67,13 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
     onError: (err) => toast.error(err.message || '가입 신청에 실패했습니다.'),
   });
 
+  const { data: myApplication } = useMyApplicationForBand(bandId);
+
+  const withdrawMutation = useWithdrawApplication(bandId, {
+    onSuccess: () => toast.success('가입 신청을 철회했습니다.'),
+    onError: (err) => toast.error(err.message || '가입 신청 철회에 실패했습니다.'),
+  });
+
   const leaveMutation = useLeaveBand(bandId, {
     onSuccess: () => {
       toast.success('밴드에서 탈퇴했습니다.');
@@ -92,6 +101,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
 
   const isMember = myRole !== null && myRole !== undefined;
   const isLeader = hasRole(myRole, 'LEADER'); // ADMIN 역할은 현재 BE 미정의 — LEADER 만 관리 권한
+  const isPendingApplicant = !isMember && myApplication?.status === 'PENDING';
 
   return (
     <div data-slot="band-detail">
@@ -106,7 +116,19 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
           </h1>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {!isMember && (
+          {isPendingApplicant && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="rounded-[5px] border-white/50 text-white/70 hover:border-transparent hover:bg-white/10 active:bg-white/20"
+              onClick={() => withdrawMutation.mutate()}
+              loading={withdrawMutation.isPending}
+            >
+              <UserMinus className="h-4 w-4" />
+              가입 철회
+            </Button>
+          )}
+          {!isMember && !isPendingApplicant && (
             <Button
               size="sm"
               variant="secondary"
