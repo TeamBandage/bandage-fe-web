@@ -3,7 +3,7 @@
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { Check, Plus, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -63,7 +63,6 @@ function emptyGrid(): GridState {
 function availabilityToGrid(availability: MemberAvailabilityResponse | undefined): GridState {
   const grid = emptyGrid();
   if (!availability) return grid;
-
   for (const rule of availability.weeklyRules) {
     const dayIdx = DAY_OF_WEEK_KEYS.indexOf(rule.dayOfWeek);
     if (dayIdx === -1) continue;
@@ -99,6 +98,15 @@ function hasAnySelected(grid: GridState): boolean {
   return grid.some((day) => day.some(Boolean));
 }
 
+type Tab = 'period' | 'schedule' | 'exception' | 'note';
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: 'period', label: '기간' },
+  { key: 'schedule', label: '시간대' },
+  { key: 'exception', label: '예외 날짜 (선택)' },
+  { key: 'note', label: '특이사항 (선택)' },
+];
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -115,8 +123,9 @@ type Props = {
 
 export function ScheduleManagerModal({ open, onClose, availability, onSave, isSaving }: Props) {
   const today = format(toZonedTime(new Date(), KST), 'yyyy-MM-dd');
+  const isNew = !availability?.updatedAt;
 
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [activeTab, setActiveTab] = useState<Tab>('period');
   const [effectiveFrom, setEffectiveFrom] = useState(today);
   const [effectiveTo, setEffectiveTo] = useState('');
   const [grid, setGrid] = useState<GridState>(emptyGrid);
@@ -129,19 +138,21 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
   const [newExcStartTime, setNewExcStartTime] = useState('09:00');
   const [newExcEndTime, setNewExcEndTime] = useState('18:00');
 
-  const dragState = useRef<{
-    active: boolean;
-    dayIdx: number;
-    painting: boolean;
-  } | null>(null);
+  const dragState = {
+    current: null as { active: boolean; dayIdx: number; painting: boolean } | null,
+  };
 
   useEffect(() => {
     if (open) {
-      setStep(1);
+      setActiveTab('period');
       const firstRule = availability?.weeklyRules[0];
       setEffectiveFrom(firstRule?.effectiveFrom ?? today);
       setEffectiveTo(firstRule?.effectiveTo ?? '');
-      setGrid(availabilityToGrid(availability));
+      setGrid(
+        isNew
+          ? Array.from({ length: 7 }, () => Array(SLOT_COUNT).fill(true))
+          : availabilityToGrid(availability),
+      );
       setExceptions(availability?.exceptions ?? []);
       setNote(availability?.note ?? '');
       setNewExcDate('');
@@ -188,7 +199,10 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
     setNewExcDate('');
   };
 
+  const canSave = !!effectiveFrom && !!effectiveTo && hasAnySelected(grid);
+
   const handleSave = () => {
+    if (!canSave) return;
     onSave(gridToWeeklyRules(grid), note, exceptions, effectiveFrom, effectiveTo);
   };
 
@@ -208,31 +222,52 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
         style={{ maxHeight: '90vh' }}
       >
         {/* 헤더 */}
-        <div className="shrink-0 px-5 pt-5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-foreground-sub hover:text-foreground absolute top-4 right-4"
-            aria-label="닫기"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <h3 className="text-foreground mb-1 text-[17px] font-bold">
-            나의 스케줄 관리{' '}
-            <span className="text-foreground-muted text-caption font-normal">({step}/4)</span>
-          </h3>
+        <div className="border-border shrink-0 border-b px-5 pt-5 pb-0">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-foreground text-[17px] font-bold">나의 스케줄 관리</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-foreground-sub hover:text-foreground"
+              aria-label="닫기"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* 탭 바 */}
+          <div className="flex">
+            {TABS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={cn(
+                  'px-3 pb-2 text-[13px] font-medium transition-colors',
+                  activeTab === key
+                    ? 'text-foreground border-foreground border-b-2'
+                    : 'text-foreground-muted hover:text-foreground-sub',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Step 1: 기간 선택 */}
-        {step === 1 && (
-          <>
-            <div className="flex-1 overflow-y-auto px-5 pt-1 pb-2">
-              <p className="text-foreground-sub mb-4 text-[12px]">
+        {/* 탭 콘텐츠 */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* 기간 탭 */}
+          {activeTab === 'period' && (
+            <div className="space-y-3 px-5 py-4">
+              <p className="text-foreground-sub text-[12px]">
                 이 스케줄이 적용될 기간을 선택해주세요
               </p>
               <div className="space-y-3">
                 <div className="grid grid-cols-[64px_1fr] items-center gap-3">
-                  <span className="text-foreground-sub text-[13px]">시작일</span>
+                  <span className="text-foreground-sub text-[13px]">
+                    시작일 <span className="text-red-400">*</span>
+                  </span>
                   <DatePicker
                     value={effectiveFrom}
                     min={today}
@@ -241,54 +276,51 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                   />
                 </div>
                 <div className="grid grid-cols-[64px_1fr] items-center gap-3">
-                  <span className="text-foreground-sub text-[13px]">종료일</span>
+                  <span className="text-foreground-sub text-[13px]">
+                    종료일 <span className="text-red-400">*</span>
+                  </span>
                   <DatePicker
                     value={effectiveTo}
                     min={effectiveFrom || today}
                     onChange={setEffectiveTo}
-                    placeholder="종료일 선택 (선택)"
+                    placeholder="종료일 선택"
                   />
                 </div>
                 <p className="text-foreground-muted text-micro">
                   {effectiveTo
                     ? `* ${effectiveFrom} ~ ${effectiveTo} 기간에 적용됩니다`
-                    : '* 종료일 미입력 시 무기한 적용됩니다'}
+                    : '* 종료일을 선택해주세요'}
                 </p>
               </div>
             </div>
-            <div className="flex shrink-0 justify-end px-5 pt-3 pb-5">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setStep(2)}
-                disabled={!effectiveFrom}
-                className="rounded-[5px]"
-              >
-                다음
-              </Button>
-            </div>
-          </>
-        )}
+          )}
 
-        {/* Step 2: 주간 타임테이블 */}
-        {step === 2 && (
-          <>
-            <div className="shrink-0 px-5 pt-1">
-              <p className="text-foreground-sub mb-3 text-[12px]">
-                주간 가능 시간대를 모두 채워주세요
-              </p>
-              <div className="mb-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setGrid(emptyGrid())}
-                  className="text-foreground-sub border-border text-micro rounded border px-2 py-0.5"
-                >
-                  스케줄 초기화
-                </button>
+          {/* 시간대 탭 */}
+          {activeTab === 'schedule' && (
+            <div className="px-5 py-4">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-foreground-sub text-[12px]">
+                  주간 가능 시간대를 모두 표시해주세요 <span className="text-red-400">*</span>
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-3 w-3 rounded-sm bg-[#e8856a]" />
+                    <span className="text-foreground-muted text-micro">가능</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-3 w-3 rounded-full border border-white/40" />
+                    <span className="text-foreground-muted text-micro">불가</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGrid(emptyGrid())}
+                    className="text-foreground-sub border-border text-micro rounded border px-2 py-0.5"
+                  >
+                    초기화
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-5">
               <div className="overflow-x-auto select-none" onPointerLeave={handlePointerUp}>
                 <div className="min-w-[320px]">
                   <div className="grid" style={{ gridTemplateColumns: '36px repeat(7, 1fr)' }}>
@@ -359,45 +391,17 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="shrink-0 px-5 pb-5">
               <p className="text-foreground-muted text-micro mt-2.5">* 셀 1칸 당 30분 단위입니다</p>
-              <p className="text-foreground-muted text-micro">
-                * 입력한 주간 가능 시간대는 향후 전 주 동일 적용됩니다
-              </p>
-              <div className="mt-4 flex justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStep(1)}
-                  className="rounded-[5px]"
-                >
-                  이전
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setStep(3)}
-                  disabled={!hasAnySelected(grid)}
-                  className="rounded-[5px]"
-                >
-                  다음
-                </Button>
-              </div>
             </div>
-          </>
-        )}
+          )}
 
-        {/* Step 3: 예외 날짜 */}
-        {step === 3 && (
-          <>
-            <div className="flex-1 space-y-4 overflow-y-auto px-5 pt-1 pb-2">
+          {/* 예외 날짜 탭 */}
+          {activeTab === 'exception' && (
+            <div className="space-y-4 px-5 py-4">
               <p className="text-foreground-sub text-[12px]">
-                위 규칙과 다른 날짜가 있으면 추가해주세요 (선택)
+                위 규칙과 다른 날짜가 있으면 추가해주세요
               </p>
 
-              {/* 추가 폼 */}
               <div className="border-border space-y-3 rounded-md border p-3">
                 <div className="grid grid-cols-[52px_1fr] items-center gap-2">
                   <span className="text-foreground-sub text-[12px]">날짜</span>
@@ -531,7 +535,6 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                 </div>
               </div>
 
-              {/* 예외 목록 */}
               {exceptions.length > 0 && (
                 <ul className="space-y-2">
                   {exceptions.map((exc) => (
@@ -570,32 +573,11 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                 </ul>
               )}
             </div>
+          )}
 
-            <div className="flex shrink-0 justify-between px-5 pt-3 pb-5">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setStep(2)}
-                className="rounded-[5px]"
-              >
-                이전
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setStep(4)}
-                className="rounded-[5px]"
-              >
-                다음
-              </Button>
-            </div>
-          </>
-        )}
-
-        {/* Step 4: 특이사항 */}
-        {step === 4 && (
-          <>
-            <div className="px-5 pb-5">
+          {/* 메모 탭 */}
+          {activeTab === 'note' && (
+            <div className="px-5 py-4">
               <p className="text-foreground-sub mb-3 text-[12px]">특이사항을 적어주세요</p>
               <Textarea
                 value={note}
@@ -607,28 +589,23 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
               <p className="text-foreground-muted mt-1 text-right text-[12px]">
                 {note.length}/500자
               </p>
-              <div className="mt-3 flex justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setStep(3)}
-                  className="rounded-[5px]"
-                >
-                  이전
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleSave}
-                  loading={isSaving}
-                  className="rounded-[5px]"
-                >
-                  완료
-                </Button>
-              </div>
             </div>
-          </>
-        )}
+          )}
+        </div>
+
+        {/* 푸터 */}
+        <div className="flex shrink-0 justify-end px-5 py-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleSave}
+            loading={isSaving}
+            disabled={!canSave}
+            className="rounded-[5px]"
+          >
+            {isNew ? '등록' : '수정'}
+          </Button>
+        </div>
       </div>
     </div>
   );

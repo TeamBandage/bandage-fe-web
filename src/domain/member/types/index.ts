@@ -15,6 +15,7 @@ export type {
   WeeklyRuleResponse,
   AvailabilityExceptionResponse,
   MemberAvailabilityResponse,
+  ScheduleSlotResponse,
 } from './res';
 export { joinSchema, updateMeSchema } from './schema';
 export type { JoinSchema, UpdateMeSchema } from './schema';

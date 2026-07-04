@@ -23,11 +23,11 @@ export interface AvailabilityExceptionRequest {
   endSlot?: number | null;
 }
 
-/** API_SPEC §2-8 — 가용성 등록/수정. weeklyRules·exceptions 전체 교체 방식. */
+/** API_SPEC §2-8 — 가용성 등록/수정. weeklyRules·exceptions 전체 교체 방식. effectiveTo는 필수. */
 export interface UpdateMyAvailabilityRequest {
   weeklyRules: WeeklyRuleRequest[];
   exceptions: AvailabilityExceptionRequest[];
   note?: string | null;
   effectiveFrom: string;
-  effectiveTo?: string | null;
+  effectiveTo: string;
 }
