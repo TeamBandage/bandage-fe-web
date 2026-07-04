@@ -6,19 +6,31 @@ export interface TrackInfoResponse {
   reference?: string;
 }
 
+export interface JamSessionParticipantInfo {
+  memberId: number;
+  name: string;
+  profileImg?: string;
+}
+
+export interface JamMemberInfo {
+  memberId: number;
+  name?: string;
+  profileImg?: string;
+}
+
 export interface JamSessionResponse {
   sessionId: string;
   label: string;
   short: string;
   need: number;
   custom: boolean;
-  participants: number[];
+  participants: JamSessionParticipantInfo[];
 }
 
 export interface JamParticipantResponse {
   participantId: string;
-  memberId: number;
-  sessionId: string | null;
+  member?: JamMemberInfo;
+  sessionId?: string | null;
 }
 
 export interface JamDetailResponse {
