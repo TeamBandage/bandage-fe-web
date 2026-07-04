@@ -86,6 +86,14 @@
       "status": "active"
     },
     {
+      "id": "track-selection",
+      "label": "선곡",
+      "routes": ["/track-selections"],
+      "endpointPrefixes": ["/api/v1/track-selections"],
+      "status": "active",
+      "notes": "setlist-meeting(셋리스트 회의) 도메인에서 선곡 조율 기능을 분리·리네임. BE source of truth는 /api/v1/track-selections. setlist-meeting 영역은 아직 마이그레이션되지 않은 일정 조율(schedules) 기능 전용으로 별도 유지."
+    },
+    {
       "id": "band-application",
       "label": "밴드 가입 신청",
       "routes": ["/bands"],
