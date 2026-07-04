@@ -89,7 +89,7 @@ export function MeContent() {
       exceptions,
       note,
       effectiveFrom,
-      effectiveTo: effectiveTo || null,
+      effectiveTo,
     });
   };
 

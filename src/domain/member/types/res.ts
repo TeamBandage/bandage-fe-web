@@ -66,3 +66,13 @@ export interface MemberAvailabilityResponse {
   note: string | null;
   updatedAt: string | null;
 }
+
+/** GET /api/v1/me/availability/slots — 날짜 범위별 가용성 슬롯. slot 0=00:00, 48슬롯, [startSlot, endSlot) */
+export interface ScheduleSlotResponse {
+  date: string;
+  startSlot: number;
+  endSlot: number;
+  type: 'AVAILABLE';
+  title: string | null;
+  refId: string | null;
+}
