@@ -10,11 +10,13 @@ import type { PerformancePosterPresignResponse, PerformancePosterResponse } from
 const PREFIX = '/api/v1/performance-posters';
 
 export async function issuePerformancePosterPresignedUrl(
+  performanceId: string,
   req: PerformancePosterPresignRequest,
 ): Promise<PerformancePosterPresignResponse> {
   const data = await apiClient.post<PerformancePosterPresignResponse>(
     `${PREFIX}/presigned-url`,
     req,
+    { query: { performanceId } },
   );
   if (!data) throw new Error('presigned URL 응답이 비어 있습니다.');
   return data;
