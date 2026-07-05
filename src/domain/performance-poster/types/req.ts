@@ -6,7 +6,7 @@ export interface PerformancePosterPresignRequest {
 
 export interface CreatePerformancePosterRequest {
   performanceId: string;
-  objectKey: string;
+  imageKey: string;
   description?: string;
 }
 

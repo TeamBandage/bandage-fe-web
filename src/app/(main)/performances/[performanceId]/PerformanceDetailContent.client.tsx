@@ -147,13 +147,13 @@ export function PerformanceDetailContent({
     try {
       const ext = extFromMime(file.type);
       if (!ext) throw new Error('지원하지 않는 이미지 형식입니다.');
-      const presign = await issuePerformancePosterPresignedUrl({
+      const presign = await issuePerformancePosterPresignedUrl(performanceId, {
         contentType: file.type,
         contentLength: file.size,
         ext,
       });
       await uploadToPresignedUrl(presign.uploadUrl, file);
-      await createPerformancePoster({ performanceId, objectKey: presign.objectKey });
+      await createPerformancePoster({ performanceId, imageKey: presign.objectKey });
       await queryClient.invalidateQueries({
         queryKey: queryKeys.performancePoster.list(performanceId),
       });
