@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { SEED_SONGS } from '../mock/seed';
 import { useSetlistStore } from './setlistStore';
 
 beforeEach(() => {
   useSetlistStore.getState().reset();
+  useSetlistStore.setState({ songs: SEED_SONGS });
 });
 
 describe('setlistStore — application/withdraw', () => {
@@ -38,16 +40,7 @@ describe('setlistStore — application/withdraw', () => {
   });
 });
 
-describe('setlistStore — chat / addSong / addCustomSession', () => {
-  it('sendChat 은 채팅 배열에 메시지를 append', () => {
-    const { sendChat } = useSetlistStore.getState();
-    const before = useSetlistStore.getState().songs.find((s) => s.id === 's1')!.chat.length;
-    sendChat('s1', 'u1', '테스트 메시지', '04-26 12:00');
-    const after = useSetlistStore.getState().songs.find((s) => s.id === 's1')!.chat;
-    expect(after.length).toBe(before + 1);
-    expect(after.at(-1)).toMatchObject({ userId: 'u1', msg: '테스트 메시지' });
-  });
-
+describe('setlistStore — addSong / addCustomSession', () => {
   it('addSong 은 빈 applicants/confirmed 버킷을 초기화', () => {
     const { addSong } = useSetlistStore.getState();
     const id = addSong('mt1', {

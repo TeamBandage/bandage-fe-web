@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp, ArrowUpDown, Check, Pencil, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Pencil, Star, Trash2 } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 
@@ -30,9 +30,12 @@ export interface SongTableProps {
   onSelectSong: (songId: string) => void;
   onEditSong?: (songId: string) => void;
   onDeleteSong?: (songId: string) => void;
+  /** 매니저가 잠금 상태에서 최종 선곡 확정/해제. */
+  onToggleSelection?: (songId: string, selected: boolean) => void;
 }
 
-function memberName(members: Member[], id: string): string {
+function memberName(members: Member[], id: string, currentUserId?: string): string {
+  if (currentUserId && id === currentUserId) return '나';
   return members.find((m) => m.id === id)?.name ?? '?';
 }
 
@@ -59,6 +62,7 @@ export function SongTable({
   onSelectSong,
   onEditSong,
   onDeleteSong,
+  onToggleSelection,
 }: SongTableProps) {
   if (songs.length === 0) {
     return (
@@ -213,7 +217,7 @@ export function SongTable({
                   {song.note ? (
                     <span className="block truncate" title={song.note}>
                       <span className="text-foreground-sub font-semibold">
-                        {memberName(members, song.proposerId)} ·{' '}
+                        {memberName(members, song.proposerId, currentUserId)} ·{' '}
                       </span>
                       {song.note}
                     </span>
@@ -223,7 +227,48 @@ export function SongTable({
                 </td>
                 <td className="px-s-3 py-s-2 align-middle">
                   {(() => {
-                    // 잠긴 회의는 모든 멤버에 대해 수정/삭제 비활성.
+                    // 잠금 전: 매니저에게 최종 선곡 토글 표시 (백엔드는 잠금 후 isSelected 변경 거부).
+                    if (!isLocked && isManager && onToggleSelection) {
+                      return (
+                        <div className="flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleSelection(song.id, !song.isSelected);
+                            }}
+                            aria-label={song.isSelected ? '셋리스트 선택 해제' : '셋리스트에 추가'}
+                            title={song.isSelected ? '셋리스트 선택 해제' : '셋리스트에 추가'}
+                            className={cn(
+                              'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                              song.isSelected
+                                ? 'text-warn'
+                                : 'text-foreground-muted hover:text-warn',
+                            )}
+                          >
+                            <Star
+                              className="h-4 w-4"
+                              fill={song.isSelected ? 'currentColor' : 'none'}
+                            />
+                          </button>
+                        </div>
+                      );
+                    }
+                    // 잠긴 후: 선택된 곡은 읽기 전용 별표로 표시.
+                    if (isLocked && song.isSelected) {
+                      return (
+                        <div className="flex items-center justify-end">
+                          <span
+                            aria-label="셋리스트 선택됨"
+                            title="셋리스트에 포함된 곡"
+                            className="text-warn inline-flex h-7 w-7 items-center justify-center"
+                          >
+                            <Star className="h-4 w-4" fill="currentColor" />
+                          </span>
+                        </div>
+                      );
+                    }
+                    // 잠긴 회의는 수정/삭제 비활성.
                     if (isLocked) return null;
                     const canMutate = isManager || song.proposerId === currentUserId;
                     if (!canMutate) return null;
