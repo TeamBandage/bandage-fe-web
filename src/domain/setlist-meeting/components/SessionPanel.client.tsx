@@ -6,6 +6,11 @@ import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
 
+import { useMe } from '@/domain/member/hooks/useMe';
+import { useApplyForSession } from '@/domain/track-selection/hooks/useApplyForSession';
+import { useWithdrawSession } from '@/domain/track-selection/hooks/useWithdrawSession';
+import { useUpdateSessionConfirmations } from '@/domain/track-selection/hooks/useUpdateSessionConfirmations';
+
 import { useSetlistStore } from '../store/setlistStore';
 import type { Member, SessionDef, Song } from '../types';
 import { displaySessionShort, findSession, missingCount, sessionState } from '../utils';
@@ -15,11 +20,23 @@ import { MemberAvatar } from './MemberAvatar';
 
 export interface SessionPanelProps {
   songId: string;
+  /** 실 API 기반 선곡 ID (meetingId와 동일). 세션 지원/철회/확정 API 호출에 필요. */
+  selectionId: string;
+  /** 밴드 멤버 목록 — MeetingDetail에서 TanStack Query로 패치 후 전달. */
+  members: Member[];
+  /** 실 API 기준 매니저 여부 — 미전달 시 mock store fallback */
+  isManager?: boolean;
   /** 모바일에서 닫기 버튼 노출용. 데스크톱은 항상 노출. */
   onClose?: () => void;
 }
 
-export function SessionPanel({ songId, onClose }: SessionPanelProps) {
+export function SessionPanel({
+  songId,
+  selectionId,
+  members: rawMembers,
+  isManager: isManagerProp,
+  onClose,
+}: SessionPanelProps) {
   // 배열 자체(stable ref) 만 select 하고 find 는 useMemo 로 — selector 내부 find/filter 는 매 렌더마다 새 참조라 무한 루프.
   const songs = useSetlistStore((s) => s.songs);
   const meetings = useSetlistStore((s) => s.meetings);
@@ -28,17 +45,34 @@ export function SessionPanel({ songId, onClose }: SessionPanelProps) {
     () => (song ? (meetings.find((m) => m.id === song.meetingId) ?? null) : null),
     [meetings, song],
   );
-  const members = useSetlistStore((s) => s.members);
   const currentUserId = useSetlistStore((s) => s.currentUserId);
   const focusedSessionId = useSetlistStore((s) => s.focusedSessionId);
+  const { data: me } = useMe();
+  // 실 유저가 전달된 members에 없을 때 임시 Member 합성 (아바타·이름 표시용)
+  const members: Member[] = useMemo(() => {
+    if (!currentUserId || rawMembers.some((m) => m.id === currentUserId)) return rawMembers;
+    const meMember: Member = {
+      id: currentUserId,
+      name: me?.name ?? '나',
+      role: '',
+      avatar: 'var(--color-accent)',
+      profileImg: me?.profileImg ?? undefined,
+    };
+    return [...rawMembers, meMember];
+  }, [rawMembers, currentUserId, me]);
   const setFocusedSession = useSetlistStore((s) => s.setFocusedSession);
   const applySession = useSetlistStore((s) => s.applySession);
   const withdrawSession = useSetlistStore((s) => s.withdrawSession);
   const confirmSession = useSetlistStore((s) => s.confirmSession);
   const unconfirmSession = useSetlistStore((s) => s.unconfirmSession);
+
+  const applyMutation = useApplyForSession(selectionId);
+  const withdrawMutation = useWithdrawSession(selectionId);
+  const confirmMutation = useUpdateSessionConfirmations(selectionId);
+
   const toast = useToast();
 
-  const isManager = meeting ? meeting.managerId === currentUserId : false;
+  const isManager = isManagerProp ?? (meeting ? meeting.managerId === currentUserId : false);
   const focused = song && focusedSessionId ? findSession(song, focusedSessionId) : undefined;
 
   if (!song) {
@@ -87,19 +121,55 @@ export function SessionPanel({ songId, onClose }: SessionPanelProps) {
             onBack={() => setFocusedSession(null)}
             onApply={() => {
               applySession(song.id, focused.id, currentUserId);
-              toast.success('세션에 지원했습니다.');
+              applyMutation.mutate(
+                { itemId: song.id, sessionId: focused.id },
+                {
+                  onSuccess: () => toast.success('세션에 지원했습니다.'),
+                  onError: () => {
+                    withdrawSession(song.id, focused.id, currentUserId);
+                    toast.error('지원에 실패했습니다.');
+                  },
+                },
+              );
             }}
             onWithdraw={() => {
               withdrawSession(song.id, focused.id, currentUserId);
-              toast.info('지원을 취소했습니다.');
+              withdrawMutation.mutate(
+                { itemId: song.id, sessionId: focused.id, userId: Number(currentUserId) },
+                {
+                  onSuccess: () => toast.info('지원을 취소했습니다.'),
+                  onError: () => {
+                    applySession(song.id, focused.id, currentUserId);
+                    toast.error('지원 취소에 실패했습니다.');
+                  },
+                },
+              );
             }}
             onConfirm={(uid) => {
               confirmSession(song.id, focused.id, uid);
-              toast.success('세션이 확정되었습니다.');
+              confirmMutation.mutate(
+                { itemId: song.id, sessionId: focused.id, confirm: [Number(uid)], unconfirm: [] },
+                {
+                  onSuccess: () => toast.success('세션이 확정되었습니다.'),
+                  onError: () => {
+                    unconfirmSession(song.id, focused.id, uid);
+                    toast.error('확정에 실패했습니다.');
+                  },
+                },
+              );
             }}
             onUnconfirm={(uid) => {
               unconfirmSession(song.id, focused.id, uid);
-              toast.info('확정이 해제되었습니다.');
+              confirmMutation.mutate(
+                { itemId: song.id, sessionId: focused.id, confirm: [], unconfirm: [Number(uid)] },
+                {
+                  onSuccess: () => toast.info('확정이 해제되었습니다.'),
+                  onError: () => {
+                    confirmSession(song.id, focused.id, uid);
+                    toast.error('확정 해제에 실패했습니다.');
+                  },
+                },
+              );
             }}
           />
         ) : (
@@ -159,13 +229,18 @@ function OverviewSessionView({
                 : 'border-border bg-card';
           // 카드의 정체성: 누가 이 세션을 맡는지 한눈에 보여주는 것.
           // 1순위: 확정자(이름·아바타). 2순위: 지원자 미니 그룹. 3순위: '미확정'.
-          const confirmedMembers = conf
-            .map((uid) => members.find((m) => m.id === uid))
-            .filter((m): m is Member => Boolean(m));
+          const fallback = (uid: string): Member => ({
+            id: uid,
+            name: `멤버 #${uid}`,
+            role: '',
+            avatar: 'var(--color-accent)',
+          });
+          const confirmedMembers = conf.map(
+            (uid) => members.find((m) => m.id === uid) ?? fallback(uid),
+          );
           const applicantMembers = apps
             .filter((uid) => !conf.includes(uid))
-            .map((uid) => members.find((m) => m.id === uid))
-            .filter((m): m is Member => Boolean(m));
+            .map((uid) => members.find((m) => m.id === uid) ?? fallback(uid));
           return (
             <li key={s.id}>
               <button

@@ -1,14 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import {
-  DEFAULT_SESSIONS,
-  SEED_CURRENT_USER_ID,
-  SEED_MEETINGS,
-  SEED_MEMBERS,
-  SEED_SONGS,
-} from '../mock/seed';
-import type { ChatMessage, Meeting, Member, SessionDef, Song } from '../types';
+import { DEFAULT_SESSIONS, SEED_CURRENT_USER_ID, SEED_MEETINGS } from '../mock/seed';
+import type { Meeting, SessionDef, Song } from '../types';
 
 const noopStorage = {
   getItem: () => null,
@@ -19,7 +13,6 @@ const noopStorage = {
 type State = {
   meetings: Meeting[];
   songs: Song[];
-  members: Member[];
   currentUserId: string;
   selectedMeetingId: string | null;
   selectedSongId: string | null;
@@ -35,7 +28,6 @@ type Actions = {
   withdrawSession: (songId: string, sessionId: string, userId: string) => void;
   confirmSession: (songId: string, sessionId: string, userId: string) => void;
   unconfirmSession: (songId: string, sessionId: string, userId: string) => void;
-  sendChat: (songId: string, userId: string, msg: string, at?: string) => void;
   addSong: (
     meetingId: string,
     song: Pick<Song, 'title' | 'artist' | 'album' | 'duration' | 'note' | 'proposerId'> & {
@@ -50,6 +42,8 @@ type Actions = {
     },
   ) => void;
   addCustomSession: (songId: string, session: SessionDef) => void;
+  /** 실 API 응답으로 특정 meetingId 의 곡 목록을 통째로 교체. */
+  setSongs: (meetingId: string, songs: Song[]) => void;
   addMeeting: (
     meeting: Omit<
       Meeting,
@@ -68,19 +62,12 @@ export type SetlistStore = State & Actions;
 
 const initial: State = {
   meetings: SEED_MEETINGS,
-  songs: SEED_SONGS,
-  members: SEED_MEMBERS,
+  songs: [],
   currentUserId: SEED_CURRENT_USER_ID,
-  selectedMeetingId: SEED_MEETINGS[0]?.id ?? null,
-  selectedSongId: SEED_SONGS[0]?.id ?? null,
+  selectedMeetingId: null,
+  selectedSongId: null,
   focusedSessionId: null,
 };
-
-function nowMMDDHHmm(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 function updateSong(songs: Song[], songId: string, updater: (song: Song) => Song): Song[] {
   return songs.map((s) => (s.id === songId ? updater(s) : s));
@@ -148,14 +135,6 @@ export const useSetlistStore = create<SetlistStore>()(
           })),
         })),
 
-      sendChat: (songId, userId, msg, at) =>
-        set((state) => ({
-          songs: updateSong(state.songs, songId, (song) => ({
-            ...song,
-            chat: [...song.chat, { userId, msg, at: at ?? nowMMDDHHmm() } satisfies ChatMessage],
-          })),
-        })),
-
       addSong: (meetingId, draft) => {
         const id = `s_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         const sessions = draft.sessions ?? DEFAULT_SESSIONS;
@@ -174,7 +153,6 @@ export const useSetlistStore = create<SetlistStore>()(
           sessions,
           applicants: empty,
           confirmed: { ...empty },
-          chat: [],
         };
         set((state) => ({ songs: [...state.songs, next] }));
         return id;
@@ -222,6 +200,18 @@ export const useSetlistStore = create<SetlistStore>()(
                   confirmed: { ...song.confirmed, [session.id]: [] },
                 },
           ),
+        })),
+
+      setSongs: (meetingId, incoming) =>
+        set((state) => ({
+          songs: [...state.songs.filter((s) => s.meetingId !== meetingId), ...incoming],
+          // 현재 선택 곡이 삭제된 경우 선택 해제.
+          selectedSongId: incoming.some((s) => s.id === state.selectedSongId)
+            ? state.selectedSongId
+            : null,
+          focusedSessionId: incoming.some((s) => s.id === state.selectedSongId)
+            ? state.focusedSessionId
+            : null,
         })),
 
       addMeeting: (meeting) => {

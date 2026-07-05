@@ -1,9 +1,3 @@
-/**
- * 선곡 회의 (Setlist Meeting) — FE-only mock 도메인.
- * 백엔드 미구현 단계: Zustand persist(sessionStorage)로만 상태 보관.
- * design/web/setlist_web.jsx 의 데이터 모델과 1:1 대응.
- */
-
 export type SessionDef = {
   id: string;
   label: string;
@@ -16,13 +10,6 @@ export type SessionDef = {
 export type Applicant = {
   userId: string;
   appliedAt: string;
-};
-
-export type ChatMessage = {
-  userId: string;
-  /** 'MM-DD HH:mm' 또는 ISO. mock 은 design 원본 표기 유지. */
-  at: string;
-  msg: string;
 };
 
 export type Member = {
@@ -53,7 +40,8 @@ export type Song = {
   applicants: Record<string, string[]>;
   /** sessionId → userId[]. confirmed.length >= need 면 full. */
   confirmed: Record<string, string[]>;
-  chat: ChatMessage[];
+  /** 매니저가 최종 선곡으로 확정한 항목. */
+  isSelected?: boolean;
 };
 
 export type MeetingPurpose = 'performance' | 'general';

@@ -20,6 +20,10 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/cn';
 import { useToast } from '@/hooks/useToast';
+import { useCreateTrackSelectionItem } from '@/domain/track-selection/hooks/useCreateTrackSelectionItem';
+import { useUpdateTrackSelectionItem } from '@/domain/track-selection/hooks/useUpdateTrackSelectionItem';
+import { mmSsToSeconds } from '@/domain/track-selection/utils/toSong';
+import type { SessionDefDto } from '@/domain/track-selection/types/req';
 
 import { searchMockSongs, type SongSearchResult } from '../mock/songSearchMock';
 import { useSetlistStore } from '../store/setlistStore';
@@ -158,10 +162,11 @@ export function AddSongModal({
   const ssInputRef = useRef<HTMLInputElement | null>(null);
   const titleRef = useRef<HTMLInputElement | null>(null);
 
-  const addSong = useSetlistStore((s) => s.addSong);
   const updateSong = useSetlistStore((s) => s.updateSong);
-  const currentUserId = useSetlistStore((s) => s.currentUserId);
   const toast = useToast();
+
+  const createItem = useCreateTrackSelectionItem(meetingId);
+  const updateItem = useUpdateTrackSelectionItem(meetingId);
 
   const form = useForm<AddSongSchema>({
     resolver: zodResolver(addSongSchema),
@@ -226,32 +231,68 @@ export function AddSongModal({
 
   const canSubmit = form.formState.isValid && composedSessions.length > 0;
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
     if (composedSessions.length === 0) {
       toast.error('세션을 최소 1개 이상 선택해 주세요.');
       return;
     }
-    const duration = formatDuration(durationMm, durationSs);
-    const payload = {
-      title: values.title,
-      artist: values.artist,
-      album: values.album,
-      duration: duration === '00:00' ? undefined : duration,
-      note: values.note,
-      sessions: composedSessions,
-    };
+    const durationStr = formatDuration(durationMm, durationSs);
+    const duration = mmSsToSeconds(durationStr);
+
+    const sessionDtos: SessionDefDto[] = composedSessions.map((s) => ({
+      custom: s.custom ?? false,
+      label: s.label,
+      need: s.need,
+      sessionId: s.id,
+      short: s.short,
+    }));
+
     if (song) {
-      updateSong(song.id, payload);
-      toast.success('곡 정보가 수정되었습니다.');
-      setOpen(false);
+      try {
+        await updateItem.mutateAsync({
+          itemId: song.id,
+          body: {
+            title: values.title,
+            artist: values.artist || undefined,
+            album: values.album || undefined,
+            duration,
+            note: values.note || undefined,
+            sessions: sessionDtos,
+          },
+        });
+        updateSong(song.id, {
+          title: values.title,
+          artist: values.artist,
+          album: values.album || undefined,
+          duration: durationStr !== '00:00' ? durationStr : undefined,
+          note: values.note || undefined,
+          sessions: composedSessions,
+        });
+        toast.success('곡 정보가 수정되었습니다.');
+        setOpen(false);
+      } catch {
+        toast.error('곡 수정에 실패했습니다.');
+      }
       return;
     }
-    addSong(meetingId, { ...payload, proposerId: currentUserId });
-    toast.success('곡이 추가되었습니다.');
-    if (keepOpen) {
-      resetForNext();
-    } else {
-      setOpen(false);
+
+    try {
+      await createItem.mutateAsync({
+        title: values.title,
+        artist: values.artist,
+        album: values.album || undefined,
+        duration,
+        note: values.note || undefined,
+        sessions: sessionDtos,
+      });
+      toast.success('곡이 추가되었습니다.');
+      if (keepOpen) {
+        resetForNext();
+      } else {
+        setOpen(false);
+      }
+    } catch {
+      toast.error('곡 추가에 실패했습니다.');
     }
   });
 

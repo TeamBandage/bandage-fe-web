@@ -1,5 +1,5 @@
 /**
- * 선곡 회의 BE API fetcher 모음 — API_SPEC §7.
+ * 선곡 조율 BE API fetcher 모음 — API_SPEC §7.
  *
  * 현재 FE 의 메인 흐름은 Zustand mock(`store/setlistStore.ts`) 을 사용.
  * 이 fetcher 들은 BE 도입 단계에서 store action 을 점진적으로 교체하기 위해 미리 준비된 표면이다.
@@ -10,14 +10,14 @@ import type { CursorResponse } from '@/global/types';
 import type {
   ConfirmSessionRequest,
   CreateChatMessageRequest,
-  CreateSetlistItemRequest,
-  CreateSetlistMeetingRequest,
-  SetlistItemChatMessageResponse,
-  SetlistItemResponse,
-  SetlistMeetingDetailResponse,
-  SetlistMeetingResponse,
-  UpdateSetlistItemRequest,
-  UpdateSetlistMeetingRequest,
+  CreateSelectionItemRequest,
+  CreateSelectionMeetingRequest,
+  SelectionItemChatMessageResponse,
+  SelectionItemResponse,
+  SelectionMeetingDetailResponse,
+  SelectionMeetingResponse,
+  UpdateSelectionItemRequest,
+  UpdateSelectionMeetingRequest,
 } from '../types/api';
 
 const PREFIX = '/api/v1/setlist-meetings';
@@ -25,77 +25,80 @@ const PREFIX = '/api/v1/setlist-meetings';
 // ─── 회의 ─────────────────────────────────────────────────────────────
 
 /** §7-1. */
-export function createSetlistMeeting(
-  body: CreateSetlistMeetingRequest,
-): Promise<SetlistMeetingResponse> {
-  return apiClient.post<SetlistMeetingResponse>(PREFIX, body);
+export function createSelectionMeeting(
+  body: CreateSelectionMeetingRequest,
+): Promise<SelectionMeetingResponse> {
+  return apiClient.post<SelectionMeetingResponse>(PREFIX, body);
 }
 
 /** §7-2. */
-export function getMySetlistMeetings(params?: {
+export function getMySelectionMeetings(params?: {
   lastId?: string;
   pageSize?: number;
-}): Promise<CursorResponse<SetlistMeetingResponse, string>> {
-  return apiClient.get<CursorResponse<SetlistMeetingResponse, string>>(`${PREFIX}/me`, {
+}): Promise<CursorResponse<SelectionMeetingResponse, string>> {
+  return apiClient.get<CursorResponse<SelectionMeetingResponse, string>>(`${PREFIX}/me`, {
     query: params,
   });
 }
 
 /** §7-3. */
-export function getSetlistMeeting(meetingId: string): Promise<SetlistMeetingDetailResponse> {
-  return apiClient.get<SetlistMeetingDetailResponse>(`${PREFIX}/${meetingId}`);
+export function getSelectionMeeting(meetingId: string): Promise<SelectionMeetingDetailResponse> {
+  return apiClient.get<SelectionMeetingDetailResponse>(`${PREFIX}/${meetingId}`);
 }
 
 /** §7-4. */
-export function updateSetlistMeeting(
+export function updateSelectionMeeting(
   meetingId: string,
-  body: UpdateSetlistMeetingRequest,
-): Promise<SetlistMeetingResponse> {
-  return apiClient.patch<SetlistMeetingResponse>(`${PREFIX}/${meetingId}`, body);
+  body: UpdateSelectionMeetingRequest,
+): Promise<SelectionMeetingResponse> {
+  return apiClient.patch<SelectionMeetingResponse>(`${PREFIX}/${meetingId}`, body);
 }
 
 /** §7-5. */
-export function deleteSetlistMeeting(meetingId: string): Promise<void> {
+export function deleteSelectionMeeting(meetingId: string): Promise<void> {
   return apiClient.delete<void>(`${PREFIX}/${meetingId}`);
 }
 
 // ─── 곡(Item) ─────────────────────────────────────────────────────────
 
 /** §7-6. */
-export function getSetlistItems(
+export function getSelectionItems(
   meetingId: string,
   params?: { lastId?: string; pageSize?: number },
-): Promise<CursorResponse<SetlistItemResponse, string>> {
-  return apiClient.get<CursorResponse<SetlistItemResponse, string>>(
+): Promise<CursorResponse<SelectionItemResponse, string>> {
+  return apiClient.get<CursorResponse<SelectionItemResponse, string>>(
     `${PREFIX}/${meetingId}/items`,
     { query: params },
   );
 }
 
 /** §7-7. */
-export function getSetlistItem(meetingId: string, itemId: string): Promise<SetlistItemResponse> {
-  return apiClient.get<SetlistItemResponse>(`${PREFIX}/${meetingId}/items/${itemId}`);
+export function getSelectionItem(
+  meetingId: string,
+  itemId: string,
+): Promise<SelectionItemResponse> {
+  return apiClient.get<SelectionItemResponse>(`${PREFIX}/${meetingId}/items/${itemId}`);
 }
 
 /** §7-8. */
-export function createSetlistItem(
+export function createSelectionItem(
   meetingId: string,
-  body: CreateSetlistItemRequest,
-): Promise<SetlistItemResponse> {
-  return apiClient.post<SetlistItemResponse>(`${PREFIX}/${meetingId}/items`, body);
+  body: CreateSelectionItemRequest,
+): Promise<SelectionItemResponse> {
+  return apiClient.post<SelectionItemResponse>(`${PREFIX}/${meetingId}/items`, body);
 }
 
 /** §7-9. */
-export function updateSetlistItem(
+export function updateSelectionItem(
   meetingId: string,
   itemId: string,
-  body: UpdateSetlistItemRequest,
-): Promise<SetlistItemResponse> {
-  return apiClient.patch<SetlistItemResponse>(`${PREFIX}/${meetingId}/items/${itemId}`, body);
+  body: UpdateSelectionItemRequest,
+): Promise<SelectionItemResponse> {
+  return apiClient.patch<SelectionItemResponse>(`${PREFIX}/${meetingId}/items/${itemId}`, body);
 }
 
 /** §7-10. */
-export function deleteSetlistItem(meetingId: string, itemId: string): Promise<void> {
+export function deleteSelectionItem(meetingId: string, itemId: string): Promise<void> {
   return apiClient.delete<void>(`${PREFIX}/${meetingId}/items/${itemId}`);
 }
 
@@ -106,8 +109,8 @@ export function applySession(
   meetingId: string,
   itemId: string,
   sessionId: string,
-): Promise<SetlistItemResponse> {
-  return apiClient.post<SetlistItemResponse>(
+): Promise<SelectionItemResponse> {
+  return apiClient.post<SelectionItemResponse>(
     `${PREFIX}/${meetingId}/items/${itemId}/sessions/${sessionId}/applicants`,
     {},
   );
@@ -131,8 +134,8 @@ export function patchConfirmations(
   itemId: string,
   sessionId: string,
   body: ConfirmSessionRequest,
-): Promise<SetlistItemResponse> {
-  return apiClient.patch<SetlistItemResponse>(
+): Promise<SelectionItemResponse> {
+  return apiClient.patch<SelectionItemResponse>(
     `${PREFIX}/${meetingId}/items/${itemId}/sessions/${sessionId}/confirmations`,
     body,
   );
@@ -145,8 +148,8 @@ export function getItemChat(
   meetingId: string,
   itemId: string,
   params?: { lastId?: string; pageSize?: number },
-): Promise<CursorResponse<SetlistItemChatMessageResponse, string>> {
-  return apiClient.get<CursorResponse<SetlistItemChatMessageResponse, string>>(
+): Promise<CursorResponse<SelectionItemChatMessageResponse, string>> {
+  return apiClient.get<CursorResponse<SelectionItemChatMessageResponse, string>>(
     `${PREFIX}/${meetingId}/items/${itemId}/chat`,
     { query: params },
   );
@@ -157,8 +160,8 @@ export function postItemChat(
   meetingId: string,
   itemId: string,
   body: CreateChatMessageRequest,
-): Promise<SetlistItemChatMessageResponse> {
-  return apiClient.post<SetlistItemChatMessageResponse>(
+): Promise<SelectionItemChatMessageResponse> {
+  return apiClient.post<SelectionItemChatMessageResponse>(
     `${PREFIX}/${meetingId}/items/${itemId}/chat`,
     body,
   );
@@ -167,11 +170,11 @@ export function postItemChat(
 // ─── 잠금/해제 ────────────────────────────────────────────────────────
 
 /** §7-16. */
-export function lockSetlistMeeting(meetingId: string): Promise<SetlistMeetingResponse> {
-  return apiClient.post<SetlistMeetingResponse>(`${PREFIX}/${meetingId}/lock`, {});
+export function lockSelectionMeeting(meetingId: string): Promise<SelectionMeetingResponse> {
+  return apiClient.post<SelectionMeetingResponse>(`${PREFIX}/${meetingId}/lock`, {});
 }
 
 /** §7-17. */
-export function unlockSetlistMeeting(meetingId: string): Promise<SetlistMeetingResponse> {
-  return apiClient.post<SetlistMeetingResponse>(`${PREFIX}/${meetingId}/unlock`, {});
+export function unlockSelectionMeeting(meetingId: string): Promise<SelectionMeetingResponse> {
+  return apiClient.post<SelectionMeetingResponse>(`${PREFIX}/${meetingId}/unlock`, {});
 }

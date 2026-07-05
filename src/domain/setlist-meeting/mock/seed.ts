@@ -69,15 +69,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: ['u4'], G: ['u1', 'u3'], B: ['u2'], D: [] },
     confirmed: { V: ['u4'], G: ['u1'], B: ['u2'], D: [] },
-    chat: [
-      {
-        userId: 'u3',
-        at: '04-22 10:14',
-        msg: 'Pull Me Under 인트로부터 너무 강력해서 1번 트랙 어떨까요?',
-      },
-      { userId: 'u4', at: '04-22 11:02', msg: '보컬 음역 빡셈. 키 반음 내릴지 고민됨.' },
-      { userId: 'u1', at: '04-22 14:30', msg: '기타 솔로 분리해서 합주 잡고 싶음.' },
-    ],
   },
   {
     id: 's2',
@@ -91,10 +82,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: ['u4'], G: ['u3', 'u1'], B: ['u2'], D: ['u5', 'u7'] },
     confirmed: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'] },
-    chat: [
-      { userId: 'u1', at: '04-20 09:00', msg: 'Take the Time 라이브에서 진짜 좋을 듯.' },
-      { userId: 'u5', at: '04-20 10:15', msg: '드럼 그루브 좋아요.' },
-    ],
   },
   {
     id: 's3',
@@ -108,9 +95,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: ['u4'], G: ['u1'], B: ['u2'], D: [] },
     confirmed: { V: [], G: [], B: [], D: [] },
-    chat: [
-      { userId: 'u4', at: '04-21 16:00', msg: '솔로가 진짜 명연이라 합주에서 살릴 만합니다.' },
-    ],
   },
   {
     id: 's4',
@@ -127,10 +111,6 @@ export const SEED_SONGS: Song[] = [
     ],
     applicants: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'], PERC: [] },
     confirmed: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'], PERC: [] },
-    chat: [
-      { userId: 'u4', at: '04-23 13:20', msg: '키보드 패드는 임지수님 맡아주시면 좋겠어요.' },
-      { userId: 'u6', at: '04-23 14:00', msg: 'OK! 사운드 미리 준비할게요.' },
-    ],
   },
   {
     id: 's5',
@@ -144,7 +124,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: [], G: ['u1', 'u3'], B: ['u2'], D: ['u5'] },
     confirmed: { V: [], G: ['u1'], B: ['u2'], D: ['u5'] },
-    chat: [{ userId: 'u2', at: '04-24 11:00', msg: 'Erotomania 베이스 패턴 진짜 멋있음.' }],
   },
   {
     id: 's6',
@@ -161,10 +140,6 @@ export const SEED_SONGS: Song[] = [
     ],
     applicants: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], D2: ['u7'] },
     confirmed: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], D2: ['u7'] },
-    chat: [
-      { userId: 'u5', at: '04-24 19:00', msg: '후반부 트윈 드럼 어떨까요? 최홍석님이랑 같이.' },
-      { userId: 'u7', at: '04-24 19:20', msg: '좋아요! 패턴 분담 정해봅시다.' },
-    ],
   },
   {
     id: 's7',
@@ -178,7 +153,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: [], G: ['u3', 'u1'], B: [], D: [] },
     confirmed: { V: [], G: [], B: [], D: [] },
-    chat: [{ userId: 'u3', at: '04-25 09:15', msg: '난이도 최상. 시간 많이 필요할 것 같아요.' }],
   },
 
   // ─── 추가 13곡 — 시간표 풀 가독성 검증용 (총 20곡). ─────────────────
@@ -194,7 +168,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'] },
     confirmed: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'] },
-    chat: [],
   },
   {
     id: 's9',
@@ -208,7 +181,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'], K: ['u6'] },
     confirmed: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'], K: ['u6'] },
-    chat: [],
   },
   {
     id: 's10',
@@ -222,7 +194,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: ['u4'], G: ['u3'], B: [], D: [] },
     confirmed: { V: ['u4'], G: [], B: [], D: [] },
-    chat: [],
   },
   {
     id: 's11',
@@ -236,7 +207,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: ['u4'], G: ['u1', 'u3'], B: ['u2'], D: ['u5'] },
     confirmed: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'] },
-    chat: [],
   },
   {
     id: 's12',
@@ -250,7 +220,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'] },
     confirmed: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'] },
-    chat: [],
   },
   {
     id: 's13',
@@ -264,7 +233,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'] },
     confirmed: { V: [], G: [], B: [], D: [], K: [] },
-    chat: [],
   },
   {
     id: 's14',
@@ -278,7 +246,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: [], G: ['u1', 'u3'], B: ['u2'], D: ['u5'], K: ['u6'] },
     confirmed: { V: [], G: ['u1'], B: ['u2'], D: ['u5'], K: ['u6'] },
-    chat: [],
   },
   {
     id: 's15',
@@ -292,7 +259,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'] },
     confirmed: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'] },
-    chat: [],
   },
   {
     id: 's16',
@@ -306,7 +272,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'], K: ['u6'] },
     confirmed: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'], K: ['u6'] },
-    chat: [],
   },
   {
     id: 's17',
@@ -320,7 +285,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: ['u4'], G: ['u3'], B: [], D: [], K: [] },
     confirmed: { V: [], G: [], B: [], D: [], K: [] },
-    chat: [],
   },
   {
     id: 's18',
@@ -334,7 +298,6 @@ export const SEED_SONGS: Song[] = [
     sessions: STANDARD_SESSIONS,
     applicants: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'] },
     confirmed: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'] },
-    chat: [],
   },
   {
     id: 's19',
@@ -348,7 +311,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'] },
     confirmed: { V: ['u4'], G: ['u3'], B: ['u2'], D: ['u5'], K: ['u6'] },
-    chat: [],
   },
   {
     id: 's20',
@@ -362,7 +324,6 @@ export const SEED_SONGS: Song[] = [
     sessions: KEYS_SESSIONS,
     applicants: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'], K: ['u6'] },
     confirmed: { V: ['u4'], G: ['u1'], B: ['u2'], D: ['u5'], K: ['u6'] },
-    chat: [],
   },
 ];
 

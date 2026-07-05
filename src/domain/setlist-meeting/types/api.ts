@@ -6,7 +6,7 @@
 export type ApiMeetingPurpose = 'PERFORMANCE' | 'GENERAL';
 
 /** §7-1 / §7-3 응답. */
-export interface SetlistMeetingResponse {
+export interface SelectionMeetingResponse {
   meetingId: string;
   bandId: string;
   title: string;
@@ -19,12 +19,12 @@ export interface SetlistMeetingResponse {
 }
 
 /** §7-3 단건 조회 응답 — 참여자 포함. */
-export interface SetlistMeetingDetailResponse extends SetlistMeetingResponse {
+export interface SelectionMeetingDetailResponse extends SelectionMeetingResponse {
   participantUserIds: number[];
 }
 
 /** §7 곡(Item) 의 세션 정의 + 지원/확정 임베디드. */
-export interface SetlistItemSessionResponse {
+export interface SelectionItemSessionResponse {
   sessionId: string;
   label: string;
   short: string;
@@ -35,7 +35,7 @@ export interface SetlistItemSessionResponse {
 }
 
 /** §7-7 / §7-8 / §7-9 응답. */
-export interface SetlistItemResponse {
+export interface SelectionItemResponse {
   setlistItemId: string;
   meetingId: string;
   title: string;
@@ -46,13 +46,13 @@ export interface SetlistItemResponse {
   note: string | null;
   /** 매니저 잠금 시 매핑되는 합주곡 ID. */
   practiceSongId: string | null;
-  sessions: SetlistItemSessionResponse[];
+  sessions: SelectionItemSessionResponse[];
   createdAt: string;
   updatedAt: string;
 }
 
 /** §7-14 채팅 메시지 응답. (실서버 검증 결과 BE 는 `memberId` 필드명 사용 — spec 와 다름) */
-export interface SetlistItemChatMessageResponse {
+export interface SelectionItemChatMessageResponse {
   messageId: string;
   setlistItemId: string;
   /** 작성자 회원 ID. spec 표기는 userId 였으나 실제 응답은 memberId. */
@@ -63,7 +63,7 @@ export interface SetlistItemChatMessageResponse {
 
 // ─── Request 바디 타입 ───────────────────────────────────────────────────
 
-export interface CreateSetlistMeetingRequest {
+export interface CreateSelectionMeetingRequest {
   title: string;
   purpose: ApiMeetingPurpose;
   performanceId?: string | null;
@@ -72,12 +72,12 @@ export interface CreateSetlistMeetingRequest {
   participantUserIds: number[];
 }
 
-export interface UpdateSetlistMeetingRequest {
+export interface UpdateSelectionMeetingRequest {
   title?: string;
   managerId?: number;
 }
 
-export interface SetlistItemSessionDefRequest {
+export interface SelectionItemSessionDefRequest {
   sessionId: string;
   label: string;
   short: string;
@@ -85,22 +85,22 @@ export interface SetlistItemSessionDefRequest {
   custom?: boolean;
 }
 
-export interface CreateSetlistItemRequest {
+export interface CreateSelectionItemRequest {
   title: string;
   artist: string;
   album?: string;
   duration?: string;
   note?: string;
-  sessions: SetlistItemSessionDefRequest[];
+  sessions: SelectionItemSessionDefRequest[];
 }
 
-export interface UpdateSetlistItemRequest {
+export interface UpdateSelectionItemRequest {
   title?: string;
   artist?: string;
   album?: string;
   duration?: string;
   note?: string;
-  sessions?: SetlistItemSessionDefRequest[];
+  sessions?: SelectionItemSessionDefRequest[];
 }
 
 export interface ConfirmSessionRequest {
