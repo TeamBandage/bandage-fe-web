@@ -11,7 +11,7 @@ type Options = {
   onError?: (error: Error) => void;
 };
 
-/** participantId(UUID) 로 참여자를 제거합니다. */
+/** participantId(UUID) 로 세션 배정만 해제합니다. 참여자 자체는 목록에 남고 미배정 상태가 됩니다. */
 export function useDeleteParticipant(jamId: string, options?: Options) {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({

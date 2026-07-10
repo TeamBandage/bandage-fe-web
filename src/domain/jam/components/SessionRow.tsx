@@ -70,7 +70,7 @@ export function SessionRow({ jamId, session }: Props) {
 
   if (editing) {
     return (
-      <div className="border-border flex items-center gap-2 border-b py-3 last:border-b-0">
+      <div className="border-border flex items-center gap-2 border-b py-3 last:border-b-0 last:pb-0">
         <Input
           value={shortDraft}
           onChange={(e) => setShortDraft(e.target.value)}
@@ -108,7 +108,7 @@ export function SessionRow({ jamId, session }: Props) {
   }
 
   return (
-    <div className="border-border flex items-center justify-between gap-3 border-b py-3 last:border-b-0">
+    <div className="border-border flex items-center justify-between gap-3 border-b py-3 last:border-b-0 last:pb-0">
       <div className="flex min-w-0 items-center gap-3">
         <Chip className="rounded-[5px] border-white/30">{session.short}</Chip>
         <div className="min-w-0">
