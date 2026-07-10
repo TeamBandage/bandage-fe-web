@@ -9,6 +9,10 @@ export interface CreateTrackSelectionRequest {
   };
 }
 
+export interface UpdateTrackSelectionRequest {
+  title: string;
+}
+
 export interface SessionDefDto {
   custom: boolean;
   label: string;
