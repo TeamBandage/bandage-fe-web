@@ -65,7 +65,8 @@ export function MeetingCreateWizard() {
   const practiceWindowValid = !!practiceFrom && !!practiceTo && practiceFrom <= practiceTo;
 
   const canNext = (() => {
-    if (step === 0) return selectedBandIds.length > 0 && participants.length > 0;
+    // 밴드는 선택 사항 — 밴드 없이 멤버만으로도 회의를 만들 수 있음. 참여 멤버는 최소 1명 필요.
+    if (step === 0) return participants.length > 0;
     if (step === 1) return title.trim().length > 0 && managerId !== null && practiceWindowValid;
     return true;
   })();
@@ -73,8 +74,7 @@ export function MeetingCreateWizard() {
   const next = () => {
     if (!canNext) {
       if (step === 0) {
-        if (selectedBandIds.length === 0) toast.error('최소 1개 이상의 밴드를 선택하세요.');
-        else toast.error('최소 1명 이상의 참여 멤버를 추가하세요.');
+        toast.error('최소 1명 이상의 참여 멤버를 추가하세요.');
       } else if (step === 1) {
         if (!title.trim()) toast.error('회의 제목을 입력하세요.');
         else if (managerId === null) toast.error('매니저를 지정하세요.');

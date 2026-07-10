@@ -1,5 +1,6 @@
 export interface CreateTrackSelectionRequest {
   title: string;
+  /** 밴드 선택은 선택 사항 — 밴드 없이 멤버만으로 회의를 만들면 빈 배열로 전송. */
   bandIds: string[];
   managerId: number;
   participantUserIds: number[];
