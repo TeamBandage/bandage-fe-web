@@ -316,7 +316,7 @@ export function JamDetailContent({
         </TabsContent>
 
         <TabsContent value="participants">
-          <Card header="참여자" padding="md">
+          <Card header="참여자" padding="md" className="overflow-visible">
             <div className="space-y-4">
               <form
                 onSubmit={addParticipantForm.handleSubmit((values) =>
@@ -478,7 +478,6 @@ export function JamDetailContent({
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-foreground-muted hover:text-danger"
                               loading={
                                 unassignSessionMutation.isPending &&
                                 unassignSessionMutation.variables === p.participantId
