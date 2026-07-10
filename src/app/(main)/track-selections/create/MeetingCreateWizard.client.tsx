@@ -2,7 +2,7 @@
 
 import { ArrowRight, CalendarDays, Loader2, Search, Users, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,16 @@ export function MeetingCreateWizard() {
   const [managerId, setManagerId] = useState<number | null>(null);
   const [practiceFrom, setPracticeFrom] = useState('');
   const [practiceTo, setPracticeTo] = useState('');
+
+  // 본인은 항상 참여 인원에 기본 포함 (멤버 검색 API는 본인을 결과에서 제외).
+  useEffect(() => {
+    if (!me) return;
+    setParticipants((prev) =>
+      prev.some((p) => p.memberId === me.id)
+        ? prev
+        : [{ memberId: me.id, name: me.name, profileImg: me.profileImg }, ...prev],
+    );
+  }, [me]);
 
   // Real API data
   const { data: myBands = [] } = useMyBands(50);
