@@ -62,9 +62,11 @@ export function MeetingCreateWizard() {
   const bandSearchResult = useBandSearch(bandQuery, 20);
   const bandSearchItems = bandSearchResult.data?.pages.flatMap((p) => p.content) ?? [];
 
+  const practiceWindowValid = !!practiceFrom && !!practiceTo && practiceFrom <= practiceTo;
+
   const canNext = (() => {
     if (step === 0) return selectedBandIds.length > 0 && participants.length > 0;
-    if (step === 1) return title.trim().length > 0 && managerId !== null;
+    if (step === 1) return title.trim().length > 0 && managerId !== null && practiceWindowValid;
     return true;
   })();
 
@@ -75,7 +77,8 @@ export function MeetingCreateWizard() {
         else toast.error('최소 1명 이상의 참여 멤버를 추가하세요.');
       } else if (step === 1) {
         if (!title.trim()) toast.error('회의 제목을 입력하세요.');
-        else toast.error('매니저를 지정하세요.');
+        else if (managerId === null) toast.error('매니저를 지정하세요.');
+        else toast.error('합주 가능 기간을 입력하세요.');
       }
       return;
     }
@@ -152,19 +155,15 @@ export function MeetingCreateWizard() {
   };
 
   const submit = async () => {
-    if (managerId === null || isPending) return;
+    if (managerId === null || !practiceWindowValid || isPending) return;
     setIsPending(true);
     try {
-      const pw =
-        practiceFrom && practiceTo && practiceFrom <= practiceTo
-          ? { from: practiceFrom, to: practiceTo }
-          : undefined;
       const res = await createTrackSelection({
         title: title.trim(),
         bandIds: selectedBandIds,
         managerId,
         participantUserIds: participants.map((p) => p.memberId),
-        practiceWindow: pw,
+        practiceWindow: { from: practiceFrom, to: practiceTo },
       });
       toast.success('선곡 회의가 만들어졌습니다.');
       router.replace(ROUTES.TRACK_SELECTION_DETAIL(res.selectionId));
@@ -604,7 +603,9 @@ function StepInfo({
       />
 
       <div>
-        <div className="text-foreground mb-s-2 text-sm font-medium">합주 가능 기간 (선택)</div>
+        <div className="text-foreground mb-s-2 text-sm font-medium">
+          합주 가능 기간 <span className="text-danger">*</span>
+        </div>
         <div className="text-foreground-muted text-micro mb-s-2">
           회의에서 다룰 합주가 가능한 기간을 입력하세요. 멤버 스케줄 조율의 기준이 됩니다.
         </div>
