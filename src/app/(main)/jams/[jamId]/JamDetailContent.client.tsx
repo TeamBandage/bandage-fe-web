@@ -1,13 +1,14 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ExternalLink, MapPin, Music, Trash2 } from 'lucide-react';
+import { ExternalLink, MapPin, Music, Search, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -34,6 +35,8 @@ import { useUnassignSession } from '@/domain/jam/hooks/useUnassignSession';
 import { useUpdateSchedule } from '@/domain/jam/hooks/useUpdateSchedule';
 import { useUpdateVenue } from '@/domain/jam/hooks/useUpdateVenue';
 import { addParticipantSchema, type AddParticipantSchema } from '@/domain/jam/types';
+import { useMemberSearch } from '@/domain/member/hooks/useMemberSearch';
+import type { MemberSearchItemResponse } from '@/domain/member/types';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 
@@ -110,10 +113,21 @@ export function JamDetailContent({
     resolver: zodResolver(addParticipantSchema),
     defaultValues: { memberId: undefined as unknown as number, sessionId: '' },
   });
+  const [memberQuery, setMemberQuery] = useState('');
+  const [selectedMember, setSelectedMember] = useState<MemberSearchItemResponse | null>(null);
+  const { data: memberSearchResults = [], isFetching: searchingMembers } =
+    useMemberSearch(memberQuery);
+
+  const resetAddParticipantForm = () => {
+    addParticipantForm.reset({ memberId: undefined as unknown as number, sessionId: '' });
+    setSelectedMember(null);
+    setMemberQuery('');
+  };
+
   const addParticipantMutation = useAddParticipant(jamId, {
     onSuccess: () => {
       toast.success('참여자가 추가되었습니다.');
-      addParticipantForm.reset({ memberId: undefined as unknown as number, sessionId: '' });
+      resetAddParticipantForm();
     },
     onError: (err) => toast.error(err.message || '참여자 추가에 실패했습니다.'),
   });
@@ -314,15 +328,88 @@ export function JamDetailContent({
                   className="grid gap-x-3 gap-y-1.5"
                   style={{ gridTemplateColumns: '1fr 1fr auto' }}
                 >
-                  <span className="text-foreground text-xs font-medium">멤버 ID</span>
+                  <span className="text-foreground text-xs font-medium">멤버 검색</span>
                   <span className="text-foreground text-xs font-medium">세션 선택</span>
                   <span />
-                  <Input
-                    type="number"
-                    min={1}
-                    className="[appearance:textfield] rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    {...addParticipantForm.register('memberId', { valueAsNumber: true })}
-                  />
+                  <div className="relative">
+                    {selectedMember ? (
+                      <div className="bg-surface border-border gap-s-2 px-s-3 flex h-10 items-center rounded-[5px] border">
+                        <Avatar
+                          size="sm"
+                          src={selectedMember.profileImg ?? undefined}
+                          fallback={selectedMember.name}
+                        />
+                        <span className="text-body flex-1 truncate text-sm">
+                          {selectedMember.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedMember(null);
+                            addParticipantForm.setValue('memberId', undefined as unknown as number);
+                          }}
+                          aria-label="선택 취소"
+                          className="text-foreground-muted hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-surface border-border gap-s-2 px-s-3 flex h-10 items-center rounded-[5px] border">
+                        <Search
+                          className="text-foreground-muted h-4 w-4 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <input
+                          type="search"
+                          value={memberQuery}
+                          onChange={(e) => setMemberQuery(e.target.value)}
+                          placeholder="이름 · 이메일로 검색"
+                          aria-label="멤버 검색"
+                          className="text-body placeholder:text-foreground-muted w-full bg-transparent text-sm outline-none"
+                        />
+                      </div>
+                    )}
+                    {!selectedMember && memberQuery.trim() && (
+                      <ul className="bg-surface border-border absolute z-10 mt-1 max-h-56 w-full overflow-y-auto rounded-[5px] border shadow-lg">
+                        {searchingMembers ? (
+                          <li className="text-foreground-muted px-s-3 py-s-2 text-xs">검색 중…</li>
+                        ) : memberSearchResults.length === 0 ? (
+                          <li className="text-foreground-muted px-s-3 py-s-2 text-xs">
+                            일치하는 멤버가 없습니다.
+                          </li>
+                        ) : (
+                          memberSearchResults.map((m) => (
+                            <li key={m.memberId}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedMember(m);
+                                  addParticipantForm.setValue('memberId', m.memberId, {
+                                    shouldValidate: true,
+                                  });
+                                  setMemberQuery('');
+                                }}
+                                className="hover:bg-card gap-s-2 px-s-3 py-s-2 flex w-full items-center text-left"
+                              >
+                                <Avatar
+                                  size="sm"
+                                  src={m.profileImg ?? undefined}
+                                  fallback={m.name}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-sm font-medium">{m.name}</div>
+                                  <div className="text-foreground-muted truncate text-xs">
+                                    {m.email}
+                                  </div>
+                                </div>
+                              </button>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                    )}
+                  </div>
                   <Select
                     placeholder="세션을 선택하세요"
                     options={practice.sessions

@@ -44,8 +44,8 @@ export const createSessionSchema = z.object({
 export type CreateSessionSchema = z.infer<typeof createSessionSchema>;
 
 export const addParticipantSchema = z.object({
-  memberId: z.number({ message: '멤버 ID 를 숫자로 입력해 주세요.' }).int().positive(),
-  sessionId: z.string().min(1, '세션 ID 를 입력해 주세요.'),
+  memberId: z.number({ message: '멤버를 검색해서 선택해 주세요.' }).int().positive(),
+  sessionId: z.string().min(1, '세션을 선택해 주세요.'),
 });
 export type AddParticipantSchema = z.infer<typeof addParticipantSchema>;
 
