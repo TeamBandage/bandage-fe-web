@@ -242,7 +242,6 @@ export function AddSongModal({
     const sessionDtos: SessionDefDto[] = composedSessions.map((s) => ({
       custom: s.custom ?? false,
       label: s.label,
-      need: s.need,
       sessionId: s.id,
       short: s.short,
     }));

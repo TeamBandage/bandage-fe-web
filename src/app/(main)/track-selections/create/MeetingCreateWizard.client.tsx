@@ -2,7 +2,7 @@
 
 import { ArrowRight, CalendarDays, Loader2, Search, Users, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -56,26 +56,39 @@ export function MeetingCreateWizard() {
   const [practiceFrom, setPracticeFrom] = useState('');
   const [practiceTo, setPracticeTo] = useState('');
 
+  // 본인은 항상 참여 인원에 기본 포함 (멤버 검색 API는 본인을 결과에서 제외).
+  useEffect(() => {
+    if (!me) return;
+    setParticipants((prev) =>
+      prev.some((p) => p.memberId === me.id)
+        ? prev
+        : [{ memberId: me.id, name: me.name, profileImg: me.profileImg }, ...prev],
+    );
+  }, [me]);
+
   // Real API data
   const { data: myBands = [] } = useMyBands(50);
   const { data: memberSearchResults = [] } = useMemberSearch(memberQuery);
   const bandSearchResult = useBandSearch(bandQuery, 20);
   const bandSearchItems = bandSearchResult.data?.pages.flatMap((p) => p.content) ?? [];
 
+  const practiceWindowValid = !!practiceFrom && !!practiceTo && practiceFrom <= practiceTo;
+
   const canNext = (() => {
-    if (step === 0) return selectedBandIds.length > 0 && participants.length > 0;
-    if (step === 1) return title.trim().length > 0 && managerId !== null;
+    // 밴드는 선택 사항 — 밴드 없이 멤버만으로도 회의를 만들 수 있음. 참여 멤버는 최소 1명 필요.
+    if (step === 0) return participants.length > 0;
+    if (step === 1) return title.trim().length > 0 && managerId !== null && practiceWindowValid;
     return true;
   })();
 
   const next = () => {
     if (!canNext) {
       if (step === 0) {
-        if (selectedBandIds.length === 0) toast.error('최소 1개 이상의 밴드를 선택하세요.');
-        else toast.error('최소 1명 이상의 참여 멤버를 추가하세요.');
+        toast.error('최소 1명 이상의 참여 멤버를 추가하세요.');
       } else if (step === 1) {
         if (!title.trim()) toast.error('회의 제목을 입력하세요.');
-        else toast.error('매니저를 지정하세요.');
+        else if (managerId === null) toast.error('매니저를 지정하세요.');
+        else toast.error('합주 가능 기간을 입력하세요.');
       }
       return;
     }
@@ -152,19 +165,15 @@ export function MeetingCreateWizard() {
   };
 
   const submit = async () => {
-    if (managerId === null || isPending) return;
+    if (managerId === null || !practiceWindowValid || isPending) return;
     setIsPending(true);
     try {
-      const pw =
-        practiceFrom && practiceTo && practiceFrom <= practiceTo
-          ? { from: practiceFrom, to: practiceTo }
-          : undefined;
       const res = await createTrackSelection({
         title: title.trim(),
         bandIds: selectedBandIds,
         managerId,
         participantUserIds: participants.map((p) => p.memberId),
-        practiceWindow: pw,
+        practiceWindow: { from: practiceFrom, to: practiceTo },
       });
       toast.success('선곡 회의가 만들어졌습니다.');
       router.replace(ROUTES.TRACK_SELECTION_DETAIL(res.selectionId));
@@ -604,7 +613,9 @@ function StepInfo({
       />
 
       <div>
-        <div className="text-foreground mb-s-2 text-sm font-medium">합주 가능 기간 (선택)</div>
+        <div className="text-foreground mb-s-2 text-sm font-medium">
+          합주 가능 기간 <span className="text-danger">*</span>
+        </div>
         <div className="text-foreground-muted text-micro mb-s-2">
           회의에서 다룰 합주가 가능한 기간을 입력하세요. 멤버 스케줄 조율의 기준이 됩니다.
         </div>
