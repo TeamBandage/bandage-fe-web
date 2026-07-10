@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2, Users } from 'lucide-react';
+import { Check, Pencil, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { useDeleteSession } from '@/domain/jam/hooks/useDeleteSession';
+import { useUpdateSession } from '@/domain/jam/hooks/useUpdateSession';
 import { useToast } from '@/hooks/useToast';
 
 import type { JamSessionResponse } from '../types';
@@ -26,6 +28,9 @@ type Props = {
 export function SessionRow({ jamId, session }: Props) {
   const toast = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [labelDraft, setLabelDraft] = useState(session.label);
+  const [shortDraft, setShortDraft] = useState(session.short);
 
   const deleteMutation = useDeleteSession(jamId, {
     onSuccess: () => {
@@ -35,7 +40,72 @@ export function SessionRow({ jamId, session }: Props) {
     onError: (err) => toast.error(err.message || '세션 삭제에 실패했습니다.'),
   });
 
-  const filledCount = session.participants.length;
+  const updateMutation = useUpdateSession(jamId, session.sessionId, {
+    onSuccess: () => {
+      toast.success('세션 정보를 수정했습니다.');
+      setEditing(false);
+    },
+    onError: (err) => toast.error(err.message || '세션 수정에 실패했습니다.'),
+  });
+
+  function startEdit() {
+    setLabelDraft(session.label);
+    setShortDraft(session.short);
+    setEditing(true);
+  }
+
+  function saveEdit() {
+    if (!labelDraft.trim() || !shortDraft.trim()) {
+      toast.error('세션 이름과 약어를 입력해 주세요.');
+      return;
+    }
+    updateMutation.mutate({
+      label: labelDraft.trim(),
+      short: shortDraft.toUpperCase().slice(0, 3),
+    });
+  }
+
+  // 세션 1개 = 정원 1명 고정. 배정된 사람이 있으면 이름을, 없으면 빈 자리임을 표시.
+  const assignee = session.participants[0];
+
+  if (editing) {
+    return (
+      <div className="border-border flex items-center gap-2 border-b py-3 last:border-b-0">
+        <Input
+          value={shortDraft}
+          onChange={(e) => setShortDraft(e.target.value)}
+          maxLength={3}
+          aria-label="약어"
+          className="w-16 rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
+        />
+        <Input
+          value={labelDraft}
+          onChange={(e) => setLabelDraft(e.target.value)}
+          aria-label="세션 이름"
+          className="flex-1 rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="저장"
+          className="text-foreground-muted hover:text-foreground"
+          loading={updateMutation.isPending}
+          onClick={saveEdit}
+        >
+          <Check className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="취소"
+          className="text-foreground-muted hover:text-foreground"
+          onClick={() => setEditing(false)}
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="border-border flex items-center justify-between gap-3 border-b py-3 last:border-b-0">
@@ -44,20 +114,30 @@ export function SessionRow({ jamId, session }: Props) {
         <div className="min-w-0">
           <span className="text-foreground truncate text-sm font-medium">{session.label}</span>
           <span className="text-foreground-muted ml-2 text-xs">
-            <Users className="mb-0.5 inline h-3 w-3" aria-hidden="true" /> {filledCount}/
-            {session.need}
+            {assignee ? assignee.name : '빈 자리'}
           </span>
         </div>
       </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        aria-label="세션 삭제"
-        className="text-foreground-muted hover:text-foreground"
-        onClick={() => setConfirmDelete(true)}
-      >
-        <Trash2 className="h-4 w-4" aria-hidden="true" />
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="세션 수정"
+          className="text-foreground-muted hover:text-foreground"
+          onClick={startEdit}
+        >
+          <Pencil className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="세션 삭제"
+          className="text-foreground-muted hover:text-foreground"
+          onClick={() => setConfirmDelete(true)}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </div>
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent>

@@ -20,6 +20,18 @@ const inputCls =
   'rounded-[5px] hover:border-white/30 focus-visible:border-white/80 focus-visible:ring-0';
 type Step = 0 | 1 | 2 | 3;
 
+/** 세션 1개 = 인원 1명이므로, 같은 이름/약어끼리 묶어 개수로 요약. */
+function summarizeSessions(sessions: SessionDefDto[]): string {
+  const counts = new Map<string, number>();
+  for (const s of sessions) {
+    const key = `${s.label}(${s.short})`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([key, count]) => `${key}×${count}`)
+    .join(', ');
+}
+
 export function JamCreateWizard() {
   const router = useRouter();
   const toast = useToast();
@@ -41,7 +53,6 @@ export function JamCreateWizard() {
   const [sessions, setSessions] = useState<SessionDefDto[]>([]);
   const [sessionLabel, setSessionLabel] = useState('');
   const [sessionShort, setSessionShort] = useState('');
-  const [sessionNeed, setSessionNeed] = useState(1);
 
   const dirty = trackTitle.length > 0 || trackArtist.length > 0 || !!startAt;
   useRegisterDirtyForm('jam-create-wizard', dirty);
@@ -82,21 +93,18 @@ export function JamCreateWizard() {
     if (!sessionLabel.trim()) return toast.error('세션 이름을 입력해 주세요.');
     if (!sessionShort.trim()) return toast.error('약어를 입력해 주세요.');
     const short = sessionShort.toUpperCase().slice(0, 3);
-    if (sessions.some((s) => s.short === short))
-      return toast.error('같은 약어의 세션이 이미 있습니다.');
+    // 세션 1개 = 인원 1명. 같은 악기가 여러 명 필요하면 같은 이름/약어로 여러 번 추가.
     setSessions((prev) => [
       ...prev,
       {
         sessionId: `${short}-${Date.now()}`,
         label: sessionLabel.trim(),
         short,
-        need: sessionNeed,
         custom: true,
       },
     ]);
     setSessionLabel('');
     setSessionShort('');
-    setSessionNeed(1);
   }
 
   function removeSession(sessionId: string) {
@@ -245,7 +253,6 @@ export function JamCreateWizard() {
                       {s.short}
                     </span>
                     <span className="text-body font-medium">{s.label}</span>
-                    <span className="text-foreground-muted text-caption">{s.need}명</span>
                   </div>
                   <button
                     type="button"
@@ -261,7 +268,7 @@ export function JamCreateWizard() {
           )}
 
           <div className="border-border bg-card p-s-4 rounded-md border">
-            <div className="gap-s-3 grid grid-cols-[1fr_auto_auto_auto] items-end">
+            <div className="gap-s-3 grid grid-cols-[1fr_auto_auto] items-end">
               <Input
                 label="세션 이름"
                 placeholder="예: Guitar 2"
@@ -277,15 +284,6 @@ export function JamCreateWizard() {
                 className={`${inputCls} w-24`}
                 maxLength={3}
               />
-              <Input
-                label="정원"
-                type="number"
-                min={1}
-                max={20}
-                value={sessionNeed}
-                onChange={(e) => setSessionNeed(Number(e.target.value) || 1)}
-                className={`${inputCls} w-20`}
-              />
               <Button
                 type="button"
                 size="sm"
@@ -295,6 +293,9 @@ export function JamCreateWizard() {
                 추가
               </Button>
             </div>
+            <p className="text-foreground-muted text-caption mt-s-2">
+              세션 1개 = 인원 1명. 같은 악기가 여러 명 필요하면 같은 이름으로 여러 번 추가하세요.
+            </p>
           </div>
         </section>
       )}
@@ -326,10 +327,7 @@ export function JamCreateWizard() {
               { label: '장소', value: venue || '미지정', onEdit: () => setStep(1) },
               {
                 label: '세션',
-                value:
-                  sessions.length > 0
-                    ? sessions.map((s) => `${s.label}(${s.short})×${s.need}`).join(', ')
-                    : '없음',
+                value: sessions.length > 0 ? summarizeSessions(sessions) : '없음',
                 onEdit: () => setStep(2),
               },
             ]}

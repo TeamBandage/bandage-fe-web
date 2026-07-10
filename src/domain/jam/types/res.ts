@@ -22,7 +22,6 @@ export interface JamSessionResponse {
   sessionId: string;
   label: string;
   short: string;
-  need: number;
   custom: boolean;
   participants: JamSessionParticipantInfo[];
 }
