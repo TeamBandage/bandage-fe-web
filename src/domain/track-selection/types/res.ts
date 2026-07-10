@@ -38,7 +38,8 @@ export interface SessionDefResponse {
   confirmed: SessionParticipantInfo[];
   custom: boolean;
   label: string;
-  need: number;
+  /** @deprecated BE가 더 이상 내려주지 않음(항상 1명으로 취급). toSong()에서 need ?? 1 로 폴백. */
+  need?: number;
   sessionId: string;
   short: string;
 }

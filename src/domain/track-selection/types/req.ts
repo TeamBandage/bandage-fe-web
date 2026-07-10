@@ -12,7 +12,6 @@ export interface CreateTrackSelectionRequest {
 export interface SessionDefDto {
   custom: boolean;
   label: string;
-  need: number;
   sessionId: string;
   short: string;
 }

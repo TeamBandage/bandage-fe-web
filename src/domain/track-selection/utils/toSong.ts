@@ -29,7 +29,7 @@ export function toSong(item: TrackSelectionItemResponse): Song {
       id: s.sessionId,
       label: s.label,
       short: s.short,
-      need: s.need,
+      need: s.need ?? 1,
       custom: s.custom,
     })),
     applicants: Object.fromEntries(
