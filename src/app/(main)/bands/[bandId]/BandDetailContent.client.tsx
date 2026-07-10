@@ -125,7 +125,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
               loading={withdrawMutation.isPending}
             >
               <UserMinus className="h-4 w-4" />
-              가입 철회
+              신청 철회
             </Button>
           )}
           {!isMember && !isPendingApplicant && (

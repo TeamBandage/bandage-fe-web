@@ -164,7 +164,7 @@ export function MyBandApplicationsSheet({ trigger }: { trigger: React.ReactNode 
         <DialogContent className="flex max-h-[85dvh] w-full max-w-md flex-col" hideCloseButton>
           <div className="border-border px-s-4 py-s-4 shrink-0 border-b">
             <DialogTitle className="text-foreground text-base font-bold">
-              가입 신청 내역
+              밴드 가입 내역
             </DialogTitle>
           </div>
           <SheetInner status={status} setStatus={setStatus} items={items} isLoading={isLoading} />
@@ -179,9 +179,9 @@ export function MyBandApplicationsSheet({ trigger }: { trigger: React.ReactNode 
       <BottomSheetContent
         style={{ height: 'calc(100dvh - 3rem)', maxHeight: 'calc(100dvh - 3rem)' }}
       >
-        <BottomSheetTitle className="sr-only">가입 신청 내역</BottomSheetTitle>
+        <BottomSheetTitle className="sr-only">밴드 가입 내역</BottomSheetTitle>
         <div className="border-border px-s-4 py-s-3 shrink-0 border-b">
-          <span className="text-foreground text-base font-bold">가입 신청 내역</span>
+          <span className="text-foreground text-base font-bold">밴드 가입 내역</span>
         </div>
         <SheetInner status={status} setStatus={setStatus} items={items} isLoading={isLoading} />
       </BottomSheetContent>

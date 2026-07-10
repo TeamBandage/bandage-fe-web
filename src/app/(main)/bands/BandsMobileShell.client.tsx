@@ -130,7 +130,7 @@ export function BandsMobileShell() {
             <MyBandApplicationsSheet
               trigger={
                 <Button size="sm" variant="ghost" className="hidden lg:inline-flex">
-                  가입 신청 내역
+                  나의 가입 신청
                 </Button>
               }
             />
@@ -167,7 +167,7 @@ export function BandsMobileShell() {
           </TabsList>
           <MyBandApplicationsSheet
             trigger={
-              <Button size="sm" variant="ghost" className="shrink-0" aria-label="가입 신청 내역">
+              <Button size="sm" variant="ghost" className="shrink-0" aria-label="나의 가입 신청">
                 <ClipboardList className="h-4 w-4" />
               </Button>
             }
