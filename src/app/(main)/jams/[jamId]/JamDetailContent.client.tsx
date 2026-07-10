@@ -30,6 +30,7 @@ import { useAddParticipant } from '@/domain/jam/hooks/useAddParticipant';
 import { useDeleteJam } from '@/domain/jam/hooks/useDeleteJam';
 import { useJam } from '@/domain/jam/hooks/useJam';
 import { useUpdateParticipantSession } from '@/domain/jam/hooks/useUpdateParticipantSession';
+import { useUnassignSession } from '@/domain/jam/hooks/useUnassignSession';
 import { useUpdateSchedule } from '@/domain/jam/hooks/useUpdateSchedule';
 import { useUpdateVenue } from '@/domain/jam/hooks/useUpdateVenue';
 import { addParticipantSchema, type AddParticipantSchema } from '@/domain/jam/types';
@@ -124,6 +125,11 @@ export function JamDetailContent({
       setAssignSessionId('');
     },
     onError: (err) => toast.error(err.message || '세션 배정에 실패했습니다.'),
+  });
+
+  const unassignSessionMutation = useUnassignSession(jamId, {
+    onSuccess: () => toast.success('세션 배정을 해제했습니다.'),
+    onError: (err) => toast.error(err.message || '세션 배정 해제에 실패했습니다.'),
   });
 
   if (isLoading) {
@@ -365,20 +371,37 @@ export function JamDetailContent({
                             <span className="text-foreground-muted ml-2">· {session.label}</span>
                           )}
                         </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setSessionAssignTarget({
-                              participantId: p.participantId,
-                              displayName:
-                                p.member?.name ?? `멤버 #${p.member?.memberId ?? p.participantId}`,
-                            });
-                            setAssignSessionId(p.sessionId ?? '');
-                          }}
-                        >
-                          {p.sessionId ? '세션 변경' : '세션 배정'}
-                        </Button>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSessionAssignTarget({
+                                participantId: p.participantId,
+                                displayName:
+                                  p.member?.name ??
+                                  `멤버 #${p.member?.memberId ?? p.participantId}`,
+                              });
+                              setAssignSessionId(p.sessionId ?? '');
+                            }}
+                          >
+                            {p.sessionId ? '세션 변경' : '세션 배정'}
+                          </Button>
+                          {p.sessionId && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-foreground-muted hover:text-danger"
+                              loading={
+                                unassignSessionMutation.isPending &&
+                                unassignSessionMutation.variables === p.participantId
+                              }
+                              onClick={() => unassignSessionMutation.mutate(p.participantId)}
+                            >
+                              배정 해제
+                            </Button>
+                          )}
+                        </div>
                       </li>
                     );
                   })}
