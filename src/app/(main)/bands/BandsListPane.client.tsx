@@ -136,7 +136,7 @@ export function BandsListPane() {
           <MyBandApplicationsSheet
             trigger={
               <Button size="sm" variant="ghost" className="shrink-0">
-                가입 신청 내역
+                나의 가입 신청
               </Button>
             }
           />
