@@ -271,8 +271,21 @@ export function PerformanceDetailContent({
         </div>
 
         <div className="px-s-5 py-s-6 lg:px-8">
-          {/* 정보 탭: 포스터 → 날짜/장소 → 셋리스트 */}
+          {/* 정보 탭: 날짜/장소 → 포스터 → 셋리스트 */}
           <TabsContent value="info" className="space-y-s-4 mt-0">
+            <div className="text-foreground-sub flex flex-wrap items-center gap-3 text-sm">
+              <span className="inline-flex items-center gap-1">
+                <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                {scheduleLabel} ({perf.durationMinutes}분)
+              </span>
+              {perf.venue && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-4 w-4" aria-hidden="true" />
+                  {perf.venue}
+                </span>
+              )}
+            </div>
+
             <div
               className="bg-card border-border relative flex h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border"
               aria-label="공연 포스터"
@@ -295,18 +308,11 @@ export function PerformanceDetailContent({
               )}
             </div>
 
-            <div className="text-foreground-sub flex flex-wrap items-center gap-3 text-sm">
-              <span className="inline-flex items-center gap-1">
-                <CalendarDays className="h-4 w-4" aria-hidden="true" />
-                {scheduleLabel} ({perf.durationMinutes}분)
-              </span>
-              {perf.venue && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-4 w-4" aria-hidden="true" />
-                  {perf.venue}
-                </span>
-              )}
-            </div>
+            {existingPoster?.description && (
+              <p className="text-foreground-muted text-xs whitespace-pre-wrap">
+                {existingPoster.description}
+              </p>
+            )}
           </TabsContent>
 
           {/* 셋리스트 탭 */}
