@@ -4,7 +4,7 @@ export type {
   CreateJamRequest,
   UpdateTimeInfoRequest,
   UpdateVenueRequest,
-  UpdateSessionsRequest,
+  UpdateSessionRequest,
   AddParticipantRequest,
   UpdateParticipantSessionRequest,
 } from './req';

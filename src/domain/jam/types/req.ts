@@ -10,8 +10,12 @@ export interface SessionDefDto {
   sessionId: string;
   label: string;
   short: string;
-  need: number;
   custom: boolean;
+}
+
+export interface UpdateSessionRequest {
+  label?: string;
+  short?: string;
 }
 
 export interface CreateJamRequest {
@@ -31,10 +35,6 @@ export interface UpdateTimeInfoRequest {
 
 export interface UpdateVenueRequest {
   venue: string;
-}
-
-export interface UpdateSessionsRequest {
-  sessions: SessionDefDto[];
 }
 
 export interface AddParticipantRequest {

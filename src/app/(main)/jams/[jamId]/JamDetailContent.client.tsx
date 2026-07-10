@@ -320,14 +320,14 @@ export function JamDetailContent({
                   <Select
                     placeholder="세션을 선택하세요"
                     options={practice.sessions
-                      .filter((s) => s.participants.length < s.need)
+                      .filter((s) => s.participants.length === 0)
                       .map((s) => ({
                         value: s.sessionId,
                         label: `${s.short} · ${s.label}`,
                       }))}
                     className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
                     disabled={
-                      practice.sessions.filter((s) => s.participants.length < s.need).length === 0
+                      practice.sessions.filter((s) => s.participants.length === 0).length === 0
                     }
                     {...addParticipantForm.register('sessionId')}
                   />
@@ -416,7 +416,7 @@ export function JamDetailContent({
                     (p) => p.participantId === sessionAssignTarget?.participantId,
                   )?.sessionId;
                   return practice.sessions
-                    .filter((s) => s.participants.length < s.need || s.sessionId === mySessionId)
+                    .filter((s) => s.participants.length === 0 || s.sessionId === mySessionId)
                     .map((s) => ({ value: s.sessionId, label: `${s.short} · ${s.label}` }));
                 })()}
                 className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"

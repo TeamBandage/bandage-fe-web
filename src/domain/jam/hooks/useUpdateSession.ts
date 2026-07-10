@@ -4,8 +4,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/global/config/queryKeys';
 
-import { addSession } from '../api/addSession';
-import type { SessionDefDto } from '../types/req';
+import { updateSession } from '../api/updateSession';
+import type { UpdateSessionRequest } from '../types/req';
 import type { JamSessionResponse } from '../types/res';
 
 type Options = {
@@ -13,10 +13,10 @@ type Options = {
   onError?: (error: Error) => void;
 };
 
-export function useCreateSession(jamId: string, options?: Options) {
+export function useUpdateSession(jamId: string, sessionId: string, options?: Options) {
   const queryClient = useQueryClient();
-  return useMutation<JamSessionResponse, Error, SessionDefDto>({
-    mutationFn: (newSession) => addSession(jamId, newSession),
+  return useMutation<JamSessionResponse, Error, UpdateSessionRequest>({
+    mutationFn: (body) => updateSession(jamId, sessionId, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...queryKeys.jam.detail(jamId)] });
       options?.onSuccess?.();
