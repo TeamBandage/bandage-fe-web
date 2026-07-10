@@ -227,10 +227,30 @@ export function SongTable({
                 </td>
                 <td className="px-s-3 py-s-2 align-middle">
                   {(() => {
-                    // 잠금 전: 매니저에게 최종 선곡 토글 표시 (백엔드는 잠금 후 isSelected 변경 거부).
-                    if (!isLocked && isManager && onToggleSelection) {
+                    // 잠긴 후: 선택된 곡은 읽기 전용 별표로 표시, 수정/삭제 불가.
+                    if (isLocked) {
+                      if (!song.isSelected) return null;
                       return (
                         <div className="flex items-center justify-end">
+                          <span
+                            aria-label="셋리스트 선택됨"
+                            title="셋리스트에 포함된 곡"
+                            className="text-warn inline-flex h-7 w-7 items-center justify-center"
+                          >
+                            <Star className="h-4 w-4" fill="currentColor" />
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    const canMutate = isManager || song.proposerId === currentUserId;
+                    // 확정된 곡(모든 세션이 정원만큼 확정)은 수정 비활성 — 확정자 데이터 보호.
+                    const editLocked = ready;
+
+                    return (
+                      <div className="gap-s-1 flex items-center justify-end">
+                        {/* 매니저에게 최종 선곡 토글 표시 (백엔드는 잠금 후 isSelected 변경 거부). */}
+                        {isManager && onToggleSelection && (
                           <button
                             type="button"
                             onClick={(e) => {
@@ -251,32 +271,8 @@ export function SongTable({
                               fill={song.isSelected ? 'currentColor' : 'none'}
                             />
                           </button>
-                        </div>
-                      );
-                    }
-                    // 잠긴 후: 선택된 곡은 읽기 전용 별표로 표시.
-                    if (isLocked && song.isSelected) {
-                      return (
-                        <div className="flex items-center justify-end">
-                          <span
-                            aria-label="셋리스트 선택됨"
-                            title="셋리스트에 포함된 곡"
-                            className="text-warn inline-flex h-7 w-7 items-center justify-center"
-                          >
-                            <Star className="h-4 w-4" fill="currentColor" />
-                          </span>
-                        </div>
-                      );
-                    }
-                    // 잠긴 회의는 수정/삭제 비활성.
-                    if (isLocked) return null;
-                    const canMutate = isManager || song.proposerId === currentUserId;
-                    if (!canMutate) return null;
-                    // 확정된 곡(모든 세션이 정원만큼 확정)은 수정 비활성 — 확정자 데이터 보호.
-                    const editLocked = ready;
-                    return (
-                      <div className="gap-s-1 flex items-center justify-end">
-                        {onEditSong && (
+                        )}
+                        {canMutate && onEditSong && (
                           <button
                             type="button"
                             disabled={editLocked}
@@ -300,7 +296,7 @@ export function SongTable({
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        {onDeleteSong && (
+                        {canMutate && onDeleteSong && (
                           <button
                             type="button"
                             onClick={(e) => {
