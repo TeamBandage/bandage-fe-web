@@ -450,7 +450,7 @@ export function JamDetailContent({
                     return (
                       <li
                         key={p.participantId}
-                        className="py-s-2 flex items-center justify-between gap-3"
+                        className="py-s-2 flex items-center justify-between gap-3 last:pb-0"
                       >
                         <span className="text-foreground-sub text-sm">
                           {p.member?.name ?? `멤버 #${p.member?.memberId ?? p.participantId}`}
@@ -478,6 +478,7 @@ export function JamDetailContent({
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="text-foreground-muted"
                               loading={
                                 unassignSessionMutation.isPending &&
                                 unassignSessionMutation.variables === p.participantId
