@@ -23,7 +23,7 @@ export async function issuePerformancePosterPresignedUrl(
 }
 
 export async function getPerformancePosters(
-  performanceId: string,
+  performanceId?: string,
 ): Promise<PerformancePosterResponse[]> {
   const data = await apiClient.get<PerformancePosterResponse[]>(PREFIX, {
     query: { performanceId },
