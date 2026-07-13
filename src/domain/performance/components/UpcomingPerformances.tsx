@@ -9,41 +9,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { pickUpcoming } from '@/lib/home-feed';
 
 import { useUpcomingPerformances } from '../hooks/useUpcomingPerformances';
-import type { PerformanceListItemResponse } from '../types';
 
 import { PerformanceCard } from './PerformanceCard';
 
-// [BD-90] MOCK_MODE — UI 확인용, 실제 연동 후 제거
-const MOCK_MODE = true;
-const MOCK_PERFORMANCES: PerformanceListItemResponse[] = [
-  {
-    performanceId: '1',
-    title: '2026 여름 인디 페스트',
-    startAt: '2026-07-05 18:00',
-    durationMinutes: 90,
-    venue: '홍대 롤링홀',
-  },
-  {
-    performanceId: '2',
-    title: '밴드 정기 공연',
-    startAt: '2026-08-20 19:30',
-    durationMinutes: 120,
-    venue: '강남 클럽 에반스',
-  },
-];
-
 export function UpcomingPerformances({ limit = 3 }: { limit?: number }) {
   const { data, isLoading, isError, refetch } = useUpcomingPerformances(limit + 1);
-
-  if (MOCK_MODE) {
-    return (
-      <div className="space-y-3">
-        {MOCK_PERFORMANCES.slice(0, limit).map((p) => (
-          <PerformanceCard key={p.performanceId} performance={p} />
-        ))}
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
