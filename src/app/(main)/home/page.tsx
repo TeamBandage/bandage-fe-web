@@ -9,7 +9,8 @@ import { UpcomingJams } from '@/domain/jam/components/UpcomingJams';
 import { ROUTES } from '@/global/config/routes';
 
 import { HomeGreeting } from './HomeGreeting.client';
-import { HomeStatCards } from './HomeStatCards.client';
+import { HomePosterStrip } from './HomePosterStrip.client';
+// import { HomeStatCards } from './HomeStatCards.client';
 
 export const metadata: Metadata = {
   title: '홈 | Bandage',
@@ -36,7 +37,9 @@ export default function HomePage() {
     <div className="space-y-s-8 lg:px-s-10 lg:pb-s-10 lg:w-full lg:pt-7.5">
       <HomeGreeting />
 
-      <HomeStatCards />
+      <HomePosterStrip />
+
+      {/* <HomeStatCards /> */}
 
       <div className="gap-s-6 grid grid-cols-1 lg:grid-cols-2">
         <section aria-labelledby="home-my-bands" className="flex flex-col">
