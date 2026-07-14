@@ -22,8 +22,9 @@ export function useMarkAsRead() {
         queryKeys.notification.unreadCount(),
       );
 
+      // useMyNotifications 는 미읽음만 반환하므로 읽음 처리된 항목은 캐시에서 제거한다.
       queryClient.setQueryData<NotificationResponse[]>(queryKeys.notification.list(), (prev) =>
-        prev?.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
+        prev?.filter((n) => n.id !== notificationId),
       );
       queryClient.setQueryData<UnreadNotificationCountResponse>(
         queryKeys.notification.unreadCount(),

@@ -22,9 +22,8 @@ export function useMarkAllAsRead() {
         queryKeys.notification.unreadCount(),
       );
 
-      queryClient.setQueryData<NotificationResponse[]>(queryKeys.notification.list(), (prev) =>
-        prev?.map((n) => ({ ...n, read: true })),
-      );
+      // useMyNotifications 는 미읽음만 반환하므로 전체 읽음 처리 시 캐시를 비운다.
+      queryClient.setQueryData<NotificationResponse[]>(queryKeys.notification.list(), []);
       queryClient.setQueryData<UnreadNotificationCountResponse>(
         queryKeys.notification.unreadCount(),
         { count: 0 },
