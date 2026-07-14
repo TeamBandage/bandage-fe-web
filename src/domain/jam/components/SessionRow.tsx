@@ -78,17 +78,19 @@ export function SessionRow({ jamId, session }: Props) {
           aria-label="약어"
           className="w-16 rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
         />
-        <Input
-          value={labelDraft}
-          onChange={(e) => setLabelDraft(e.target.value)}
-          aria-label="세션 이름"
-          className="flex-1 rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
-        />
+        <div className="flex-1">
+          <Input
+            value={labelDraft}
+            onChange={(e) => setLabelDraft(e.target.value)}
+            aria-label="세션 이름"
+            className="w-full rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
+          />
+        </div>
         <Button
           size="sm"
           variant="ghost"
           aria-label="저장"
-          className="text-foreground-muted hover:text-foreground"
+          className="text-foreground-muted hover:text-foreground h-10"
           loading={updateMutation.isPending}
           onClick={saveEdit}
         >
@@ -98,7 +100,7 @@ export function SessionRow({ jamId, session }: Props) {
           size="sm"
           variant="ghost"
           aria-label="취소"
-          className="text-foreground-muted hover:text-foreground"
+          className="text-foreground-muted hover:text-foreground h-10"
           onClick={() => setEditing(false)}
         >
           <X className="h-4 w-4" aria-hidden="true" />
@@ -123,7 +125,7 @@ export function SessionRow({ jamId, session }: Props) {
           size="sm"
           variant="ghost"
           aria-label="세션 수정"
-          className="text-foreground-muted hover:text-foreground"
+          className="text-foreground-muted hover:text-foreground h-10"
           onClick={startEdit}
         >
           <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -132,7 +134,7 @@ export function SessionRow({ jamId, session }: Props) {
           size="sm"
           variant="ghost"
           aria-label="세션 삭제"
-          className="text-foreground-muted hover:text-foreground"
+          className="text-foreground-muted hover:text-foreground h-10"
           onClick={() => setConfirmDelete(true)}
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
