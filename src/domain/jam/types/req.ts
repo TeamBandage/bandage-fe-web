@@ -18,6 +18,10 @@ export interface UpdateSessionRequest {
   short?: string;
 }
 
+export interface JamSessionsUpdateRequest {
+  sessions: SessionDefDto[];
+}
+
 export interface CreateJamRequest {
   title?: string;
   track: TrackInfoRequest;

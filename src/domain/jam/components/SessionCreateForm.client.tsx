@@ -57,7 +57,7 @@ export function SessionCreateForm({ jamId, onCreated }: { jamId: string; onCreat
         <Button
           type="submit"
           variant="secondary"
-          className="h-8 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
+          className="h-10 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
           loading={mutation.isPending}
         >
           추가

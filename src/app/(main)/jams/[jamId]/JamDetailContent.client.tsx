@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { JamScheduleBadge } from '@/domain/jam/components/JamScheduleBadge';
 import { SessionCreateForm } from '@/domain/jam/components/SessionCreateForm.client';
 import { SessionRow } from '@/domain/jam/components/SessionRow';
+import { SessionsBulkEditModal } from '@/domain/jam/components/SessionsBulkEditModal.client';
 import { useAddParticipant } from '@/domain/jam/hooks/useAddParticipant';
 import { useDeleteJam } from '@/domain/jam/hooks/useDeleteJam';
 import { useJam } from '@/domain/jam/hooks/useJam';
@@ -244,7 +245,7 @@ export function JamDetailContent({
                   <Button
                     type="submit"
                     variant="secondary"
-                    className="h-8 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
+                    className="h-10 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
                     loading={updateScheduleMutation.isPending}
                   >
                     저장
@@ -262,7 +263,7 @@ export function JamDetailContent({
                   />
                   <Button
                     variant="secondary"
-                    className="h-8 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
+                    className="h-10 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
                     loading={updateVenueMutation.isPending}
                     onClick={() => updateVenueMutation.mutate({ venue: venueValue.trim() })}
                   >
@@ -299,7 +300,15 @@ export function JamDetailContent({
         </TabsContent>
 
         <TabsContent value="sessions">
-          <Card header="세션 편성" padding="md">
+          <Card
+            header={
+              <div className="flex items-center justify-between">
+                <span>세션 편성</span>
+                <SessionsBulkEditModal jamId={jamId} sessions={practice.sessions} />
+              </div>
+            }
+            padding="md"
+          >
             <div className="space-y-4">
               <SessionCreateForm jamId={jamId} />
               {practice.sessions.length === 0 ? (
@@ -427,7 +436,7 @@ export function JamDetailContent({
                   <Button
                     type="submit"
                     variant="secondary"
-                    className="h-8 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
+                    className="h-10 w-fit self-end rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
                     loading={addParticipantMutation.isPending}
                   >
                     추가
