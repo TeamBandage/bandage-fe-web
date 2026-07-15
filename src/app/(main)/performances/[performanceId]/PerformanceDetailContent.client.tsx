@@ -19,6 +19,7 @@ import { useForm } from 'react-hook-form';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { ErrorState } from '@/components/feedback/error-state';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -36,6 +37,7 @@ import { PerformanceInvitationsPanel } from '@/domain/performance/components/Per
 import { SetlistSelectorSheet } from '@/domain/performance/components/SetlistSelectorSheet.client';
 import { useBatchAddPerformanceSetlists } from '@/domain/performance/hooks/useBatchAddPerformanceSetlists';
 import { useDeletePerformance } from '@/domain/performance/hooks/useDeletePerformance';
+import { useMyPerformanceInvitations } from '@/domain/performance/hooks/useMyPerformanceInvitations';
 import { usePerformanceDetail } from '@/domain/performance/hooks/usePerformanceDetail';
 import { useRemovePerformanceSetlist } from '@/domain/performance/hooks/useRemovePerformanceSetlist';
 import { useUpdatePerformance } from '@/domain/performance/hooks/useUpdatePerformance';
@@ -48,6 +50,7 @@ import {
 import { usePerformancePosters } from '@/domain/performance-poster/hooks/usePerformancePosters';
 import { useUpdatePerformancePoster } from '@/domain/performance-poster/hooks/useUpdatePerformancePoster';
 import type { PerformanceSetlistSummary } from '@/domain/performance/types/res';
+import { useMySetlists } from '@/domain/setlist/hooks/useMySetlists';
 import { useSetlistTracks } from '@/domain/setlist/hooks/useSetlistTracks';
 import { useIsPerformanceManager } from '@/global/auth/useIsPerformanceManager';
 import { queryKeys } from '@/global/config/queryKeys';
@@ -84,8 +87,16 @@ export function PerformanceDetailContent({
   const posterInputId = useId();
 
   const { data: perf, isLoading, isError, refetch } = usePerformanceDetail(performanceId);
-  const { isManager } = useIsPerformanceManager(performanceId);
+  const { isManager, isOwner } = useIsPerformanceManager(performanceId);
   const { data: posters = [] } = usePerformancePosters(performanceId);
+  const { data: myInvitations = [] } = useMyPerformanceInvitations({ enabled: !isManager });
+  const hasMyInvitation = myInvitations.some((inv) => inv.performanceId === performanceId);
+  const showInvitationsTab = isOwner || (!isManager && hasMyInvitation);
+
+  // OWNER는 모든 셋리스트를, MANAGER는 본인이 소유/참여한 셋리스트만 제거할 수 있다(BE 정책).
+  const { data: mySetlists } = useMySetlists();
+  const mySetlistIds = new Set((mySetlists?.content ?? []).map((s) => s.setlistId));
+  const canRemoveSetlist = (setlistId: string) => isOwner || mySetlistIds.has(setlistId);
 
   const [localPosterPreview, setLocalPosterPreview] = useState<string | null>(null);
   const [posterUploading, setPosterUploading] = useState(false);
@@ -247,6 +258,11 @@ export function PerformanceDetailContent({
         <div className="flex items-center gap-2">
           <h1 className="text-foreground text-[22px] leading-snug font-bold">{perf.title}</h1>
           <PerformanceDday startAt={perf.startAt} />
+          {(isOwner || isManager) && (
+            <Badge className="ml-auto border border-white/30 bg-white/10 text-white">
+              {isOwner ? '소유자' : '매니저'}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -259,9 +275,11 @@ export function PerformanceDetailContent({
             <TabsTrigger value="setlists" className={outerTriggerCls}>
               셋리스트
             </TabsTrigger>
-            <TabsTrigger value="invitations" className={outerTriggerCls}>
-              {isManager ? '초대 목록' : '초대 요청'}
-            </TabsTrigger>
+            {showInvitationsTab && (
+              <TabsTrigger value="invitations" className={outerTriggerCls}>
+                {isOwner ? '초대 목록' : '초대 요청'}
+              </TabsTrigger>
+            )}
             {isManager && (
               <TabsTrigger value="settings" className={outerTriggerCls}>
                 설정
@@ -339,7 +357,7 @@ export function PerformanceDetailContent({
                 {perf.setlists.map((s) => (
                   <div key={s.setlistId} className="flex items-center gap-2">
                     <SetlistCard setlist={s} />
-                    {isManager && (
+                    {isManager && canRemoveSetlist(s.setlistId) && (
                       <button
                         type="button"
                         onClick={() => setPendingRemoveSetlist(s)}
@@ -403,10 +421,12 @@ export function PerformanceDetailContent({
             </Dialog>
           </TabsContent>
 
-          {/* 초대 목록/초대 요청 탭 */}
-          <TabsContent value="invitations" className="mt-0">
-            <PerformanceInvitationsPanel performanceId={performanceId} isManager={isManager} />
-          </TabsContent>
+          {/* 초대 목록(owner)/초대 요청(미배정 초대 수신자) 탭. 매니저는 노출하지 않음 */}
+          {showInvitationsTab && (
+            <TabsContent value="invitations" className="mt-0">
+              <PerformanceInvitationsPanel performanceId={performanceId} isOwner={isOwner} />
+            </TabsContent>
+          )}
 
           {/* 설정 탭 (매니저 전용) */}
           {isManager && (
@@ -425,12 +445,14 @@ export function PerformanceDetailContent({
                   >
                     포스터
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="delete"
-                    className="flex-1 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
-                  >
-                    삭제
-                  </TabsTrigger>
+                  {isOwner && (
+                    <TabsTrigger
+                      value="delete"
+                      className="flex-1 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                    >
+                      삭제
+                    </TabsTrigger>
+                  )}
                 </TabsList>
 
                 {/* 정보 수정 */}
@@ -573,32 +595,35 @@ export function PerformanceDetailContent({
                   )}
                 </TabsContent>
 
-                {/* 삭제 */}
-                <TabsContent value="delete" className="mt-0">
-                  <div className="space-y-s-3">
-                    <p className="text-foreground-sub text-xs">
-                      공연을 삭제하면 모든 포스터·셋리스트 연결이 함께 제거되며 복구할 수 없습니다.
-                    </p>
-                    <Input
-                      label={`공연 이름(${perf.title})을 그대로 입력해 주세요`}
-                      value={deleteConfirmText}
-                      onChange={(e) => setDeleteConfirmText(e.target.value)}
-                      placeholder={perf.title}
-                    />
-                  </div>
-                  <div className="mt-s-4 flex justify-end">
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      className="rounded-[5px]"
-                      disabled={deleteConfirmText !== perf.title}
-                      loading={deleteMutation.isPending}
-                      onClick={() => deleteMutation.mutate()}
-                    >
-                      삭제
-                    </Button>
-                  </div>
-                </TabsContent>
+                {/* 삭제 (OWNER 전용) */}
+                {isOwner && (
+                  <TabsContent value="delete" className="mt-0">
+                    <div className="space-y-s-3">
+                      <p className="text-foreground-sub text-xs">
+                        공연을 삭제하면 모든 포스터·셋리스트 연결이 함께 제거되며 복구할 수
+                        없습니다.
+                      </p>
+                      <Input
+                        label={`공연 이름(${perf.title})을 그대로 입력해 주세요`}
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder={perf.title}
+                      />
+                    </div>
+                    <div className="mt-s-4 flex justify-end">
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        className="rounded-[5px]"
+                        disabled={deleteConfirmText !== perf.title}
+                        loading={deleteMutation.isPending}
+                        onClick={() => deleteMutation.mutate()}
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  </TabsContent>
+                )}
               </Tabs>
             </TabsContent>
           )}

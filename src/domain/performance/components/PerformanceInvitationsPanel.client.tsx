@@ -41,25 +41,25 @@ function formatInvitedAt(createdAt: string) {
 
 export function PerformanceInvitationsPanel({
   performanceId,
-  isManager,
+  isOwner,
 }: {
   performanceId: string;
-  isManager: boolean;
+  isOwner: boolean;
 }) {
   const toast = useToast();
   const [inviteOpen, setInviteOpen] = useState(false);
 
   const { data: sentInvitations = [] } = usePerformanceInvitations(performanceId, {
-    enabled: isManager,
+    enabled: isOwner,
   });
-  const { data: myInvitations = [] } = useMyPerformanceInvitations({ enabled: !isManager });
+  const { data: myInvitations = [] } = useMyPerformanceInvitations({ enabled: !isOwner });
 
   const sendMutation = useSendPerformanceInvitation(performanceId, {
     onSuccess: () => toast.success('초대를 보냈습니다.'),
     onError: (err) => toast.error(err.message || '초대 전송에 실패했습니다.'),
   });
 
-  if (isManager) {
+  if (isOwner) {
     return (
       <div className="space-y-s-3">
         <div className="flex items-center justify-between">
