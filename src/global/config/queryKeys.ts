@@ -9,6 +9,7 @@ export const queryKeys = {
     myAvailabilitySlots: (from: string, to: string) =>
       ['member', 'me', 'availability', 'slots', from, to] as const,
     search: (q: string) => ['member', 'search', q] as const,
+    detail: (memberId: number) => ['member', memberId] as const,
   },
   band: {
     all: ['band'] as const,

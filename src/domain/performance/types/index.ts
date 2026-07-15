@@ -3,6 +3,7 @@ export type {
   UpdatePerformanceRequest,
   PerformanceSetlistAddRequest,
   PerformanceInvitationCreateRequest,
+  TransferPerformanceOwnerRequest,
 } from './req';
 export type {
   CreatePerformanceResponse,

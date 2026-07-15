@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PerformanceDday } from '@/domain/performance/components/PerformanceDday';
 import { PerformanceInvitationsPanel } from '@/domain/performance/components/PerformanceInvitationsPanel.client';
 import { SetlistSelectorSheet } from '@/domain/performance/components/SetlistSelectorSheet.client';
+import { TransferOwnershipPanel } from '@/domain/performance/components/TransferOwnershipPanel.client';
 import { useBatchAddPerformanceSetlists } from '@/domain/performance/hooks/useBatchAddPerformanceSetlists';
 import { useDeletePerformance } from '@/domain/performance/hooks/useDeletePerformance';
 import { useMyPerformanceInvitations } from '@/domain/performance/hooks/useMyPerformanceInvitations';
@@ -277,7 +278,7 @@ export function PerformanceDetailContent({
             </TabsTrigger>
             {showInvitationsTab && (
               <TabsTrigger value="invitations" className={outerTriggerCls}>
-                {isOwner ? '초대 목록' : '초대 요청'}
+                {isOwner ? '매니저 관리' : '초대 요청'}
               </TabsTrigger>
             )}
             {isManager && (
@@ -421,10 +422,40 @@ export function PerformanceDetailContent({
             </Dialog>
           </TabsContent>
 
-          {/* 초대 목록(owner)/초대 요청(미배정 초대 수신자) 탭. 매니저는 노출하지 않음 */}
+          {/* 매니저 관리(owner)/초대 요청(미배정 초대 수신자) 탭. 매니저는 노출하지 않음 */}
           {showInvitationsTab && (
             <TabsContent value="invitations" className="mt-0">
-              <PerformanceInvitationsPanel performanceId={performanceId} isOwner={isOwner} />
+              {isOwner ? (
+                <Tabs defaultValue="invite-managers">
+                  <TabsList className="mb-s-4 w-full">
+                    <TabsTrigger
+                      value="invite-managers"
+                      className="flex-1 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                    >
+                      매니저 초대
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="transfer-ownership"
+                      className="flex-1 data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                    >
+                      공연 소유권 양도
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="invite-managers" className="mt-0">
+                    <PerformanceInvitationsPanel performanceId={performanceId} isOwner={isOwner} />
+                  </TabsContent>
+
+                  <TabsContent value="transfer-ownership" className="mt-0">
+                    <TransferOwnershipPanel
+                      performanceId={performanceId}
+                      managerIds={perf.managerIds}
+                    />
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <PerformanceInvitationsPanel performanceId={performanceId} isOwner={isOwner} />
+              )}
             </TabsContent>
           )}
 
