@@ -154,6 +154,7 @@ export function Sidebar({ className }: SidebarProps) {
       >
         {collapsed ? (
           <Image
+            key="collapsed-logo"
             src="/brand/bandage_pick_logo_white.png"
             alt="Bandage"
             width={18}
@@ -162,6 +163,7 @@ export function Sidebar({ className }: SidebarProps) {
           />
         ) : (
           <Image
+            key="expanded-logo"
             src="/brand/bandage_wave_text_white.png"
             alt="Bandage"
             width={100}
