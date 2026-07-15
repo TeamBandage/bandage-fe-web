@@ -28,6 +28,7 @@ export interface PerformanceDetailResponse {
   startAt: string;
   durationMinutes: number;
   venue?: string | null;
+  ownerId: number;
   managerIds: number[];
   setlists: PerformanceSetlistSummary[];
 }
