@@ -21,3 +21,7 @@ export interface PerformanceSetlistAddRequest {
 export interface PerformanceInvitationCreateRequest {
   memberId: number;
 }
+
+export interface TransferPerformanceOwnerRequest {
+  targetMemberId: number;
+}
