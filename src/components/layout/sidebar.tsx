@@ -59,11 +59,11 @@ const mainNav: NavItem[] = [
   },
   {
     href: ROUTES.TRACK_SELECTIONS,
-    label: '선곡 조율',
+    label: '선곡 회의',
     icon: ListMusic,
     subs: [
-      { href: ROUTES.TRACK_SELECTION_CREATE, label: '선곡 생성' },
-      { href: `${ROUTES.TRACK_SELECTIONS}?listOpen=1`, label: '선곡 목록' },
+      { href: ROUTES.TRACK_SELECTION_CREATE, label: '선곡 회의 생성' },
+      { href: `${ROUTES.TRACK_SELECTIONS}?listOpen=1`, label: '선곡 회의 목록' },
       { href: ROUTES.SETLISTS, label: '셋리스트 목록' },
     ],
   },
