@@ -1,7 +1,6 @@
 'use client';
 
 import { Root, Portal, Overlay, Content, Title, Close } from '@radix-ui/react-dialog';
-import { formatInTimeZone } from 'date-fns-tz';
 import { Maximize2, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -22,6 +21,7 @@ import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { cn } from '@/lib/cn';
 import { useRouter } from 'next/navigation';
+import { formatKst, parseKst } from '@/lib/date';
 import { DOMAIN_ICONS, DOMAIN_TONES } from '@/lib/domain-icons';
 
 import { JamDetailContent } from './[jamId]/JamDetailContent.client';
@@ -37,7 +37,7 @@ function PracticeSelectRow({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const when = formatInTimeZone(new Date(practice.startAt), 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
+  const when = formatKst(parseKst(practice.startAt), 'yy년 M월 d일 HH:mm');
   return (
     <li>
       <button

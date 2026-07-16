@@ -11,16 +11,19 @@ import { useMyTrackSelections } from '@/domain/track-selection/hooks/useMyTrackS
 import type { TrackSelectionResponse } from '@/domain/track-selection/types/res';
 import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
+import { formatKst, parseKst } from '@/lib/date';
 import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
 
 const TrackSelectionIcon = DOMAIN_ICONS['track-selection'];
 
+function formatPracticeDate(dateStr: string): string {
+  return formatKst(parseKst(dateStr, 'yyyy-MM-dd'), 'yy년 M월 d일');
+}
+
 function MeetingRow({ item, active }: { item: TrackSelectionResponse; active: boolean }) {
   const locked = Boolean(item.lockedAt);
-  const updatedLabel = item.updatedAt
-    ? new Date(item.updatedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
-    : null;
+  const periodLabel = `${formatPracticeDate(item.practiceWindow.from)} ~ ${formatPracticeDate(item.practiceWindow.to)}`;
 
   return (
     <li>
@@ -40,9 +43,7 @@ function MeetingRow({ item, active }: { item: TrackSelectionResponse; active: bo
             <span className="text-caption truncate font-semibold">{item.title}</span>
             {locked && <Lock className="text-foreground-muted h-3 w-3 shrink-0" />}
           </div>
-          {updatedLabel && (
-            <div className="text-foreground-muted text-caption mt-0.5">{updatedLabel}</div>
-          )}
+          <div className="text-foreground-muted text-caption mt-0.5">{periodLabel}</div>
         </div>
       </Link>
     </li>
@@ -67,16 +68,16 @@ export function TrackSelectionsMobileShell() {
   return (
     <>
       <div className="border-border mb-s-3 pb-s-2 pt-s-1 flex items-center justify-between border-b">
-        <h2 className="text-foreground pl-2.5 text-2xl font-bold lg:text-3xl">내 선곡</h2>
+        <h2 className="text-foreground pl-2.5 text-2xl font-bold lg:text-3xl">내 선곡 회의</h2>
         <Button
           asChild
           size="sm"
           variant="accent-outline"
-          aria-label="선곡 생성"
+          aria-label="선곡 회의 생성"
           className="rounded-[5px] border-white text-white hover:border-transparent hover:bg-white hover:text-neutral-900 active:border-transparent active:bg-neutral-200 active:text-neutral-900"
         >
           <Link href={ROUTES.TRACK_SELECTION_CREATE}>
-            <Plus className="h-4 w-4" /> 선곡 생성
+            <Plus className="h-4 w-4" /> 선곡 회의 생성
           </Link>
         </Button>
       </div>

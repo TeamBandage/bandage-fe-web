@@ -244,7 +244,7 @@ export function PerformanceDetailContent({
 
   let scheduleLabel = perf.startAt;
   try {
-    scheduleLabel = formatKst(parseKst(perf.startAt), 'yyyy년 M월 d일 (EEE) HH:mm');
+    scheduleLabel = formatKst(parseKst(perf.startAt), 'yyyy년 M월 d일 HH:mm');
   } catch {
     /* keep raw */
   }
