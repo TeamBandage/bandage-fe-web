@@ -104,7 +104,7 @@ export function BandCreateModal({ trigger }: { trigger: ReactNode }) {
             className="h-8 rounded-[5px] border-white bg-white px-2 text-neutral-900 hover:border-neutral-100 hover:bg-neutral-100 active:border-neutral-200 active:bg-neutral-200"
             loading={mutation.isPending}
           >
-            밴드 생성
+            밴드 만들기
           </Button>
         </ResponsiveSheetFooter>
       </ResponsiveSheetContent>

@@ -17,6 +17,7 @@ import { ROUTES } from '@/global/config/routes';
 import { useRegisterDirtyForm } from '@/global/navigation/dirty-form-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/useToast';
+import { formatKst, parseKst } from '@/lib/date';
 
 const STEPS = ['기본 정보', '셋리스트 추가', '검토'] as const;
 const inputCls =
@@ -213,7 +214,7 @@ export function PerformanceCreateWizard() {
                 value: (
                   <span>
                     <CalendarDays className="mr-1 inline h-4 w-4" aria-hidden="true" />
-                    {startAt || '—'}
+                    {startAt ? formatKst(parseKst(startAt), 'yyyy.MM.dd (EEE) HH:mm') : '—'}
                   </span>
                 ),
                 emphasized: true,

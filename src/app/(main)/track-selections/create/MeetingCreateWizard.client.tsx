@@ -1,13 +1,17 @@
 'use client';
 
-import { ArrowRight, CalendarDays, Loader2, Search, Users, X } from 'lucide-react';
+import { format, parse } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { CalendarDays, Loader2, Search, Users, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/ui/step-indicator';
+import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
 import { getBandMembers } from '@/domain/band/api/getBandMembers';
 import { useBandSearch } from '@/domain/band/hooks/useBandSearch';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
@@ -21,9 +25,17 @@ import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
-const STEPS = ['참여 인원', '회의 정보', '확인'] as const;
+const STEPS = ['참여 인원', '회의 정보', '검토'] as const;
 type Step = 0 | 1 | 2;
 type BandTab = 'my-bands' | 'band-search' | 'member';
+
+function formatPracticeDate(dateStr: string): string {
+  try {
+    return format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'yyyy.MM.dd (EEE)', { locale: ko });
+  } catch {
+    return dateStr;
+  }
+}
 
 type Participant = {
   memberId: number;
@@ -186,22 +198,12 @@ export function MeetingCreateWizard() {
   };
 
   return (
-    <div
-      data-slot="meeting-create-wizard"
-      className="px-s-5 py-s-6 lg:px-s-8 lg:py-s-8 mx-auto max-w-3xl"
-    >
+    <div data-slot="meeting-create-wizard" className="p-s-4 mx-auto w-full max-w-3xl lg:py-10">
       <header className="mb-s-6">
-        <button
-          type="button"
-          onClick={() => router.push(ROUTES.TRACK_SELECTIONS)}
-          className="text-foreground-muted hover:text-foreground text-caption mb-s-2"
-        >
-          ← 선곡 회의 목록
-        </button>
-        <h1 className="text-title-lg font-bold">선곡 회의 만들기</h1>
+        <h1 className="text-title font-bold">선곡 회의 생성</h1>
       </header>
 
-      <StepIndicator steps={STEPS} current={step} className="mb-s-6" />
+      <StepIndicator steps={STEPS} current={step} className="mb-s-6" colorScheme="white" />
 
       {step === 0 && (
         <StepParticipants
@@ -251,19 +253,36 @@ export function MeetingCreateWizard() {
           managerId={managerId}
           practiceFrom={practiceFrom}
           practiceTo={practiceTo}
+          setStep={setStep}
         />
       )}
 
       <footer className="mt-s-8 gap-s-3 flex items-center justify-between">
-        <Button type="button" variant="ghost" onClick={back} disabled={step === 0}>
-          이전
-        </Button>
-        {step < 2 ? (
-          <Button type="button" variant="primary" onClick={next} disabled={!canNext}>
-            다음 <ArrowRight className="h-4 w-4" />
+        {step > 0 ? (
+          <Button type="button" variant="ghost" size="sm" onClick={back} className="rounded-[5px]">
+            이전
           </Button>
         ) : (
-          <Button type="button" variant="primary" onClick={submit} disabled={isPending}>
+          <span />
+        )}
+        {step < 2 ? (
+          <Button
+            type="button"
+            size="sm"
+            onClick={next}
+            disabled={!canNext}
+            className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+          >
+            다음
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            onClick={submit}
+            disabled={isPending}
+            className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+          >
             {isPending ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -340,12 +359,12 @@ function StepParticipants({
             <label
               className={cn(
                 'gap-s-3 px-s-3 py-s-2 hover:bg-card flex w-full cursor-pointer items-center rounded-md text-left transition-colors',
-                active && 'bg-accent-dim border-accent/30 border',
+                active && 'border border-white/30 bg-white/10',
               )}
             >
               <input
                 type="checkbox"
-                className="accent-accent h-4 w-4"
+                className="h-4 w-4 accent-white"
                 checked={active}
                 onChange={() => onToggleBand(b)}
               />
@@ -424,7 +443,7 @@ function StepParticipants({
           {selectedBandIds.map((id) => (
             <span
               key={id}
-              className="bg-accent-dim border-accent/30 text-accent gap-s-1 px-s-2 inline-flex items-center rounded-full border py-0.5 text-xs font-semibold"
+              className="gap-s-1 px-s-2 inline-flex items-center rounded-full border border-white/30 bg-white/10 py-0.5 text-xs font-semibold text-white"
             >
               {selectedBandNames[id] ?? id}
               <button
@@ -473,9 +492,9 @@ function StepParticipants({
                   profileImg: myProfileImg ?? null,
                 })
               }
-              className="bg-accent-dim border-accent/30 hover:bg-accent/20 gap-s-2 px-s-3 py-s-2 flex w-full items-center rounded-md border text-sm transition-colors"
+              className="gap-s-2 px-s-3 py-s-2 flex w-full items-center rounded-md border border-white/30 bg-white/10 text-sm transition-colors hover:bg-white/20"
             >
-              <span className="text-accent font-bold">+ 나 추가</span>
+              <span className="font-bold text-white">+ 나 추가</span>
               <span className="text-foreground-muted text-micro font-normal">
                 {myName ? `(${myName})` : ''} 본인은 검색 결과에 포함되지 않아요
               </span>
@@ -521,7 +540,7 @@ function StepParticipants({
                         <span
                           className={cn(
                             'text-micro px-s-2 shrink-0 rounded-full py-0.5 font-bold',
-                            added ? 'bg-success-dim text-success' : 'bg-accent-dim text-accent',
+                            added ? 'bg-success-dim text-success' : 'bg-white/10 text-white',
                           )}
                         >
                           {added ? '추가됨' : '+ 추가'}
@@ -552,13 +571,13 @@ function StepParticipants({
                 key={p.memberId}
                 className={cn(
                   'bg-card border-border gap-s-1 px-s-2 inline-flex items-center rounded-full border py-0.5',
-                  p.memberId === myMemberId && 'border-accent/40 bg-accent-dim',
+                  p.memberId === myMemberId && 'border-white/40 bg-white/10',
                 )}
               >
                 <Avatar src={p.profileImg ?? undefined} fallback={p.name} size="sm" />
                 <span className="text-micro font-semibold">{p.name}</span>
                 {p.memberId === myMemberId && (
-                  <span className="text-accent text-micro font-bold">나</span>
+                  <span className="text-micro font-bold text-white">나</span>
                 )}
                 <button
                   type="button"
@@ -620,22 +639,22 @@ function StepInfo({
           회의에서 다룰 합주가 가능한 기간을 입력하세요. 멤버 스케줄 조율의 기준이 됩니다.
         </div>
         <div className="gap-s-3 flex items-center">
-          <input
-            type="date"
+          <DatePicker
             value={practiceFrom}
             min={today}
-            onChange={(e) => setPracticeFrom(e.target.value)}
-            aria-label="합주 시작일"
-            className="bg-surface border-border px-s-3 focus:ring-accent h-10 rounded-md border text-sm outline-none focus:ring-2"
+            onChange={setPracticeFrom}
+            placeholder="시작일 선택"
+            showWeekday
+            className="h-10 rounded-md px-3 text-sm"
           />
           <span className="text-foreground-muted">~</span>
-          <input
-            type="date"
+          <DatePicker
             value={practiceTo}
             min={practiceFrom || today}
-            onChange={(e) => setPracticeTo(e.target.value)}
-            aria-label="합주 종료일"
-            className="bg-surface border-border px-s-3 focus:ring-accent h-10 rounded-md border text-sm outline-none focus:ring-2"
+            onChange={setPracticeTo}
+            placeholder="종료일 선택"
+            showWeekday
+            className="h-10 rounded-md px-3 text-sm"
           />
         </div>
         {practiceFrom && practiceTo && practiceFrom > practiceTo && (
@@ -658,13 +677,13 @@ function StepInfo({
                 <label
                   className={cn(
                     'gap-s-3 px-s-3 py-s-2 flex cursor-pointer items-center rounded-md transition-colors',
-                    active ? 'bg-accent-dim border-accent/30 border' : 'hover:bg-card',
+                    active ? 'border border-white/30 bg-white/10' : 'hover:bg-card',
                   )}
                 >
                   <input
                     type="radio"
                     name="manager"
-                    className="accent-accent h-4 w-4"
+                    className="h-4 w-4 accent-white"
                     checked={active}
                     onChange={() => setManagerId(p.memberId)}
                   />
@@ -673,7 +692,7 @@ function StepInfo({
                     <div className="text-caption gap-s-2 flex items-center font-semibold">
                       <span className="truncate">{p.name}</span>
                       {p.memberId === myMemberId && (
-                        <span className="text-accent text-micro font-bold">나</span>
+                        <span className="text-micro font-bold text-white">나</span>
                       )}
                     </div>
                   </div>
@@ -687,7 +706,7 @@ function StepInfo({
   );
 }
 
-// ── Step 2 — 확인 ────────────────────────────────────────────────────
+// ── Step 2 — 검토 ────────────────────────────────────────────────────
 function StepReview({
   selectedBandNames,
   selectedBandIds,
@@ -696,6 +715,7 @@ function StepReview({
   managerId,
   practiceFrom,
   practiceTo,
+  setStep,
 }: {
   selectedBandNames: Record<string, string>;
   selectedBandIds: string[];
@@ -704,50 +724,69 @@ function StepReview({
   managerId: number | null;
   practiceFrom: string;
   practiceTo: string;
+  setStep: (step: Step) => void;
 }) {
   const manager = participants.find((p) => p.memberId === managerId);
   const bandNames = selectedBandIds.map((id) => selectedBandNames[id] ?? id);
 
   return (
-    <section className="gap-s-4 flex flex-col">
-      {bandNames.length > 0 && (
-        <SummaryRow icon={<Users className="h-4 w-4" />} label="선택 밴드">
-          {bandNames.join(' · ')}
-        </SummaryRow>
-      )}
-      <SummaryRow icon={<Users className="h-4 w-4" />} label={`참여 ${participants.length}명`}>
-        <div className="gap-s-2 flex flex-wrap">
-          {participants.map((p) => (
-            <span
-              key={p.memberId}
-              className="bg-card border-border gap-s-1 px-s-2 inline-flex items-center rounded-full border py-0.5"
-            >
-              <Avatar src={p.profileImg ?? undefined} fallback={p.name} size="sm" />
-              <span className="text-micro font-semibold">{p.name}</span>
-            </span>
-          ))}
-        </div>
-      </SummaryRow>
-      <SummaryRow label="제목">
-        <span className="text-caption font-bold">{title || '(미입력)'}</span>
-      </SummaryRow>
-      {practiceFrom && practiceTo && (
-        <SummaryRow icon={<CalendarDays className="h-4 w-4" />} label="합주 가능 기간">
-          <span className="text-caption font-mono">
-            {practiceFrom} ~ {practiceTo}
-          </span>
-        </SummaryRow>
-      )}
-      <SummaryRow label="매니저">
-        {manager ? (
-          <span className="gap-s-2 inline-flex items-center">
-            <Avatar src={manager.profileImg ?? undefined} fallback={manager.name} size="sm" />
-            <span className="text-caption font-semibold">{manager.name}</span>
-          </span>
-        ) : (
-          <span className="text-foreground-muted">미지정</span>
-        )}
-      </SummaryRow>
+    <section className="space-y-s-4">
+      <h2 className="text-foreground-sub text-base font-semibold">아래 내용을 확인해주세요</h2>
+      <WizardSummaryCard
+        sections={[
+          ...(bandNames.length > 0
+            ? [{ label: '선택 밴드', value: bandNames.join(' · '), onEdit: () => setStep(0) }]
+            : []),
+          {
+            label: `참여 인원 (${participants.length}명)`,
+            value: (
+              <div className="gap-s-2 flex flex-wrap">
+                {participants.map((p) => (
+                  <span
+                    key={p.memberId}
+                    className="bg-card border-border gap-s-1 px-s-2 inline-flex items-center rounded-full border py-0.5"
+                  >
+                    <Avatar src={p.profileImg ?? undefined} fallback={p.name} size="sm" />
+                    <span className="text-micro font-semibold">{p.name}</span>
+                  </span>
+                ))}
+              </div>
+            ),
+            onEdit: () => setStep(0),
+          },
+          { label: '제목', value: title || '(미입력)', onEdit: () => setStep(1) },
+          ...(practiceFrom && practiceTo
+            ? [
+                {
+                  label: '합주 가능 기간',
+                  value: (
+                    <span>
+                      <CalendarDays className="mr-1 inline h-4 w-4" aria-hidden="true" />
+                      {formatPracticeDate(practiceFrom)} ~ {formatPracticeDate(practiceTo)}
+                    </span>
+                  ),
+                  emphasized: true,
+                  onEdit: () => setStep(1),
+                },
+              ]
+            : []),
+          {
+            label: '매니저',
+            value: manager ? (
+              <span className="gap-s-2 inline-flex items-center">
+                <Avatar src={manager.profileImg ?? undefined} fallback={manager.name} size="sm" />
+                <span className="text-caption font-semibold">{manager.name}</span>
+              </span>
+            ) : (
+              <span className="text-foreground-muted">미지정</span>
+            ),
+            onEdit: () => setStep(1),
+          },
+        ]}
+      />
+      <p className="text-foreground-muted text-caption">
+        확정 버튼을 눌러야 실제로 회의가 생성됩니다.
+      </p>
     </section>
   );
 }
@@ -774,7 +813,7 @@ function UnderlineTabs<T extends string>({
             className={cn(
               'px-s-1 -mb-px h-10 border-b-2 text-sm font-semibold transition-colors',
               active
-                ? 'border-accent text-accent'
+                ? 'border-white text-white'
                 : 'text-foreground-sub hover:text-foreground border-transparent',
             )}
           >
@@ -782,26 +821,6 @@ function UnderlineTabs<T extends string>({
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function SummaryRow({
-  icon,
-  label,
-  children,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-card border-border px-s-4 py-s-3 gap-s-3 flex items-start rounded-lg border">
-      {icon && <div className="text-foreground-muted mt-0.5">{icon}</div>}
-      <div className="min-w-0 flex-1">
-        <div className="text-foreground-muted text-micro mb-s-1 font-bold uppercase">{label}</div>
-        <div className="text-foreground">{children}</div>
-      </div>
     </div>
   );
 }

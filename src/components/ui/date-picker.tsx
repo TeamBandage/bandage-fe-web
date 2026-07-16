@@ -29,6 +29,8 @@ type Props = {
   max?: string;
   placeholder?: string;
   className?: string;
+  /** true면 표시 라벨에 요일을 붙임 (예: 2026.07.23 (목)). */
+  showWeekday?: boolean;
 };
 
 export function DatePicker({
@@ -38,6 +40,7 @@ export function DatePicker({
   max,
   placeholder = '날짜 선택',
   className,
+  showWeekday = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
@@ -107,7 +110,10 @@ export function DatePicker({
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
   while (cells.length % 7 !== 0) cells.push(null);
 
-  const displayLabel = parsed ? `${parsed.y}.${pad(parsed.mo)}.${pad(parsed.d)}` : placeholder;
+  const displayLabel = parsed
+    ? `${parsed.y}.${pad(parsed.mo)}.${pad(parsed.d)}` +
+      (showWeekday ? ` (${DOW[new Date(parsed.y, parsed.mo - 1, parsed.d).getDay()]})` : '')
+    : placeholder;
 
   return (
     <>

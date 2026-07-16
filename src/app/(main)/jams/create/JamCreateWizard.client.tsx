@@ -14,6 +14,7 @@ import type { SessionDefDto } from '@/domain/jam/types';
 import { ROUTES } from '@/global/config/routes';
 import { useRegisterDirtyForm } from '@/global/navigation/dirty-form-context';
 import { useToast } from '@/hooks/useToast';
+import { formatKst, parseKst } from '@/lib/date';
 
 const STEPS = ['곡 정보', '일정 설정', '세션 설정', '검토'] as const;
 const inputCls =
@@ -288,7 +289,7 @@ export function JamCreateWizard() {
                 type="button"
                 size="sm"
                 onClick={addSession}
-                className="self-end rounded-[5px] bg-white/70 text-neutral-900 transition-transform hover:bg-white/85 active:scale-95 active:bg-white"
+                className="h-10 self-end rounded-[5px] bg-white/70 text-neutral-900 transition-transform hover:bg-white/85 active:scale-95 active:bg-white"
               >
                 추가
               </Button>
@@ -313,7 +314,7 @@ export function JamCreateWizard() {
               },
               {
                 label: '시작 시각',
-                value: startAt || '—',
+                value: startAt ? formatKst(parseKst(startAt), 'yyyy.MM.dd (EEE) HH:mm') : '—',
                 emphasized: true,
                 onEdit: () => setStep(1),
               },
