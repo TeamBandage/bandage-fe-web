@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  CalendarDays,
   CheckCircle2,
   ListMusic,
   Lock,
@@ -49,8 +50,13 @@ import { useToast } from '@/hooks/useToast';
 import type { Song } from '@/domain/setlist-meeting/types';
 import { confirmedCount, isReady, totalNeed } from '@/domain/setlist-meeting/utils';
 import { cn } from '@/lib/cn';
+import { formatKst, parseKst } from '@/lib/date';
 
 type Filter = 'all' | 'ready' | 'pending' | 'mine';
+
+function formatPracticeDate(dateStr: string): string {
+  return formatKst(parseKst(dateStr, 'yyyy-MM-dd'), 'yyyy년 M월 d일');
+}
 
 function applyFilter(songs: Song[], filter: Filter, currentUserId: string): Song[] {
   switch (filter) {
@@ -379,6 +385,13 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 )}
               </div>
             )}
+            <div className="mt-s-2">
+              <span className="text-foreground-sub text-caption inline-flex items-center gap-1 rounded bg-white/8 px-1.5 py-0.5">
+                <CalendarDays className="h-3 w-3" aria-hidden="true" />
+                {formatPracticeDate(selection.practiceWindow.from)} ~{' '}
+                {formatPracticeDate(selection.practiceWindow.to)}
+              </span>
+            </div>
             <div className="text-foreground-muted text-caption gap-s-3 mt-s-2 flex flex-wrap items-center">
               <span>
                 전체 <strong className="text-foreground">{stats.total}</strong>곡

@@ -18,12 +18,20 @@ const tabs: Tab[] = [
   { href: ROUTES.BANDS, icon: Users, label: '밴드' },
   { href: ROUTES.JAMS, icon: Music, label: '합주' },
   { href: ROUTES.PERFORMANCES, icon: CalendarDays, label: '공연' },
-  { href: ROUTES.TRACK_SELECTIONS, icon: ListMusic, label: '선곡' },
+  { href: ROUTES.TRACK_SELECTIONS, icon: ListMusic, label: '선곡 회의' },
   { href: ROUTES.ME, icon: User, label: 'MY' },
 ];
 
 function isActive(pathname: string, href: string) {
   if (href === ROUTES.HOME) return pathname === ROUTES.HOME;
+  if (href === ROUTES.TRACK_SELECTIONS) {
+    return (
+      pathname === href ||
+      pathname.startsWith(`${href}/`) ||
+      pathname === ROUTES.SETLISTS ||
+      pathname.startsWith(`${ROUTES.SETLISTS}/`)
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -44,8 +52,8 @@ export function BottomNav() {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'focus-visible:ring-accent focus-visible:ring-offset-bg flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-                  active ? 'text-accent-hi' : 'text-foreground-muted hover:text-foreground',
+                  'focus-visible:ring-accent focus-visible:ring-offset-bg flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium no-underline transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                  active ? 'text-white' : 'text-foreground-muted hover:text-foreground',
                 )}
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />

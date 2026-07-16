@@ -40,7 +40,7 @@ function PerformanceSelectRow({
 }) {
   let dateLabel = performance.startAt;
   try {
-    dateLabel = formatKst(parseKst(performance.startAt), 'M월 d일 (EEE) HH:mm');
+    dateLabel = formatKst(parseKst(performance.startAt), 'yy년 M월 d일 HH:mm');
   } catch {
     // keep raw
   }
