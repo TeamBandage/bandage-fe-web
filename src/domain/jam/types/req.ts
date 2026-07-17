@@ -45,7 +45,3 @@ export interface AddParticipantRequest {
   memberId: number;
   sessionId: string;
 }
-
-export interface UpdateParticipantSessionRequest {
-  sessionId: string;
-}

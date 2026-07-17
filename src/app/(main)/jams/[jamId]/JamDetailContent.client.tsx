@@ -29,10 +29,11 @@ import { SessionCreateForm } from '@/domain/jam/components/SessionCreateForm.cli
 import { SessionRow } from '@/domain/jam/components/SessionRow';
 import { SessionsBulkEditModal } from '@/domain/jam/components/SessionsBulkEditModal.client';
 import { useAddParticipant } from '@/domain/jam/hooks/useAddParticipant';
+import { useAddParticipantSession } from '@/domain/jam/hooks/useAddParticipantSession';
 import { useDeleteJam } from '@/domain/jam/hooks/useDeleteJam';
+import { useDeleteParticipant } from '@/domain/jam/hooks/useDeleteParticipant';
 import { useJam } from '@/domain/jam/hooks/useJam';
-import { useUpdateParticipantSession } from '@/domain/jam/hooks/useUpdateParticipantSession';
-import { useUnassignSession } from '@/domain/jam/hooks/useUnassignSession';
+import { useRemoveParticipantSession } from '@/domain/jam/hooks/useRemoveParticipantSession';
 import { useUpdateSchedule } from '@/domain/jam/hooks/useUpdateSchedule';
 import { useUpdateVenue } from '@/domain/jam/hooks/useUpdateVenue';
 import { addParticipantSchema, type AddParticipantSchema } from '@/domain/jam/types';
@@ -108,7 +109,10 @@ export function JamDetailContent({
     participantId: string;
     displayName: string;
   } | null>(null);
-  const [assignSessionId, setAssignSessionId] = useState('');
+  const [pendingRemoveParticipant, setPendingRemoveParticipant] = useState<{
+    participantId: string;
+    displayName: string;
+  } | null>(null);
 
   const addParticipantForm = useForm<AddParticipantSchema>({
     resolver: zodResolver(addParticipantSchema),
@@ -133,18 +137,22 @@ export function JamDetailContent({
     onError: (err) => toast.error(err.message || '참여자 추가에 실패했습니다.'),
   });
 
-  const updateSessionMutation = useUpdateParticipantSession(jamId, {
-    onSuccess: () => {
-      toast.success('세션이 배정되었습니다.');
-      setSessionAssignTarget(null);
-      setAssignSessionId('');
-    },
+  const addParticipantSessionMutation = useAddParticipantSession(jamId, {
+    onSuccess: () => toast.success('세션을 배정했습니다.'),
     onError: (err) => toast.error(err.message || '세션 배정에 실패했습니다.'),
   });
 
-  const unassignSessionMutation = useUnassignSession(jamId, {
+  const removeParticipantSessionMutation = useRemoveParticipantSession(jamId, {
     onSuccess: () => toast.success('세션 배정을 해제했습니다.'),
     onError: (err) => toast.error(err.message || '세션 배정 해제에 실패했습니다.'),
+  });
+
+  const deleteParticipantMutation = useDeleteParticipant(jamId, {
+    onSuccess: () => {
+      toast.success('참여자를 제거했습니다.');
+      setPendingRemoveParticipant(null);
+    },
+    onError: (err) => toast.error(err.message || '참여자 제거에 실패했습니다.'),
   });
 
   if (isLoading) {
@@ -455,7 +463,9 @@ export function JamDetailContent({
               ) : (
                 <ul className="divide-border divide-y">
                   {practice.participants.map((p) => {
-                    const session = practice.sessions.find((s) => s.sessionId === p.sessionId);
+                    const mySessions = practice.sessions.filter((s) =>
+                      p.sessionIds.includes(s.sessionId),
+                    );
                     return (
                       <li
                         key={p.participantId}
@@ -463,40 +473,43 @@ export function JamDetailContent({
                       >
                         <span className="text-foreground-sub text-sm">
                           {p.member?.name ?? `멤버 #${p.member?.memberId ?? p.participantId}`}
-                          {session && (
-                            <span className="text-foreground-muted ml-2">· {session.label}</span>
+                          {mySessions.length > 0 && (
+                            <span className="text-foreground-muted ml-2">
+                              · {mySessions.map((s) => s.label).join(', ')}
+                            </span>
                           )}
                         </span>
                         <div className="flex shrink-0 items-center gap-1">
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => {
+                            className={mySessions.length > 0 ? undefined : 'text-blue'}
+                            onClick={() =>
                               setSessionAssignTarget({
                                 participantId: p.participantId,
                                 displayName:
                                   p.member?.name ??
                                   `멤버 #${p.member?.memberId ?? p.participantId}`,
-                              });
-                              setAssignSessionId(p.sessionId ?? '');
-                            }}
+                              })
+                            }
                           >
-                            {p.sessionId ? '세션 변경' : '세션 배정'}
+                            {mySessions.length > 0 ? '세션 변경' : '세션 배정'}
                           </Button>
-                          {p.sessionId && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-foreground-muted"
-                              loading={
-                                unassignSessionMutation.isPending &&
-                                unassignSessionMutation.variables === p.participantId
-                              }
-                              onClick={() => unassignSessionMutation.mutate(p.participantId)}
-                            >
-                              배정 해제
-                            </Button>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-foreground-muted"
+                            onClick={() =>
+                              setPendingRemoveParticipant({
+                                participantId: p.participantId,
+                                displayName:
+                                  p.member?.name ??
+                                  `멤버 #${p.member?.memberId ?? p.participantId}`,
+                              })
+                            }
+                          >
+                            참여자 제거
+                          </Button>
                         </div>
                       </li>
                     );
@@ -511,10 +524,7 @@ export function JamDetailContent({
       <Dialog
         open={sessionAssignTarget !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setSessionAssignTarget(null);
-            setAssignSessionId('');
-          }
+          if (!open) setSessionAssignTarget(null);
         }}
       >
         <DialogContent>
@@ -523,50 +533,127 @@ export function JamDetailContent({
           </DialogHeader>
           <DialogBody>
             <div className="space-y-3">
-              <p className="text-foreground-muted text-sm">
-                {sessionAssignTarget?.displayName}에게 세션을 배정합니다.
-              </p>
-              <Select
-                placeholder="세션을 선택하세요"
-                value={assignSessionId}
-                onChange={(e) => setAssignSessionId(e.target.value)}
-                options={(() => {
-                  const mySessionId = practice.participants.find(
-                    (p) => p.participantId === sessionAssignTarget?.participantId,
-                  )?.sessionId;
-                  return practice.sessions
-                    .filter((s) => s.participants.length === 0 || s.sessionId === mySessionId)
-                    .map((s) => ({ value: s.sessionId, label: `${s.short} · ${s.label}` }));
-                })()}
-                className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
-              />
+              {(() => {
+                const target = practice.participants.find(
+                  (p) => p.participantId === sessionAssignTarget?.participantId,
+                );
+                const mySessionIds = target?.sessionIds ?? [];
+                const candidates = practice.sessions.filter(
+                  (s) => s.participants.length === 0 || mySessionIds.includes(s.sessionId),
+                );
+                if (candidates.length === 0) {
+                  return (
+                    <p className="text-foreground-muted text-sm">
+                      <strong className="text-foreground font-bold">
+                        {sessionAssignTarget?.displayName}
+                      </strong>
+                      에게 배정 가능한 세션이 없습니다.
+                    </p>
+                  );
+                }
+                return (
+                  <>
+                    <p className="text-foreground-muted text-sm">
+                      <strong className="text-foreground font-bold">
+                        {sessionAssignTarget?.displayName}
+                      </strong>
+                      에게 배정할 세션을 선택하세요. 여러 개 선택할 수 있습니다.
+                    </p>
+                    <ul className="space-y-1">
+                      {candidates.map((s) => {
+                        const checked = mySessionIds.includes(s.sessionId);
+                        const pending =
+                          (addParticipantSessionMutation.isPending &&
+                            addParticipantSessionMutation.variables?.participantId ===
+                              sessionAssignTarget?.participantId &&
+                            addParticipantSessionMutation.variables?.sessionId === s.sessionId) ||
+                          (removeParticipantSessionMutation.isPending &&
+                            removeParticipantSessionMutation.variables?.participantId ===
+                              sessionAssignTarget?.participantId &&
+                            removeParticipantSessionMutation.variables?.sessionId === s.sessionId);
+                        return (
+                          <li key={s.sessionId}>
+                            <label className="hover:bg-card gap-s-2 px-s-2 py-s-1.5 flex cursor-pointer items-center rounded-[5px]">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 accent-white"
+                                checked={checked}
+                                disabled={pending}
+                                onChange={() => {
+                                  if (!sessionAssignTarget) return;
+                                  if (checked) {
+                                    removeParticipantSessionMutation.mutate({
+                                      participantId: sessionAssignTarget.participantId,
+                                      sessionId: s.sessionId,
+                                    });
+                                  } else {
+                                    addParticipantSessionMutation.mutate({
+                                      participantId: sessionAssignTarget.participantId,
+                                      sessionId: s.sessionId,
+                                    });
+                                  }
+                                }}
+                              />
+                              <span className="text-sm">
+                                {s.short} · {s.label}
+                              </span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                );
+              })()}
             </div>
           </DialogBody>
-          <DialogFooter>
+          <DialogFooter className="border-t-0">
+            <Button
+              variant="secondary"
+              className="h-8 rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
+              onClick={() => setSessionAssignTarget(null)}
+            >
+              닫기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={pendingRemoveParticipant !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingRemoveParticipant(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader className="border-b-0 pb-2">
+            <DialogTitle>참여자를 제거하시겠어요?</DialogTitle>
+          </DialogHeader>
+          <div className="border-border mx-5 border-b" />
+          <DialogBody className="pt-2">
+            <DialogDescription className="text-foreground-sub text-sm">
+              <strong className="text-foreground">{pendingRemoveParticipant?.displayName}</strong>
+              님을 합주에서 제거합니다. 보유한 세션 배정도 함께 삭제됩니다.
+            </DialogDescription>
+          </DialogBody>
+          <DialogFooter className="border-t-0">
             <Button
               variant="ghost"
               className="h-8 rounded-[5px]"
-              onClick={() => {
-                setSessionAssignTarget(null);
-                setAssignSessionId('');
-              }}
+              onClick={() => setPendingRemoveParticipant(null)}
             >
               취소
             </Button>
             <Button
-              variant="secondary"
-              className="h-8 rounded-[5px] border-white bg-white px-3 text-neutral-900 hover:bg-white/90 active:bg-white/80"
-              disabled={!assignSessionId}
-              loading={updateSessionMutation.isPending}
+              variant="danger"
+              className="h-8 rounded-[5px] px-2"
+              loading={deleteParticipantMutation.isPending}
               onClick={() => {
-                if (!sessionAssignTarget || !assignSessionId) return;
-                updateSessionMutation.mutate({
-                  participantId: sessionAssignTarget.participantId,
-                  req: { sessionId: assignSessionId },
-                });
+                if (!pendingRemoveParticipant) return;
+                deleteParticipantMutation.mutate(pendingRemoveParticipant.participantId);
               }}
             >
-              배정
+              제거하기
             </Button>
           </DialogFooter>
         </DialogContent>

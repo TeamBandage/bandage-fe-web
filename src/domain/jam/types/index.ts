@@ -7,7 +7,6 @@ export type {
   UpdateSessionRequest,
   JamSessionsUpdateRequest,
   AddParticipantRequest,
-  UpdateParticipantSessionRequest,
 } from './req';
 export type {
   TrackInfoResponse,

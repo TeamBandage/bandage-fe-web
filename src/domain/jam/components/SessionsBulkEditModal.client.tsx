@@ -149,10 +149,7 @@ export function SessionsBulkEditModal({
                 <div>
                   {rows.map((r) =>
                     r.removed ? (
-                      <div
-                        key={r.key}
-                        className="border-border flex items-center justify-between gap-2 border-b py-3 last:border-b-0"
-                      >
+                      <div key={r.key} className="flex items-center justify-between gap-2 py-3">
                         <span className="text-foreground-muted min-w-0 truncate text-sm line-through">
                           {r.short || '?'} · {r.label || '(이름 없음)'}
                         </span>
@@ -172,10 +169,7 @@ export function SessionsBulkEditModal({
                         </div>
                       </div>
                     ) : (
-                      <div
-                        key={r.key}
-                        className="border-border flex items-center gap-2 border-b py-3 last:border-b-0"
-                      >
+                      <div key={r.key} className="flex items-center gap-2 py-3">
                         <Input
                           value={r.short}
                           onChange={(e) => updateRow(r.key, { short: e.target.value })}
@@ -217,7 +211,7 @@ export function SessionsBulkEditModal({
               </Button>
             </div>
           </DialogBody>
-          <DialogFooter>
+          <DialogFooter className="border-t-0">
             <Button variant="ghost" className="h-8 rounded-[5px]" onClick={() => setOpen(false)}>
               취소
             </Button>
