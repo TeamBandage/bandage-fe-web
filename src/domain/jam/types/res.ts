@@ -29,7 +29,7 @@ export interface JamSessionResponse {
 export interface JamParticipantResponse {
   participantId: string;
   member?: JamMemberInfo;
-  sessionId?: string | null;
+  sessionIds: string[];
 }
 
 export interface JamDetailResponse {
