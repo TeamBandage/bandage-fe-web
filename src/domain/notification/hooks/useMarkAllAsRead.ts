@@ -3,46 +3,65 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/global/config/queryKeys';
+import type { CursorResponse } from '@/global/types';
 
 import type { NotificationResponse, UnreadNotificationCountResponse } from '../types/res';
 import { markAllAsRead } from '../api/markAllAsRead';
+
+type ListData = { pages: CursorResponse<NotificationResponse, string>[]; pageParams: unknown[] };
+type ListEntry = [readonly unknown[], ListData | undefined];
+
+const listQueryKey = [...queryKeys.notification.all, 'list'];
+
+/** 캐시 키의 unreadOnly 위치(list 캐시 키의 3번째 요소)로 목록 종류를 판별. */
+function isUnreadOnlyKey(key: readonly unknown[]): boolean {
+  return key[2] === true;
+}
 
 export function useMarkAllAsRead() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, void>({
     mutationFn: markAllAsRead,
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.notification.list() });
+      await queryClient.cancelQueries({ queryKey: listQueryKey });
       await queryClient.cancelQueries({ queryKey: queryKeys.notification.unreadCount() });
 
-      const prevList = queryClient.getQueryData<NotificationResponse[]>(
-        queryKeys.notification.list(),
-      );
+      const prevLists: ListEntry[] = queryClient.getQueriesData<ListData>({
+        queryKey: listQueryKey,
+      });
       const prevCount = queryClient.getQueryData<UnreadNotificationCountResponse>(
         queryKeys.notification.unreadCount(),
       );
 
-      queryClient.setQueryData<NotificationResponse[]>(queryKeys.notification.list(), (prev) =>
-        prev?.map((n) => ({ ...n, read: true })),
-      );
+      // unreadOnly 캐시는 전체 읽음 처리 시 모든 페이지를 비우고, 전체 캐시는 read 플래그만 갱신.
+      prevLists.forEach(([key, data]) => {
+        if (!data) return;
+        const unreadOnly = isUnreadOnlyKey(key);
+        queryClient.setQueryData<ListData>(key, {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            content: unreadOnly ? [] : page.content.map((n) => ({ ...n, read: true })),
+          })),
+        });
+      });
       queryClient.setQueryData<UnreadNotificationCountResponse>(
         queryKeys.notification.unreadCount(),
         { count: 0 },
       );
 
-      return { prevList, prevCount };
+      return { prevLists, prevCount };
     },
     onError: (_err, _vars, context) => {
       const ctx = context as
-        | { prevList?: NotificationResponse[]; prevCount?: UnreadNotificationCountResponse }
+        | { prevLists?: ListEntry[]; prevCount?: UnreadNotificationCountResponse }
         | undefined;
-      if (ctx?.prevList !== undefined)
-        queryClient.setQueryData(queryKeys.notification.list(), ctx.prevList);
+      ctx?.prevLists?.forEach(([key, data]) => queryClient.setQueryData(key, data));
       if (ctx?.prevCount !== undefined)
         queryClient.setQueryData(queryKeys.notification.unreadCount(), ctx.prevCount);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notification.list() });
+      queryClient.invalidateQueries({ queryKey: listQueryKey });
       queryClient.invalidateQueries({ queryKey: queryKeys.notification.unreadCount() });
     },
   });

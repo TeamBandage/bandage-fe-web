@@ -10,6 +10,7 @@ export type InfiniteCursorOptions = {
   gcTime?: number;
   retry?: boolean | number;
   refetchOnWindowFocus?: boolean;
+  refetchInterval?: number;
 };
 
 const DEFAULT_PAGE_SIZE = 10;

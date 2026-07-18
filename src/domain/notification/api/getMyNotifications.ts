@@ -3,11 +3,20 @@ import type { CursorResponse } from '@/global/types';
 
 import type { NotificationResponse } from '../types/res';
 
-type NotificationListRaw = NotificationResponse[] | CursorResponse<NotificationResponse, number>;
-
-export async function getMyNotifications(): Promise<NotificationResponse[]> {
-  const data = await apiClient.get<NotificationListRaw | null>('/api/v1/notifications');
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  return data.content;
+export async function getMyNotifications(params: {
+  pageSize: number;
+  lastId?: string;
+  unreadOnly?: boolean;
+}): Promise<CursorResponse<NotificationResponse, string>> {
+  const data = await apiClient.get<CursorResponse<NotificationResponse, string> | null>(
+    '/api/v1/notifications',
+    {
+      query: {
+        pageSize: params.pageSize,
+        lastId: params.lastId,
+        unreadOnly: params.unreadOnly ? true : undefined,
+      },
+    },
+  );
+  return data ?? { content: [], nextCursor: null, hasNext: false };
 }

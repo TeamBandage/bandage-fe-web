@@ -2,7 +2,7 @@
 
 import { Bell, CheckCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type UIEvent } from 'react';
 
 import { cn } from '@/lib/cn';
 import { formatRelative } from '@/lib/date';
@@ -38,7 +38,9 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const { data: notifications = [], isLoading } = useMyNotifications();
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useMyNotifications(true);
+  const notifications = data?.pages.flatMap((p) => p.content) ?? [];
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
@@ -54,6 +56,14 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
+
+  function handleScroll(e: UIEvent<HTMLUListElement>) {
+    if (!hasNextPage || isFetchingNextPage) return;
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+      fetchNextPage();
+    }
+  }
 
   function handleNotificationClick(
     notificationId: string,
@@ -118,14 +128,14 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
           {placement === 'topbar' && (
             <span className="bg-card border-border absolute -top-2 right-4 h-4 w-4 rotate-45 border-t border-l" />
           )}
-          <div className="border-border flex items-center justify-between border-b px-4 py-3">
+          <div className="border-border flex items-center justify-between gap-2 border-b px-4 py-3">
             <span className="text-foreground text-sm font-semibold">알림</span>
             {unreadCount > 0 && (
               <button
                 type="button"
                 onClick={() => markAllAsRead.mutate()}
                 disabled={markAllAsRead.isPending}
-                className="text-foreground-muted hover:text-foreground flex items-center gap-1 text-xs transition-colors disabled:opacity-50"
+                className="text-foreground-muted hover:text-foreground flex shrink-0 items-center gap-1 text-xs transition-colors disabled:opacity-50"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 전체 읽음
@@ -133,12 +143,12 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
             )}
           </div>
 
-          <ul className="flex-1 overflow-y-auto">
+          <ul className="flex-1 overflow-y-auto" onScroll={handleScroll}>
             {isLoading ? (
               <li className="text-foreground-muted px-4 py-8 text-center text-sm">불러오는 중…</li>
             ) : notifications.length === 0 ? (
               <li className="text-foreground-muted px-4 py-8 text-center text-sm">
-                알림이 없습니다.
+                읽지 않은 알림이 없습니다.
               </li>
             ) : (
               notifications.map((n) => {
@@ -184,6 +194,9 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
                   </li>
                 );
               })
+            )}
+            {isFetchingNextPage && (
+              <li className="text-foreground-muted px-4 py-3 text-center text-xs">불러오는 중…</li>
             )}
           </ul>
         </div>
