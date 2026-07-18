@@ -2,7 +2,7 @@
 
 import { Bell, CheckCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type UIEvent } from 'react';
 
 import { cn } from '@/lib/cn';
 import { formatRelative } from '@/lib/date';
@@ -38,7 +38,9 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const { data: notifications = [], isLoading } = useMyNotifications(true);
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useMyNotifications(true);
+  const notifications = data?.pages.flatMap((p) => p.content) ?? [];
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
@@ -54,6 +56,14 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
+
+  function handleScroll(e: UIEvent<HTMLUListElement>) {
+    if (!hasNextPage || isFetchingNextPage) return;
+    const el = e.currentTarget;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+      fetchNextPage();
+    }
+  }
 
   function handleNotificationClick(
     notificationId: string,
@@ -133,7 +143,7 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
             )}
           </div>
 
-          <ul className="flex-1 overflow-y-auto">
+          <ul className="flex-1 overflow-y-auto" onScroll={handleScroll}>
             {isLoading ? (
               <li className="text-foreground-muted px-4 py-8 text-center text-sm">불러오는 중…</li>
             ) : notifications.length === 0 ? (
@@ -184,6 +194,9 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
                   </li>
                 );
               })
+            )}
+            {isFetchingNextPage && (
+              <li className="text-foreground-muted px-4 py-3 text-center text-xs">불러오는 중…</li>
             )}
           </ul>
         </div>

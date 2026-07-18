@@ -3,11 +3,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/global/config/queryKeys';
+import type { CursorResponse } from '@/global/types';
 
 import type { NotificationResponse, UnreadNotificationCountResponse } from '../types/res';
 import { markAllAsRead } from '../api/markAllAsRead';
 
-type ListEntry = [readonly unknown[], NotificationResponse[] | undefined];
+type ListData = { pages: CursorResponse<NotificationResponse, string>[]; pageParams: unknown[] };
+type ListEntry = [readonly unknown[], ListData | undefined];
 
 const listQueryKey = [...queryKeys.notification.all, 'list'];
 
@@ -24,18 +26,24 @@ export function useMarkAllAsRead() {
       await queryClient.cancelQueries({ queryKey: listQueryKey });
       await queryClient.cancelQueries({ queryKey: queryKeys.notification.unreadCount() });
 
-      const prevLists: ListEntry[] = queryClient.getQueriesData<NotificationResponse[]>({
+      const prevLists: ListEntry[] = queryClient.getQueriesData<ListData>({
         queryKey: listQueryKey,
       });
       const prevCount = queryClient.getQueryData<UnreadNotificationCountResponse>(
         queryKeys.notification.unreadCount(),
       );
 
-      // unreadOnly 캐시는 전체 읽음 처리 시 비우고, 전체 캐시는 read 플래그만 전부 갱신.
+      // unreadOnly 캐시는 전체 읽음 처리 시 모든 페이지를 비우고, 전체 캐시는 read 플래그만 갱신.
       prevLists.forEach(([key, data]) => {
         if (!data) return;
-        const next = isUnreadOnlyKey(key) ? [] : data.map((n) => ({ ...n, read: true }));
-        queryClient.setQueryData(key, next);
+        const unreadOnly = isUnreadOnlyKey(key);
+        queryClient.setQueryData<ListData>(key, {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            content: unreadOnly ? [] : page.content.map((n) => ({ ...n, read: true })),
+          })),
+        });
       });
       queryClient.setQueryData<UnreadNotificationCountResponse>(
         queryKeys.notification.unreadCount(),
