@@ -11,6 +11,7 @@ import { ROUTES } from '@/global/config/routes';
 import { useMarkAllAsRead } from '../hooks/useMarkAllAsRead';
 import { useMarkAsRead } from '../hooks/useMarkAsRead';
 import { useMyNotifications } from '../hooks/useMyNotifications';
+import { useUnreadCount } from '../hooks/useUnreadCount';
 import type { NotifyCategory } from '../types/res';
 
 interface Props {
@@ -44,7 +45,9 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // 프론트에서 페이지네이션된 목록을 세는 건 부정확 — 전용 API로 정확한 미확인 개수를 받는다.
+  const { data: unreadCountData } = useUnreadCount();
+  const unreadCount = unreadCountData?.count ?? 0;
 
   useEffect(() => {
     if (!open) return;
