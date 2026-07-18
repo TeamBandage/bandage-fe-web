@@ -35,10 +35,11 @@ function resolveHref(category: NotifyCategory, referenceId: string): string | nu
 
 export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
   const [open, setOpen] = useState(false);
+  const [unreadOnly, setUnreadOnly] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const { data: notifications = [], isLoading } = useMyNotifications();
+  const { data: notifications = [], isLoading } = useMyNotifications(unreadOnly);
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
@@ -118,14 +119,44 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
           {placement === 'topbar' && (
             <span className="bg-card border-border absolute -top-2 right-4 h-4 w-4 rotate-45 border-t border-l" />
           )}
-          <div className="border-border flex items-center justify-between border-b px-4 py-3">
-            <span className="text-foreground text-sm font-semibold">알림</span>
+          <div className="border-border flex items-center justify-between gap-2 border-b px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="text-foreground text-sm font-semibold">알림</span>
+              <div className="bg-surface gap-s-0.5 flex items-center rounded-full p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setUnreadOnly(false)}
+                  aria-pressed={!unreadOnly}
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-xs font-medium transition-colors',
+                    !unreadOnly
+                      ? 'bg-card text-foreground'
+                      : 'text-foreground-muted hover:text-foreground',
+                  )}
+                >
+                  전체
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUnreadOnly(true)}
+                  aria-pressed={unreadOnly}
+                  className={cn(
+                    'rounded-full px-2 py-0.5 text-xs font-medium transition-colors',
+                    unreadOnly
+                      ? 'bg-card text-foreground'
+                      : 'text-foreground-muted hover:text-foreground',
+                  )}
+                >
+                  안 읽음
+                </button>
+              </div>
+            </div>
             {unreadCount > 0 && (
               <button
                 type="button"
                 onClick={() => markAllAsRead.mutate()}
                 disabled={markAllAsRead.isPending}
-                className="text-foreground-muted hover:text-foreground flex items-center gap-1 text-xs transition-colors disabled:opacity-50"
+                className="text-foreground-muted hover:text-foreground flex shrink-0 items-center gap-1 text-xs transition-colors disabled:opacity-50"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
                 전체 읽음
@@ -138,7 +169,7 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
               <li className="text-foreground-muted px-4 py-8 text-center text-sm">불러오는 중…</li>
             ) : notifications.length === 0 ? (
               <li className="text-foreground-muted px-4 py-8 text-center text-sm">
-                알림이 없습니다.
+                {unreadOnly ? '읽지 않은 알림이 없습니다.' : '알림이 없습니다.'}
               </li>
             ) : (
               notifications.map((n) => {

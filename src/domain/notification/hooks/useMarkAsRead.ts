@@ -7,43 +7,55 @@ import { queryKeys } from '@/global/config/queryKeys';
 import type { NotificationResponse, UnreadNotificationCountResponse } from '../types/res';
 import { markAsRead } from '../api/markAsRead';
 
+type ListEntry = [readonly unknown[], NotificationResponse[] | undefined];
+
+const listQueryKey = [...queryKeys.notification.all, 'list'];
+
+/** 캐시 키의 unreadOnly 위치(list 캐시 키의 3번째 요소)로 목록 종류를 판별. */
+function isUnreadOnlyKey(key: readonly unknown[]): boolean {
+  return key[2] === true;
+}
+
 export function useMarkAsRead() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
     mutationFn: markAsRead,
     onMutate: async (notificationId) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.notification.list() });
+      await queryClient.cancelQueries({ queryKey: listQueryKey });
       await queryClient.cancelQueries({ queryKey: queryKeys.notification.unreadCount() });
 
-      const prevList = queryClient.getQueryData<NotificationResponse[]>(
-        queryKeys.notification.list(),
-      );
+      const prevLists: ListEntry[] = queryClient.getQueriesData<NotificationResponse[]>({
+        queryKey: listQueryKey,
+      });
       const prevCount = queryClient.getQueryData<UnreadNotificationCountResponse>(
         queryKeys.notification.unreadCount(),
       );
 
-      // useMyNotifications 는 미읽음만 반환하므로 읽음 처리된 항목은 캐시에서 제거한다.
-      queryClient.setQueryData<NotificationResponse[]>(queryKeys.notification.list(), (prev) =>
-        prev?.filter((n) => n.id !== notificationId),
-      );
+      // unreadOnly 캐시는 읽음 처리된 항목을 제거, 전체 캐시는 read 플래그만 갱신.
+      prevLists.forEach(([key, data]) => {
+        if (!data) return;
+        const next = isUnreadOnlyKey(key)
+          ? data.filter((n) => n.id !== notificationId)
+          : data.map((n) => (n.id === notificationId ? { ...n, read: true } : n));
+        queryClient.setQueryData(key, next);
+      });
       queryClient.setQueryData<UnreadNotificationCountResponse>(
         queryKeys.notification.unreadCount(),
         (prev) => (prev ? { count: Math.max(0, prev.count - 1) } : prev),
       );
 
-      return { prevList, prevCount };
+      return { prevLists, prevCount };
     },
     onError: (_err, _id, context) => {
       const ctx = context as
-        | { prevList?: NotificationResponse[]; prevCount?: UnreadNotificationCountResponse }
+        | { prevLists?: ListEntry[]; prevCount?: UnreadNotificationCountResponse }
         | undefined;
-      if (ctx?.prevList !== undefined)
-        queryClient.setQueryData(queryKeys.notification.list(), ctx.prevList);
+      ctx?.prevLists?.forEach(([key, data]) => queryClient.setQueryData(key, data));
       if (ctx?.prevCount !== undefined)
         queryClient.setQueryData(queryKeys.notification.unreadCount(), ctx.prevCount);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notification.list() });
+      queryClient.invalidateQueries({ queryKey: listQueryKey });
       queryClient.invalidateQueries({ queryKey: queryKeys.notification.unreadCount() });
     },
   });

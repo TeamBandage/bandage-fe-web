@@ -10,13 +10,13 @@ import type { NotificationResponse } from '../types/res';
 
 const PAGE_SIZE = 50;
 
-export function useMyNotifications() {
+export function useMyNotifications(unreadOnly?: boolean) {
   const authenticated = useIsAuthenticated();
   return useQuery<NotificationResponse[], Error>({
-    queryKey: queryKeys.notification.list(),
+    queryKey: queryKeys.notification.list(unreadOnly),
     queryFn: async () => {
-      const page = await getMyNotifications({ pageSize: PAGE_SIZE });
-      return page.content.filter((n) => !n.read);
+      const page = await getMyNotifications({ pageSize: PAGE_SIZE, unreadOnly });
+      return page.content;
     },
     enabled: authenticated,
     staleTime: 30 * 1000,

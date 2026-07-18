@@ -35,7 +35,8 @@ export const queryKeys = {
   },
   notification: {
     all: ['notification'] as const,
-    list: () => [...queryKeys.notification.all, 'list'] as const,
+    list: (unreadOnly?: boolean) =>
+      [...queryKeys.notification.all, 'list', unreadOnly ?? false] as const,
     unreadCount: () => [...queryKeys.notification.all, 'unread-count'] as const,
   },
   setlist: {
