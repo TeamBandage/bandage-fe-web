@@ -37,7 +37,7 @@ type Actions = {
   deleteSong: (songId: string) => void;
   updateSong: (
     songId: string,
-    patch: Partial<Pick<Song, 'title' | 'artist' | 'album' | 'duration' | 'note'>> & {
+    patch: Partial<Pick<Song, 'title' | 'artist' | 'album' | 'duration' | 'note' | 'reference'>> & {
       sessions?: SessionDef[];
     },
   ) => void;

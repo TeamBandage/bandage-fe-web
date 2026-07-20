@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ChevronRight, Crown, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Crown } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -26,8 +26,6 @@ export interface SessionPanelProps {
   members: Member[];
   /** 실 API 기준 매니저 여부 — 미전달 시 mock store fallback */
   isManager?: boolean;
-  /** 모바일에서 닫기 버튼 노출용. 데스크톱은 항상 노출. */
-  onClose?: () => void;
 }
 
 export function SessionPanel({
@@ -35,7 +33,6 @@ export function SessionPanel({
   selectionId,
   members: rawMembers,
   isManager: isManagerProp,
-  onClose,
 }: SessionPanelProps) {
   // 배열 자체(stable ref) 만 select 하고 find 는 useMemo 로 — selector 내부 find/filter 는 매 렌더마다 새 참조라 무한 루프.
   const songs = useSetlistStore((s) => s.songs);
@@ -55,7 +52,7 @@ export function SessionPanel({
       id: currentUserId,
       name: me?.name ?? '나',
       role: '',
-      avatar: 'var(--color-accent)',
+      avatar: 'var(--color-border-hi)',
       profileImg: me?.profileImg ?? undefined,
     };
     return [...rawMembers, meMember];
@@ -98,16 +95,6 @@ export function SessionPanel({
           <div className="text-subtitle mt-s-1 truncate font-bold">{song.title}</div>
           <div className="text-foreground-sub text-caption mt-0.5">{song.artist}</div>
         </div>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-foreground-muted hover:text-foreground rounded-md p-1"
-            aria-label="패널 닫기"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
       </header>
 
       <div className="flex-1 overflow-y-auto">
@@ -202,8 +189,8 @@ function OverviewSessionView({
   return (
     <div className="px-s-5 py-s-4">
       {song.note && (
-        <div className="bg-accent-dim border-accent/25 px-s-4 py-s-3 mb-s-4 rounded-lg border">
-          <div className="text-accent text-micro font-bold">
+        <div className="px-s-4 py-s-3 mb-s-4 rounded-lg border border-white/25 bg-white/10">
+          <div className="text-micro font-bold text-white">
             추천자 의견 · {proposer?.name ?? '?'}
           </div>
           <p className="text-foreground text-caption mt-s-1 leading-relaxed">{song.note}</p>
@@ -233,7 +220,7 @@ function OverviewSessionView({
             id: uid,
             name: `멤버 #${uid}`,
             role: '',
-            avatar: 'var(--color-accent)',
+            avatar: 'var(--color-border-hi)',
           });
           const confirmedMembers = conf.map(
             (uid) => members.find((m) => m.id === uid) ?? fallback(uid),
@@ -294,7 +281,7 @@ function OverviewSessionView({
                           <MemberAvatar member={m} size="sm" className="-ml-1" />
                           <span className="text-caption font-semibold">{m.name}</span>
                           {m.id === currentUserId && (
-                            <span className="text-accent text-micro font-bold">나</span>
+                            <span className="text-micro font-bold text-white">나</span>
                           )}
                           <span className="text-success text-micro font-bold">확정</span>
                         </span>
@@ -322,7 +309,7 @@ function OverviewSessionView({
                       <span className="text-foreground-muted text-micro">미확정 · 지원자 없음</span>
                     )}
                     {isMine && !isMineConfirmed && (
-                      <span className="bg-accent-dim text-accent text-micro px-s-2 rounded-full py-0.5 font-bold">
+                      <span className="text-micro px-s-2 rounded-full bg-white/10 py-0.5 font-bold text-white">
                         내 지원
                       </span>
                     )}
@@ -447,7 +434,7 @@ function FocusedSessionView({
                   <div className="text-caption gap-s-2 flex items-center font-semibold">
                     <span className="truncate">{m?.name ?? '?'}</span>
                     {uid === currentUserId && (
-                      <span className="text-accent text-micro font-bold">나</span>
+                      <span className="text-micro font-bold text-white">나</span>
                     )}
                     {m?.role && (
                       <span className="text-foreground-muted text-micro">· {m.role}</span>
@@ -473,6 +460,7 @@ function FocusedSessionView({
                       variant="primary"
                       disabled={isFull}
                       onClick={() => onConfirm(uid)}
+                      className="bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
                     >
                       확정
                     </Button>
@@ -493,7 +481,12 @@ function FocusedSessionView({
             지원 취소
           </Button>
         ) : (
-          <Button variant="primary" className="w-full" onClick={onApply} disabled={isFull}>
+          <Button
+            variant="primary"
+            className="w-full bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+            onClick={onApply}
+            disabled={isFull}
+          >
             {isFull ? '확정 완료된 세션입니다' : '이 세션 지원하기'}
           </Button>
         )}

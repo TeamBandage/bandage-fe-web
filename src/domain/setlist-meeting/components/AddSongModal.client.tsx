@@ -53,9 +53,17 @@ const PRESETS: Record<string, SessionDef> = {
   S2: { id: 'S2', label: '신스2', short: 'S2', need: 1 },
 };
 
-const PRESET_ROWS: ReadonlyArray<ReadonlyArray<string>> = [
-  ['V', 'G', 'G2', 'B', 'D'],
-  ['V2', 'G3', 'D2', 'S1', 'S2'],
+const PRESET_DISPLAY_ORDER: ReadonlyArray<string> = [
+  'V',
+  'G',
+  'G2',
+  'B',
+  'D',
+  'V2',
+  'G3',
+  'D2',
+  'S1',
+  'S2',
 ];
 
 const CANONICAL_ORDER: ReadonlyArray<string> = [
@@ -138,6 +146,7 @@ export function AddSongModal({
           artist: song.artist,
           album: song.album ?? '',
           note: song.note ?? '',
+          reference: song.reference ?? '',
         },
       };
     }
@@ -146,7 +155,13 @@ export function AddSongModal({
       extras: [] as SessionDef[],
       durationMm: '',
       durationSs: '',
-      formValues: { title: '', artist: '', album: '', note: '' } as AddSongSchema,
+      formValues: {
+        title: '',
+        artist: '',
+        album: '',
+        note: '',
+        reference: '',
+      } as AddSongSchema,
     };
   }, [song]);
 
@@ -157,10 +172,12 @@ export function AddSongModal({
   const [activePresetIds, setActivePresetIds] = useState<ReadonlyArray<string>>(initial.activeIds);
   const [extras, setExtras] = useState<SessionDef[]>(initial.extras);
   const [extraDraft, setExtraDraft] = useState('');
+  const [extraShortDraft, setExtraShortDraft] = useState('');
   const [durationMm, setDurationMm] = useState(initial.durationMm);
   const [durationSs, setDurationSs] = useState(initial.durationSs);
   const ssInputRef = useRef<HTMLInputElement | null>(null);
   const titleRef = useRef<HTMLInputElement | null>(null);
+  const extraShortInputRef = useRef<HTMLInputElement | null>(null);
 
   const updateSong = useSetlistStore((s) => s.updateSong);
   const toast = useToast();
@@ -183,6 +200,7 @@ export function AddSongModal({
     setActivePresetIds(initial.activeIds);
     setExtras(initial.extras);
     setExtraDraft('');
+    setExtraShortDraft('');
     setDurationMm(initial.durationMm);
     setDurationSs(initial.durationSs);
     form.reset(initial.formValues);
@@ -191,7 +209,7 @@ export function AddSongModal({
 
   /** 다음 곡 입력을 위해 폼/duration 만 비움. 세션/extras/keepOpen 은 유지. */
   const resetForNext = () => {
-    form.reset({ title: '', artist: '', album: '', note: '' });
+    form.reset({ title: '', artist: '', album: '', note: '', reference: '' });
     setDurationMm('');
     setDurationSs('');
     // 다음 입력에 즉시 포커스.
@@ -212,19 +230,17 @@ export function AddSongModal({
   }, [activePresetIds, extras]);
 
   const addExtra = () => {
-    const cleaned = extraDraft
-      .trim()
-      .toUpperCase()
-      .replace(/[^A-Z]/g, '');
-    if (!cleaned) return;
-    const id = `X_${cleaned}`;
-    const short = cleaned.slice(0, 2);
-    if (composedSessions.some((s) => s.id === id || s.short === short || s.label === cleaned)) {
-      toast.warn('이미 같은 라벨의 세션이 있습니다.');
+    const label = extraDraft.trim();
+    const short = extraShortDraft.trim().toUpperCase();
+    if (!label || !short) return;
+    const id = short;
+    if (composedSessions.some((s) => s.id === id || s.short === short || s.label === label)) {
+      toast.warn('이미 같은 라벨 또는 약어의 세션이 있습니다.');
       return;
     }
-    setExtras((prev) => [...prev, { id, label: cleaned, short, need: 1, custom: true }]);
+    setExtras((prev) => [...prev, { id, label, short, need: 1, custom: true }]);
     setExtraDraft('');
+    setExtraShortDraft('');
   };
 
   const removeExtra = (id: string) => setExtras((prev) => prev.filter((s) => s.id !== id));
@@ -256,6 +272,7 @@ export function AddSongModal({
             album: values.album || undefined,
             duration,
             note: values.note || undefined,
+            reference: values.reference || undefined,
             sessions: sessionDtos,
           },
         });
@@ -265,6 +282,7 @@ export function AddSongModal({
           album: values.album || undefined,
           duration: durationStr !== '00:00' ? durationStr : undefined,
           note: values.note || undefined,
+          reference: values.reference || undefined,
           sessions: composedSessions,
         });
         toast.success('곡 정보가 수정되었습니다.');
@@ -282,6 +300,7 @@ export function AddSongModal({
         album: values.album || undefined,
         duration,
         note: values.note || undefined,
+        reference: values.reference || undefined,
         sessions: sessionDtos,
       });
       toast.success('곡이 추가되었습니다.');
@@ -296,7 +315,9 @@ export function AddSongModal({
   });
 
   // Enter 로 다음 입력 필드 포커스 이동. 마지막 ss 까지 가면 더 이상 이동하지 않고 유지(submit 은 버튼).
-  const advanceTo = (target: 'artist' | 'album' | 'mmInput' | 'ssInput' | 'note') => {
+  const advanceTo = (
+    target: 'artist' | 'album' | 'mmInput' | 'ssInput' | 'reference' | 'note' | 'extraShort',
+  ) => {
     if (target === 'mmInput') {
       // mm input ref 는 별도로 관리하지 않음 — 그냥 album 다음은 ss 또는 note 로.
       return;
@@ -305,11 +326,16 @@ export function AddSongModal({
       ssInputRef.current?.focus();
       return;
     }
+    if (target === 'extraShort') {
+      extraShortInputRef.current?.focus();
+      return;
+    }
     form.setFocus(target);
   };
 
   const onEnterAdvance =
-    (next: 'artist' | 'album' | 'ssInput' | 'note') => (e: KeyboardEvent<HTMLInputElement>) => {
+    (next: 'artist' | 'album' | 'ssInput' | 'reference' | 'note') =>
+    (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key !== 'Enter') return;
       if (e.nativeEvent.isComposing) return;
       e.preventDefault();
@@ -327,7 +353,7 @@ export function AddSongModal({
     if (e.key !== 'Enter') return;
     if (e.nativeEvent.isComposing) return;
     e.preventDefault();
-    form.setFocus('note');
+    form.setFocus('reference');
   };
 
   // 외부 곡 DB mock 검색. 향후 SONG 검색 API 도입 시 fetcher 만 교체.
@@ -357,6 +383,7 @@ export function AddSongModal({
           setActivePresetIds(initial.activeIds);
           setExtras(initial.extras);
           setExtraDraft('');
+          setExtraShortDraft('');
           setDurationMm(initial.durationMm);
           setDurationSs(initial.durationSs);
           setMode('manual');
@@ -366,7 +393,7 @@ export function AddSongModal({
       }}
     >
       {trigger && <ResponsiveSheetTrigger asChild>{trigger}</ResponsiveSheetTrigger>}
-      <ResponsiveSheetContent>
+      <ResponsiveSheetContent className="sm:max-w-2xl">
         <ResponsiveSheetHeader>
           <ResponsiveSheetTitle>{isEdit ? '곡 수정' : '곡 추가'}</ResponsiveSheetTitle>
         </ResponsiveSheetHeader>
@@ -389,7 +416,7 @@ export function AddSongModal({
                       className={cn(
                         'px-s-1 -mb-px h-10 border-b-2 text-sm font-semibold transition-colors',
                         active
-                          ? 'border-accent text-accent'
+                          ? 'border-white text-white'
                           : 'text-foreground-sub hover:text-foreground border-transparent',
                       )}
                     >
@@ -403,27 +430,28 @@ export function AddSongModal({
             <div className="gap-s-3 flex flex-col">
               {mode === 'manual' || isEdit ? (
                 <div className="gap-s-3 flex flex-col">
-                  <Input
-                    label="곡명"
-                    required
-                    error={form.formState.errors.title?.message}
-                    placeholder="예: Vicarious"
-                    autoFocus
-                    {...form.register('title')}
-                    ref={(el) => {
-                      form.register('title').ref(el);
-                      titleRef.current = el;
-                    }}
-                    onKeyDown={onEnterAdvance('artist')}
-                  />
-                  <Input
-                    label="아티스트"
-                    required
-                    error={form.formState.errors.artist?.message}
-                    placeholder="예: Tool"
-                    {...form.register('artist')}
-                    onKeyDown={onEnterAdvance('album')}
-                  />
+                  <div className="gap-s-3 grid grid-cols-1 sm:grid-cols-2">
+                    <Input
+                      label="곡명"
+                      required
+                      error={form.formState.errors.title?.message}
+                      placeholder="예: Vicarious"
+                      {...form.register('title')}
+                      ref={(el) => {
+                        form.register('title').ref(el);
+                        titleRef.current = el;
+                      }}
+                      onKeyDown={onEnterAdvance('artist')}
+                    />
+                    <Input
+                      label="아티스트"
+                      required
+                      error={form.formState.errors.artist?.message}
+                      placeholder="예: Tool"
+                      {...form.register('artist')}
+                      onKeyDown={onEnterAdvance('album')}
+                    />
+                  </div>
                   <div className="gap-s-3 flex">
                     <div className="flex-1">
                       <Input
@@ -436,7 +464,7 @@ export function AddSongModal({
                     </div>
                     <div>
                       <label className="text-foreground text-sm font-medium">재생 시간</label>
-                      <div className="bg-surface border-border focus-within:ring-accent focus-within:ring-offset-bg gap-s-1 px-s-3 mt-1.5 flex h-10 items-center rounded-md border focus-within:ring-2 focus-within:ring-offset-2">
+                      <div className="bg-surface border-border hover:border-border-hi gap-s-1 px-s-3 mt-2.5 flex h-10 items-center rounded-[5px] border transition-colors focus-within:border-white/70">
                         <input
                           type="text"
                           inputMode="numeric"
@@ -476,11 +504,18 @@ export function AddSongModal({
                       </div>
                     </div>
                   </div>
+                  <Input
+                    label="참고 링크"
+                    error={form.formState.errors.reference?.message}
+                    placeholder="예: https://youtube.com/..."
+                    {...form.register('reference')}
+                    onKeyDown={onEnterAdvance('note')}
+                  />
                 </div>
               ) : (
                 <div>
                   <label className="text-foreground text-sm font-medium">곡 검색</label>
-                  <div className="bg-surface border-border gap-s-2 px-s-3 focus-within:ring-accent focus-within:ring-offset-bg mt-1.5 flex h-10 items-center rounded-md border focus-within:ring-2 focus-within:ring-offset-2">
+                  <div className="bg-surface border-border hover:border-border-hi gap-s-2 px-s-3 mt-2.5 flex h-10 items-center rounded-[5px] border transition-colors focus-within:border-white/70">
                     <Search className="text-foreground-muted h-4 w-4 shrink-0" />
                     <input
                       type="search"
@@ -542,90 +577,104 @@ export function AddSongModal({
                   세션 구성
                 </div>
                 <div className="text-foreground-muted text-micro mb-s-2">
-                  자주 쓰는 세션을 토글하고, 필요하면 알파벳 라벨로 커스텀 세션을 추가하세요.
+                  자주 쓰는 세션을 토글하고, 필요하면 라벨과 약어를 직접 입력해 커스텀 세션을
+                  추가하세요.
                 </div>
 
                 <div className="gap-s-2 flex flex-col">
-                  {PRESET_ROWS.map((row, rowIdx) => (
-                    <div key={rowIdx} className="gap-s-2 flex flex-wrap">
-                      {row.map((id) => {
-                        const p = PRESETS[id]!;
-                        const active = activePresetIds.includes(id);
-                        return (
+                  <div className="gap-s-2 flex flex-wrap">
+                    {PRESET_DISPLAY_ORDER.map((id) => {
+                      const p = PRESETS[id]!;
+                      const active = activePresetIds.includes(id);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => togglePreset(id)}
+                          aria-pressed={active}
+                          className={cn(
+                            'px-s-3 py-s-1 text-caption rounded-md border font-mono font-bold transition-colors',
+                            active
+                              ? 'border-white/40 bg-white/10 text-white'
+                              : 'bg-card border-border text-foreground-muted hover:border-border-hi',
+                          )}
+                        >
+                          {p.short}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {extras.length > 0 && (
+                    <div className="gap-s-2 flex flex-wrap">
+                      {extras.map((s) => (
+                        <span
+                          key={s.id}
+                          title={s.label}
+                          className="px-s-2 py-s-1 text-caption gap-s-1 inline-flex items-center rounded-md border border-white/40 bg-white/10 font-mono font-bold text-white"
+                        >
+                          {s.short}
                           <button
-                            key={id}
                             type="button"
-                            onClick={() => togglePreset(id)}
-                            aria-pressed={active}
-                            className={cn(
-                              'px-s-3 py-s-1 text-caption rounded-md border font-mono font-bold transition-colors',
-                              active
-                                ? 'bg-accent-dim border-accent/40 text-accent'
-                                : 'bg-card border-border text-foreground-muted hover:border-border-hi',
-                            )}
+                            onClick={() => removeExtra(s.id)}
+                            aria-label={`${s.label} 세션 제거`}
+                            className="hover:text-danger"
                           >
-                            {p.short}
+                            <X className="h-3 w-3" />
                           </button>
-                        );
-                      })}
+                        </span>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <div className="gap-s-2 mt-s-3 flex items-end">
                   <div className="flex-1">
                     <Input
                       value={extraDraft}
+                      onChange={(e) => setExtraDraft(e.target.value.slice(0, 20))}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter') return;
+                        e.preventDefault();
+                        advanceTo('extraShort');
+                      }}
+                      placeholder="예: Guitar 2"
+                      aria-label="세션 이름"
+                      autoComplete="off"
+                      maxLength={20}
+                    />
+                  </div>
+                  <div className="w-20">
+                    <Input
+                      ref={extraShortInputRef}
+                      value={extraShortDraft}
                       onChange={(e) =>
-                        setExtraDraft(
+                        setExtraShortDraft(
                           e.target.value
                             .toUpperCase()
-                            .replace(/[^A-Z]/g, '')
-                            .slice(0, 10),
+                            .replace(/[^A-Z0-9]/g, '')
+                            .slice(0, 3),
                         )
                       }
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          addExtra();
-                        }
+                        if (e.key !== 'Enter') return;
+                        e.preventDefault();
+                        addExtra();
                       }}
-                      placeholder="커스텀 세션 라벨 (영문 최대 10자, 표시는 앞 2자)"
+                      placeholder="예: G2"
+                      aria-label="약어"
                       autoComplete="off"
-                      maxLength={10}
+                      maxLength={3}
                     />
                   </div>
                   <Button
                     type="button"
                     variant="secondary"
-                    size="sm"
                     onClick={addExtra}
-                    disabled={!extraDraft}
+                    disabled={!extraDraft || !extraShortDraft}
                   >
                     <Plus className="h-4 w-4" /> 추가
                   </Button>
                 </div>
-                {extras.length > 0 && (
-                  <ul className="gap-s-2 mt-s-2 flex flex-wrap">
-                    {extras.map((s) => (
-                      <li
-                        key={s.id}
-                        className="bg-amber-dim text-amber border-amber/30 px-s-2 gap-s-1 text-micro inline-flex items-center rounded-full border py-0.5 font-bold"
-                      >
-                        {s.label}
-                        <button
-                          type="button"
-                          onClick={() => removeExtra(s.id)}
-                          aria-label={`${s.label} 세션 제거`}
-                          className="hover:text-foreground"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
                 {composedSessions.length === 0 && (
                   <p className="text-danger text-micro mt-s-2">최소 1개 세션을 선택하세요.</p>
                 )}
@@ -636,11 +685,12 @@ export function AddSongModal({
                 error={form.formState.errors.note?.message}
                 rows={3}
                 placeholder="이 곡을 추천하는 이유, 합주 시 유의사항 등"
+                className="rounded-[5px] focus-visible:border-white/70 focus-visible:ring-0"
                 {...form.register('note')}
               />
             </div>
           </ResponsiveSheetBody>
-          <ResponsiveSheetFooter>
+          <ResponsiveSheetFooter className="border-t-0">
             {/* 새로 추가 모드일 때만 '계속 추가' 토글 노출. */}
             {!isEdit && (
               <label className="text-foreground-sub gap-s-2 text-caption mr-auto inline-flex cursor-pointer items-center">
@@ -648,17 +698,23 @@ export function AddSongModal({
                   type="checkbox"
                   checked={keepOpen}
                   onChange={(e) => setKeepOpen(e.target.checked)}
-                  className="accent-accent h-4 w-4"
+                  className="h-4 w-4 accent-white"
                 />
                 계속해서 추가하기
               </label>
             )}
             <ResponsiveSheetClose asChild>
-              <Button type="button" variant="ghost">
+              <Button type="button" variant="ghost" size="sm" className="rounded-[5px]">
                 취소
               </Button>
             </ResponsiveSheetClose>
-            <Button type="submit" variant="primary" disabled={!canSubmit}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={!canSubmit}
+              className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+            >
               {isEdit ? '저장' : keepOpen ? '다음 곡 추가' : '곡 추가'}
             </Button>
           </ResponsiveSheetFooter>

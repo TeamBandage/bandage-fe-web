@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowUp, ArrowUpDown, Check, Pencil, Star, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Pencil, Pin, Trash2 } from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 
@@ -42,9 +42,9 @@ function memberName(members: Member[], id: string, currentUserId?: string): stri
 function SortIcon({ active, dir }: { active: boolean; dir: SongSortDir }) {
   if (!active) return <ArrowUpDown className="text-foreground-muted ml-s-1 inline h-3 w-3" />;
   return dir === 'asc' ? (
-    <ArrowUp className="text-accent ml-s-1 inline h-3 w-3" />
+    <ArrowUp className="ml-s-1 inline h-3 w-3 text-white" />
   ) : (
-    <ArrowDown className="text-accent ml-s-1 inline h-3 w-3" />
+    <ArrowDown className="ml-s-1 inline h-3 w-3 text-white" />
   );
 }
 
@@ -139,7 +139,7 @@ export function SongTable({
                 className={cn(
                   'border-border hover:bg-card cursor-pointer border-b transition-colors',
                   ready && 'border-l-success bg-success-dim/30 border-l-[3px]',
-                  selected && 'bg-accent-dim border-l-accent border-l-[3px]',
+                  selected && 'border-l-[3px] border-l-white bg-white/10',
                 )}
               >
                 <td className="px-s-3 py-s-2 text-foreground-muted text-micro text-center font-mono tabular-nums">
@@ -204,7 +204,7 @@ export function SongTable({
                       aria-valuemax={100}
                     >
                       <div
-                        className={cn('h-full', ready ? 'bg-success' : 'bg-accent')}
+                        className={cn('h-full', ready ? 'bg-success' : 'bg-white')}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -227,7 +227,7 @@ export function SongTable({
                 </td>
                 <td className="px-s-3 py-s-2 align-middle">
                   {(() => {
-                    // 잠긴 후: 선택된 곡은 읽기 전용 별표로 표시, 수정/삭제 불가.
+                    // 잠긴 후: 선택된 곡은 읽기 전용 핀으로 표시, 수정/삭제 불가.
                     if (isLocked) {
                       if (!song.isSelected) return null;
                       return (
@@ -237,7 +237,7 @@ export function SongTable({
                             title="셋리스트에 포함된 곡"
                             className="text-warn inline-flex h-7 w-7 items-center justify-center"
                           >
-                            <Star className="h-4 w-4" fill="currentColor" />
+                            <Pin className="h-4 w-4" fill="currentColor" />
                           </span>
                         </div>
                       );
@@ -266,7 +266,7 @@ export function SongTable({
                                 : 'text-foreground-muted hover:text-warn',
                             )}
                           >
-                            <Star
+                            <Pin
                               className="h-4 w-4"
                               fill={song.isSelected ? 'currentColor' : 'none'}
                             />
@@ -290,7 +290,7 @@ export function SongTable({
                               'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
                               editLocked
                                 ? 'text-foreground-muted/40 cursor-not-allowed'
-                                : 'text-foreground-muted hover:bg-accent-dim hover:text-accent',
+                                : 'text-foreground-muted hover:bg-white/10 hover:text-white',
                             )}
                           >
                             <Pencil className="h-3.5 w-3.5" />

@@ -13,6 +13,12 @@ export const addSongSchema = z.object({
     .max(500)
     .optional()
     .or(z.literal('').transform(() => undefined)),
+  reference: z
+    .string()
+    .url('올바른 URL을 입력해 주세요.')
+    .max(500)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
 });
 export type AddSongSchema = z.infer<typeof addSongSchema>;
 

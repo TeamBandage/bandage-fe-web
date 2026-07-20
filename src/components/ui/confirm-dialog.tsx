@@ -58,15 +58,27 @@ export function ConfirmDialog({
             <p className="text-foreground-sub text-caption leading-relaxed">{description}</p>
           </DialogBody>
         )}
-        <DialogFooter>
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="border-t-0">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="rounded-[5px]"
+            onClick={() => onOpenChange(false)}
+          >
             {cancelLabel}
           </Button>
           <Button
             type="button"
             variant="primary"
+            size="sm"
             onClick={handleConfirm}
-            className={cn(tone === 'danger' && 'bg-danger hover:bg-danger/90 text-white')}
+            className={cn(
+              'rounded-[5px]',
+              tone === 'danger'
+                ? 'bg-danger hover:bg-danger/90 text-white'
+                : 'bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200',
+            )}
           >
             {confirmLabel}
           </Button>

@@ -35,6 +35,8 @@ export type Song = {
   duration?: string;
   proposerId: string;
   note?: string;
+  /** 참고 링크(URL). */
+  reference?: string;
   sessions: SessionDef[];
   /** sessionId → userId[]. */
   applicants: Record<string, string[]>;

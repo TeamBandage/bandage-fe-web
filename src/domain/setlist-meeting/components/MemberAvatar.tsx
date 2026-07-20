@@ -1,3 +1,6 @@
+import { useState } from 'react';
+
+import { normalizeProfileImgUrl } from '@/global/upload';
 import { cn } from '@/lib/cn';
 
 import type { Member } from '../types';
@@ -13,23 +16,32 @@ const sizeClasses: Record<'sm' | 'md', string> = {
   md: 'h-8 w-8 text-xs',
 };
 
-/**
- * 시드 mock 의 hex avatar 색을 반영한 원형 아바타.
- * 실제 사용자 아바타 도입 시 `Avatar` 로 일괄 치환 예정.
- */
 export function MemberAvatar({ member, size = 'md', className }: MemberAvatarProps) {
+  const [errored, setErrored] = useState(false);
   const initial = (member?.name?.[0] ?? '?').toUpperCase();
+  const src = normalizeProfileImgUrl(member?.profileImg);
+  const showImage = src && !errored;
+
   return (
     <span
-      aria-hidden="true"
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white select-none',
+        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-bold text-white select-none',
         sizeClasses[size],
         className,
       )}
-      style={{ background: member?.avatar ?? 'var(--color-accent)' }}
+      style={showImage ? undefined : { background: member?.avatar ?? 'var(--color-border-hi)' }}
     >
-      {initial}
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element -- 다양한 외부 origin 프로필 이미지를 허용해야 하므로 native img 사용
+        <img
+          src={src}
+          alt={member?.name ?? ''}
+          className="h-full w-full object-cover"
+          onError={() => setErrored(true)}
+        />
+      ) : (
+        <span aria-hidden="true">{initial}</span>
+      )}
     </span>
   );
 }

@@ -5,8 +5,8 @@ import {
   CheckCircle2,
   ListMusic,
   Lock,
-  PanelRightOpen,
   Pencil,
+  Pin,
   Plus,
   RotateCcw,
   Search,
@@ -20,6 +20,7 @@ import { ROUTES } from '@/global/config/routes';
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { RightSlidePanel } from '@/components/ui/right-slide-panel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddSongModal } from '@/domain/setlist-meeting/components/AddSongModal.client';
@@ -49,7 +50,6 @@ import { useCreateSetlist } from '@/domain/setlist/hooks/useCreateSetlist';
 import { useToast } from '@/hooks/useToast';
 import type { Song } from '@/domain/setlist-meeting/types';
 import { confirmedCount, isReady, totalNeed } from '@/domain/setlist-meeting/utils';
-import { cn } from '@/lib/cn';
 import { formatKst, parseKst } from '@/lib/date';
 
 type Filter = 'all' | 'ready' | 'pending' | 'mine';
@@ -108,7 +108,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
           id: String(memberId),
           name: p.member?.name ?? `멤버 #${memberId}`,
           role: '',
-          avatar: 'var(--color-accent)',
+          avatar: 'var(--color-border-hi)',
           profileImg: p.member?.profileImg,
         };
       }),
@@ -167,13 +167,6 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   // 곡 수정 / 삭제 다이얼로그 상태.
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [pendingDeleteSong, setPendingDeleteSong] = useState<Song | null>(null);
-  // 우측 패널 / 하단 채팅 순차 애니메이션:
-  //  - 오픈 시: 채팅이 먼저 슬라이드 업(0~200ms) → 끝나면 우측 패널 슬라이드 인(200~400ms)
-  //  - 닫기 시: 우측 패널이 먼저 슬라이드 아웃(0~200ms) → 끝나면 채팅 슬라이드 다운(200~400ms) → 480ms 후 unmount
-  // 결과: 우측 패널은 항상 채팅이 자리잡은 후에만 보이고, 채팅은 우측 패널이 사라진 후에야 사라짐.
-  const [chatMounted, setChatMounted] = useState(false);
-  const [chatSlideIn, setChatSlideIn] = useState(false);
-  const [panelSlideIn, setPanelSlideIn] = useState(false);
 
   useEffect(() => {
     setSelectedMeeting(meetingId);
@@ -190,28 +183,6 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
     const realSongs = itemsData.pages.flatMap((p) => p.content).map(toSong);
     setSongs(meetingId, realSongs);
   }, [itemsData, meetingId, setSongs]);
-
-  useEffect(() => {
-    if (sessionPanelOpen && selectedSongId) {
-      // 오픈 시퀀스: 채팅 먼저 → 200ms 후 우측 패널.
-      setChatMounted(true);
-      // 다음 프레임에 translate 클래스 변경(이전 mount 직후 transition 발동).
-      const enter = requestAnimationFrame(() => setChatSlideIn(true));
-      const panelTimer = setTimeout(() => setPanelSlideIn(true), 200);
-      return () => {
-        cancelAnimationFrame(enter);
-        clearTimeout(panelTimer);
-      };
-    }
-    // 클로즈 시퀀스: 우측 패널 먼저 → 200ms 후 채팅 슬라이드 다운 → 480ms 후 unmount.
-    setPanelSlideIn(false);
-    const chatOut = setTimeout(() => setChatSlideIn(false), 200);
-    const unmount = setTimeout(() => setChatMounted(false), 480);
-    return () => {
-      clearTimeout(chatOut);
-      clearTimeout(unmount);
-    };
-  }, [sessionPanelOpen, selectedSongId]);
 
   const stats = useMemo(() => {
     const total = allSongs.length;
@@ -343,7 +314,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   };
 
   return (
-    <div className="relative flex h-full">
+    <div className="flex h-full">
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="border-border px-s-5 py-s-4 border-b">
           <div className="min-w-0">
@@ -409,13 +380,33 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
           <div className="gap-s-3 mt-s-4 flex flex-col items-stretch md:flex-row md:flex-wrap md:items-center">
             <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
               <TabsList>
-                <TabsTrigger value="all">전체</TabsTrigger>
-                <TabsTrigger value="ready">합주 가능</TabsTrigger>
-                <TabsTrigger value="pending">모집 중</TabsTrigger>
-                <TabsTrigger value="mine">내 지원</TabsTrigger>
+                <TabsTrigger
+                  value="all"
+                  className="data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                >
+                  전체
+                </TabsTrigger>
+                <TabsTrigger
+                  value="ready"
+                  className="data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                >
+                  합주 가능
+                </TabsTrigger>
+                <TabsTrigger
+                  value="pending"
+                  className="data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                >
+                  모집 중
+                </TabsTrigger>
+                <TabsTrigger
+                  value="mine"
+                  className="data-[state=active]:bg-white data-[state=active]:text-neutral-900"
+                >
+                  내 지원
+                </TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border md:w-60">
+            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-[5px] border md:w-60">
               <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
               <input
                 type="search"
@@ -426,7 +417,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
               />
             </div>
-            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-md border md:w-52">
+            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 flex items-center rounded-[5px] border md:w-52">
               <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
               <input
                 type="search"
@@ -442,7 +433,12 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 <AddSongModal
                   meetingId={meetingId}
                   trigger={
-                    <Button size="sm" variant="primary" aria-label="새 곡 추가">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      aria-label="새 곡 추가"
+                      className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200"
+                    >
                       <Plus className="h-4 w-4" /> 곡 추가
                     </Button>
                   }
@@ -454,6 +450,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                   variant="secondary"
                   onClick={() => setShowParticipantsModal(true)}
                   aria-label="참여자 관리"
+                  className="rounded-[5px]"
                 >
                   <Users className="h-4 w-4" /> 참여자
                 </Button>
@@ -464,7 +461,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                   variant="primary"
                   onClick={() => setPendingLockAction('lock')}
                   aria-label="선곡 확정"
-                  className="bg-success hover:bg-success/90 text-white"
+                  className="bg-success hover:bg-success/90 rounded-[5px] text-white"
                 >
                   <CheckCircle2 className="h-4 w-4" /> 선곡 확정
                 </Button>
@@ -480,6 +477,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                   disabled={!hasSelectedSongs}
                   aria-label="셋리스트 생성"
                   aria-disabled={!hasSelectedSongs}
+                  className="bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
                 >
                   <ListMusic className="h-4 w-4" /> 셋리스트 생성
                 </Button>
@@ -507,12 +505,17 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 {isManager && hasSelectedSongs && (
                   <>
                     {' '}
-                    ★ 표시된 {allSongs.filter((s) => s.isSelected).length}곡으로 셋리스트를 생성할
-                    수 있습니다.
+                    <Pin className="-mt-0.5 inline h-3 w-3" fill="currentColor" /> 표시된{' '}
+                    {allSongs.filter((s) => s.isSelected).length}곡으로 셋리스트를 생성할 수
+                    있습니다.
                   </>
                 )}
                 {isManager && !hasSelectedSongs && (
-                  <> 회의를 재개한 뒤 ★ 아이콘으로 곡을 선택하고 다시 확정하세요.</>
+                  <>
+                    {' '}
+                    회의를 재개한 뒤 <Pin className="-mt-0.5 inline h-3 w-3" /> 아이콘으로 곡을
+                    선택하고 다시 확정하세요.
+                  </>
                 )}
               </span>
             </div>
@@ -575,49 +578,29 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             }}
           />
         </div>
-        {/* 메인 컬럼 하단 채팅 — 시퀀싱: 오픈 시 먼저 들어오고, 닫을 때는 우측 패널 후에 나감. */}
-        {chatMounted && selectedSongId && (
-          <div
-            className={cn(
-              'relative z-30 transition-transform duration-200 ease-out',
-              chatSlideIn ? 'translate-y-0' : 'pointer-events-none translate-y-full',
-            )}
-          >
-            <MeetingChatBox selectionId={meetingId} songId={selectedSongId} />
-          </div>
-        )}
       </div>
 
-      {/* 우측 오버레이 SessionPanel — panelSlideIn 상태로 슬라이드. 채팅이 자리잡은 후에만 보이고 채팅이 사라지기 전에 먼저 빠짐. */}
+      {/* 우측 슬라이드 패널 — 세션 패널(좌)과 채팅(우)을 가로로 나란히 배치.
+          너비는 고정값이 아니라 사이드바(최대 200px)+곡 목록 최소폭(360px)을 제외한 나머지를
+          채팅이 채우도록 뷰포트 기준 calc — 최소 780px, 상한 없이 화면 끝까지 채움. */}
       {selectedSongId && (
-        <aside
-          aria-hidden={!panelSlideIn}
-          className={cn(
-            'absolute top-0 right-0 bottom-[280px] z-20 hidden shadow-lg transition-transform duration-200 ease-out lg:flex',
-            panelSlideIn ? 'translate-x-0' : 'pointer-events-none translate-x-full',
-          )}
-          style={{ width: 380 }}
-        >
-          <SessionPanel
-            songId={selectedSongId}
-            selectionId={meetingId}
-            members={members}
-            isManager={isManager}
-            onClose={() => setSessionPanelOpen(false)}
-          />
-        </aside>
-      )}
-
-      {/* 닫혔을 때 다시 열기 핸들. */}
-      {selectedSongId && !sessionPanelOpen && (
-        <button
-          type="button"
-          onClick={() => setSessionPanelOpen(true)}
-          aria-label="세션 패널 열기"
-          className="bg-surface border-border text-foreground-sub hover:bg-card hover:text-foreground top-s-3 right-s-3 absolute z-30 hidden h-8 w-8 items-center justify-center rounded-md border shadow-sm transition-colors lg:inline-flex"
-        >
-          <PanelRightOpen className="h-4 w-4" />
-        </button>
+        <RightSlidePanel open={sessionPanelOpen} width="max(780px, calc(100vw - 560px))">
+          <div className="flex h-full w-[380px] shrink-0">
+            <SessionPanel
+              songId={selectedSongId}
+              selectionId={meetingId}
+              members={members}
+              isManager={isManager}
+            />
+          </div>
+          <div className="flex h-full min-w-0 flex-1">
+            <MeetingChatBox
+              selectionId={meetingId}
+              songId={selectedSongId}
+              onClose={() => setSessionPanelOpen(false)}
+            />
+          </div>
+        </RightSlidePanel>
       )}
 
       {/* 곡 수정 모달 — 외부에서 open 제어. song 이 있으면 수정 모드로 동작. */}
