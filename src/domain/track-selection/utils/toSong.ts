@@ -24,6 +24,7 @@ export function toSong(item: TrackSelectionItemResponse): Song {
     album: item.album,
     duration: item.duration != null ? secondsToMmSs(item.duration) : undefined,
     note: item.note,
+    reference: item.reference,
     proposerId: String(item.proposer?.memberId ?? item.proposerId ?? ''),
     sessions: item.sessions.map<SessionDef>((s) => ({
       id: s.sessionId,

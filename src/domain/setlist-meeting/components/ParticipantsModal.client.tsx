@@ -4,7 +4,6 @@ import { Loader2, Search, UserMinus, UserPlus, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { useMemberSearch } from '@/domain/member/hooks/useMemberSearch';
 import { useUpdateParticipants } from '@/domain/track-selection/hooks/useUpdateParticipants';
 import type { TrackSelectionParticipant } from '@/domain/track-selection/types/res';
@@ -104,9 +103,7 @@ export function ParticipantsModal({
                     />
                     <div className="min-w-0 flex-1">
                       <span className="text-caption font-semibold">{name}</span>
-                      {isSelf && (
-                        <span className="text-accent text-micro ml-s-2 font-bold">나</span>
-                      )}
+                      {isSelf && <span className="text-micro ml-s-2 font-bold text-white">나</span>}
                     </div>
                     {!isSelf && (
                       <button
@@ -171,7 +168,7 @@ export function ParticipantsModal({
                           <span
                             className={cn(
                               'text-micro px-s-2 shrink-0 rounded-full py-0.5 font-bold',
-                              already ? 'bg-success-dim text-success' : 'bg-accent-dim text-accent',
+                              already ? 'bg-success-dim text-success' : 'bg-white/10 text-white',
                             )}
                           >
                             {already ? '참여 중' : <UserPlus className="h-3 w-3" />}
@@ -185,12 +182,6 @@ export function ParticipantsModal({
             )}
           </section>
         </div>
-
-        <footer className="border-border px-s-5 py-s-3 border-t">
-          <Button variant="secondary" size="sm" onClick={onClose} className="w-full">
-            닫기
-          </Button>
-        </footer>
       </div>
     </div>
   );

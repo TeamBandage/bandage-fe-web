@@ -21,14 +21,14 @@ export interface SessionTrackProps {
 }
 
 const labelTone: Record<'mine' | 'full' | 'partial' | 'empty', string> = {
-  mine: 'text-accent underline underline-offset-2',
+  mine: 'text-white underline underline-offset-2',
   full: 'text-success',
   partial: 'text-warn',
   empty: 'text-foreground-muted',
 };
 
 const fillTone: Record<'mine' | 'full' | 'partial' | 'empty', string> = {
-  mine: 'bg-accent',
+  mine: 'bg-white',
   full: 'bg-success',
   partial: 'bg-warn',
   empty: 'bg-transparent',
@@ -79,7 +79,7 @@ export function SessionTrack({
 
   const baseClass = cn(
     'relative inline-flex min-w-[30px] flex-col items-stretch gap-1 rounded-sm bg-transparent p-0.5 transition-colors',
-    active && 'ring-accent ring-1 ring-offset-2',
+    active && 'ring-1 ring-white ring-offset-2',
   );
 
   if (onClick) {
