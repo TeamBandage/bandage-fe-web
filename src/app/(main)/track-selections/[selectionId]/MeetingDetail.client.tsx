@@ -12,6 +12,7 @@ import {
   Search,
   Trash2,
   Users,
+  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -159,18 +160,24 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [memberQuery, setMemberQuery] = useState('');
-  // 우측 세션 패널 토글. 곡을 새로 선택하면 자동 열림.
-  const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
   // 컬럼 정렬 — 재생시간 / 세션 모집 현황. 동일 컬럼 재클릭 시 asc↔desc 토글.
   const [sortKey, setSortKey] = useState<SongSortKey | null>(null);
   const [sortDir, setSortDir] = useState<SongSortDir>('asc');
   // 곡 수정 / 삭제 다이얼로그 상태.
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [pendingDeleteSong, setPendingDeleteSong] = useState<Song | null>(null);
+  // 우측 슬라이드 패널 — 세션 지원 / 채팅 탭 전환. 곡을 새로 선택하면 자동 열림.
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelTab, setPanelTab] = useState<'session' | 'chat'>('session');
 
   useEffect(() => {
     setSelectedMeeting(meetingId);
   }, [meetingId, setSelectedMeeting]);
+
+  // 선택된 곡이 사라지면 패널도 함께 닫음 — 패널은 곡 컨텍스트가 필수.
+  useEffect(() => {
+    if (!selectedSongId) setPanelOpen(false);
+  }, [selectedSongId]);
 
   // 실 유저 ID → mock store 동기화 (SessionPanel, SongTable, AddSongModal 공통 기준점)
   useEffect(() => {
@@ -260,7 +267,8 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
       if (nextSong.id !== selectedSongId) {
         setSelectedSong(nextSong.id);
         setFocusedSession(null);
-        setSessionPanelOpen(true);
+        setPanelOpen(true);
+        setPanelTab('session');
         // Task 25 — 포커스된 곡 행이 항상 보이도록 자동 스크롤.
         // 마이크로태스크 후 호출 — 리스트가 selected 클래스로 재렌더된 다음 스크롤.
         queueMicrotask(() => {
@@ -536,14 +544,15 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             sortDir={sortDir}
             onToggleSort={handleToggleSort}
             onSelectSong={(id) => {
-              // 메인 행 클릭은 항상 overview 모드로 진입. 세션 focus 는 우측 패널에서만.
+              // 메인 행 클릭은 항상 세션 탭으로 진입. 같은 행 재클릭 시 패널 토글.
               if (id === selectedSongId) {
-                setSessionPanelOpen((v) => !v);
+                setPanelOpen((v) => !v);
                 return;
               }
               setSelectedSong(id);
               setFocusedSession(null);
-              setSessionPanelOpen(true);
+              setPanelOpen(true);
+              setPanelTab('session');
             }}
             onEditSong={(id) => {
               const s = visible.find((x) => x.id === id);
@@ -552,6 +561,12 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             onDeleteSong={(id) => {
               const s = visible.find((x) => x.id === id);
               if (s) setPendingDeleteSong(s);
+            }}
+            onOpenChat={(id) => {
+              setSelectedSong(id);
+              setFocusedSession(null);
+              setPanelOpen(true);
+              setPanelTab('chat');
             }}
             onToggleSelection={(id, selected) => {
               // 낙관적 업데이트: 클릭 즉시 store 반영
@@ -581,25 +596,52 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
         </div>
       </div>
 
-      {/* 우측 슬라이드 패널 — 세션 패널(좌)과 채팅(우)을 가로로 나란히 배치.
-          너비는 고정값이 아니라 사이드바(최대 200px)+곡 목록 최소폭(360px)을 제외한 나머지를
-          채팅이 채우도록 뷰포트 기준 calc — 최소 780px, 상한 없이 화면 끝까지 채움. */}
+      {/* 우측 슬라이드 패널 — 세션 지원 / 채팅 탭 전환. */}
       {selectedSongId && (
-        <RightSlidePanel open={sessionPanelOpen} width="max(780px, calc(100vw - 560px))">
-          <div className="flex h-full w-[380px] shrink-0">
-            <SessionPanel
-              songId={selectedSongId}
-              selectionId={meetingId}
-              members={members}
-              isManager={isManager}
-            />
-          </div>
-          <div className="flex h-full min-w-0 flex-1">
-            <MeetingChatBox
-              selectionId={meetingId}
-              songId={selectedSongId}
-              onClose={() => setSessionPanelOpen(false)}
-            />
+        <RightSlidePanel open={panelOpen} width="420px">
+          <div className="bg-surface flex h-full w-full flex-col">
+            <Tabs
+              value={panelTab}
+              onValueChange={(v) => setPanelTab(v as 'session' | 'chat')}
+              variant="underline"
+            >
+              <div className="border-border px-s-4 relative border-l">
+                <TabsList aria-label="선곡 상세 패널 탭">
+                  <TabsTrigger
+                    value="session"
+                    className="data-[state=active]:border-foreground data-[state=active]:text-foreground"
+                  >
+                    세션
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="chat"
+                    className="data-[state=active]:border-foreground data-[state=active]:text-foreground"
+                  >
+                    채팅
+                  </TabsTrigger>
+                </TabsList>
+                <button
+                  type="button"
+                  onClick={() => setPanelOpen(false)}
+                  aria-label="패널 닫기"
+                  className="text-foreground-muted hover:text-foreground right-s-4 absolute top-1/2 -translate-y-1/2 rounded-md p-1 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </Tabs>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              {panelTab === 'session' ? (
+                <SessionPanel
+                  songId={selectedSongId}
+                  selectionId={meetingId}
+                  members={members}
+                  isManager={isManager}
+                />
+              ) : (
+                <MeetingChatBox selectionId={meetingId} songId={selectedSongId} />
+              )}
+            </div>
           </div>
         </RightSlidePanel>
       )}
