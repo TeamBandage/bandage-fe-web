@@ -477,7 +477,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                   disabled={!hasSelectedSongs}
                   aria-label="셋리스트 생성"
                   aria-disabled={!hasSelectedSongs}
-                  className="bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+                  className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
                 >
                   <ListMusic className="h-4 w-4" /> 셋리스트 생성
                 </Button>
@@ -488,6 +488,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                   variant="secondary"
                   onClick={() => setPendingLockAction('unlock')}
                   aria-label="회의 재개"
+                  className="rounded-[5px]"
                 >
                   <RotateCcw className="h-4 w-4" /> 회의 재개
                 </Button>
@@ -715,15 +716,16 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 }}
                 placeholder={selection?.title ?? '셋리스트 이름'}
                 autoFocus
-                className="bg-card border-border text-body placeholder:text-foreground-muted mt-s-2 px-s-3 py-s-2 w-full rounded-md border outline-none focus:ring-1 focus:ring-current"
+                className="bg-card border-border text-body placeholder:text-foreground-muted mt-s-2 px-s-3 py-s-2 w-full rounded-[5px] border outline-none focus:ring-1 focus:ring-current"
               />
             </div>
-            <footer className="border-border px-s-5 py-s-3 gap-s-2 flex justify-end border-t">
+            <footer className="px-s-5 py-s-3 gap-s-2 flex justify-end">
               <Button
                 size="sm"
                 variant="secondary"
                 onClick={() => setShowCreateSetlist(false)}
                 disabled={createSetlist.isPending}
+                className="rounded-[5px]"
               >
                 취소
               </Button>
@@ -744,6 +746,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                     },
                   )
                 }
+                className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
               >
                 {createSetlist.isPending ? '생성 중…' : '생성'}
               </Button>

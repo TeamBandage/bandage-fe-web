@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Skeleton } from '@/components/ui/skeleton';
+import { JamDday } from '@/domain/jam/components/JamDday';
 import { useMyJams } from '@/domain/jam/hooks/useMyJams';
 import { useSearchMyJams } from '@/domain/jam/hooks/useSearchMyJams';
 import type { JamListItemResponse } from '@/domain/jam/types';
@@ -51,7 +52,10 @@ function PracticeSelectRow({
       >
         <IconTile icon={<PracticeIcon />} size="sm" tone={DOMAIN_TONES.practice} />
         <div className="min-w-0 flex-1">
-          <div className="text-caption truncate font-semibold">{practice.title}</div>
+          <div className="gap-s-1 flex items-center">
+            <span className="text-caption truncate font-semibold">{practice.title}</span>
+            <JamDday startAt={practice.startAt} />
+          </div>
           <div className="text-foreground-muted text-caption gap-s-2 mt-0.5 flex items-center">
             <span>{when}</span>
             {practice.venue && <span className="truncate">· {practice.venue}</span>}

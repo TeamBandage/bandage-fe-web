@@ -63,10 +63,7 @@ function PerformanceSelectRow({
             <PerformanceDday startAt={performance.startAt} />
           </div>
           <div className="text-foreground-muted text-caption mt-0.5 flex items-center gap-2">
-            <span className="inline-flex items-center gap-0.5 truncate">
-              <CalendarDays className="h-3 w-3 shrink-0" aria-hidden="true" />
-              {dateLabel}
-            </span>
+            <span className="truncate">{dateLabel}</span>
             {performance.venue && (
               <span className="inline-flex min-w-0 items-center gap-0.5">
                 <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
