@@ -28,3 +28,38 @@ export interface SetlistToJamRequest {
   durationMinutes: number;
   venue?: string;
 }
+
+export interface ScheduleBoardConstraints {
+  excludeLateNight: boolean;
+  maxConsecutiveMinutes: number;
+  workingHoursStart: number;
+  workingHoursEnd: number;
+}
+
+export interface ScheduleBoardCreateRequest {
+  name: string;
+  constraints?: Partial<ScheduleBoardConstraints>;
+  windowFrom?: string;
+  windowTo?: string;
+}
+
+export type ScheduleBoardUpdateRequest = Partial<ScheduleBoardCreateRequest>;
+
+export interface ScheduleBlockRecurrenceRequest {
+  freq: 'NONE' | 'DAILY' | 'WEEKLY' | 'BIWEEKLY';
+  interval: number;
+  until?: string;
+  count?: number;
+}
+
+export interface ScheduleBlockUpsertRequest {
+  trackIds: string[];
+  startDate: string;
+  startSlot: number;
+  endDate: string;
+  endSlot: number;
+  pinned?: boolean;
+  title?: string;
+  note?: string;
+  recurrence?: ScheduleBlockRecurrenceRequest;
+}
