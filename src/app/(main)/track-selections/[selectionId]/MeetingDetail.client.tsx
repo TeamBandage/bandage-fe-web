@@ -529,7 +529,6 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             members={members}
             selectedSongId={selectedSongId}
             currentUserId={currentUserId}
-            selectionId={meetingId}
             isManager={isManager}
             isLocked={isLocked}
             matchedUserIds={matchedUserIds}
