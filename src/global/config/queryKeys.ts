@@ -44,6 +44,7 @@ export const queryKeys = {
     my: () => ['setlist', 'my'] as const,
     detail: (setlistId: string) => ['setlist', setlistId] as const,
     tracks: (setlistId: string) => ['setlist', setlistId, 'tracks'] as const,
+    scheduleBoards: (setlistId: string) => ['setlist', setlistId, 'schedule-boards'] as const,
   },
   performance: {
     all: ['performance'] as const,

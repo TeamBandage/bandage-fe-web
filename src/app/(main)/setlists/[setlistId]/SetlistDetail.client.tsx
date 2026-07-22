@@ -1,13 +1,16 @@
 'use client';
 
-import { ArrowLeft, Clock, Edit2, Music, Pencil, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { ArrowLeft, Clock, Edit2, ExternalLink, Music, Pencil, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCreateJamsFromSetlist } from '@/domain/setlist/hooks/useCreateJamsFromSetlist';
 import { useDeleteSetlistTrack } from '@/domain/setlist/hooks/useDeleteSetlistTrack';
 import { useSetlist } from '@/domain/setlist/hooks/useSetlist';
@@ -15,6 +18,7 @@ import { useSetlistTracks } from '@/domain/setlist/hooks/useSetlistTracks';
 import { useUpdateSetlist } from '@/domain/setlist/hooks/useUpdateSetlist';
 import { useUpdateSetlistTrack } from '@/domain/setlist/hooks/useUpdateSetlistTrack';
 import type { SetlistTrackResponse } from '@/domain/setlist/types/res';
+import { ROUTES } from '@/global/config/routes';
 import { formatKst } from '@/lib/date';
 import { useToast } from '@/hooks/useToast';
 
@@ -35,7 +39,21 @@ function TrackRow({
         {track.sessions?.length > 0 ? '' : ''}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-foreground truncate font-medium">{track.title}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-foreground truncate font-medium">{track.title}</p>
+          {track.reference && (
+            <a
+              href={track.reference}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${track.title} 참고 링크 열기`}
+              title="참고 링크"
+              className="text-foreground-muted hover:text-foreground shrink-0"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
         <p className="text-foreground-muted truncate text-sm">{track.artist}</p>
         {track.album && <p className="text-foreground-sub truncate text-xs">{track.album}</p>}
       </div>
@@ -43,20 +61,29 @@ function TrackRow({
         {track.duration !== undefined && (
           <span className="text-foreground-muted flex items-center gap-1 text-xs">
             <Clock className="h-3 w-3" />
-            {Math.floor(track.duration / 60)}:{String(track.duration % 60).padStart(2, '0')}
+            {Math.round(track.duration / 60)}분
           </span>
         )}
         {track.sessions && track.sessions.length > 0 && (
-          <div className="flex gap-1">
-            {track.sessions.map((s) => (
-              <span
-                key={s.sessionId}
-                className="bg-card border-border rounded px-1.5 py-0.5 text-xs"
-              >
-                {s.short}
-              </span>
-            ))}
-          </div>
+          <TooltipProvider delayDuration={0}>
+            <div className="flex gap-1">
+              {track.sessions.map((s) => (
+                <Tooltip key={s.sessionId}>
+                  <TooltipTrigger asChild>
+                    <span className="bg-card border-border rounded px-1.5 py-0.5 text-xs">
+                      {s.short}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {s.label}
+                    {s.participants.length > 0
+                      ? `: ${s.participants.map((p) => p.name).join(', ')}`
+                      : ' · 미정'}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </TooltipProvider>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
@@ -81,6 +108,23 @@ function TrackRow({
   );
 }
 
+const DURATION_STEP_MINUTES = 30;
+const DURATION_OPTIONS_MINUTES = [30, 60, 90, 120, 150, 180];
+
+function formatDurationLabel(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}분`;
+  if (m === 0) return `${h}시간`;
+  return `${h}시간 ${m}분`;
+}
+
+function snapToDurationStep(durationSeconds: number): number {
+  const minutes = Math.round(durationSeconds / 60 / DURATION_STEP_MINUTES) * DURATION_STEP_MINUTES;
+  const max = DURATION_OPTIONS_MINUTES[DURATION_OPTIONS_MINUTES.length - 1]!;
+  return Math.min(Math.max(minutes, DURATION_STEP_MINUTES), max);
+}
+
 function TrackEditForm({
   track,
   onSave,
@@ -94,6 +138,7 @@ function TrackEditForm({
     album?: string;
     duration?: number;
     note?: string;
+    reference?: string;
   }) => void;
   onCancel: () => void;
   isPending: boolean;
@@ -101,18 +146,11 @@ function TrackEditForm({
   const [title, setTitle] = useState(track.title);
   const [artist, setArtist] = useState(track.artist);
   const [album, setAlbum] = useState(track.album ?? '');
-  const [durationStr, setDurationStr] = useState(
-    track.duration !== undefined
-      ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, '0')}`
-      : '',
+  const [durationMin, setDurationMin] = useState(
+    track.duration !== undefined ? String(snapToDurationStep(track.duration)) : '',
   );
   const [note, setNote] = useState(track.note ?? '');
-
-  const parseDuration = (str: string): number | undefined => {
-    const m = str.trim().match(/^(\d{1,2}):(\d{2})$/);
-    if (!m) return undefined;
-    return parseInt(m[1]!, 10) * 60 + parseInt(m[2]!, 10);
-  };
+  const [reference, setReference] = useState(track.reference ?? '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,8 +158,9 @@ function TrackEditForm({
       title: title.trim() || undefined,
       artist: artist.trim() || undefined,
       album: album.trim() || undefined,
-      duration: parseDuration(durationStr),
+      duration: durationMin ? Number(durationMin) * 60 : undefined,
       note: note.trim() || undefined,
+      reference: reference.trim() || undefined,
     });
   };
 
@@ -170,16 +209,21 @@ function TrackEditForm({
         </div>
         <div>
           <label className="text-xs font-semibold" htmlFor={`duration-${track.setlistTrackId}`}>
-            재생시간 (mm:ss)
+            재생시간 (30분 단위)
           </label>
-          <input
+          <select
             id={`duration-${track.setlistTrackId}`}
-            type="text"
-            value={durationStr}
-            onChange={(e) => setDurationStr(e.target.value)}
-            placeholder="예: 3:45"
+            value={durationMin}
+            onChange={(e) => setDurationMin(e.target.value)}
             className={`mt-1 ${inputClass}`}
-          />
+          >
+            <option value="">선택 안함</option>
+            {DURATION_OPTIONS_MINUTES.map((min) => (
+              <option key={min} value={min}>
+                {formatDurationLabel(min)}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       <div>
@@ -192,6 +236,19 @@ function TrackEditForm({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="선택"
+          className={`mt-1 ${inputClass}`}
+        />
+      </div>
+      <div>
+        <label className="text-xs font-semibold" htmlFor={`reference-${track.setlistTrackId}`}>
+          참고 링크
+        </label>
+        <input
+          id={`reference-${track.setlistTrackId}`}
+          type="text"
+          value={reference}
+          onChange={(e) => setReference(e.target.value)}
+          placeholder="예: https://youtube.com/..."
           className={`mt-1 ${inputClass}`}
         />
       </div>
@@ -295,8 +352,8 @@ function JamCreateForm({
 }
 
 export function SetlistDetail({ setlistId }: { setlistId: string }) {
-  const router = useRouter();
   const toast = useToast();
+  const searchParams = useSearchParams();
 
   const { data: setlist, isPending: setlistPending, error: setlistError } = useSetlist(setlistId);
   const { data: tracks, isPending: tracksPending } = useSetlistTracks(setlistId);
@@ -311,6 +368,11 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
   const [editingTrack, setEditingTrack] = useState<SetlistTrackResponse | null>(null);
   const [pendingDeleteTrack, setPendingDeleteTrack] = useState<SetlistTrackResponse | null>(null);
   const [showJamForm, setShowJamForm] = useState(false);
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'tracks');
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') ?? 'tracks');
+  }, [searchParams]);
 
   const handleTitleEdit = () => {
     setTitleInput(setlist?.title ?? '');
@@ -338,6 +400,7 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
     album?: string;
     duration?: number;
     note?: string;
+    reference?: string;
   }) => {
     if (!editingTrack) return;
     updateTrack.mutate(
@@ -406,58 +469,78 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
   const hasTrack = trackList.length > 0;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-      <div className="border-border flex min-h-0 flex-1 flex-col lg:border-r">
-        {/* 헤더 */}
-        <header className="border-border border-b px-5 py-4">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            aria-label="뒤로 가기"
-            className="text-foreground-muted hover:text-foreground mb-3 flex items-center gap-1 text-sm transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            뒤로
-          </button>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* 헤더 */}
+      <header className="border-border border-b px-5 py-4">
+        <Link
+          href={ROUTES.SETLISTS}
+          className="text-foreground-muted hover:text-foreground mb-3 flex items-center gap-1 text-sm no-underline transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          셋리스트 목록
+        </Link>
 
-          {editingTitle ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={titleInput}
-                onChange={(e) => setTitleInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleTitleSave();
-                  if (e.key === 'Escape') setEditingTitle(false);
-                }}
-                onBlur={handleTitleSave}
-                autoFocus
-                className="bg-card border-border text-title flex-1 rounded-md border px-3 py-1.5 font-bold outline-none focus:ring-1 focus:ring-current"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <h1 className="text-title font-bold">{setlist.title}</h1>
-              <button
-                type="button"
-                onClick={handleTitleEdit}
-                aria-label="셋리스트 제목 수정"
-                className="text-foreground-muted hover:text-foreground rounded p-1 transition-colors"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+        {editingTitle ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={titleInput}
+              onChange={(e) => setTitleInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleTitleSave();
+                if (e.key === 'Escape') setEditingTitle(false);
+              }}
+              onBlur={handleTitleSave}
+              autoFocus
+              className="bg-card border-border text-title flex-1 rounded-md border px-3 py-1.5 font-bold outline-none focus:ring-1 focus:ring-current"
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <h1 className="text-title font-bold">{setlist.title}</h1>
+            <button
+              type="button"
+              onClick={handleTitleEdit}
+              aria-label="셋리스트 제목 수정"
+              className="text-foreground-muted hover:text-foreground rounded p-1 transition-colors"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
-          {setlist.createdAt && (
-            <p className="text-foreground-muted mt-1 text-xs">
-              생성일: {formatKst(new Date(setlist.createdAt))}
-            </p>
-          )}
-        </header>
+        {setlist.createdAt && (
+          <p className="text-foreground-muted mt-1 text-xs">
+            생성일: {formatKst(new Date(setlist.createdAt))}
+          </p>
+        )}
+      </header>
+
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        variant="underline"
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <div className="px-5">
+          <TabsList aria-label="셋리스트 상세 탭">
+            <TabsTrigger
+              value="tracks"
+              className="data-[state=active]:border-foreground data-[state=active]:text-foreground"
+            >
+              트랙
+            </TabsTrigger>
+            <TabsTrigger
+              value="schedule"
+              className="data-[state=active]:border-foreground data-[state=active]:text-foreground"
+            >
+              시간표
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* 트랙 목록 */}
-        <div className="flex-1 overflow-y-auto">
+        <TabsContent value="tracks" className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto">
           {tracksPending ? (
             <div className="space-y-2 px-5 py-4">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -508,13 +591,13 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
               </Button>
             )}
           </div>
-        </div>
-      </div>
+        </TabsContent>
 
-      {/* 합주 시간표 (미리보기 — 실제 자동배치 API 연동 전) */}
-      <div className="border-border min-h-[360px] border-t lg:min-h-0 lg:w-[480px] lg:shrink-0 lg:border-t-0">
-        <SetlistScheduleBoard tracks={trackList} />
-      </div>
+        {/* 합주 시간표 시안 — 드래그로 트랙 배치 */}
+        <TabsContent value="schedule" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <SetlistScheduleBoard setlistId={setlistId} tracks={trackList} />
+        </TabsContent>
+      </Tabs>
 
       {/* 트랙 삭제 확인 다이얼로그 */}
       <ConfirmDialog

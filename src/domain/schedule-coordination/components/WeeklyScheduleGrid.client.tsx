@@ -46,6 +46,11 @@ export interface WeeklyScheduleGridProps {
   /** export 용 ref (캡처 대상). */
   gridRef?: React.RefObject<HTMLDivElement | null>;
   className?: string;
+  /**
+   * true 이면 일자 컬럼이 남는 폭을 채우도록 가변폭(1fr) 처리.
+   * 기본값 false — 기존 고정폭(mx-auto, DAY_COL_WIDTH) 유지, 다른 화면엔 영향 없음.
+   */
+  fillWidth?: boolean;
 }
 
 /** 행=시간 슬롯, 열=일자. 좌측 시간 라벨 sticky, 상단 일자 헤더 sticky. */
@@ -65,11 +70,14 @@ export function WeeklyScheduleGrid({
   cellClassName,
   gridRef,
   className,
+  fillWidth = false,
 }: WeeklyScheduleGridProps) {
   const slotCount = slotEnd - slotStart;
   const slots = Array.from({ length: slotCount }, (_, i) => slotStart + i);
   const gridStyle: CSSProperties = {
-    gridTemplateColumns: `${TIME_COL_WIDTH}px repeat(${days.length}, ${DAY_COL_WIDTH}px)`,
+    gridTemplateColumns: fillWidth
+      ? `${TIME_COL_WIDTH}px repeat(${days.length}, minmax(${DAY_COL_WIDTH}px, 1fr))`
+      : `${TIME_COL_WIDTH}px repeat(${days.length}, ${DAY_COL_WIDTH}px)`,
     gridTemplateRows: `36px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
   };
 
@@ -115,7 +123,7 @@ export function WeeklyScheduleGrid({
       ref={gridRef}
       className={cn('border-border bg-card flex-1 overflow-auto rounded-md border', className)}
     >
-      <div className="mx-auto grid w-fit" style={gridStyle}>
+      <div className={cn('grid', fillWidth ? 'w-full' : 'mx-auto w-fit')} style={gridStyle}>
         {/* 코너 */}
         <div
           className="bg-surface border-border sticky top-0 left-0 z-30 border-r border-b"

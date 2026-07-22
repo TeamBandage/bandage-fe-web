@@ -2,12 +2,20 @@ import { apiClient } from '@/global/api/apiClient';
 import type { CursorResponse } from '@/global/types';
 
 import type {
+  ScheduleBlockUpsertRequest,
+  ScheduleBoardCreateRequest,
+  ScheduleBoardUpdateRequest,
   SetlistCreateRequest,
   SetlistToJamRequest,
   SetlistTrackUpdateRequest,
   SetlistUpdateRequest,
 } from '../types/req';
-import type { SetlistResponse, SetlistTrackResponse } from '../types/res';
+import type {
+  ScheduleBlockResponse,
+  ScheduleBoardResponse,
+  SetlistResponse,
+  SetlistTrackResponse,
+} from '../types/res';
 
 const PREFIX = '/api/v1/setlists';
 
@@ -75,4 +83,71 @@ export function updateSetlistTrack(
 /** 셋리스트 트랙 삭제 */
 export function deleteSetlistTrack(setlistId: string, trackId: string): Promise<void> {
   return apiClient.delete<void>(`${PREFIX}/${setlistId}/tracks/${trackId}`);
+}
+
+/** 시간표 시안 목록 조회 */
+export function getScheduleBoards(setlistId: string): Promise<ScheduleBoardResponse[]> {
+  return apiClient.get<ScheduleBoardResponse[]>(`${PREFIX}/${setlistId}/schedule-boards`);
+}
+
+/** 시간표 시안 생성 */
+export function createScheduleBoard(
+  setlistId: string,
+  body: ScheduleBoardCreateRequest,
+): Promise<ScheduleBoardResponse> {
+  return apiClient.post<ScheduleBoardResponse>(`${PREFIX}/${setlistId}/schedule-boards`, body);
+}
+
+/** 시간표 시안 수정 */
+export function updateScheduleBoard(
+  setlistId: string,
+  boardId: string,
+  body: ScheduleBoardUpdateRequest,
+): Promise<ScheduleBoardResponse> {
+  return apiClient.patch<ScheduleBoardResponse>(
+    `${PREFIX}/${setlistId}/schedule-boards/${boardId}`,
+    body,
+  );
+}
+
+/** 시간표 시안 삭제 */
+export function deleteScheduleBoard(setlistId: string, boardId: string): Promise<void> {
+  return apiClient.delete<void>(`${PREFIX}/${setlistId}/schedule-boards/${boardId}`);
+}
+
+/** 시간표 블록 등록/수정(upsert) */
+export function upsertScheduleBlock(
+  setlistId: string,
+  boardId: string,
+  blockId: string,
+  body: ScheduleBlockUpsertRequest,
+): Promise<ScheduleBlockResponse> {
+  return apiClient.put<ScheduleBlockResponse>(
+    `${PREFIX}/${setlistId}/schedule-boards/${boardId}/blocks/${blockId}`,
+    body,
+  );
+}
+
+/** 시간표 블록 삭제 */
+export function deleteScheduleBlock(
+  setlistId: string,
+  boardId: string,
+  blockId: string,
+): Promise<void> {
+  return apiClient.delete<void>(
+    `${PREFIX}/${setlistId}/schedule-boards/${boardId}/blocks/${blockId}`,
+  );
+}
+
+/** 시간표 블록 핀 토글 */
+export function setScheduleBlockPin(
+  setlistId: string,
+  boardId: string,
+  blockId: string,
+  pinned: boolean,
+): Promise<ScheduleBlockResponse> {
+  return apiClient.patch<ScheduleBlockResponse>(
+    `${PREFIX}/${setlistId}/schedule-boards/${boardId}/blocks/${blockId}/pin`,
+    { pinned },
+  );
 }
