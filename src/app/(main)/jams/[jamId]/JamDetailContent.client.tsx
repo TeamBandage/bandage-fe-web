@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ExternalLink, MapPin, Music, Search, Trash2, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -58,10 +58,16 @@ export function JamDetailContent({
   onAfterDelete?: () => void;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const { data: practice, isLoading, isError, refetch } = useJam(jamId);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'song');
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') ?? 'song');
+  }, [searchParams]);
 
   const scheduleForm = useForm<{ startAt: string; durationMinutes: number }>({
     defaultValues: { startAt: '', durationMinutes: 60 },
@@ -189,7 +195,7 @@ export function JamDetailContent({
         </div>
       </Card>
 
-      <Tabs defaultValue="song">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
           <TabsTrigger
             value="song"

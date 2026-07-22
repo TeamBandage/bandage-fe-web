@@ -13,7 +13,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -82,10 +82,16 @@ export function PerformanceDetailContent({
   onDeleted?: () => void;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const toast = useToast();
   const queryClient = useQueryClient();
   const posterInputRef = useRef<HTMLInputElement>(null);
   const posterInputId = useId();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'info');
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') ?? 'info');
+  }, [searchParams]);
 
   const { data: perf, isLoading, isError, refetch } = usePerformanceDetail(performanceId);
   const { isManager, isOwner } = useIsPerformanceManager(performanceId);
@@ -267,7 +273,7 @@ export function PerformanceDetailContent({
         </div>
       </div>
 
-      <Tabs defaultValue="info" variant="underline">
+      <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">
         <div className="px-s-5 lg:px-8">
           <TabsList aria-label="공연 상세 탭">
             <TabsTrigger value="info" className={outerTriggerCls}>

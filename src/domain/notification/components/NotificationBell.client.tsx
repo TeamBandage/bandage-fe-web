@@ -29,6 +29,21 @@ function resolveHref(category: NotifyCategory, referenceId: string): string | nu
       return `${ROUTES.BAND_DETAIL(referenceId)}?tab=members`;
     case 'JAM_UPCOMING':
       return ROUTES.JAM_DETAIL(referenceId);
+    case 'JAM_PARTICIPANT_ADDED':
+      return `${ROUTES.JAM_DETAIL(referenceId)}?tab=participants`;
+    // JAM_CREATED: referenceId는 setlistId 지만 특정 합주 하나를 가리키지 않는 요약
+    // 알림이라 셋리스트 상세 대신 합주 목록으로 보낸다.
+    case 'JAM_CREATED':
+      return ROUTES.JAMS;
+    case 'SETLIST_CREATED':
+      return ROUTES.SETLIST_DETAIL(referenceId);
+    case 'PERFORMANCE_UPCOMING':
+    case 'PERFORMANCE_OWNER_PROMOTED':
+      return ROUTES.PERFORMANCE_DETAIL(referenceId);
+    case 'PERFORMANCE_MANAGER_INVITED':
+      return `${ROUTES.PERFORMANCE_DETAIL(referenceId)}?tab=invitations`;
+    case 'SELECTION_PARTICIPANT_ADDED':
+      return ROUTES.TRACK_SELECTION_DETAIL(referenceId);
     default:
       return null;
   }
