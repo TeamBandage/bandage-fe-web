@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   ListMusic,
   Lock,
-  MessageSquare,
   Pencil,
   Pin,
   Plus,
@@ -453,20 +452,6 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                   }
                 />
               )}
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  setPanelOpen(true);
-                  setPanelTab('chat');
-                }}
-                disabled={!selectedSongId}
-                aria-label="곡 의견 채팅"
-                title={selectedSongId ? undefined : '곡을 먼저 선택하세요.'}
-                className="rounded-[5px]"
-              >
-                <MessageSquare className="h-4 w-4" /> 채팅
-              </Button>
               {isManager && (
                 <Button
                   size="sm"
@@ -576,6 +561,12 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             onDeleteSong={(id) => {
               const s = visible.find((x) => x.id === id);
               if (s) setPendingDeleteSong(s);
+            }}
+            onOpenChat={(id) => {
+              setSelectedSong(id);
+              setFocusedSession(null);
+              setPanelOpen(true);
+              setPanelTab('chat');
             }}
             onToggleSelection={(id, selected) => {
               // 낙관적 업데이트: 클릭 즉시 store 반영

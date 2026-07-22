@@ -1,6 +1,15 @@
 'use client';
 
-import { ArrowDown, ArrowUp, ArrowUpDown, Check, Pencil, Pin, Trash2 } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Check,
+  MessageSquare,
+  Pencil,
+  Pin,
+  Trash2,
+} from 'lucide-react';
 
 import { cn } from '@/lib/cn';
 
@@ -30,6 +39,8 @@ export interface SongTableProps {
   onSelectSong: (songId: string) => void;
   onEditSong?: (songId: string) => void;
   onDeleteSong?: (songId: string) => void;
+  /** 곡별 의견 채팅 패널 열기. */
+  onOpenChat?: (songId: string) => void;
   /** 매니저가 잠금 상태에서 최종 선곡 확정/해제. */
   onToggleSelection?: (songId: string, selected: boolean) => void;
 }
@@ -62,6 +73,7 @@ export function SongTable({
   onSelectSong,
   onEditSong,
   onDeleteSong,
+  onOpenChat,
   onToggleSelection,
 }: SongTableProps) {
   if (songs.length === 0) {
@@ -226,12 +238,26 @@ export function SongTable({
                   )}
                 </td>
                 <td className="px-s-3 py-s-2 align-middle">
-                  {(() => {
-                    // 잠긴 후: 선택된 곡은 읽기 전용 핀으로 표시, 수정/삭제 불가.
-                    if (isLocked) {
-                      if (!song.isSelected) return null;
-                      return (
-                        <div className="flex items-center justify-end">
+                  <div className="gap-s-1 flex items-center justify-end">
+                    {onOpenChat && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenChat(song.id);
+                        }}
+                        aria-label={`${song.title} 의견 채팅`}
+                        title="의견 채팅"
+                        className="text-foreground-muted inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-white/10 hover:text-white"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {(() => {
+                      // 잠긴 후: 선택된 곡은 읽기 전용 핀으로 표시, 수정/삭제 불가.
+                      if (isLocked) {
+                        if (!song.isSelected) return null;
+                        return (
                           <span
                             aria-label="셋리스트 선택됨"
                             title="셋리스트에 포함된 곡"
@@ -239,79 +265,81 @@ export function SongTable({
                           >
                             <Pin className="h-4 w-4" fill="currentColor" />
                           </span>
-                        </div>
+                        );
+                      }
+
+                      const canMutate = isManager || song.proposerId === currentUserId;
+                      // 확정된 곡(모든 세션이 정원만큼 확정)은 수정 비활성 — 확정자 데이터 보호.
+                      const editLocked = ready;
+
+                      return (
+                        <>
+                          {/* 매니저에게 최종 선곡 토글 표시 (백엔드는 잠금 후 isSelected 변경 거부). */}
+                          {isManager && onToggleSelection && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleSelection(song.id, !song.isSelected);
+                              }}
+                              aria-label={
+                                song.isSelected ? '셋리스트 선택 해제' : '셋리스트에 추가'
+                              }
+                              title={song.isSelected ? '셋리스트 선택 해제' : '셋리스트에 추가'}
+                              className={cn(
+                                'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                                song.isSelected
+                                  ? 'text-warn'
+                                  : 'text-foreground-muted hover:text-warn',
+                              )}
+                            >
+                              <Pin
+                                className="h-4 w-4"
+                                fill={song.isSelected ? 'currentColor' : 'none'}
+                              />
+                            </button>
+                          )}
+                          {canMutate && onEditSong && (
+                            <button
+                              type="button"
+                              disabled={editLocked}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditSong(song.id);
+                              }}
+                              aria-label={
+                                editLocked
+                                  ? `${song.title} 수정 불가 (확정 완료)`
+                                  : `${song.title} 수정`
+                              }
+                              title={editLocked ? '확정된 곡은 수정할 수 없습니다.' : '곡 수정'}
+                              className={cn(
+                                'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                                editLocked
+                                  ? 'text-foreground-muted/40 cursor-not-allowed'
+                                  : 'text-foreground-muted hover:bg-white/10 hover:text-white',
+                              )}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          {canMutate && onDeleteSong && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteSong(song.id);
+                              }}
+                              aria-label={`${song.title} 삭제`}
+                              className="text-foreground-muted hover:bg-danger-dim hover:text-danger inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </>
                       );
-                    }
-
-                    const canMutate = isManager || song.proposerId === currentUserId;
-                    // 확정된 곡(모든 세션이 정원만큼 확정)은 수정 비활성 — 확정자 데이터 보호.
-                    const editLocked = ready;
-
-                    return (
-                      <div className="gap-s-1 flex items-center justify-end">
-                        {/* 매니저에게 최종 선곡 토글 표시 (백엔드는 잠금 후 isSelected 변경 거부). */}
-                        {isManager && onToggleSelection && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToggleSelection(song.id, !song.isSelected);
-                            }}
-                            aria-label={song.isSelected ? '셋리스트 선택 해제' : '셋리스트에 추가'}
-                            title={song.isSelected ? '셋리스트 선택 해제' : '셋리스트에 추가'}
-                            className={cn(
-                              'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                              song.isSelected
-                                ? 'text-warn'
-                                : 'text-foreground-muted hover:text-warn',
-                            )}
-                          >
-                            <Pin
-                              className="h-4 w-4"
-                              fill={song.isSelected ? 'currentColor' : 'none'}
-                            />
-                          </button>
-                        )}
-                        {canMutate && onEditSong && (
-                          <button
-                            type="button"
-                            disabled={editLocked}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEditSong(song.id);
-                            }}
-                            aria-label={
-                              editLocked
-                                ? `${song.title} 수정 불가 (확정 완료)`
-                                : `${song.title} 수정`
-                            }
-                            title={editLocked ? '확정된 곡은 수정할 수 없습니다.' : '곡 수정'}
-                            className={cn(
-                              'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                              editLocked
-                                ? 'text-foreground-muted/40 cursor-not-allowed'
-                                : 'text-foreground-muted hover:bg-white/10 hover:text-white',
-                            )}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        {canMutate && onDeleteSong && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteSong(song.id);
-                            }}
-                            aria-label={`${song.title} 삭제`}
-                            className="text-foreground-muted hover:bg-danger-dim hover:text-danger inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })()}
+                    })()}
+                  </div>
                 </td>
               </tr>
             );
