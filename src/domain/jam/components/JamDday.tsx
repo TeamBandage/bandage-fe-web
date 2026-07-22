@@ -4,7 +4,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { Badge } from '@/components/ui/badge';
 import { KST, parseKst } from '@/lib/date';
 
-export function PerformanceDday({ startAt }: { startAt: string }) {
+export function JamDday({ startAt }: { startAt: string }) {
   let days: number;
   try {
     const now = toZonedTime(new Date(), KST);

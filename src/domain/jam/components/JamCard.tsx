@@ -6,6 +6,7 @@ import { ROUTES } from '@/global/config/routes';
 import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
 
+import { JamDday } from './JamDday';
 import { JamScheduleBadge } from './JamScheduleBadge';
 import type { JamListItemResponse } from '../types';
 
@@ -31,7 +32,10 @@ export function JamCard({
     >
       <IconTile icon={<PracticeIcon />} size="md" tone={DOMAIN_TONES.practice} />
       <div className="min-w-0 flex-1 space-y-1">
-        <p className="text-foreground line-clamp-1 text-base font-semibold">{practice.title}</p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-foreground line-clamp-1 text-base font-semibold">{practice.title}</p>
+          <JamDday startAt={practice.startAt} />
+        </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <JamScheduleBadge startAt={practice.startAt} durationMinutes={practice.durationMinutes} />
           {practice.venue && (
