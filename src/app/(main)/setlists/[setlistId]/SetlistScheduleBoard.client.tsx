@@ -833,6 +833,7 @@ export function SetlistScheduleBoard({
                   slotStart={SLOT_START}
                   slotEnd={SLOT_END}
                   className="h-full"
+                  fillWidth
                   onCellDragOver={() => (e) => e.preventDefault()}
                   onCellDrop={handleDropOnCell}
                   overlay={activeBoard.blocks.map((block) => {
