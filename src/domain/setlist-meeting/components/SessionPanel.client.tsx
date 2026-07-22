@@ -471,26 +471,28 @@ function FocusedSessionView({
         </ul>
       )}
 
-      <div className="border-border mt-s-5 pt-s-4 border-t">
-        {isMineConfirmed ? (
-          <div className="text-foreground-muted text-caption text-center">
-            확정된 세션은 본인이 직접 취소할 수 없습니다. 매니저에게 문의해 주세요.
-          </div>
-        ) : isMineApplied ? (
-          <Button variant="ghost" className="w-full" onClick={onWithdraw}>
-            지원 취소
-          </Button>
-        ) : (
-          <Button
-            variant="primary"
-            className="w-full bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
-            onClick={onApply}
-            disabled={isFull}
-          >
-            {isFull ? '확정 완료된 세션입니다' : '이 세션 지원하기'}
-          </Button>
-        )}
-      </div>
+      {!(isManager && isMineConfirmed) && (
+        <div className="border-border mt-s-5 pt-s-4 border-t">
+          {isMineConfirmed ? (
+            <div className="text-foreground-muted text-caption text-center">
+              확정된 세션은 본인이 직접 취소할 수 없습니다. 매니저에게 문의해 주세요.
+            </div>
+          ) : isMineApplied ? (
+            <Button variant="ghost" className="w-full" onClick={onWithdraw}>
+              지원 취소
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              className="w-full bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+              onClick={onApply}
+              disabled={isFull}
+            >
+              {isFull ? '확정 완료된 세션입니다' : '이 세션 지원하기'}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
