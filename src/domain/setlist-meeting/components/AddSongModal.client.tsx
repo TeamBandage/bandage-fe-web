@@ -18,6 +18,7 @@ import {
   ResponsiveSheetTrigger,
 } from '@/components/ui/responsive-sheet';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/cn';
 import { useToast } from '@/hooks/useToast';
 import { useCreateTrackSelectionItem } from '@/domain/track-selection/hooks/useCreateTrackSelectionItem';
@@ -582,28 +583,34 @@ export function AddSongModal({
                 </div>
 
                 <div className="gap-s-2 flex flex-col">
-                  <div className="gap-s-2 flex flex-wrap">
-                    {PRESET_DISPLAY_ORDER.map((id) => {
-                      const p = PRESETS[id]!;
-                      const active = activePresetIds.includes(id);
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => togglePreset(id)}
-                          aria-pressed={active}
-                          className={cn(
-                            'px-s-3 py-s-1 text-caption rounded-md border font-mono font-bold transition-colors',
-                            active
-                              ? 'border-white/40 bg-white/10 text-white'
-                              : 'bg-card border-border text-foreground-muted hover:border-border-hi',
-                          )}
-                        >
-                          {p.short}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <TooltipProvider delayDuration={0}>
+                    <div className="gap-s-2 flex flex-wrap">
+                      {PRESET_DISPLAY_ORDER.map((id) => {
+                        const p = PRESETS[id]!;
+                        const active = activePresetIds.includes(id);
+                        return (
+                          <Tooltip key={id}>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={() => togglePreset(id)}
+                                aria-pressed={active}
+                                className={cn(
+                                  'px-s-3 py-s-1 text-caption rounded-md border font-mono font-bold transition-colors',
+                                  active
+                                    ? 'border-white/40 bg-white/10 text-white'
+                                    : 'bg-card border-border text-foreground-muted hover:border-border-hi',
+                                )}
+                              >
+                                {p.short}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">{p.label}</TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                    </div>
+                  </TooltipProvider>
                   {extras.length > 0 && (
                     <div className="gap-s-2 flex flex-wrap">
                       {extras.map((s) => (
@@ -637,7 +644,7 @@ export function AddSongModal({
                         e.preventDefault();
                         advanceTo('extraShort');
                       }}
-                      placeholder="예: Guitar 2"
+                      placeholder="예: Guitar4"
                       aria-label="세션 이름"
                       autoComplete="off"
                       maxLength={20}
@@ -647,20 +654,13 @@ export function AddSongModal({
                     <Input
                       ref={extraShortInputRef}
                       value={extraShortDraft}
-                      onChange={(e) =>
-                        setExtraShortDraft(
-                          e.target.value
-                            .toUpperCase()
-                            .replace(/[^A-Z0-9]/g, '')
-                            .slice(0, 3),
-                        )
-                      }
+                      onChange={(e) => setExtraShortDraft(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key !== 'Enter') return;
                         e.preventDefault();
                         addExtra();
                       }}
-                      placeholder="예: G2"
+                      placeholder="예: G4"
                       aria-label="약어"
                       autoComplete="off"
                       maxLength={3}
