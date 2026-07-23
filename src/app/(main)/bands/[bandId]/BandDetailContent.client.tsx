@@ -250,8 +250,10 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
             <Button
               variant="danger"
               className="h-8 rounded-[5px] px-2"
-              loading={leaveMutation.isPending}
-              onClick={() => leaveMutation.mutate()}
+              onClick={() => {
+                setLeaveOpen(false);
+                leaveMutation.mutate();
+              }}
             >
               탈퇴하기
             </Button>
@@ -343,6 +345,7 @@ const STATUS_FILTERS: { value: ApplicationStatus; label: string }[] = [
   { value: 'PENDING', label: '대기중' },
   { value: 'APPROVED', label: '승인됨' },
   { value: 'REJECTED', label: '거절됨' },
+  { value: 'LEAVED', label: '탈퇴' },
 ];
 
 function ApplicationsTab({ bandId }: { bandId: string }) {

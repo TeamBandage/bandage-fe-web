@@ -1,7 +1,7 @@
 'use client';
 
 import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useDecideApplication } from '@/domain/band/hooks/useDecideApplication';
 import { getMemberDisplayName } from '@/domain/member/utils';
@@ -21,6 +21,14 @@ const STATUS_LABEL: Record<BandApplicationInfoResponse['status'], string> = {
   REJECTED: '거절됨',
   WITHDRAWN: '신청 철회',
   LEAVED: '탈퇴',
+};
+
+const STATUS_VARIANT: Record<BandApplicationInfoResponse['status'], BadgeVariant> = {
+  PENDING: 'default',
+  APPROVED: 'blue',
+  REJECTED: 'danger',
+  WITHDRAWN: 'muted',
+  LEAVED: 'muted',
 };
 
 export function BandApplicationRow({ bandId, application, onDecide }: Props) {
@@ -81,7 +89,7 @@ export function BandApplicationRow({ bandId, application, onDecide }: Props) {
           </Button>
         </div>
       ) : (
-        <Badge variant={application.status === 'APPROVED' ? 'blue' : 'danger'}>
+        <Badge variant={STATUS_VARIANT[application.status]}>
           {STATUS_LABEL[application.status]}
         </Badge>
       )}

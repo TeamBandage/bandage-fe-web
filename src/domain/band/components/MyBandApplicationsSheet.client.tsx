@@ -29,6 +29,7 @@ const STATUS_FILTERS: { label: string; value: ApplicationStatus | undefined }[] 
   { label: '대기중', value: 'PENDING' },
   { label: '승인됨', value: 'APPROVED' },
   { label: '거절됨', value: 'REJECTED' },
+  { label: '탈퇴', value: 'LEAVED' },
 ];
 
 const STATUS_LABEL: Record<ApplicationStatus, string> = {
@@ -36,7 +37,7 @@ const STATUS_LABEL: Record<ApplicationStatus, string> = {
   APPROVED: '승인됨',
   REJECTED: '거절됨',
   WITHDRAWN: '철회됨',
-  LEAVED: '탈퇴됨',
+  LEAVED: '탈퇴',
 };
 
 const STATUS_COLOR: Record<ApplicationStatus, string> = {
