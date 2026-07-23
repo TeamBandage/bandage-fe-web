@@ -22,7 +22,9 @@ export function useDecideApplication(bandId: string, options?: UseDecideApplicat
   return useMutation<void, Error, Variables>({
     mutationFn: ({ applicationId, decision }) => decideApplication(bandId, applicationId, decision),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.band.applications(bandId) });
+      // status 를 지정하지 않은 3단계 prefix로 무효화 — PENDING/APPROVED/REJECTED 등
+      // 모든 상태별 캐시된 목록을 다 잡기 위함 (status 지정 시 4번째 key 요소가 달라 매칭 안 됨).
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.band.all, bandId, 'applications'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.band.myApplication(bandId) });
       queryClient.invalidateQueries({ queryKey: [...queryKeys.band.members(bandId)] });
       options?.onSuccess?.(variables);

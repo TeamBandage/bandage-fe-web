@@ -1,7 +1,7 @@
 'use client';
 
 import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useDecideApplication } from '@/domain/band/hooks/useDecideApplication';
 import { getMemberDisplayName } from '@/domain/member/utils';
@@ -21,6 +21,14 @@ const STATUS_LABEL: Record<BandApplicationInfoResponse['status'], string> = {
   REJECTED: '거절됨',
   WITHDRAWN: '신청 철회',
   LEAVED: '탈퇴',
+};
+
+const STATUS_VARIANT: Record<BandApplicationInfoResponse['status'], BadgeVariant> = {
+  PENDING: 'default',
+  APPROVED: 'blue',
+  REJECTED: 'danger',
+  WITHDRAWN: 'muted',
+  LEAVED: 'muted',
 };
 
 export function BandApplicationRow({ bandId, application, onDecide }: Props) {
@@ -44,7 +52,7 @@ export function BandApplicationRow({ bandId, application, onDecide }: Props) {
       className="bg-card border-border gap-s-3 p-s-3 flex items-center rounded-md border"
       data-slot="band-application-row"
     >
-      <Avatar size="lg" fallback={displayName} />
+      <Avatar size="lg" src={application.applicantProfileImg ?? undefined} fallback={displayName} />
       <div className="min-w-0 flex-1">
         <p className="text-foreground truncate text-sm font-semibold">{displayName}</p>
         {isPending && <p className="text-foreground-muted text-caption mt-0.5">신청 대기 중</p>}
@@ -81,7 +89,7 @@ export function BandApplicationRow({ bandId, application, onDecide }: Props) {
           </Button>
         </div>
       ) : (
-        <Badge variant={application.status === 'APPROVED' ? 'blue' : 'danger'}>
+        <Badge variant={STATUS_VARIANT[application.status]}>
           {STATUS_LABEL[application.status]}
         </Badge>
       )}
