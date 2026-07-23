@@ -477,14 +477,21 @@ export function JamDetailContent({
                         key={p.participantId}
                         className="py-s-2 flex items-center justify-between gap-3 last:pb-0"
                       >
-                        <span className="text-foreground-sub text-sm">
-                          {p.member?.name ?? `멤버 #${p.member?.memberId ?? p.participantId}`}
-                          {mySessions.length > 0 && (
-                            <span className="text-foreground-muted ml-2">
-                              · {mySessions.map((s) => s.label).join(', ')}
-                            </span>
-                          )}
-                        </span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Avatar
+                            size="sm"
+                            src={p.member?.profileImg ?? undefined}
+                            fallback={p.member?.name}
+                          />
+                          <span className="text-foreground-sub truncate text-sm">
+                            {p.member?.name ?? `멤버 #${p.member?.memberId ?? p.participantId}`}
+                            {mySessions.length > 0 && (
+                              <span className="text-foreground-muted ml-2">
+                                · {mySessions.map((s) => s.label).join(', ')}
+                              </span>
+                            )}
+                          </span>
+                        </div>
                         <div className="flex shrink-0 items-center gap-1">
                           <Button
                             size="sm"
