@@ -52,7 +52,7 @@ export function BandApplicationRow({ bandId, application, onDecide }: Props) {
       className="bg-card border-border gap-s-3 p-s-3 flex items-center rounded-md border"
       data-slot="band-application-row"
     >
-      <Avatar size="lg" fallback={displayName} />
+      <Avatar size="lg" src={application.applicantProfileImg ?? undefined} fallback={displayName} />
       <div className="min-w-0 flex-1">
         <p className="text-foreground truncate text-sm font-semibold">{displayName}</p>
         {isPending && <p className="text-foreground-muted text-caption mt-0.5">신청 대기 중</p>}

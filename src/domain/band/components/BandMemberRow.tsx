@@ -58,7 +58,7 @@ export function BandMemberRow({ bandId, member }: Props) {
       className="bg-card border-border gap-s-3 p-s-3 flex items-center rounded-md border"
       data-slot="band-member-row"
     >
-      <Avatar size="lg" fallback={displayName} />
+      <Avatar size="lg" src={member.profileImg ?? undefined} fallback={displayName} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="text-foreground truncate text-sm font-semibold">{displayName}</p>
