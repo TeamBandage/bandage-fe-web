@@ -11,19 +11,13 @@ import { useMyTrackSelections } from '@/domain/track-selection/hooks/useMyTrackS
 import type { TrackSelectionResponse } from '@/domain/track-selection/types/res';
 import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
-import { formatKst, parseKst } from '@/lib/date';
 import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
 
 const TrackSelectionIcon = DOMAIN_ICONS['track-selection'];
 
-function formatPracticeDate(dateStr: string): string {
-  return formatKst(parseKst(dateStr, 'yyyy-MM-dd'), 'yy년 M월 d일');
-}
-
 function MeetingRow({ item, active }: { item: TrackSelectionResponse; active: boolean }) {
   const locked = Boolean(item.lockedAt);
-  const periodLabel = `${formatPracticeDate(item.practiceWindow.from)} ~ ${formatPracticeDate(item.practiceWindow.to)}`;
 
   return (
     <li>
@@ -43,7 +37,6 @@ function MeetingRow({ item, active }: { item: TrackSelectionResponse; active: bo
             <span className="text-caption truncate font-semibold">{item.title}</span>
             {locked && <Lock className="text-foreground-muted h-3 w-3 shrink-0" />}
           </div>
-          <div className="text-foreground-muted text-caption mt-0.5">{periodLabel}</div>
         </div>
       </Link>
     </li>

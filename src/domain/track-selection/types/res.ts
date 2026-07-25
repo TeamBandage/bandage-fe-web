@@ -3,7 +3,6 @@ export interface TrackSelectionResponse {
   title: string;
   bandIds: string[];
   managerId: number;
-  practiceWindow: { from: string; to: string };
   createdAt?: string;
   lockedAt?: string;
   updatedAt?: string;
