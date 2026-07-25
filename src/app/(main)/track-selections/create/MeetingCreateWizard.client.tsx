@@ -1,14 +1,11 @@
 'use client';
 
-import { format, parse } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { CalendarDays, Loader2, Search, Users, X } from 'lucide-react';
+import { Loader2, Search, Users, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
@@ -28,14 +25,6 @@ import { cn } from '@/lib/cn';
 const STEPS = ['참여 인원', '회의 정보', '검토'] as const;
 type Step = 0 | 1 | 2;
 type BandTab = 'my-bands' | 'band-search' | 'member';
-
-function formatPracticeDate(dateStr: string): string {
-  try {
-    return format(parse(dateStr, 'yyyy-MM-dd', new Date()), 'yyyy.MM.dd (EEE)', { locale: ko });
-  } catch {
-    return dateStr;
-  }
-}
 
 type Participant = {
   memberId: number;
@@ -65,8 +54,6 @@ export function MeetingCreateWizard() {
   // Step 1 — 회의 정보
   const [title, setTitle] = useState('');
   const [managerId, setManagerId] = useState<number | null>(null);
-  const [practiceFrom, setPracticeFrom] = useState('');
-  const [practiceTo, setPracticeTo] = useState('');
 
   // 본인은 항상 참여 인원에 기본 포함 (멤버 검색 API는 본인을 결과에서 제외).
   useEffect(() => {
@@ -84,12 +71,10 @@ export function MeetingCreateWizard() {
   const bandSearchResult = useBandSearch(bandQuery, 20);
   const bandSearchItems = bandSearchResult.data?.pages.flatMap((p) => p.content) ?? [];
 
-  const practiceWindowValid = !!practiceFrom && !!practiceTo && practiceFrom <= practiceTo;
-
   const canNext = (() => {
     // 밴드는 선택 사항 — 밴드 없이 멤버만으로도 회의를 만들 수 있음. 참여 멤버는 최소 1명 필요.
     if (step === 0) return participants.length > 0;
-    if (step === 1) return title.trim().length > 0 && managerId !== null && practiceWindowValid;
+    if (step === 1) return title.trim().length > 0 && managerId !== null;
     return true;
   })();
 
@@ -99,8 +84,7 @@ export function MeetingCreateWizard() {
         toast.error('최소 1명 이상의 참여 멤버를 추가하세요.');
       } else if (step === 1) {
         if (!title.trim()) toast.error('회의 제목을 입력하세요.');
-        else if (managerId === null) toast.error('매니저를 지정하세요.');
-        else toast.error('합주 가능 기간을 입력하세요.');
+        else toast.error('매니저를 지정하세요.');
       }
       return;
     }
@@ -177,7 +161,7 @@ export function MeetingCreateWizard() {
   };
 
   const submit = async () => {
-    if (managerId === null || !practiceWindowValid || isPending) return;
+    if (managerId === null || isPending) return;
     setIsPending(true);
     try {
       const res = await createTrackSelection({
@@ -185,7 +169,6 @@ export function MeetingCreateWizard() {
         bandIds: selectedBandIds,
         managerId,
         participantUserIds: participants.map((p) => p.memberId),
-        practiceWindow: { from: practiceFrom, to: practiceTo },
       });
       toast.success('선곡 회의가 만들어졌습니다.');
       router.replace(ROUTES.TRACK_SELECTION_DETAIL(res.selectionId));
@@ -238,10 +221,6 @@ export function MeetingCreateWizard() {
           setManagerId={setManagerId}
           participants={participants}
           myMemberId={myMemberId}
-          practiceFrom={practiceFrom}
-          setPracticeFrom={setPracticeFrom}
-          practiceTo={practiceTo}
-          setPracticeTo={setPracticeTo}
         />
       )}
       {step === 2 && (
@@ -251,8 +230,6 @@ export function MeetingCreateWizard() {
           participants={participants}
           title={title}
           managerId={managerId}
-          practiceFrom={practiceFrom}
-          practiceTo={practiceTo}
           setStep={setStep}
         />
       )}
@@ -604,10 +581,6 @@ function StepInfo({
   setManagerId,
   participants,
   myMemberId,
-  practiceFrom,
-  setPracticeFrom,
-  practiceTo,
-  setPracticeTo,
 }: {
   title: string;
   setTitle: (t: string) => void;
@@ -615,12 +588,7 @@ function StepInfo({
   setManagerId: (id: number) => void;
   participants: Participant[];
   myMemberId?: number;
-  practiceFrom: string;
-  setPracticeFrom: (v: string) => void;
-  practiceTo: string;
-  setPracticeTo: (v: string) => void;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
   return (
     <section className="gap-s-4 flex flex-col">
       <Input
@@ -630,37 +598,6 @@ function StepInfo({
         onChange={(e) => setTitle(e.target.value)}
         placeholder="예: 여름 페스티벌 셋리스트 회의"
       />
-
-      <div>
-        <div className="text-foreground mb-s-2 text-sm font-medium">
-          합주 가능 기간 <span className="text-danger">*</span>
-        </div>
-        <div className="text-foreground-muted text-micro mb-s-2">
-          회의에서 다룰 합주가 가능한 기간을 입력하세요. 멤버 스케줄 조율의 기준이 됩니다.
-        </div>
-        <div className="gap-s-3 flex items-center">
-          <DatePicker
-            value={practiceFrom}
-            min={today}
-            onChange={setPracticeFrom}
-            placeholder="시작일 선택"
-            showWeekday
-            className="h-10 rounded-md px-3 text-sm"
-          />
-          <span className="text-foreground-muted">~</span>
-          <DatePicker
-            value={practiceTo}
-            min={practiceFrom || today}
-            onChange={setPracticeTo}
-            placeholder="종료일 선택"
-            showWeekday
-            className="h-10 rounded-md px-3 text-sm"
-          />
-        </div>
-        {practiceFrom && practiceTo && practiceFrom > practiceTo && (
-          <p className="text-danger text-micro mt-s-2">시작일은 종료일보다 빨라야 합니다.</p>
-        )}
-      </div>
 
       <div>
         <div className="text-foreground mb-s-2 text-sm font-medium">
@@ -713,8 +650,6 @@ function StepReview({
   participants,
   title,
   managerId,
-  practiceFrom,
-  practiceTo,
   setStep,
 }: {
   selectedBandNames: Record<string, string>;
@@ -722,8 +657,6 @@ function StepReview({
   participants: Participant[];
   title: string;
   managerId: number | null;
-  practiceFrom: string;
-  practiceTo: string;
   setStep: (step: Step) => void;
 }) {
   const manager = participants.find((p) => p.memberId === managerId);
@@ -755,21 +688,6 @@ function StepReview({
             onEdit: () => setStep(0),
           },
           { label: '제목', value: title || '(미입력)', onEdit: () => setStep(1) },
-          ...(practiceFrom && practiceTo
-            ? [
-                {
-                  label: '합주 가능 기간',
-                  value: (
-                    <span>
-                      <CalendarDays className="mr-1 inline h-4 w-4" aria-hidden="true" />
-                      {formatPracticeDate(practiceFrom)} ~ {formatPracticeDate(practiceTo)}
-                    </span>
-                  ),
-                  emphasized: true,
-                  onEdit: () => setStep(1),
-                },
-              ]
-            : []),
           {
             label: '매니저',
             value: manager ? (
