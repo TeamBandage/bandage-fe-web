@@ -2,6 +2,7 @@
 
 import { formatInTimeZone } from 'date-fns-tz';
 import { Users } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 
 import {
@@ -14,12 +15,14 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ROUTES } from '@/global/config/routes';
 import type { ApplicationStatus } from '@/global/types';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 import { DOMAIN_TONES } from '@/lib/domain-icons';
 
+import { useApplyBand } from '../hooks/useApplyBand';
 import { useMyBandApplications } from '../hooks/useMyBandApplications';
 import { useWithdrawApplication } from '../hooks/useWithdrawApplication';
 import type { MyBandApplicationResponse } from '../types/res';
@@ -54,6 +57,10 @@ function ApplicationRow({ item }: { item: MyBandApplicationResponse }) {
     onSuccess: () => toast.success('가입 신청을 철회했습니다.'),
     onError: (err) => toast.error(err.message || '철회에 실패했습니다.'),
   });
+  const applyMutation = useApplyBand(item.bandId, {
+    onSuccess: () => toast.success('가입 신청을 다시 보냈습니다.'),
+    onError: (err) => toast.error(err.message || '재가입 신청에 실패했습니다.'),
+  });
 
   const appliedAt = item.appliedAt
     ? formatInTimeZone(new Date(item.appliedAt), 'Asia/Seoul', 'yyyy-MM-dd')
@@ -61,39 +68,55 @@ function ApplicationRow({ item }: { item: MyBandApplicationResponse }) {
 
   return (
     <li className="gap-s-3 px-s-4 py-s-3 flex items-center">
-      {item.bandProfileImg ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.bandProfileImg}
-          alt={item.bandName}
-          className="h-10 w-10 shrink-0 rounded-md object-cover"
-        />
-      ) : (
-        <IconTile icon={<Users />} size="sm" tone={DOMAIN_TONES.band} />
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="gap-s-2 flex items-center">
-          <span className="text-caption truncate font-semibold">{item.bandName}</span>
-          <span
-            className={cn(
-              'text-micro rounded px-1.5 py-0.5 font-medium',
-              STATUS_COLOR[item.status],
-            )}
-          >
-            {STATUS_LABEL[item.status]}
-          </span>
+      <Link
+        href={ROUTES.BAND_DETAIL(item.bandId)}
+        className="gap-s-3 text-foreground flex min-w-0 flex-1 items-center hover:no-underline"
+      >
+        {item.bandProfileImg ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.bandProfileImg}
+            alt={item.bandName}
+            className="h-10 w-10 shrink-0 rounded-md object-cover"
+          />
+        ) : (
+          <IconTile icon={<Users />} size="sm" tone={DOMAIN_TONES.band} />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="gap-s-2 flex items-center">
+            <span className="text-caption truncate font-semibold">{item.bandName}</span>
+            <span
+              className={cn(
+                'text-micro rounded px-1.5 py-0.5 font-medium',
+                STATUS_COLOR[item.status],
+              )}
+            >
+              {STATUS_LABEL[item.status]}
+            </span>
+          </div>
+          {appliedAt && <p className="text-foreground-muted text-micro mt-0.5">{appliedAt} 신청</p>}
         </div>
-        {appliedAt && <p className="text-foreground-muted text-micro mt-0.5">{appliedAt} 신청</p>}
-      </div>
+      </Link>
       {item.status === 'PENDING' && (
         <Button
           size="sm"
           variant="ghost"
-          className="text-foreground-muted hover:text-foreground shrink-0 rounded-[5px] hover:bg-white/10"
+          className="shrink-0 rounded-[5px] text-red-400 hover:bg-red-400/10 hover:text-red-400"
           onClick={() => withdrawMutation.mutate()}
           loading={withdrawMutation.isPending}
         >
           철회
+        </Button>
+      )}
+      {item.status === 'LEAVED' && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-foreground-muted hover:text-foreground shrink-0 rounded-[5px] hover:bg-white/10"
+          onClick={() => applyMutation.mutate()}
+          loading={applyMutation.isPending}
+        >
+          재가입
         </Button>
       )}
     </li>
