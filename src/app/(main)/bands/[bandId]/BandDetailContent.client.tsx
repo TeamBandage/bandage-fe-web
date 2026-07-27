@@ -605,7 +605,7 @@ function SettingsTab({
 
         <TabsContent value="delete" className="space-y-s-3 mt-0">
           <p className="text-foreground-sub text-xs">
-            밴드를 삭제하면 모든 멤버·합주·공연 연결이 함께 제거되며 복구할 수 없습니다.
+            밴드를 삭제하면 모든 멤버·합주·공연 데이터가 함께 제거되며 복구할 수 없습니다.
           </p>
           <div className="mt-s-5">
             <Input

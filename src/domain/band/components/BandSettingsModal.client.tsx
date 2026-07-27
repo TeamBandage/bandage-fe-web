@@ -124,7 +124,7 @@ export function BandSettingsModal({ open, onOpenChange, band }: Props) {
 
             <TabsContent value="delete" className="space-y-s-3">
               <p className="text-foreground-sub text-sm">
-                밴드를 삭제하면 모든 멤버·합주·공연 연결이 함께 제거되며 복구할 수 없습니다.
+                밴드를 삭제하면 모든 멤버·합주·공연 데이터가 함께 제거되며 복구할 수 없습니다.
               </p>
               <Input
                 label={`밴드 이름(${band.bandName}) 을 그대로 입력해 주세요`}
