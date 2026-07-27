@@ -185,7 +185,7 @@ export function MyBandApplicationsSheet({ trigger }: { trigger: React.ReactNode 
     return (
       <Dialog>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="flex max-h-[85dvh] w-full max-w-md flex-col" hideCloseButton>
+        <DialogContent className="flex max-h-[85dvh] w-full max-w-md flex-col">
           <div className="border-border px-s-4 py-s-4 shrink-0 border-b">
             <DialogTitle className="text-foreground text-base font-bold">
               밴드 가입 내역
