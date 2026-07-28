@@ -66,7 +66,8 @@ export function MeetingCreateWizard() {
   }, [me]);
 
   // Real API data
-  const { data: myBands = [] } = useMyBands(50);
+  const { data: myBandsData } = useMyBands(50);
+  const myBands = myBandsData?.pages.flatMap((p) => p.content) ?? [];
   const { data: memberSearchResults = [] } = useMemberSearch(memberQuery);
   const bandSearchResult = useBandSearch(bandQuery, 20);
   const bandSearchItems = bandSearchResult.data?.pages.flatMap((p) => p.content) ?? [];

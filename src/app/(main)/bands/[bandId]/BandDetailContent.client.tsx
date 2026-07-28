@@ -35,6 +35,7 @@ import { useMyApplicationForBand } from '@/domain/band/hooks/useMyApplicationFor
 import { useWithdrawApplication } from '@/domain/band/hooks/useWithdrawApplication';
 import { useBandDetail } from '@/domain/band/hooks/useBandDetail';
 import { useBandMembers } from '@/domain/band/hooks/useBandMembers';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useDeleteBand } from '@/domain/band/hooks/useDeleteBand';
 import { useDeleteBandProfileImage } from '@/domain/band/hooks/useDeleteBandProfileImage';
 import { useLeaveBand } from '@/domain/band/hooks/useLeaveBand';
@@ -312,6 +313,8 @@ function MembersTab({ bandId }: { bandId: string }) {
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useBandMembers(bandId, 20);
 
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
+
   if (isLoading) return <Skeleton className="h-16 w-full" />;
   if (isError) return <ErrorState onRetry={() => refetch()} />;
 
@@ -325,18 +328,8 @@ function MembersTab({ bandId }: { bandId: string }) {
           <BandMemberRow key={m.bandMemberId} bandId={bandId} member={m} />
         ))}
       </div>
-      {hasNextPage && (
-        <div className="flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => fetchNextPage()}
-            loading={isFetchingNextPage}
-          >
-            더 불러오기
-          </Button>
-        </div>
-      )}
+      {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+      {isFetchingNextPage && <Skeleton className="h-16 w-full" />}
     </div>
   );
 }
@@ -355,6 +348,8 @@ function ApplicationsTab({ bandId }: { bandId: string }) {
 
   const apps = data?.pages.flatMap((p) => p.content) ?? [];
   const currentLabel = STATUS_FILTERS.find((f) => f.value === status)?.label ?? '';
+
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   return (
     <div className="space-y-s-4">
@@ -389,18 +384,8 @@ function ApplicationsTab({ bandId }: { bandId: string }) {
               onDecide={() => setStatus('PENDING')}
             />
           ))}
-          {hasNextPage && (
-            <div className="flex justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fetchNextPage()}
-                loading={isFetchingNextPage}
-              >
-                더 불러오기
-              </Button>
-            </div>
-          )}
+          {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+          {isFetchingNextPage && <Skeleton className="h-16 w-full" />}
         </div>
       )}
     </div>

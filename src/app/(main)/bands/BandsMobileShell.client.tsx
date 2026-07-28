@@ -24,6 +24,7 @@ import { useBandSearch } from '@/domain/band/hooks/useBandSearch';
 import { useMyBands } from '@/domain/band/hooks/useMyBands';
 import type { BandInfoResponse, MyBandInfoResponse } from '@/domain/band/types';
 import { useIsDesktop } from '@/hooks/use-media-query';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { cn } from '@/lib/cn';
 import { ROUTES } from '@/global/config/routes';
 import { DOMAIN_TONES } from '@/lib/domain-icons';
@@ -93,17 +94,50 @@ export function BandsMobileShell() {
     router.push(ROUTES.BAND_DETAIL(selectedBandId));
   }
 
-  const { data: myBandsData, isLoading: myLoading } = useMyBands(50);
-  const myBands = myBandsData ?? [];
+  const {
+    data: myBandsData,
+    isLoading: myLoading,
+    fetchNextPage: fetchNextMyBands,
+    hasNextPage: hasNextMyBands,
+    isFetchingNextPage: isFetchingNextMyBands,
+  } = useMyBands(50);
+  const myBands = myBandsData?.pages.flatMap((p) => p.content) ?? [];
 
   const hasQuery = query.trim().length > 0;
-  const { data: allBandsData, isLoading: allLoading } = useBandList(20);
+  const {
+    data: allBandsData,
+    isLoading: allLoading,
+    fetchNextPage: fetchNextAllBands,
+    hasNextPage: hasNextAllBands,
+    isFetchingNextPage: isFetchingNextAllBands,
+  } = useBandList(20);
   const allBands = allBandsData?.pages.flatMap((p) => p.content) ?? [];
-  const { data: searchData, isLoading: searchLoading } = useBandSearch(query, 20);
+  const {
+    data: searchData,
+    isLoading: searchLoading,
+    fetchNextPage: fetchNextSearch,
+    hasNextPage: hasNextSearch,
+    isFetchingNextPage: isFetchingNextSearch,
+  } = useBandSearch(query, 20);
   const searchResults = searchData?.pages.flatMap((p) => p.content) ?? [];
 
   const discoverBands = hasQuery ? searchResults : allBands;
   const discoverLoading = hasQuery ? searchLoading : allLoading;
+  const fetchNextDiscover = hasQuery ? fetchNextSearch : fetchNextAllBands;
+  const hasNextDiscover = hasQuery ? hasNextSearch : hasNextAllBands;
+  const isFetchingNextDiscover = hasQuery ? isFetchingNextSearch : isFetchingNextAllBands;
+
+  const discoverLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextDiscover,
+    isFetchingNextPage: isFetchingNextDiscover,
+    fetchNextPage: fetchNextDiscover,
+  });
+
+  const myBandsLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextMyBands,
+    isFetchingNextPage: isFetchingNextMyBands,
+    fetchNextPage: fetchNextMyBands,
+  });
 
   return (
     <>
@@ -186,17 +220,27 @@ export function BandsMobileShell() {
               참여 중인 밴드가 없습니다.
             </p>
           ) : (
-            <ul className="gap-s-1 flex flex-col">
-              {myBands.map((b) => (
-                <BandSelectRow
-                  key={b.bandId}
-                  band={b}
-                  myRole={b.myRole}
-                  isSelected={selectedBandId === b.bandId}
-                  onClick={() => setSelectedBandId(b.bandId)}
-                />
-              ))}
-            </ul>
+            <>
+              <ul className="gap-s-1 flex flex-col">
+                {myBands.map((b) => (
+                  <BandSelectRow
+                    key={b.bandId}
+                    band={b}
+                    myRole={b.myRole}
+                    isSelected={selectedBandId === b.bandId}
+                    onClick={() => setSelectedBandId(b.bandId)}
+                  />
+                ))}
+              </ul>
+              {hasNextMyBands && (
+                <div ref={myBandsLoadMoreRef} className="h-4" aria-hidden="true" />
+              )}
+              {isFetchingNextMyBands && (
+                <div className="space-y-s-2 py-2">
+                  <Skeleton className="h-14 w-full" rounded="md" />
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
 
@@ -224,21 +268,31 @@ export function BandsMobileShell() {
               {hasQuery ? '검색 결과가 없습니다.' : '등록된 밴드가 없습니다.'}
             </p>
           ) : (
-            <ul className="gap-s-1 flex flex-col">
-              {discoverBands.map((b) => {
-                const myEntry = myBands.find((mb) => mb.bandId === b.bandId);
-                return (
-                  <BandSelectRow
-                    key={b.bandId}
-                    band={b}
-                    myRole={myEntry?.myRole}
-                    showMineMarker={!!myEntry}
-                    isSelected={selectedBandId === b.bandId}
-                    onClick={() => setSelectedBandId(b.bandId)}
-                  />
-                );
-              })}
-            </ul>
+            <>
+              <ul className="gap-s-1 flex flex-col">
+                {discoverBands.map((b) => {
+                  const myEntry = myBands.find((mb) => mb.bandId === b.bandId);
+                  return (
+                    <BandSelectRow
+                      key={b.bandId}
+                      band={b}
+                      myRole={myEntry?.myRole}
+                      showMineMarker={!!myEntry}
+                      isSelected={selectedBandId === b.bandId}
+                      onClick={() => setSelectedBandId(b.bandId)}
+                    />
+                  );
+                })}
+              </ul>
+              {hasNextDiscover && (
+                <div ref={discoverLoadMoreRef} className="h-4" aria-hidden="true" />
+              )}
+              {isFetchingNextDiscover && (
+                <div className="space-y-s-2 py-2">
+                  <Skeleton className="h-14 w-full" rounded="md" />
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>

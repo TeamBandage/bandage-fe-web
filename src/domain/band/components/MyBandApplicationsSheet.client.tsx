@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/global/config/routes';
 import type { ApplicationStatus } from '@/global/types';
 import { useIsDesktop } from '@/hooks/use-media-query';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 import { DOMAIN_TONES } from '@/lib/domain-icons';
@@ -128,12 +129,20 @@ function SheetInner({
   setStatus,
   items,
   isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
 }: {
   status: ApplicationStatus | undefined;
   setStatus: (v: ApplicationStatus | undefined) => void;
   items: MyBandApplicationResponse[];
   isLoading: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => void;
 }) {
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
+
   return (
     <>
       <div className="gap-s-2 px-s-4 py-s-3 flex shrink-0 flex-wrap">
@@ -164,11 +173,19 @@ function SheetInner({
         ) : items.length === 0 ? (
           <p className="text-foreground-muted py-s-8 text-center text-sm">신청 내역이 없습니다.</p>
         ) : (
-          <ul className="divide-border divide-y">
-            {items.map((item) => (
-              <ApplicationRow key={item.bandApplicationId} item={item} />
-            ))}
-          </ul>
+          <>
+            <ul className="divide-border divide-y">
+              {items.map((item) => (
+                <ApplicationRow key={item.bandApplicationId} item={item} />
+              ))}
+            </ul>
+            {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+            {isFetchingNextPage && (
+              <div className="px-s-4 py-2">
+                <Skeleton className="h-14 w-full" rounded="md" />
+              </div>
+            )}
+          </>
         )}
       </div>
     </>
@@ -178,7 +195,10 @@ function SheetInner({
 export function MyBandApplicationsSheet({ trigger }: { trigger: React.ReactNode }) {
   const isDesktop = useIsDesktop();
   const [status, setStatus] = useState<ApplicationStatus | undefined>(undefined);
-  const { data, isLoading } = useMyBandApplications(status, 30);
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMyBandApplications(
+    status,
+    30,
+  );
   const items = data?.pages.flatMap((p) => p.content) ?? [];
 
   if (isDesktop) {
@@ -191,7 +211,15 @@ export function MyBandApplicationsSheet({ trigger }: { trigger: React.ReactNode 
               밴드 가입 내역
             </DialogTitle>
           </div>
-          <SheetInner status={status} setStatus={setStatus} items={items} isLoading={isLoading} />
+          <SheetInner
+            status={status}
+            setStatus={setStatus}
+            items={items}
+            isLoading={isLoading}
+            hasNextPage={!!hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={() => fetchNextPage()}
+          />
         </DialogContent>
       </Dialog>
     );
@@ -207,7 +235,15 @@ export function MyBandApplicationsSheet({ trigger }: { trigger: React.ReactNode 
         <div className="border-border px-s-4 py-s-3 shrink-0 border-b">
           <span className="text-foreground text-base font-bold">밴드 가입 내역</span>
         </div>
-        <SheetInner status={status} setStatus={setStatus} items={items} isLoading={isLoading} />
+        <SheetInner
+          status={status}
+          setStatus={setStatus}
+          items={items}
+          isLoading={isLoading}
+          hasNextPage={!!hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          fetchNextPage={() => fetchNextPage()}
+        />
       </BottomSheetContent>
     </BottomSheet>
   );
