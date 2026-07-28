@@ -18,6 +18,7 @@ function Stub() {
  */
 export function HomeStatCards() {
   const bands = useMyBands();
+  const bandCount = bands.data?.pages.flatMap((p) => p.content).length ?? 0;
   const practices = useUpcomingJams();
   const performances = useUpcomingPerformances();
 
@@ -26,7 +27,7 @@ export function HomeStatCards() {
       {bands.isLoading ? (
         <Stub />
       ) : (
-        <StatCard icon={Users} label="소속 밴드" value={bands.data?.length ?? 0} accent="accent" />
+        <StatCard icon={Users} label="소속 밴드" value={bandCount} accent="accent" />
       )}
       {practices.isLoading ? (
         <Stub />

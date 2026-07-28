@@ -19,7 +19,9 @@ export function useBandRole(bandId: string) {
 
   const data = useMemo<BandRole | null>(() => {
     if (!authenticated || !myBandsQuery.data) return null;
-    const found = myBandsQuery.data.find((b) => b.bandId === bandId);
+    const found = myBandsQuery.data.pages
+      .flatMap((p) => p.content)
+      .find((b) => b.bandId === bandId);
     return found ? found.myRole : null;
   }, [authenticated, myBandsQuery.data, bandId]);
 
