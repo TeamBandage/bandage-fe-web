@@ -7,18 +7,15 @@ import { useEffect, useRef, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAllPerformancePosters } from '@/domain/performance-poster/hooks/useAllPerformancePosters';
 import type { PerformancePosterResponse } from '@/domain/performance-poster/types/res';
-import { usePerformanceDetail } from '@/domain/performance/hooks/usePerformanceDetail';
 import { ROUTES } from '@/global/config/routes';
 
 const SCROLL_STEP = 240;
 
-function HomePosterCard({ poster }: { poster: PerformancePosterResponse }) {
-  const { data: performance } = usePerformanceDetail(poster.performanceId);
-
+function PosterCard({ poster }: { poster: PerformancePosterResponse }) {
   return (
     <Link
       href={ROUTES.PERFORMANCE_DETAIL(poster.performanceId)}
-      className="flex w-56 shrink-0 flex-col gap-2 no-underline"
+      className="block w-56 shrink-0 no-underline"
     >
       <div className="border-border h-80 w-56 shrink-0 overflow-hidden border">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -28,14 +25,11 @@ function HomePosterCard({ poster }: { poster: PerformancePosterResponse }) {
           className="h-full w-full object-cover"
         />
       </div>
-      <p className="text-foreground-muted truncate text-center text-sm font-medium">
-        {performance?.title ?? ''}
-      </p>
     </Link>
   );
 }
 
-export function HomePosterStrip() {
+export function PerformancePosterStrip() {
   const { data: posters = [], isLoading } = useAllPerformancePosters();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -86,7 +80,7 @@ export function HomePosterStrip() {
         className="gap-s-3 -mx-s-5 px-s-5 scrollbar-hide flex overflow-x-auto pb-1 lg:mx-0 lg:px-0"
       >
         {posters.map((poster) => (
-          <HomePosterCard key={poster.posterId} poster={poster} />
+          <PosterCard key={poster.posterId} poster={poster} />
         ))}
       </div>
       {canScrollRight && (

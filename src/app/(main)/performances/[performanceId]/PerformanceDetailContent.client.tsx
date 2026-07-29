@@ -101,8 +101,19 @@ export function PerformanceDetailContent({
   const showInvitationsTab = isOwner || (!isManager && hasMyInvitation);
 
   // OWNER는 모든 셋리스트를, MANAGER는 본인이 소유/참여한 셋리스트만 제거할 수 있다(BE 정책).
-  const { data: mySetlists } = useMySetlists();
-  const mySetlistIds = new Set((mySetlists?.content ?? []).map((s) => s.setlistId));
+  // 권한 판정에는 전체 목록이 필요하므로(화면에 노출되는 리스트가 아님) hasNextPage 인 동안 계속 이어서 가져온다.
+  const {
+    data: mySetlists,
+    fetchNextPage: fetchNextMySetlists,
+    hasNextPage: hasNextMySetlists,
+    isFetchingNextPage: isFetchingNextMySetlists,
+  } = useMySetlists();
+  useEffect(() => {
+    if (hasNextMySetlists && !isFetchingNextMySetlists) fetchNextMySetlists();
+  }, [hasNextMySetlists, isFetchingNextMySetlists, fetchNextMySetlists]);
+  const mySetlistIds = new Set(
+    (mySetlists?.pages.flatMap((p) => p.content) ?? []).map((s) => s.setlistId),
+  );
   const canRemoveSetlist = (setlistId: string) => isOwner || mySetlistIds.has(setlistId);
 
   const [localPosterPreview, setLocalPosterPreview] = useState<string | null>(null);
@@ -271,6 +282,31 @@ export function PerformanceDetailContent({
             </Badge>
           )}
         </div>
+
+        <div className="border-border bg-card mt-s-3 relative mx-auto h-56 w-40 overflow-hidden rounded-2xl border sm:h-80 sm:w-56">
+          {posterSrc ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={posterSrc} alt="공연 포스터" className="h-full w-full object-cover" />
+              {posterUploading && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </span>
+              )}
+            </>
+          ) : (
+            <div className="text-foreground-muted gap-s-2 flex h-full flex-col items-center justify-center">
+              <ImagePlus className="h-8 w-8" aria-hidden="true" />
+              <span className="text-center text-xs">공연 포스터 이미지 없음</span>
+            </div>
+          )}
+        </div>
+
+        {existingPoster?.description && (
+          <p className="text-foreground-muted mt-2 text-center text-xs whitespace-pre-wrap">
+            {existingPoster.description}
+          </p>
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">
@@ -296,7 +332,7 @@ export function PerformanceDetailContent({
         </div>
 
         <div className="px-s-5 py-s-6 lg:px-8">
-          {/* 정보 탭: 날짜/장소 → 포스터 → 셋리스트 */}
+          {/* 정보 탭: 날짜/장소 (포스터는 헤더로 이동) → 셋리스트 */}
           <TabsContent value="info" className="space-y-s-4 mt-0">
             <div className="text-foreground-sub flex flex-wrap items-center gap-3 text-sm">
               <span className="inline-flex items-center gap-1">
@@ -310,34 +346,6 @@ export function PerformanceDetailContent({
                 </span>
               )}
             </div>
-
-            <div
-              className="bg-card border-border relative flex h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border"
-              aria-label="공연 포스터"
-            >
-              {posterSrc ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={posterSrc} alt="공연 포스터" className="h-full w-full object-cover" />
-                  {posterUploading && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/50">
-                      <Loader2 className="h-6 w-6 animate-spin text-white" />
-                    </span>
-                  )}
-                </>
-              ) : (
-                <div className="text-foreground-muted gap-s-2 flex flex-col items-center">
-                  <ImagePlus className="h-8 w-8" aria-hidden="true" />
-                  <span className="text-xs">공연 포스터 이미지 없음</span>
-                </div>
-              )}
-            </div>
-
-            {existingPoster?.description && (
-              <p className="text-foreground-muted text-xs whitespace-pre-wrap">
-                {existingPoster.description}
-              </p>
-            )}
           </TabsContent>
 
           {/* 셋리스트 탭 */}
@@ -364,16 +372,21 @@ export function PerformanceDetailContent({
                 {perf.setlists.map((s) => (
                   <div key={s.setlistId} className="flex items-center gap-2">
                     <SetlistCard setlist={s} />
-                    {isManager && canRemoveSetlist(s.setlistId) && (
-                      <button
-                        type="button"
-                        onClick={() => setPendingRemoveSetlist(s)}
-                        aria-label={`${s.title} 셋리스트 제거`}
-                        className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    )}
+                    {isManager &&
+                      (canRemoveSetlist(s.setlistId) ? (
+                        <button
+                          type="button"
+                          onClick={() => setPendingRemoveSetlist(s)}
+                          aria-label={`${s.title} 셋리스트 제거`}
+                          className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      ) : (
+                        <span className="invisible shrink-0 rounded p-1" aria-hidden="true">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </span>
+                      ))}
                   </div>
                 ))}
               </div>
@@ -619,7 +632,7 @@ export function PerformanceDetailContent({
                         />
                       </div>
                       <Button
-                        size="sm"
+                        size="md"
                         className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200"
                         loading={updatePosterMutation.isPending}
                         onClick={() =>

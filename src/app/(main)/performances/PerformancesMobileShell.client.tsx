@@ -22,12 +22,14 @@ import { usePerformanceList } from '@/domain/performance/hooks/usePerformanceLis
 import { useSearchPerformances } from '@/domain/performance/hooks/useSearchPerformances';
 import type { PerformanceListItemResponse } from '@/domain/performance/types';
 import { useIsDesktop } from '@/hooks/use-media-query';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { cn } from '@/lib/cn';
 import { formatKst, parseKst } from '@/lib/date';
 import { DOMAIN_TONES } from '@/lib/domain-icons';
 import { ROUTES } from '@/global/config/routes';
 
 import { PerformanceDetailContent } from './[performanceId]/PerformanceDetailContent.client';
+import { PerformancePosterStrip } from './PerformancePosterStrip.client';
 
 function PerformanceSelectRow({
   performance,
@@ -89,17 +91,48 @@ export function PerformancesMobileShell() {
     router.push(ROUTES.PERFORMANCE_DETAIL(selectedId));
   }
 
-  const { data: myData, isLoading: myLoading } = useMyPerformances(50);
+  const {
+    data: myData,
+    isLoading: myLoading,
+    fetchNextPage: fetchNextMyPerformances,
+    hasNextPage: hasNextMyPerformances,
+    isFetchingNextPage: isFetchingNextMyPerformances,
+  } = useMyPerformances(50);
   const myPerformances = myData?.pages.flatMap((p) => p.content) ?? [];
+  const myPerformancesLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextMyPerformances,
+    isFetchingNextPage: isFetchingNextMyPerformances,
+    fetchNextPage: fetchNextMyPerformances,
+  });
 
   const hasQuery = query.trim().length > 0;
-  const { data: allData, isLoading: allLoading } = usePerformanceList(undefined, 20);
+  const {
+    data: allData,
+    isLoading: allLoading,
+    fetchNextPage: fetchNextAllPerformances,
+    hasNextPage: hasNextAllPerformances,
+    isFetchingNextPage: isFetchingNextAllPerformances,
+  } = usePerformanceList(undefined, 20);
   const allPerformances = allData?.pages.flatMap((p) => p.content) ?? [];
-  const { data: searchData, isLoading: searchLoading } = useSearchPerformances(query, 20);
+  const {
+    data: searchData,
+    isLoading: searchLoading,
+    fetchNextPage: fetchNextSearch,
+    hasNextPage: hasNextSearch,
+    isFetchingNextPage: isFetchingNextSearch,
+  } = useSearchPerformances(query, 20);
   const searchResults = searchData?.pages.flatMap((p) => p.content) ?? [];
 
   const discoverList = hasQuery ? searchResults : allPerformances;
   const discoverLoading = hasQuery ? searchLoading : allLoading;
+  const fetchNextDiscover = hasQuery ? fetchNextSearch : fetchNextAllPerformances;
+  const hasNextDiscover = hasQuery ? hasNextSearch : hasNextAllPerformances;
+  const isFetchingNextDiscover = hasQuery ? isFetchingNextSearch : isFetchingNextAllPerformances;
+  const discoverLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextDiscover,
+    isFetchingNextPage: isFetchingNextDiscover,
+    fetchNextPage: fetchNextDiscover,
+  });
 
   const panelContent = selectedId ? (
     <div className="pb-6">
@@ -162,20 +195,34 @@ export function PerformancesMobileShell() {
               예정된 공연이 없습니다.
             </p>
           ) : (
-            <ul className="gap-s-1 flex flex-col">
-              {myPerformances.map((p) => (
-                <PerformanceSelectRow
-                  key={p.performanceId}
-                  performance={p}
-                  isSelected={selectedId === p.performanceId}
-                  onClick={() => setSelectedId(p.performanceId)}
-                />
-              ))}
-            </ul>
+            <>
+              <ul className="gap-s-1 flex flex-col">
+                {myPerformances.map((p) => (
+                  <PerformanceSelectRow
+                    key={p.performanceId}
+                    performance={p}
+                    isSelected={selectedId === p.performanceId}
+                    onClick={() => setSelectedId(p.performanceId)}
+                  />
+                ))}
+              </ul>
+              {hasNextMyPerformances && (
+                <div ref={myPerformancesLoadMoreRef} className="h-4" aria-hidden="true" />
+              )}
+              {isFetchingNextMyPerformances && (
+                <div className="space-y-s-2 mt-s-2">
+                  <Skeleton className="h-14 w-full" rounded="md" />
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
 
         <TabsContent value="discover">
+          <div className="mb-s-3">
+            <PerformancePosterStrip />
+          </div>
+
           <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 mb-s-3 flex items-center rounded-[5px] border">
             <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
             <input
@@ -199,16 +246,26 @@ export function PerformancesMobileShell() {
               {hasQuery ? '검색 결과가 없습니다.' : '등록된 공연이 없습니다.'}
             </p>
           ) : (
-            <ul className="gap-s-1 flex flex-col">
-              {discoverList.map((p) => (
-                <PerformanceSelectRow
-                  key={p.performanceId}
-                  performance={p}
-                  isSelected={selectedId === p.performanceId}
-                  onClick={() => setSelectedId(p.performanceId)}
-                />
-              ))}
-            </ul>
+            <>
+              <ul className="gap-s-1 flex flex-col">
+                {discoverList.map((p) => (
+                  <PerformanceSelectRow
+                    key={p.performanceId}
+                    performance={p}
+                    isSelected={selectedId === p.performanceId}
+                    onClick={() => setSelectedId(p.performanceId)}
+                  />
+                ))}
+              </ul>
+              {hasNextDiscover && (
+                <div ref={discoverLoadMoreRef} className="h-4" aria-hidden="true" />
+              )}
+              {isFetchingNextDiscover && (
+                <div className="space-y-s-2 mt-s-2">
+                  <Skeleton className="h-14 w-full" rounded="md" />
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>
