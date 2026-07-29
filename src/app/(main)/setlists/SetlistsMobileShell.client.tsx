@@ -9,6 +9,8 @@ import { useMySetlists } from '@/domain/setlist/hooks/useMySetlists';
 import type { SetlistResponse } from '@/domain/setlist/types/res';
 import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
+import { cn } from '@/lib/cn';
 import { listItemClasses } from '@/lib/list-item-styles';
 
 function SetlistRow({ item, active }: { item: SetlistResponse; active: boolean }) {
@@ -27,10 +29,13 @@ function SetlistRow({ item, active }: { item: SetlistResponse; active: boolean }
         className={listItemClasses(
           active,
           'accent',
-          'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+          cn(
+            'text-foreground focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:outline-none',
+            active && 'border-white/25 bg-white/10 hover:bg-white/10',
+          ),
         )}
       >
-        <span className="bg-accent/15 text-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/15 text-white">
           <ListMusic className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
@@ -45,8 +50,9 @@ function SetlistRow({ item, active }: { item: SetlistResponse; active: boolean }
 export function SetlistsMobileShell() {
   const pathname = usePathname() ?? '';
   const isDesktop = useIsDesktop();
-  const { data, isLoading } = useMySetlists();
-  const setlists = data?.content ?? [];
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMySetlists();
+  const setlists = data?.pages.flatMap((p) => p.content) ?? [];
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   if (!isDesktop) {
     return (
@@ -73,13 +79,21 @@ export function SetlistsMobileShell() {
           생성된 셋리스트가 없습니다.
         </p>
       ) : (
-        <ul className="gap-s-1 flex flex-col">
-          {setlists.map((item) => {
-            const href = ROUTES.SETLIST_DETAIL(item.setlistId);
-            const active = pathname === href || pathname.startsWith(`${href}/`);
-            return <SetlistRow key={item.setlistId} item={item} active={active} />;
-          })}
-        </ul>
+        <>
+          <ul className="gap-s-1 flex flex-col">
+            {setlists.map((item) => {
+              const href = ROUTES.SETLIST_DETAIL(item.setlistId);
+              const active = pathname === href || pathname.startsWith(`${href}/`);
+              return <SetlistRow key={item.setlistId} item={item} active={active} />;
+            })}
+          </ul>
+          {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+          {isFetchingNextPage && (
+            <div className="space-y-s-2 mt-s-2">
+              <Skeleton className="h-14 w-full" rounded="md" />
+            </div>
+          )}
+        </>
       )}
     </>
   );

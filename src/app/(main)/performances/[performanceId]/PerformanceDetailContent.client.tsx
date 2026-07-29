@@ -101,8 +101,19 @@ export function PerformanceDetailContent({
   const showInvitationsTab = isOwner || (!isManager && hasMyInvitation);
 
   // OWNER는 모든 셋리스트를, MANAGER는 본인이 소유/참여한 셋리스트만 제거할 수 있다(BE 정책).
-  const { data: mySetlists } = useMySetlists();
-  const mySetlistIds = new Set((mySetlists?.content ?? []).map((s) => s.setlistId));
+  // 권한 판정에는 전체 목록이 필요하므로(화면에 노출되는 리스트가 아님) hasNextPage 인 동안 계속 이어서 가져온다.
+  const {
+    data: mySetlists,
+    fetchNextPage: fetchNextMySetlists,
+    hasNextPage: hasNextMySetlists,
+    isFetchingNextPage: isFetchingNextMySetlists,
+  } = useMySetlists();
+  useEffect(() => {
+    if (hasNextMySetlists && !isFetchingNextMySetlists) fetchNextMySetlists();
+  }, [hasNextMySetlists, isFetchingNextMySetlists, fetchNextMySetlists]);
+  const mySetlistIds = new Set(
+    (mySetlists?.pages.flatMap((p) => p.content) ?? []).map((s) => s.setlistId),
+  );
   const canRemoveSetlist = (setlistId: string) => isOwner || mySetlistIds.has(setlistId);
 
   const [localPosterPreview, setLocalPosterPreview] = useState<string | null>(null);

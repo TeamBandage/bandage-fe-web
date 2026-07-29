@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/responsive-sheet';
 import { useMySetlists } from '@/domain/setlist/hooks/useMySetlists';
 import type { SetlistResponse } from '@/domain/setlist/types/res';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 
 export interface SetlistSelectorSheetProps {
   open: boolean;
@@ -31,11 +32,16 @@ export function SetlistSelectorSheet({
   onConfirm,
   excludeIds = [],
 }: SetlistSelectorSheetProps) {
-  const { data, isLoading, isError } = useMySetlists();
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useMySetlists();
   const setlists = useMemo(
-    () => (data?.content ?? []).filter((s) => !excludeIds.includes(s.setlistId)),
+    () =>
+      (data?.pages.flatMap((p) => p.content) ?? []).filter(
+        (s) => !excludeIds.includes(s.setlistId),
+      ),
     [data, excludeIds],
   );
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   const [selection, setSelection] = useState<SetlistResponse[]>(initialSelection);
   const [query, setQuery] = useState('');
@@ -149,6 +155,11 @@ export function SetlistSelectorSheet({
                       </li>
                     );
                   })}
+                  {hasNextPage && (
+                    <li aria-hidden="true">
+                      <div ref={loadMoreRef} className="h-4" />
+                    </li>
+                  )}
                 </ul>
               )}
             </>

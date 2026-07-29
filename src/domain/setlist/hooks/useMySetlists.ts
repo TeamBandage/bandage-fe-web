@@ -1,14 +1,15 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-
 import { queryKeys } from '@/global/config/queryKeys';
+import { useInfiniteCursor } from '@/hooks/useInfiniteCursor';
 
 import { getMySetlists } from '../api';
+import type { SetlistResponse } from '../types/res';
 
-export function useMySetlists() {
-  return useQuery({
-    queryKey: queryKeys.setlist.my(),
-    queryFn: () => getMySetlists({ pageSize: 50 }),
-  });
+export function useMySetlists(pageSize: number = 20) {
+  return useInfiniteCursor<SetlistResponse, string>(
+    [...queryKeys.setlist.my(), pageSize],
+    ({ lastId, pageSize: size }) => getMySetlists({ lastId, pageSize: size }),
+    pageSize,
+  );
 }
