@@ -282,6 +282,31 @@ export function PerformanceDetailContent({
             </Badge>
           )}
         </div>
+
+        <div className="border-border bg-card mt-s-3 relative mx-auto h-56 w-40 overflow-hidden rounded-2xl border sm:h-80 sm:w-56">
+          {posterSrc ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={posterSrc} alt="공연 포스터" className="h-full w-full object-cover" />
+              {posterUploading && (
+                <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </span>
+              )}
+            </>
+          ) : (
+            <div className="text-foreground-muted gap-s-2 flex h-full flex-col items-center justify-center">
+              <ImagePlus className="h-8 w-8" aria-hidden="true" />
+              <span className="text-center text-xs">공연 포스터 이미지 없음</span>
+            </div>
+          )}
+        </div>
+
+        {existingPoster?.description && (
+          <p className="text-foreground-muted mt-2 text-center text-xs whitespace-pre-wrap">
+            {existingPoster.description}
+          </p>
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} variant="underline">
@@ -307,7 +332,7 @@ export function PerformanceDetailContent({
         </div>
 
         <div className="px-s-5 py-s-6 lg:px-8">
-          {/* 정보 탭: 날짜/장소 → 포스터 → 셋리스트 */}
+          {/* 정보 탭: 날짜/장소 (포스터는 헤더로 이동) → 셋리스트 */}
           <TabsContent value="info" className="space-y-s-4 mt-0">
             <div className="text-foreground-sub flex flex-wrap items-center gap-3 text-sm">
               <span className="inline-flex items-center gap-1">
@@ -321,34 +346,6 @@ export function PerformanceDetailContent({
                 </span>
               )}
             </div>
-
-            <div
-              className="bg-card border-border relative flex h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border"
-              aria-label="공연 포스터"
-            >
-              {posterSrc ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={posterSrc} alt="공연 포스터" className="h-full w-full object-cover" />
-                  {posterUploading && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/50">
-                      <Loader2 className="h-6 w-6 animate-spin text-white" />
-                    </span>
-                  )}
-                </>
-              ) : (
-                <div className="text-foreground-muted gap-s-2 flex flex-col items-center">
-                  <ImagePlus className="h-8 w-8" aria-hidden="true" />
-                  <span className="text-xs">공연 포스터 이미지 없음</span>
-                </div>
-              )}
-            </div>
-
-            {existingPoster?.description && (
-              <p className="text-foreground-muted text-xs whitespace-pre-wrap">
-                {existingPoster.description}
-              </p>
-            )}
           </TabsContent>
 
           {/* 셋리스트 탭 */}
