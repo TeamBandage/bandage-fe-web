@@ -28,6 +28,7 @@ import { DOMAIN_TONES } from '@/lib/domain-icons';
 import { ROUTES } from '@/global/config/routes';
 
 import { PerformanceDetailContent } from './[performanceId]/PerformanceDetailContent.client';
+import { PerformancePosterStrip } from './PerformancePosterStrip.client';
 
 function PerformanceSelectRow({
   performance,
@@ -176,6 +177,10 @@ export function PerformancesMobileShell() {
         </TabsContent>
 
         <TabsContent value="discover">
+          <div className="mb-s-3">
+            <PerformancePosterStrip />
+          </div>
+
           <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 mb-s-3 flex items-center rounded-[5px] border">
             <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
             <input
