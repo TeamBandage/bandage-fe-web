@@ -632,7 +632,7 @@ export function PerformanceDetailContent({
                         />
                       </div>
                       <Button
-                        size="sm"
+                        size="md"
                         className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200"
                         loading={updatePosterMutation.isPending}
                         onClick={() =>
