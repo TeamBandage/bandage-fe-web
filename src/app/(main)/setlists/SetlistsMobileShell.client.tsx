@@ -1,11 +1,13 @@
 'use client';
 
-import { ListMusic } from 'lucide-react';
+import { ListMusic, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMySetlists } from '@/domain/setlist/hooks/useMySetlists';
+import { useSetlistsByTitle } from '@/domain/setlist/hooks/useSetlistsByTitle';
 import type { SetlistResponse } from '@/domain/setlist/types/res';
 import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
@@ -50,9 +52,21 @@ function SetlistRow({ item, active }: { item: SetlistResponse; active: boolean }
 export function SetlistsMobileShell() {
   const pathname = usePathname() ?? '';
   const isDesktop = useIsDesktop();
+  const [query, setQuery] = useState('');
+  const hasQuery = query.trim().length > 0;
+
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMySetlists();
-  const setlists = data?.pages.flatMap((p) => p.content) ?? [];
+  const mySetlists = data?.pages.flatMap((p) => p.content) ?? [];
   const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
+
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    isError: isSearchError,
+  } = useSetlistsByTitle(query);
+
+  const setlists = hasQuery ? (searchData ?? []) : mySetlists;
+  const setlistsLoading = hasQuery ? isSearchLoading : isLoading;
 
   if (!isDesktop) {
     return (
@@ -68,15 +82,29 @@ export function SetlistsMobileShell() {
         <h2 className="text-foreground pl-2.5 text-2xl font-bold lg:text-3xl">내 셋리스트</h2>
       </div>
 
-      {isLoading ? (
+      <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 mb-s-3 flex items-center rounded-[5px] border">
+        <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="셋리스트 검색"
+          aria-label="셋리스트 검색"
+          className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+        />
+      </div>
+
+      {setlistsLoading ? (
         <div className="space-y-s-2">
           <Skeleton className="h-14 w-full" rounded="md" />
           <Skeleton className="h-14 w-full" rounded="md" />
           <Skeleton className="h-14 w-full" rounded="md" />
         </div>
+      ) : hasQuery && isSearchError ? (
+        <p className="text-danger py-s-6 text-center text-sm">셋리스트를 검색하지 못했습니다.</p>
       ) : setlists.length === 0 ? (
         <p className="text-foreground-muted py-s-6 text-center text-sm">
-          생성된 셋리스트가 없습니다.
+          {hasQuery ? '검색 결과가 없습니다.' : '생성된 셋리스트가 없습니다.'}
         </p>
       ) : (
         <>
@@ -87,8 +115,8 @@ export function SetlistsMobileShell() {
               return <SetlistRow key={item.setlistId} item={item} active={active} />;
             })}
           </ul>
-          {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
-          {isFetchingNextPage && (
+          {!hasQuery && hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+          {!hasQuery && isFetchingNextPage && (
             <div className="space-y-s-2 mt-s-2">
               <Skeleton className="h-14 w-full" rounded="md" />
             </div>

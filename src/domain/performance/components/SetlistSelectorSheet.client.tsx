@@ -13,6 +13,7 @@ import {
   ResponsiveSheetTitle,
 } from '@/components/ui/responsive-sheet';
 import { useMySetlists } from '@/domain/setlist/hooks/useMySetlists';
+import { useSetlistsByTitle } from '@/domain/setlist/hooks/useSetlistsByTitle';
 import type { SetlistResponse } from '@/domain/setlist/types/res';
 import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 
@@ -45,6 +46,17 @@ export function SetlistSelectorSheet({
 
   const [selection, setSelection] = useState<SetlistResponse[]>(initialSelection);
   const [query, setQuery] = useState('');
+  const hasQuery = query.trim().length > 0;
+
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    isError: isSearchError,
+  } = useSetlistsByTitle(query, { enabled: open });
+  const searchResults = useMemo(
+    () => (searchData ?? []).filter((s) => !excludeIds.includes(s.setlistId)),
+    [searchData, excludeIds],
+  );
 
   useEffect(() => {
     if (open) {
@@ -54,13 +66,9 @@ export function SetlistSelectorSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const filtered = useMemo(
-    () =>
-      query.trim()
-        ? setlists.filter((s) => s.title.toLowerCase().includes(query.trim().toLowerCase()))
-        : setlists,
-    [setlists, query],
-  );
+  const filtered = hasQuery ? searchResults : setlists;
+  const filteredLoading = hasQuery ? isSearchLoading : isLoading;
+  const filteredError = hasQuery ? isSearchError : isError;
 
   function toggle(item: SetlistResponse) {
     setSelection((prev) =>
@@ -84,85 +92,82 @@ export function SetlistSelectorSheet({
         <div className="border-border mx-5 border-b" />
 
         <ResponsiveSheetBody className="pt-2">
-          {isLoading && <p className="text-foreground-muted text-caption p-s-4">불러오는 중...</p>}
-          {isError && (
-            <p className="text-danger text-caption p-s-4">셋리스트를 불러오지 못했습니다.</p>
+          <div className="border-border mx-5 mb-3 flex items-center gap-2 rounded-md border px-3 py-2">
+            <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="셋리스트 검색"
+              className="text-foreground placeholder:text-foreground-muted w-full bg-transparent text-sm outline-none"
+            />
+          </div>
+
+          {filteredLoading && (
+            <p className="text-foreground-muted text-caption px-5">불러오는 중...</p>
           )}
-          {!isLoading && !isError && setlists.length === 0 && (
-            <p className="text-foreground-sub px-5 text-sm">참여 중인 셋리스트가 없습니다.</p>
+          {!filteredLoading && filteredError && (
+            <p className="text-danger text-caption px-5">셋리스트를 불러오지 못했습니다.</p>
           )}
+          {!filteredLoading && !filteredError && filtered.length === 0 && (
+            <p className="text-foreground-sub px-5 text-sm">
+              {hasQuery ? '검색 결과가 없습니다.' : '참여 중인 셋리스트가 없습니다.'}
+            </p>
+          )}
+          {!filteredLoading && !filteredError && filtered.length > 0 && (
+            <ul className="gap-s-2 flex max-h-[360px] flex-col overflow-y-auto px-5">
+              {filtered.map((item) => {
+                const sel = selection.some((s) => s.setlistId === item.setlistId);
+                const date = (item.updatedAt ?? item.createdAt)?.slice(0, 10) ?? '';
 
-          {!isLoading && !isError && setlists.length > 0 && (
-            <>
-              <div className="border-border mx-5 mb-3 flex items-center gap-2 rounded-md border px-3 py-2">
-                <Search className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="셋리스트 검색"
-                  className="text-foreground placeholder:text-foreground-muted w-full bg-transparent text-sm outline-none"
-                />
-              </div>
-
-              {filtered.length === 0 ? (
-                <p className="text-foreground-sub px-5 text-sm">검색 결과가 없습니다.</p>
-              ) : (
-                <ul className="gap-s-2 flex max-h-[360px] flex-col overflow-y-auto px-5">
-                  {filtered.map((item) => {
-                    const sel = selection.some((s) => s.setlistId === item.setlistId);
-                    const date = (item.updatedAt ?? item.createdAt)?.slice(0, 10) ?? '';
-
-                    return (
-                      <li key={item.setlistId}>
-                        <button
-                          type="button"
-                          onClick={() => toggle(item)}
-                          aria-pressed={sel}
-                          className="w-full text-left"
+                return (
+                  <li key={item.setlistId}>
+                    <button
+                      type="button"
+                      onClick={() => toggle(item)}
+                      aria-pressed={sel}
+                      className="w-full text-left"
+                    >
+                      <div
+                        className={
+                          'gap-s-3 px-s-4 py-s-3 flex items-center rounded-md border transition-colors ' +
+                          (sel
+                            ? 'border-white/60 bg-white/20'
+                            : 'border-white/15 bg-white/8 hover:bg-white/12')
+                        }
+                      >
+                        <span
+                          className={
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors ' +
+                            (sel ? 'bg-white/30 text-white' : 'bg-white/15 text-white/80')
+                          }
                         >
-                          <div
-                            className={
-                              'gap-s-3 px-s-4 py-s-3 flex items-center rounded-md border transition-colors ' +
-                              (sel
-                                ? 'border-white/60 bg-white/20'
-                                : 'border-white/15 bg-white/8 hover:bg-white/12')
-                            }
-                          >
-                            <span
-                              className={
-                                'flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors ' +
-                                (sel ? 'bg-white/30 text-white' : 'bg-white/15 text-white/80')
-                              }
-                            >
-                              <ListMusic className="h-4 w-4" aria-hidden="true" />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-body truncate font-semibold">{item.title}</p>
-                              {date && (
-                                <p className="text-foreground-muted" style={{ fontSize: 11 }}>
-                                  {date}
-                                </p>
-                              )}
-                            </div>
-                            {sel && (
-                              <span className="text-caption rounded-full bg-white/20 px-2 py-0.5 text-white">
-                                선택됨
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      </li>
-                    );
-                  })}
-                  {hasNextPage && (
-                    <li aria-hidden="true">
-                      <div ref={loadMoreRef} className="h-4" />
-                    </li>
-                  )}
-                </ul>
+                          <ListMusic className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-body truncate font-semibold">{item.title}</p>
+                          {date && (
+                            <p className="text-foreground-muted" style={{ fontSize: 11 }}>
+                              {date}
+                            </p>
+                          )}
+                        </div>
+                        {sel && (
+                          <span className="text-caption rounded-full bg-white/20 px-2 py-0.5 text-white">
+                            선택됨
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+              {!hasQuery && hasNextPage && (
+                <li aria-hidden="true">
+                  <div ref={loadMoreRef} className="h-4" />
+                </li>
               )}
-            </>
+            </ul>
           )}
         </ResponsiveSheetBody>
 
