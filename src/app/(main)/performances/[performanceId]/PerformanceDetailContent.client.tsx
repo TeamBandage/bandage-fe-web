@@ -364,16 +364,21 @@ export function PerformanceDetailContent({
                 {perf.setlists.map((s) => (
                   <div key={s.setlistId} className="flex items-center gap-2">
                     <SetlistCard setlist={s} />
-                    {isManager && canRemoveSetlist(s.setlistId) && (
-                      <button
-                        type="button"
-                        onClick={() => setPendingRemoveSetlist(s)}
-                        aria-label={`${s.title} 셋리스트 제거`}
-                        className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
-                    )}
+                    {isManager &&
+                      (canRemoveSetlist(s.setlistId) ? (
+                        <button
+                          type="button"
+                          onClick={() => setPendingRemoveSetlist(s)}
+                          aria-label={`${s.title} 셋리스트 제거`}
+                          className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      ) : (
+                        <span className="invisible shrink-0 rounded p-1" aria-hidden="true">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </span>
+                      ))}
                   </div>
                 ))}
               </div>
