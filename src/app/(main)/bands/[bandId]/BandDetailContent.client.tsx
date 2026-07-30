@@ -111,7 +111,21 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
         className="px-s-5 flex h-[72px] items-center justify-between gap-3 lg:px-8"
         data-slot="band-detail-topbar"
       >
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="border-border bg-card h-12 w-12 shrink-0 overflow-hidden rounded-lg border">
+            {band.profileImg ? (
+              // eslint-disable-next-line @next/next/no-img-element -- 외부 origin 허용 위해 native img
+              <img
+                src={band.profileImg}
+                alt={`${band.bandName} 프로필`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="text-foreground-muted flex h-full w-full items-center justify-center">
+                <ImagePlus className="h-5 w-5" aria-hidden="true" />
+              </div>
+            )}
+          </div>
           <h1 className="text-foreground truncate text-[22px] leading-snug font-bold">
             {band.bandName}
           </h1>
@@ -193,12 +207,7 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
         {/* Content — padding 24px / 32px */}
         <div className="px-s-5 py-s-6 lg:px-8" data-slot="band-detail-content">
           <TabsContent value="info" className="mt-0">
-            <InfoTab
-              bandId={bandId}
-              bandName={band.bandName}
-              description={band.description}
-              profileImg={band.profileImg}
-            />
+            <InfoTab bandId={bandId} description={band.description} />
           </TabsContent>
 
           <TabsContent value="members" className="mt-0">
@@ -265,38 +274,12 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
   );
 }
 
-function InfoTab({
-  bandId,
-  bandName,
-  description,
-  profileImg,
-}: {
-  bandId: string;
-  bandName: string;
-  description?: string;
-  profileImg?: string;
-}) {
+function InfoTab({ bandId, description }: { bandId: string; description?: string }) {
   const members = useBandMembers(bandId, 20);
   const memberCount = members.data?.pages.flatMap((p) => p.content).length ?? 0;
 
   return (
     <div className="space-y-s-6">
-      <div
-        className="bg-card border-border flex h-[220px] w-full items-center justify-center overflow-hidden rounded-2xl border"
-        data-slot="band-cover"
-        aria-label={`${bandName} 커버 이미지`}
-      >
-        {profileImg ? (
-          // eslint-disable-next-line @next/next/no-img-element -- 외부 origin 허용 위해 native img
-          <img src={profileImg} alt={`${bandName} 커버`} className="h-full w-full object-cover" />
-        ) : (
-          <div className="text-foreground-muted gap-s-2 flex flex-col items-center">
-            <ImagePlus className="h-8 w-8" aria-hidden="true" />
-            <span className="text-xs">밴드 커버 이미지 없음</span>
-          </div>
-        )}
-      </div>
-
       <div className="space-y-s-2 max-w-[720px]">
         <p className="text-foreground-sub text-body leading-relaxed">
           {description ?? '소개가 등록되지 않았습니다.'}
