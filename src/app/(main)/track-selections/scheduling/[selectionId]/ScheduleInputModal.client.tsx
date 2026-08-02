@@ -104,7 +104,7 @@ export function ScheduleInputModal({
 
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange}>
-      <ResponsiveSheetContent className="sm:max-w-2xl">
+      <ResponsiveSheetContent className="lg:max-w-2xl">
         <ResponsiveSheetHeader>
           <ResponsiveSheetTitle>나의 스케줄 입력</ResponsiveSheetTitle>
         </ResponsiveSheetHeader>

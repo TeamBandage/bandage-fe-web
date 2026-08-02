@@ -26,7 +26,7 @@ export default async function PerformanceDetailPage({ params }: PageProps) {
         </Link>
       </div>
       <div className="pb-6">
-        <PerformanceDetailContent performanceId={performanceId} />
+        <PerformanceDetailContent performanceId={performanceId} variant="page" />
       </div>
     </>
   );
