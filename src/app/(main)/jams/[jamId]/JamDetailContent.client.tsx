@@ -709,8 +709,8 @@ export function JamDetailContent({
           </DialogHeader>
           <div className="border-border mx-5 border-b" />
           <DialogBody className="space-y-s-3 pt-2">
-            <DialogDescription className="text-foreground-sub text-sm">
-              삭제된 합주는 복구할 수 없습니다. 세션과 참여자 정보도 함께 제거됩니다.
+            <DialogDescription className="text-foreground-sub text-xs">
+              합주를 삭제하면 세션·참여자 정보가 함께 제거되며 복구할 수 없습니다.
             </DialogDescription>
             <Input
               label={`합주 이름(${practice.title})을 그대로 입력해 주세요`}
