@@ -9,7 +9,6 @@ import {
   Plus,
   RotateCcw,
   Search,
-  Trash2,
   Users,
   X,
 } from 'lucide-react';
@@ -35,7 +34,6 @@ import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
 import { useMe } from '@/domain/member/hooks/useMe';
 import { useTrackSelection } from '@/domain/track-selection/hooks/useTrackSelection';
 import { useUpdateTrackSelection } from '@/domain/track-selection/hooks/useUpdateTrackSelection';
-import { useDeleteTrackSelection } from '@/domain/track-selection/hooks/useDeleteTrackSelection';
 import { useTrackSelectionItems } from '@/domain/track-selection/hooks/useTrackSelectionItems';
 import { useDeleteTrackSelectionItem } from '@/domain/track-selection/hooks/useDeleteTrackSelectionItem';
 import { toSong } from '@/domain/track-selection/utils/toSong';
@@ -135,19 +133,11 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   const setlistTitleRef = useRef<HTMLInputElement>(null);
   const createSetlist = useCreateSetlist();
   const updateTrackSelection = useUpdateTrackSelection(meetingId);
-  const deleteTrackSelection = useDeleteTrackSelection(meetingId, {
-    onSuccess: () => {
-      toast.success('선곡 회의를 삭제했습니다.');
-      router.replace(ROUTES.TRACK_SELECTIONS);
-    },
-    onError: (err) => toast.error(err.message || '선곡 회의 삭제에 실패했습니다.'),
-  });
   const router = useRouter();
   const toast = useToast();
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
-  const [confirmDeleteSelection, setConfirmDeleteSelection] = useState(false);
 
   const hasSelectedSongs = allSongs.some((s) => s.isSelected);
 
@@ -337,24 +327,14 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
               <div className="mt-s-1 flex items-center gap-2">
                 <h1 className="text-title-lg font-bold">{selection.title}</h1>
                 {isManager && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleTitleEdit}
-                      aria-label="선곡 이름 수정"
-                      className="text-foreground-muted hover:text-foreground rounded p-1 transition-colors"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDeleteSelection(true)}
-                      aria-label="선곡 회의 삭제"
-                      className="text-foreground-muted hover:text-danger rounded p-1 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={handleTitleEdit}
+                    aria-label="선곡 이름 수정"
+                    className="text-foreground-muted hover:text-foreground rounded p-1 transition-colors"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
                 )}
               </div>
             )}
@@ -674,22 +654,6 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
             },
           });
         }}
-      />
-
-      {/* 선곡 회의 삭제 확인 다이얼로그 — 매니저 전용. */}
-      <ConfirmDialog
-        open={confirmDeleteSelection}
-        onOpenChange={setConfirmDeleteSelection}
-        title="선곡 회의 삭제"
-        description={
-          <>
-            <strong className="text-foreground">{selection.title}</strong> 회의를 정말
-            삭제하시겠습니까? 등록된 곡·세션·채팅 내용도 함께 사라지며 복구할 수 없습니다.
-          </>
-        }
-        confirmLabel="삭제"
-        tone="danger"
-        onConfirm={() => deleteTrackSelection.mutate()}
       />
 
       {/* 참여자 관리 모달 — 매니저 전용. */}
