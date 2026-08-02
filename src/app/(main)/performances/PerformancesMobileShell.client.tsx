@@ -6,12 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import {
-  BottomSheet,
-  BottomSheetClose,
-  BottomSheetContent,
-  BottomSheetTitle,
-} from '@/components/ui/bottom-sheet';
+import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -307,7 +302,7 @@ export function PerformancesMobileShell() {
         <BottomSheet open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
           <BottomSheetContent className="h-dvh">
             <BottomSheetTitle className="sr-only">공연 상세</BottomSheetTitle>
-            <div className="flex shrink-0 items-center justify-between px-4 py-3">
+            <div className="flex shrink-0 items-center px-4 py-3">
               <button
                 type="button"
                 onClick={handleExpand}
@@ -316,12 +311,6 @@ export function PerformancesMobileShell() {
               >
                 <Maximize2 className="h-4 w-4" />
               </button>
-              <BottomSheetClose
-                aria-label="닫기"
-                className="text-foreground-sub hover:text-foreground rounded-sm p-1 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </BottomSheetClose>
             </div>
             <div className="flex-1 overflow-y-auto">{panelContent}</div>
           </BottomSheetContent>
