@@ -49,6 +49,11 @@ function toDatetimeLocal(kst: string) {
 function fromDatetimeLocal(dt: string) {
   return dt.replace('T', ' ').slice(0, 16);
 }
+function formatDuration(totalSeconds: number): string {
+  const mm = Math.floor(totalSeconds / 60);
+  const ss = totalSeconds % 60;
+  return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+}
 
 export function JamDetailContent({
   jamId,
@@ -245,7 +250,7 @@ export function JamDetailContent({
                   <span />
                   <Input
                     type="datetime-local"
-                    className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0 [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:invert"
+                    className="rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0 [&::-webkit-calendar-picker-indicator]:opacity-70"
                     {...scheduleForm.register('startAt')}
                   />
                   <Input
@@ -292,11 +297,18 @@ export function JamDetailContent({
         <TabsContent value="song">
           <Card header="합주곡" padding="md">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Music className="text-foreground-muted h-4 w-4" aria-hidden="true" />
-                <span className="text-foreground text-sm font-medium">
-                  {practice.track.title} — {practice.track.artist}
-                </span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Music className="text-foreground-muted h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="text-foreground truncate text-sm font-medium">
+                    {practice.track.title} — {practice.track.artist}
+                  </span>
+                </div>
+                {practice.track.duration != null && (
+                  <span className="text-foreground-muted shrink-0 font-mono text-xs tabular-nums">
+                    {formatDuration(practice.track.duration)}
+                  </span>
+                )}
               </div>
               {practice.track.reference && (
                 <a
