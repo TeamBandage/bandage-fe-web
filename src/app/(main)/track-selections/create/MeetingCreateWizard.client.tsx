@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { WizardSummaryCard } from '@/components/ui/wizard-summary-card';
 import { getBandMembers } from '@/domain/band/api/getBandMembers';
@@ -19,6 +20,7 @@ import { useMemberSearch } from '@/domain/member/hooks/useMemberSearch';
 import type { MemberSearchItemResponse } from '@/domain/member/types';
 import { createTrackSelection } from '@/domain/track-selection/api/createTrackSelection';
 import { ROUTES } from '@/global/config/routes';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
@@ -66,11 +68,32 @@ export function MeetingCreateWizard() {
   }, [me]);
 
   // Real API data
-  const { data: myBandsData } = useMyBands(50);
+  const {
+    data: myBandsData,
+    fetchNextPage: fetchNextMyBands,
+    hasNextPage: hasNextMyBands,
+    isFetchingNextPage: isFetchingNextMyBands,
+  } = useMyBands(20);
   const myBands = myBandsData?.pages.flatMap((p) => p.content) ?? [];
+  const myBandsLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextMyBands,
+    isFetchingNextPage: isFetchingNextMyBands,
+    fetchNextPage: fetchNextMyBands,
+  });
   const { data: memberSearchResults = [] } = useMemberSearch(memberQuery);
-  const bandSearchResult = useBandSearch(bandQuery, 20);
-  const bandSearchItems = bandSearchResult.data?.pages.flatMap((p) => p.content) ?? [];
+  const {
+    data: bandSearchData,
+    isFetching: bandSearchIsFetching,
+    fetchNextPage: fetchNextBandSearch,
+    hasNextPage: hasNextBandSearch,
+    isFetchingNextPage: isFetchingNextBandSearch,
+  } = useBandSearch(bandQuery, 20);
+  const bandSearchItems = bandSearchData?.pages.flatMap((p) => p.content) ?? [];
+  const bandSearchLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextBandSearch,
+    isFetchingNextPage: isFetchingNextBandSearch,
+    fetchNextPage: fetchNextBandSearch,
+  });
 
   const canNext = (() => {
     // 밴드는 선택 사항 — 밴드 없이 멤버만으로도 회의를 만들 수 있음. 참여 멤버는 최소 1명 필요.
@@ -192,6 +215,9 @@ export function MeetingCreateWizard() {
       {step === 0 && (
         <StepParticipants
           myBands={myBands}
+          hasNextMyBands={hasNextMyBands}
+          isFetchingNextMyBands={isFetchingNextMyBands}
+          myBandsLoadMoreRef={myBandsLoadMoreRef}
           bandTab={bandTab}
           setBandTab={setBandTab}
           selectedBandIds={selectedBandIds}
@@ -202,7 +228,10 @@ export function MeetingCreateWizard() {
           bandQuery={bandQuery}
           setBandQuery={setBandQuery}
           bandSearchItems={bandSearchItems}
-          bandSearchLoading={bandSearchResult.isFetching}
+          bandSearchLoading={bandSearchIsFetching}
+          hasNextBandSearch={hasNextBandSearch}
+          isFetchingNextBandSearch={isFetchingNextBandSearch}
+          bandSearchLoadMoreRef={bandSearchLoadMoreRef}
           memberQuery={memberQuery}
           setMemberQuery={setMemberQuery}
           memberSearchResults={memberSearchResults}
@@ -279,6 +308,9 @@ export function MeetingCreateWizard() {
 // ── Step 0 — 참여 인원 ────────────────────────────────────────────────
 function StepParticipants({
   myBands,
+  hasNextMyBands,
+  isFetchingNextMyBands,
+  myBandsLoadMoreRef,
   bandTab,
   setBandTab,
   selectedBandIds,
@@ -290,6 +322,9 @@ function StepParticipants({
   setBandQuery,
   bandSearchItems,
   bandSearchLoading,
+  hasNextBandSearch,
+  isFetchingNextBandSearch,
+  bandSearchLoadMoreRef,
   memberQuery,
   setMemberQuery,
   memberSearchResults,
@@ -301,6 +336,9 @@ function StepParticipants({
   myProfileImg,
 }: {
   myBands: MyBandInfoResponse[];
+  hasNextMyBands: boolean | undefined;
+  isFetchingNextMyBands: boolean;
+  myBandsLoadMoreRef: (node: HTMLDivElement | null) => void;
   bandTab: BandTab;
   setBandTab: (t: BandTab) => void;
   selectedBandIds: string[];
@@ -312,6 +350,9 @@ function StepParticipants({
   setBandQuery: (q: string) => void;
   bandSearchItems: BandInfoResponse[];
   bandSearchLoading: boolean;
+  hasNextBandSearch: boolean | undefined;
+  isFetchingNextBandSearch: boolean;
+  bandSearchLoadMoreRef: (node: HTMLDivElement | null) => void;
   memberQuery: string;
   setMemberQuery: (q: string) => void;
   memberSearchResults: MemberSearchItemResponse[];
@@ -378,7 +419,13 @@ function StepParticipants({
               소속된 밴드가 없습니다.
             </p>
           ) : (
-            <BandCheckList bands={myBands} />
+            <div className="max-h-56 overflow-y-auto rounded-md border border-white/10 p-1">
+              <BandCheckList bands={myBands} />
+              {hasNextMyBands && (
+                <div ref={myBandsLoadMoreRef} className="h-4" aria-hidden="true" />
+              )}
+              {isFetchingNextMyBands && <Skeleton className="h-10 w-full" rounded="md" />}
+            </div>
           )}
         </>
       )}
@@ -402,14 +449,20 @@ function StepParticipants({
           </div>
           {!bandQuery.trim() ? (
             <p className="text-foreground-muted text-caption py-s-4 text-center">
-              밴드명을 입력하면 검색 결과가 나타납니다.
+              밴드명으로 검색하세요.
             </p>
           ) : bandSearchItems.length === 0 && !bandSearchLoading ? (
             <p className="text-foreground-muted text-caption py-s-4 text-center">
               일치하는 밴드가 없습니다.
             </p>
           ) : (
-            <BandCheckList bands={bandSearchItems} />
+            <div className="max-h-56 overflow-y-auto rounded-md border border-white/10 p-1">
+              <BandCheckList bands={bandSearchItems} />
+              {hasNextBandSearch && (
+                <div ref={bandSearchLoadMoreRef} className="h-4" aria-hidden="true" />
+              )}
+              {isFetchingNextBandSearch && <Skeleton className="h-10 w-full" rounded="md" />}
+            </div>
           )}
         </>
       )}
@@ -489,16 +542,16 @@ function StepParticipants({
               className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
             />
           </div>
-          <div className="border-border h-50 overflow-y-auto rounded-md border">
-            {!memberQuery.trim() ? (
-              <div className="text-foreground-muted text-caption px-s-4 py-s-8 text-center">
-                이름 또는 이메일로 검색하세요.
-              </div>
-            ) : memberSearchResults.length === 0 ? (
-              <div className="text-foreground-muted text-caption px-s-4 py-s-8 text-center">
-                일치하는 멤버가 없습니다.
-              </div>
-            ) : (
+          {!memberQuery.trim() ? (
+            <p className="text-foreground-muted text-caption py-s-4 text-center">
+              이름 또는 이메일로 참여 멤버를 검색하세요.
+            </p>
+          ) : memberSearchResults.length === 0 ? (
+            <p className="text-foreground-muted text-caption py-s-4 text-center">
+              일치하는 멤버가 없습니다.
+            </p>
+          ) : (
+            <div className="border-border h-50 overflow-y-auto rounded-md border">
               <ul>
                 {memberSearchResults.map((m) => {
                   const added = participantSet.has(m.memberId);
@@ -528,8 +581,8 @@ function StepParticipants({
                   );
                 })}
               </ul>
-            )}
-          </div>
+            </div>
+          )}
         </>
       )}
 
