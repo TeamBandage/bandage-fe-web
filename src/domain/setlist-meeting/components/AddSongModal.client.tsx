@@ -395,7 +395,7 @@ export function AddSongModal({
     >
       {trigger && <ResponsiveSheetTrigger asChild>{trigger}</ResponsiveSheetTrigger>}
       <ResponsiveSheetContent className="lg:max-w-2xl">
-        <ResponsiveSheetHeader>
+        <ResponsiveSheetHeader className="border-b-0 pb-2">
           <ResponsiveSheetTitle>{isEdit ? '곡 수정' : '곡 추가'}</ResponsiveSheetTitle>
         </ResponsiveSheetHeader>
         <form onSubmit={onSubmit}>
@@ -693,7 +693,7 @@ export function AddSongModal({
           <ResponsiveSheetFooter className="border-t-0">
             {/* 새로 추가 모드일 때만 '계속 추가' 토글 노출. */}
             {!isEdit && (
-              <label className="text-foreground-sub gap-s-2 text-caption mr-auto inline-flex cursor-pointer items-center">
+              <label className="text-foreground-sub gap-s-2 text-body mr-auto inline-flex cursor-pointer items-center">
                 <input
                   type="checkbox"
                   checked={keepOpen}
