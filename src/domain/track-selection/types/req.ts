@@ -12,9 +12,9 @@ export interface UpdateTrackSelectionRequest {
 
 export interface SessionDefDto {
   custom: boolean;
+  /** 영문 대문자만 허용(BE 검증 패턴 ^[A-Za-z]+$, FE는 대문자로 정규화해 전송). */
   label: string;
   sessionId: string;
-  short: string;
 }
 
 export interface TrackSelectionItemCreateRequest {
