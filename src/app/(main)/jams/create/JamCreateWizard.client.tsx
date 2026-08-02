@@ -2,7 +2,7 @@
 
 import { Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
@@ -20,6 +20,13 @@ const STEPS = ['곡 정보', '일정 설정', '세션 설정', '검토'] as cons
 const inputCls =
   'rounded-[5px] hover:border-white/30 focus-visible:border-white/80 focus-visible:ring-0';
 type Step = 0 | 1 | 2 | 3;
+
+function clampNumeric(raw: string, max: number): string {
+  const digits = raw.replace(/[^0-9]/g, '').slice(0, 2);
+  if (digits === '') return '';
+  const n = Math.min(parseInt(digits, 10), max);
+  return String(n);
+}
 
 /** 세션 1개 = 인원 1명이므로, 같은 이름/약어끼리 묶어 개수로 요약. */
 function summarizeSessions(sessions: SessionDefDto[]): string {
@@ -42,13 +49,27 @@ export function JamCreateWizard() {
   const [trackTitle, setTrackTitle] = useState('');
   const [trackArtist, setTrackArtist] = useState('');
   const [trackAlbum, setTrackAlbum] = useState('');
-  const [trackDuration, setTrackDuration] = useState<number>(0);
+  const [trackDurationMm, setTrackDurationMm] = useState('');
+  const [trackDurationSs, setTrackDurationSs] = useState('');
+  const trackDurationSsRef = useRef<HTMLInputElement | null>(null);
+  const trackDuration = (() => {
+    const mm = trackDurationMm === '' ? 0 : parseInt(trackDurationMm, 10);
+    const ss = trackDurationSs === '' ? 0 : parseInt(trackDurationSs, 10);
+    const total = mm * 60 + ss;
+    return total === 0 ? undefined : total;
+  })();
 
   // Step 1 — 일정 설정
   const [title, setTitle] = useState('');
+  const [titleTouched, setTitleTouched] = useState(false);
   const [venue, setVenue] = useState('');
   const [startAt, setStartAt] = useState('');
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
+
+  // 합주 제목 미입력 시 1단계 곡 제목으로 자동 채움. 사용자가 직접 수정하면 더 이상 덮어쓰지 않음.
+  useEffect(() => {
+    if (!titleTouched) setTitle(trackTitle);
+  }, [trackTitle, titleTouched]);
 
   // Step 2 — 세션 설정
   const [sessions, setSessions] = useState<SessionDefDto[]>([]);
@@ -120,7 +141,7 @@ export function JamCreateWizard() {
         title: trackTitle.trim(),
         artist: trackArtist.trim(),
         album: trackAlbum.trim() || undefined,
-        duration: trackDuration || undefined,
+        duration: trackDuration,
       },
       sessions,
       venue: venue || undefined,
@@ -143,34 +164,73 @@ export function JamCreateWizard() {
           <h2 className="text-foreground-sub text-base font-semibold">
             합주할 곡 정보를 입력하세요
           </h2>
-          <Input
-            label="곡 제목"
-            required
-            value={trackTitle}
-            onChange={(e) => setTrackTitle(e.target.value)}
-            className={inputCls}
-          />
-          <Input
-            label="아티스트"
-            required
-            value={trackArtist}
-            onChange={(e) => setTrackArtist(e.target.value)}
-            className={inputCls}
-          />
-          <Input
-            label="앨범 (선택)"
-            value={trackAlbum}
-            onChange={(e) => setTrackAlbum(e.target.value)}
-            className={inputCls}
-          />
-          <Input
-            label="재생 시간 (초, 선택)"
-            type="number"
-            min={0}
-            value={trackDuration}
-            onChange={(e) => setTrackDuration(Number(e.target.value) || 0)}
-            className={inputCls}
-          />
+          <div className="gap-s-3 grid grid-cols-1 sm:grid-cols-2">
+            <Input
+              label="곡 제목"
+              required
+              value={trackTitle}
+              onChange={(e) => setTrackTitle(e.target.value)}
+              className={inputCls}
+            />
+            <Input
+              label="아티스트"
+              required
+              value={trackArtist}
+              onChange={(e) => setTrackArtist(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+          <div className="gap-s-3 flex">
+            <div className="flex-1">
+              <Input
+                label="앨범 (선택)"
+                value={trackAlbum}
+                onChange={(e) => setTrackAlbum(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="text-foreground block text-sm font-medium">재생 시간 (선택)</label>
+              <div className="bg-surface border-border hover:border-border-hi gap-s-1 px-s-3 mt-2.5 flex h-10 items-center rounded-[5px] border transition-colors focus-within:border-white/70">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={2}
+                  value={trackDurationMm}
+                  onChange={(e) => {
+                    const next = clampNumeric(e.target.value, 99);
+                    setTrackDurationMm(next);
+                    if (next.length === 2) trackDurationSsRef.current?.focus();
+                  }}
+                  onBlur={() => {
+                    if (trackDurationMm.length === 1) {
+                      setTrackDurationMm(trackDurationMm.padStart(2, '0'));
+                    }
+                  }}
+                  placeholder="00"
+                  aria-label="재생 시간 분"
+                  className="placeholder:text-foreground-muted w-7 bg-transparent text-center font-mono text-sm tabular-nums outline-none"
+                />
+                <span className="text-foreground-muted font-mono text-sm">:</span>
+                <input
+                  ref={trackDurationSsRef}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={2}
+                  value={trackDurationSs}
+                  onChange={(e) => setTrackDurationSs(clampNumeric(e.target.value, 59))}
+                  onBlur={() => {
+                    if (trackDurationSs.length === 1) {
+                      setTrackDurationSs(trackDurationSs.padStart(2, '0'));
+                    }
+                  }}
+                  placeholder="00"
+                  aria-label="재생 시간 초"
+                  className="placeholder:text-foreground-muted w-7 bg-transparent text-center font-mono text-sm tabular-nums outline-none"
+                />
+              </div>
+            </div>
+          </div>
         </section>
       )}
 
@@ -182,7 +242,10 @@ export function JamCreateWizard() {
             label="합주 제목 (선택)"
             placeholder="예: TuNA 정기공연 1주차 합주"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setTitleTouched(true);
+            }}
             className={inputCls}
           />
           <Input
