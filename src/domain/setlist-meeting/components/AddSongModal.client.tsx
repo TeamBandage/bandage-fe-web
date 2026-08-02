@@ -394,7 +394,7 @@ export function AddSongModal({
       }}
     >
       {trigger && <ResponsiveSheetTrigger asChild>{trigger}</ResponsiveSheetTrigger>}
-      <ResponsiveSheetContent className="sm:max-w-2xl">
+      <ResponsiveSheetContent className="lg:max-w-2xl">
         <ResponsiveSheetHeader>
           <ResponsiveSheetTitle>{isEdit ? '곡 수정' : '곡 추가'}</ResponsiveSheetTitle>
         </ResponsiveSheetHeader>
