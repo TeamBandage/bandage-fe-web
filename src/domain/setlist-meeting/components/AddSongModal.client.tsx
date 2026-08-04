@@ -574,8 +574,8 @@ export function AddSongModal({
                   세션별 인원수를 +/- 로 조정하고, 필요하면 영문 이름으로 커스텀 세션을 추가하세요.
                 </div>
 
-                <div ref={sessionListRef} className="max-h-[104px] overflow-y-auto">
-                  <div className="gap-s-2 grid grid-cols-2">
+                <div ref={sessionListRef} className="max-h-28 overflow-y-auto">
+                  <div className="flex flex-wrap gap-x-3 gap-y-2">
                     {sessionRows
                       .filter((row) => !row.removable)
                       .map((row) => (
@@ -587,7 +587,7 @@ export function AddSongModal({
                       ))}
                   </div>
                   {sessionRows.some((row) => row.removable) && (
-                    <div className="gap-s-2 mt-s-2 grid grid-cols-2">
+                    <div className="mt-s-2 flex flex-wrap gap-x-3 gap-y-2">
                       {sessionRows
                         .filter((row) => row.removable)
                         .map((row) => (
@@ -688,53 +688,49 @@ function SessionRowItem({
   onRemove?: (label: string) => void;
 }) {
   return (
-    <div className="gap-s-2 flex items-center">
+    <div
+      className={cn(
+        'gap-s-1 px-s-2 py-s-1 inline-flex shrink-0 items-center rounded-full border transition-colors',
+        row.count > 0 ? 'border-white/40 bg-white/10' : 'bg-card border-border',
+      )}
+    >
       <span
         className={cn(
-          'gap-s-2 px-s-3 py-s-1 text-caption flex min-w-0 flex-1 items-center justify-between rounded-full border font-mono font-bold transition-colors',
-          row.count > 0
-            ? 'border-white/40 bg-white/10 text-white'
-            : 'bg-card border-border text-foreground-muted',
+          'px-s-2 text-micro font-mono font-bold whitespace-nowrap',
+          row.count > 0 ? 'text-white' : 'text-foreground-muted',
         )}
       >
-        <span className="truncate">{row.label}</span>
-        <span>{row.count}</span>
+        {row.label}
       </span>
-      <div className="gap-s-0.5 flex shrink-0 items-center">
+      <button
+        type="button"
+        onClick={() => onChangeCount(row.label, -1)}
+        disabled={row.count <= 0}
+        aria-label={`${row.label} 인원 감소`}
+        className="border-border text-foreground-sub hover:text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors outline-none hover:border-white/50 disabled:opacity-30"
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <span className="text-micro w-3 shrink-0 text-center font-mono font-bold">{row.count}</span>
+      <button
+        type="button"
+        onClick={() => onChangeCount(row.label, 1)}
+        disabled={row.count >= MAX_SESSION_COUNT}
+        aria-label={`${row.label} 인원 추가`}
+        className="border-border text-foreground-sub hover:text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors outline-none hover:border-white/50 disabled:opacity-30"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
+      {onRemove && (
         <button
           type="button"
-          onClick={() => onChangeCount(row.label, 1)}
-          disabled={row.count >= MAX_SESSION_COUNT}
-          aria-label={`${row.label} 인원 추가`}
-          className="text-foreground-sub hover:text-foreground rounded p-1 transition-colors disabled:opacity-30"
+          onClick={() => onRemove(row.label)}
+          aria-label={`${row.label} 세션 삭제`}
+          className="text-foreground-muted hover:text-danger shrink-0 rounded p-0.5 transition-colors"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <X className="h-3.5 w-3.5" />
         </button>
-        <button
-          type="button"
-          onClick={() => onChangeCount(row.label, -1)}
-          disabled={row.count <= 0}
-          aria-label={`${row.label} 인원 감소`}
-          className="text-foreground-sub hover:text-foreground rounded p-1 transition-colors disabled:opacity-30"
-        >
-          <Minus className="h-3.5 w-3.5" />
-        </button>
-        {onRemove ? (
-          <button
-            type="button"
-            onClick={() => onRemove(row.label)}
-            aria-label={`${row.label} 세션 삭제`}
-            className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        ) : (
-          // 기본 세션에는 X 버튼이 없지만, 커스텀 행과 가로 폭·+/- 버튼 위치를 맞추기 위한 자리 채움.
-          <span className="invisible shrink-0 rounded p-1" aria-hidden="true">
-            <X className="h-3.5 w-3.5" />
-          </span>
-        )}
-      </div>
+      )}
     </div>
   );
 }
