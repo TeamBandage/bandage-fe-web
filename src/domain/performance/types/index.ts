@@ -12,6 +12,7 @@ export type {
   PerformanceSetlistSummary,
   PerformanceDetailResponse,
   PerformanceSetlistResponse,
+  PerformanceSetlistTracksResponse,
   PerformanceInvitationResponse,
   PerformanceInvitationStatus,
 } from './res';

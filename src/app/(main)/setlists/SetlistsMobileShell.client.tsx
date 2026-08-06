@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMe } from '@/domain/member/hooks/useMe';
 import { useMySetlists } from '@/domain/setlist/hooks/useMySetlists';
 import { useSetlistsByTitle } from '@/domain/setlist/hooks/useSetlistsByTitle';
 import type { SetlistResponse } from '@/domain/setlist/types/res';
@@ -15,12 +17,16 @@ import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { cn } from '@/lib/cn';
 import { listItemClasses } from '@/lib/list-item-styles';
 
-function SetlistRow({ item, active }: { item: SetlistResponse; active: boolean }) {
+function SetlistRow({
+  item,
+  active,
+  isManager,
+}: {
+  item: SetlistResponse;
+  active: boolean;
+  isManager: boolean;
+}) {
   const href = ROUTES.SETLIST_DETAIL(item.setlistId);
-  const dateLabel = item.updatedAt ?? item.createdAt;
-  const label = dateLabel
-    ? new Date(dateLabel).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
-    : null;
 
   return (
     <li>
@@ -32,7 +38,7 @@ function SetlistRow({ item, active }: { item: SetlistResponse; active: boolean }
           active,
           'accent',
           cn(
-            'text-foreground focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:outline-none',
+            'text-foreground focus-visible:ring-offset-bg items-center focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:outline-none',
             active && 'border-white/25 bg-white/10 hover:bg-white/10',
           ),
         )}
@@ -40,9 +46,13 @@ function SetlistRow({ item, active }: { item: SetlistResponse; active: boolean }
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/15 text-white">
           <ListMusic className="h-4 w-4" />
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-caption truncate font-semibold">{item.title}</div>
-          {label && <div className="text-foreground-muted text-caption mt-0.5">{label}</div>}
+        <div className="gap-s-2 flex min-w-0 flex-1 items-center">
+          <span className="text-caption truncate font-semibold">{item.title}</span>
+          {isManager && (
+            <Badge variant="amber" className="bg-white/10 text-white">
+              매니저
+            </Badge>
+          )}
         </div>
       </Link>
     </li>
@@ -52,6 +62,7 @@ function SetlistRow({ item, active }: { item: SetlistResponse; active: boolean }
 export function SetlistsMobileShell() {
   const pathname = usePathname() ?? '';
   const isDesktop = useIsDesktop();
+  const { data: me } = useMe();
   const [query, setQuery] = useState('');
   const hasQuery = query.trim().length > 0;
 
@@ -112,7 +123,14 @@ export function SetlistsMobileShell() {
             {setlists.map((item) => {
               const href = ROUTES.SETLIST_DETAIL(item.setlistId);
               const active = pathname === href || pathname.startsWith(`${href}/`);
-              return <SetlistRow key={item.setlistId} item={item} active={active} />;
+              return (
+                <SetlistRow
+                  key={item.setlistId}
+                  item={item}
+                  active={active}
+                  isManager={item.managerId === me?.id}
+                />
+              );
             })}
           </ul>
           {!hasQuery && hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}

@@ -40,6 +40,7 @@ import { useBatchAddPerformanceSetlists } from '@/domain/performance/hooks/useBa
 import { useDeletePerformance } from '@/domain/performance/hooks/useDeletePerformance';
 import { useMyPerformanceInvitations } from '@/domain/performance/hooks/useMyPerformanceInvitations';
 import { usePerformanceDetail } from '@/domain/performance/hooks/usePerformanceDetail';
+import { usePerformanceSetlistTracks } from '@/domain/performance/hooks/usePerformanceSetlistTracks';
 import { useRemovePerformanceSetlist } from '@/domain/performance/hooks/useRemovePerformanceSetlist';
 import { useUpdatePerformance } from '@/domain/performance/hooks/useUpdatePerformance';
 import { updatePerformanceSchema, type UpdatePerformanceSchema } from '@/domain/performance/types';
@@ -51,8 +52,8 @@ import {
 import { usePerformancePosters } from '@/domain/performance-poster/hooks/usePerformancePosters';
 import { useUpdatePerformancePoster } from '@/domain/performance-poster/hooks/useUpdatePerformancePoster';
 import type { PerformanceSetlistSummary } from '@/domain/performance/types/res';
+import type { SetlistTrackResponse } from '@/domain/setlist/types/res';
 import { useMySetlists } from '@/domain/setlist/hooks/useMySetlists';
-import { useSetlistTracks } from '@/domain/setlist/hooks/useSetlistTracks';
 import { useIsPerformanceManager } from '@/global/auth/useIsPerformanceManager';
 import { queryKeys } from '@/global/config/queryKeys';
 import { ROUTES } from '@/global/config/routes';
@@ -103,6 +104,12 @@ export function PerformanceDetailContent({
   const { data: perf, isLoading, isError, refetch } = usePerformanceDetail(performanceId);
   const { isManager, isOwner } = useIsPerformanceManager(performanceId);
   const { data: posters = [] } = usePerformancePosters(performanceId);
+  // 셋리스트별 개별 조회(useSetlistTracks) 대신 공연 단위 일괄 조회 사용 — 공연 OWNER/MANAGER가
+  // 본인이 소유·참여하지 않은 셋리스트를 열람하면 예전엔 SETLIST_FORBIDDEN 이 났던 문제를 해결.
+  const { data: perfSetlistTracks } = usePerformanceSetlistTracks(performanceId);
+  const tracksBySetlistId = new Map(
+    (perfSetlistTracks ?? []).map((entry) => [entry.setlist.setlistId, entry.tracks]),
+  );
   const { data: myInvitations = [] } = useMyPerformanceInvitations({ enabled: !isManager });
   const hasMyInvitation = myInvitations.some((inv) => inv.performanceId === performanceId);
   const showInvitationsTab = isOwner || (!isManager && hasMyInvitation);
@@ -383,7 +390,7 @@ export function PerformanceDetailContent({
             <div className="space-y-s-2">
               {perf.setlists.map((s) => (
                 <div key={s.setlistId} className="flex items-center gap-2">
-                  <SetlistCard setlist={s} />
+                  <SetlistCard setlist={s} tracks={tracksBySetlistId.get(s.setlistId) ?? []} />
                   {isManager &&
                     (canRemoveSetlist(s.setlistId) ? (
                       <button
@@ -721,10 +728,14 @@ export function PerformanceDetailContent({
   );
 }
 
-function SetlistCard({ setlist }: { setlist: PerformanceSetlistSummary }) {
+function SetlistCard({
+  setlist,
+  tracks,
+}: {
+  setlist: PerformanceSetlistSummary;
+  tracks: SetlistTrackResponse[];
+}) {
   const [open, setOpen] = useState(false);
-  const { data } = useSetlistTracks(setlist.setlistId);
-  const tracks = data?.content ?? [];
 
   return (
     <div className="border-border min-w-0 flex-1 overflow-hidden rounded-[5px] border">

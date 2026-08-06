@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -56,6 +57,11 @@ function MeetingRow({
             <div className="gap-s-1 flex items-center">
               <span className="text-caption truncate font-semibold">{item.title}</span>
               {locked && <Lock className="text-foreground-muted h-3 w-3 shrink-0" />}
+              {isManager && (
+                <Badge variant="amber" className="bg-white/10 text-white">
+                  매니저
+                </Badge>
+              )}
             </div>
           </div>
         </Link>
