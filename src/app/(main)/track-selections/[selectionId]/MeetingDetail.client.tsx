@@ -132,6 +132,9 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
+  // Enter(keydown)와 onBlur가 같은 handleTitleSave를 호출 — 연속 Enter 등으로 리렌더 전에
+  // 다시 들어오면 selection.title이 아직 갱신 전이라 가드를 통과해 중복 PATCH가 나갈 수 있어 ref로 막는다.
+  const isSavingTitleRef = useRef(false);
 
   const hasSelectedSongs = allSongs.some((s) => s.isSelected);
 
@@ -313,12 +316,17 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
       setEditingTitle(false);
       return;
     }
+    if (isSavingTitleRef.current) return;
+    isSavingTitleRef.current = true;
     updateTrackSelection.mutate(trimmed, {
       onSuccess: () => {
         toast.success('선곡 이름이 수정되었습니다.');
         setEditingTitle(false);
       },
       onError: () => toast.error('이름 수정에 실패했습니다.'),
+      onSettled: () => {
+        isSavingTitleRef.current = false;
+      },
     });
   };
 

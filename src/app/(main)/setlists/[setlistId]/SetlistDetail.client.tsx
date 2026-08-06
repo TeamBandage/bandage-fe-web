@@ -3,7 +3,7 @@
 import { ArrowLeft, Clock, Edit2, ExternalLink, Music, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { Button } from '@/components/ui/button';
@@ -365,6 +365,9 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
+  // Enter(keydown)와 onBlur가 같은 handleTitleSave를 호출 — 연속 Enter 등으로 리렌더 전에
+  // 다시 들어오면 setlist.title이 아직 갱신 전이라 가드를 통과해 중복 PATCH가 나갈 수 있어 ref로 막는다.
+  const isSavingTitleRef = useRef(false);
   const [editingTrack, setEditingTrack] = useState<SetlistTrackResponse | null>(null);
   const [pendingDeleteTrack, setPendingDeleteTrack] = useState<SetlistTrackResponse | null>(null);
   const [showJamForm, setShowJamForm] = useState(false);
@@ -385,12 +388,17 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
       setEditingTitle(false);
       return;
     }
+    if (isSavingTitleRef.current) return;
+    isSavingTitleRef.current = true;
     updateSetlist.mutate(trimmed, {
       onSuccess: () => {
         toast.success('셋리스트 제목이 수정되었습니다.');
         setEditingTitle(false);
       },
       onError: () => toast.error('제목 수정에 실패했습니다.'),
+      onSettled: () => {
+        isSavingTitleRef.current = false;
+      },
     });
   };
 
