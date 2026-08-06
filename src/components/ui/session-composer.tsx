@@ -9,9 +9,12 @@ import { cn } from '@/lib/cn';
 import { Button } from './button';
 import { Input } from './input';
 
+/** 세션 인원 한 자리. existingId 가 있으면 서버에 이미 존재하는 세션(수정 시 그대로 재전송), 없으면 아직 생성 전인 신규 자리. */
+export type SessionInstance = { existingId?: string };
+
 export type SessionRowState = {
   label: string;
-  count: number;
+  instances: SessionInstance[];
   /** 기본 세션이 아닌, 사용자가 직접 추가한 세션만 X 로 삭제 가능. */
   removable: boolean;
 };
@@ -26,41 +29,68 @@ export function normalizeSessionLabel(raw: string): string {
   return raw.replace(/[^a-zA-Z]/g, '').toUpperCase();
 }
 
-/** 새로 만들 때 기본값: 기본 4종이 인원 1명씩 켜져 있는 상태. */
+/** 새로 만들 때 기본값: 기본 4종이 인원 1명씩(전부 신규 자리) 켜져 있는 상태. */
 export function defaultSessionRows(): SessionRowState[] {
-  return DEFAULT_SESSION_LABELS.map((label) => ({ label, count: 1, removable: false }));
+  return DEFAULT_SESSION_LABELS.map((label) => ({ label, instances: [{}], removable: false }));
 }
 
-/** 기존 세션 라벨 목록(중복 = 인원수) → 라벨별 인원수로 그룹핑. */
-export function deriveSessionRows(labels: string[]): SessionRowState[] {
-  const counts = new Map<string, number>();
-  for (const raw of labels) {
-    const label = raw.toUpperCase();
-    counts.set(label, (counts.get(label) ?? 0) + 1);
+/** 기존 세션(label+실제 sessionId) 목록 → 라벨별로 그룹핑, 각 자리에 실제 sessionId 보존. */
+export function deriveSessionRows(
+  sessions: Array<{ label: string; sessionId: string }>,
+): SessionRowState[] {
+  const grouped = new Map<string, SessionInstance[]>();
+  for (const s of sessions) {
+    const label = s.label.toUpperCase();
+    const list = grouped.get(label) ?? [];
+    list.push({ existingId: s.sessionId });
+    grouped.set(label, list);
   }
   const rows: SessionRowState[] = DEFAULT_SESSION_LABELS.map((label) => ({
     label,
-    count: counts.get(label) ?? 0,
+    instances: grouped.get(label) ?? [],
     removable: false,
   }));
-  for (const [label, count] of counts) {
+  for (const [label, instances] of grouped) {
     if (DEFAULT_SESSION_LABELS.includes(label)) continue;
-    rows.push({ label, count, removable: true });
+    rows.push({ label, instances, removable: true });
   }
   return rows;
 }
 
-/** rows → 인원수만큼 같은 라벨을 중복 전개(예: VOCAL count=2 → 2개 엔트리, 같은 label). */
+/**
+ * rows → 실제 전송용 세션 목록. 기존 자리는 원래 sessionId 그대로, 신규 자리는 sessionId 를
+ * 아예 생략(BD-269: 서버가 발급 — 임의 값을 보내면 400 SESSION_NOT_FOUND/SESSION_DUPLICATED).
+ */
 export function expandSessionRows(
   rows: SessionRowState[],
-): Array<{ id: string; label: string; custom: boolean }> {
-  const out: Array<{ id: string; label: string; custom: boolean }> = [];
+): Array<{ sessionId?: string; label: string; custom: boolean }> {
+  const out: Array<{ sessionId?: string; label: string; custom: boolean }> = [];
   for (const row of rows) {
-    for (let i = 0; i < row.count; i += 1) {
-      out.push({ id: `${row.label}-${i + 1}`, label: row.label, custom: row.removable });
+    for (const instance of row.instances) {
+      out.push({
+        ...(instance.existingId ? { sessionId: instance.existingId } : {}),
+        label: row.label,
+        custom: row.removable,
+      });
     }
   }
   return out;
+}
+
+function updateRowCount(rows: SessionRowState[], label: string, delta: number): SessionRowState[] {
+  return rows.map((row) => {
+    if (row.label !== label) return row;
+    if (delta > 0) {
+      if (row.instances.length >= MAX_SESSION_COUNT) return row;
+      return { ...row, instances: [...row.instances, {}] };
+    }
+    if (row.instances.length === 0) return row;
+    // 감소 시 아직 저장 안 된(신규) 자리부터 제거 — 이미 존재하는(배정된 인원이 있을 수 있는)
+    // 세션은 더 이상 줄일 신규 자리가 없을 때만 제거된다.
+    const lastNewIndex = row.instances.map((i) => !i.existingId).lastIndexOf(true);
+    const removeIndex = lastNewIndex !== -1 ? lastNewIndex : row.instances.length - 1;
+    return { ...row, instances: row.instances.filter((_, i) => i !== removeIndex) };
+  });
 }
 
 function SessionRowItem({
@@ -72,17 +102,18 @@ function SessionRowItem({
   onChangeCount: (label: string, delta: number) => void;
   onRemove?: (label: string) => void;
 }) {
+  const count = row.instances.length;
   return (
     <div
       className={cn(
         'gap-s-1 px-s-2 py-s-1 inline-flex shrink-0 items-center rounded-full border transition-colors',
-        row.count > 0 ? 'border-white/40 bg-white/10' : 'bg-card border-border',
+        count > 0 ? 'border-white/40 bg-white/10' : 'bg-card border-border',
       )}
     >
       <span
         className={cn(
           'px-s-2 text-micro font-mono font-bold whitespace-nowrap',
-          row.count > 0 ? 'text-white' : 'text-foreground-muted',
+          count > 0 ? 'text-white' : 'text-foreground-muted',
         )}
       >
         {row.label}
@@ -90,17 +121,17 @@ function SessionRowItem({
       <button
         type="button"
         onClick={() => onChangeCount(row.label, -1)}
-        disabled={row.count <= 0}
+        disabled={count <= 0}
         aria-label={`${row.label} 인원 감소`}
         className="border-border text-foreground-sub hover:text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors outline-none hover:border-white/50 disabled:opacity-30"
       >
         <Minus className="h-3 w-3" />
       </button>
-      <span className="text-micro w-3 shrink-0 text-center font-mono font-bold">{row.count}</span>
+      <span className="text-micro w-3 shrink-0 text-center font-mono font-bold">{count}</span>
       <button
         type="button"
         onClick={() => onChangeCount(row.label, 1)}
-        disabled={row.count >= MAX_SESSION_COUNT}
+        disabled={count >= MAX_SESSION_COUNT}
         aria-label={`${row.label} 인원 추가`}
         className="border-border text-foreground-sub hover:text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors outline-none hover:border-white/50 disabled:opacity-30"
       >
@@ -153,13 +184,7 @@ export function SessionComposer({
   }, [rows]);
 
   function updateCount(label: string, delta: number) {
-    onChange(
-      rows.map((row) =>
-        row.label === label
-          ? { ...row, count: Math.max(0, Math.min(MAX_SESSION_COUNT, row.count + delta)) }
-          : row,
-      ),
-    );
+    onChange(updateRowCount(rows, label, delta));
   }
 
   function removeRow(label: string) {
@@ -174,13 +199,13 @@ export function SessionComposer({
       return;
     }
     justAddedRef.current = true;
-    onChange([...rows, { label, count: 1, removable: true }]);
+    onChange([...rows, { label, instances: [{}], removable: true }]);
     setCustomDraft('');
   }
 
   const defaults = rows.filter((row) => !row.removable);
   const customs = rows.filter((row) => row.removable);
-  const totalCount = rows.reduce((acc, row) => acc + row.count, 0);
+  const totalCount = rows.reduce((acc, row) => acc + row.instances.length, 0);
 
   return (
     <div className={className}>

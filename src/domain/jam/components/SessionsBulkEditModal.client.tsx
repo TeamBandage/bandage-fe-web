@@ -56,20 +56,14 @@ export function SessionsBulkEditModal({
 
   function handleOpenChange(next: boolean) {
     if (next) {
-      setRows(deriveSessionRows(sessions.map((s) => s.label)));
+      setRows(deriveSessionRows(sessions.map((s) => ({ label: s.label, sessionId: s.sessionId }))));
       setAssignedCounts(assignedCountsByLabel(sessions));
     }
     setOpen(next);
   }
 
   function handleSave() {
-    mutation.mutate({
-      sessions: expandSessionRows(rows).map((r) => ({
-        sessionId: r.id,
-        label: r.label,
-        custom: r.custom,
-      })),
-    });
+    mutation.mutate({ sessions: expandSessionRows(rows) });
   }
 
   const assignedEntries = Array.from(assignedCounts.entries());

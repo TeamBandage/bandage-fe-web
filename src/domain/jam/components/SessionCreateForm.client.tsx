@@ -25,11 +25,8 @@ export function SessionCreateForm({ jamId, onCreated }: { jamId: string; onCreat
     e.preventDefault();
     if (!label.trim()) return toast.error('세션 이름을 입력해 주세요.');
     // 세션 1개 = 인원 1명. 같은 악기가 여러 명 필요하면 같은 이름으로 여러 번 추가.
-    mutation.mutate({
-      sessionId: `${label}-${Date.now()}`,
-      label,
-      custom: true,
-    });
+    // sessionId 는 서버가 발급(BD-269) — 신규 세션 생성 시 전송하지 않음.
+    mutation.mutate({ label, custom: true });
   }
 
   return (

@@ -35,8 +35,8 @@ function clampNumeric(raw: string, max: number): string {
 /** 세션별 인원수 요약(예: VOCAL×2, GUITAR×1). */
 function summarizeSessionRows(rows: SessionRowState[]): string {
   return rows
-    .filter((r) => r.count > 0)
-    .map((r) => `${r.label}×${r.count}`)
+    .filter((r) => r.instances.length > 0)
+    .map((r) => `${r.label}×${r.instances.length}`)
     .join(', ');
 }
 
@@ -119,11 +119,7 @@ export function JamCreateWizard() {
         album: trackAlbum.trim() || undefined,
         duration: trackDuration,
       },
-      sessions: expandSessionRows(sessionRows).map((s) => ({
-        sessionId: s.id,
-        label: s.label,
-        custom: s.custom,
-      })),
+      sessions: expandSessionRows(sessionRows),
       venue: venue || undefined,
       startAt,
       durationMinutes,
