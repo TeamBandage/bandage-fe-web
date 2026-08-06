@@ -40,3 +40,18 @@ export interface TrackSelectionItemUpdateRequest {
   reference?: string;
   sessions?: SessionDefDto[];
 }
+
+export type TrackSelectionItemStatus = 'OPEN' | 'APPLY_COMPLETED' | 'ASSIGN_COMPLETED' | 'CLOSED';
+export type TrackSelectionSearchField = 'TITLE' | 'ARTIST' | 'ALBUM';
+
+/**
+ * 선곡 항목 목록 조회 필터. 4개 필터는 서로 독립적으로 AND 결합된다.
+ * status 값끼리는 겹칠 수 있음(예: ASSIGN_COMPLETED 항목은 APPLY_COMPLETED 조건도 만족) — 소비 측에서 주의.
+ */
+export interface TrackSelectionItemsFilter {
+  status?: TrackSelectionItemStatus[];
+  appliedByMe?: boolean;
+  memberName?: string;
+  keyword?: string;
+  searchFields?: TrackSelectionSearchField[];
+}

@@ -16,6 +16,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ROUTES } from '@/global/config/routes';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -37,6 +39,7 @@ import { useUpdateTrackSelection } from '@/domain/track-selection/hooks/useUpdat
 import { useTrackSelectionItems } from '@/domain/track-selection/hooks/useTrackSelectionItems';
 import { useDeleteTrackSelectionItem } from '@/domain/track-selection/hooks/useDeleteTrackSelectionItem';
 import { toSong } from '@/domain/track-selection/utils/toSong';
+import type { TrackSelectionItemsFilter } from '@/domain/track-selection/types/req';
 import { resolveMemberId } from '@/domain/track-selection/utils/resolveMemberId';
 import { lockSelection, unlockSelection } from '@/domain/track-selection/api/lockSelection';
 import { useUpdateItemSelection } from '@/domain/track-selection/hooks/useUpdateItemSelection';
@@ -51,31 +54,18 @@ import { confirmedCount, isReady, totalNeed } from '@/domain/setlist-meeting/uti
 
 type Filter = 'all' | 'ready' | 'pending' | 'mine';
 
-function applyFilter(songs: Song[], filter: Filter, currentUserId: string): Song[] {
+function buildFilterQuery(filter: Filter): TrackSelectionItemsFilter {
   switch (filter) {
     case 'ready':
-      return songs.filter(isReady);
+      return { status: ['ASSIGN_COMPLETED'] };
     case 'pending':
-      return songs.filter((s) => !isReady(s));
+      return { status: ['OPEN', 'APPLY_COMPLETED'] };
     case 'mine':
-      return songs.filter((s) =>
-        Object.values(s.applicants).some((list) => list.includes(currentUserId)),
-      );
+      return { appliedByMe: true };
     case 'all':
     default:
-      return songs;
+      return {};
   }
-}
-
-function applySearch(songs: Song[], q: string): Song[] {
-  const t = q.trim().toLowerCase();
-  if (!t) return songs;
-  return songs.filter(
-    (s) =>
-      s.title.toLowerCase().includes(t) ||
-      s.artist.toLowerCase().includes(t) ||
-      (s.album ?? '').toLowerCase().includes(t),
-  );
 }
 
 export function MeetingDetail({ meetingId }: { meetingId: string }) {
@@ -87,7 +77,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   } = useTrackSelection(meetingId);
   const { data: me } = useMe();
 
-  // 실API: 선곡 항목 목록 조회 → mock store에 동기화
+  // 실API: 선곡 항목 목록 조회(전체) → mock store에 동기화. 상단 통계(전체/합주가능/모집중)의 기준.
   const { data: itemsData } = useTrackSelectionItems(meetingId, 50);
   const deleteItem = useDeleteTrackSelectionItem(meetingId);
   const toggleSelection = useUpdateItemSelection(meetingId);
@@ -181,25 +171,48 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
     return { total, ready: readyCount, pending: total - readyCount };
   }, [allSongs]);
 
-  // 멤버 이름 부분 매칭 → userId 집합. 빈 검색이면 빈 Set.
+  // 멤버 이름 부분 매칭 → userId 집합. 하이라이트 표시용(실제 필터링은 서버 memberName 파라미터가 담당).
   const matchedUserIds = useMemo(() => {
     const t = memberQuery.trim().toLowerCase();
     if (!t) return new Set<string>();
     return new Set(members.filter((m) => m.name.toLowerCase().includes(t)).map((m) => m.id));
   }, [members, memberQuery]);
 
+  // 검색어는 디바운스 후 서버로 전송 — 매 키입력마다 요청하지 않도록.
+  const debouncedQuery = useDebounce(query.trim(), 300);
+  const debouncedMemberQuery = useDebounce(memberQuery.trim(), 300);
+
+  const activeFilter = useMemo<TrackSelectionItemsFilter>(
+    () => ({
+      ...buildFilterQuery(filter),
+      ...(debouncedQuery ? { keyword: debouncedQuery } : {}),
+      ...(debouncedMemberQuery ? { memberName: debouncedMemberQuery } : {}),
+    }),
+    [filter, debouncedQuery, debouncedMemberQuery],
+  );
+  const hasActiveFilter = Object.keys(activeFilter).length > 0;
+  // filter='all' + 검색어 없음이면 activeFilter === {} 이고 base 쿼리와 동일한 쿼리키를 사용하므로
+  // TanStack Query가 자동으로 요청을 중복 제거한다(불필요한 추가 네트워크 요청 없음).
+  // 이 덕분에 무한 스크롤 페이지네이션도 이 쿼리 하나만 구독하면 필터 여부와 무관하게 항상 맞는 상태를 가리킨다.
+  const {
+    data: filteredItemsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTrackSelectionItems(meetingId, 50, activeFilter);
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
+
   const filtered = useMemo(() => {
-    let result = applySearch(applyFilter(allSongs, filter, currentUserId), query);
-    if (matchedUserIds.size > 0) {
-      // 곡 필터 + 멤버 필터 AND: 매칭 유저가 어떤 세션이든 들어있는 곡만.
-      result = result.filter(
-        (s) =>
-          Object.values(s.applicants).some((list) => list.some((u) => matchedUserIds.has(u))) ||
-          Object.values(s.confirmed).some((list) => list.some((u) => matchedUserIds.has(u))),
-      );
-    }
+    if (!hasActiveFilter) return allSongs;
+    if (!filteredItemsData) return [];
+    // store(allSongs)는 base(무필터) 쿼리가 로드한 페이지만큼만 채워져 있어, 필터 탭에서 더
+    // 스크롤해 store 에 없는 항목을 서버가 돌려줄 수 있다 → store 조인 대신 응답을 직접 변환한다.
+    let result = filteredItemsData.pages.flatMap((p) => p.content).map(toSong);
+    // BE 문서: status 값끼리 겹칠 수 있음(ASSIGN_COMPLETED 항목도 APPLY_COMPLETED 조건을 만족) →
+    // '모집 중' 탭에 이미 합주 가능한 곡이 섞여 들어올 수 있어 클라이언트에서 한 번 더 걸러낸다.
+    if (filter === 'pending') result = result.filter((s) => !isReady(s));
     return result;
-  }, [allSongs, filter, currentUserId, query, matchedUserIds]);
+  }, [hasActiveFilter, filteredItemsData, allSongs, filter]);
 
   // 컬럼 정렬 적용. progress = confirmed/totalNeed 비율, duration = mm*60+ss 초.
   const visible = useMemo(() => {
@@ -560,6 +573,12 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
               );
             }}
           />
+          {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+          {isFetchingNextPage && (
+            <div className="px-s-5 py-s-3">
+              <Skeleton className="h-12 w-full" />
+            </div>
+          )}
         </div>
       </div>
 
