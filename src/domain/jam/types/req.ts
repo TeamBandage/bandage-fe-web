@@ -8,14 +8,13 @@ export interface TrackInfoRequest {
 
 export interface SessionDefDto {
   sessionId: string;
+  /** 영문 대문자만 허용(BE 검증 패턴 ^[A-Za-z]+$, FE는 대문자로 정규화해 전송). */
   label: string;
-  short: string;
   custom: boolean;
 }
 
 export interface UpdateSessionRequest {
   label?: string;
-  short?: string;
 }
 
 export interface JamSessionsUpdateRequest {

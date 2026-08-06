@@ -1,6 +1,6 @@
 'use client';
 
-import { ListChecks, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { ListChecks } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -12,34 +12,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import {
+  SessionComposer,
+  deriveSessionRows,
+  expandSessionRows,
+  type SessionRowState,
+} from '@/components/ui/session-composer';
 import { useUpdateSessions } from '@/domain/jam/hooks/useUpdateSessions';
 import { useToast } from '@/hooks/useToast';
 
 import type { JamSessionResponse } from '../types';
 
-type DraftRow = {
-  key: string;
-  sessionId: string;
-  label: string;
-  short: string;
-  custom: boolean;
-  isNew: boolean;
-  removed: boolean;
-  assignedCount: number;
-};
-
-function toDraftRows(sessions: JamSessionResponse[]): DraftRow[] {
-  return sessions.map((s) => ({
-    key: s.sessionId,
-    sessionId: s.sessionId,
-    label: s.label,
-    short: s.short,
-    custom: s.custom,
-    isNew: false,
-    removed: false,
-    assignedCount: s.participants.length,
-  }));
+/** 라벨별 배정 인원 합계(감소/삭제 시 어떤 세션의 배정이 해제될 수 있는지 안내용). */
+function assignedCountsByLabel(sessions: JamSessionResponse[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const s of sessions) {
+    if (s.participants.length === 0) continue;
+    const label = s.label.toUpperCase();
+    counts.set(label, (counts.get(label) ?? 0) + s.participants.length);
+  }
+  return counts;
 }
 
 export function SessionsBulkEditModal({
@@ -51,7 +43,8 @@ export function SessionsBulkEditModal({
 }) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
-  const [rows, setRows] = useState<DraftRow[]>([]);
+  const [rows, setRows] = useState<SessionRowState[]>([]);
+  const [assignedCounts, setAssignedCounts] = useState<Map<string, number>>(new Map());
 
   const mutation = useUpdateSessions(jamId, {
     onSuccess: () => {
@@ -62,61 +55,24 @@ export function SessionsBulkEditModal({
   });
 
   function handleOpenChange(next: boolean) {
-    if (next) setRows(toDraftRows(sessions));
+    if (next) {
+      setRows(deriveSessionRows(sessions.map((s) => s.label)));
+      setAssignedCounts(assignedCountsByLabel(sessions));
+    }
     setOpen(next);
   }
 
-  function addRow() {
-    setRows((prev) => [
-      ...prev,
-      {
-        key: crypto.randomUUID(),
-        sessionId: crypto.randomUUID(),
-        label: '',
-        short: '',
-        custom: true,
-        isNew: true,
-        removed: false,
-        assignedCount: 0,
-      },
-    ]);
-  }
-
-  function updateRow(key: string, patch: Partial<Pick<DraftRow, 'label' | 'short'>>) {
-    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
-  }
-
-  // 신규(미저장) 행은 즉시 제거하고, 기존 행은 취소 가능한 삭제 예정 상태로 표시.
-  function removeRow(key: string) {
-    setRows((prev) =>
-      prev.flatMap((r) => {
-        if (r.key !== key) return [r];
-        if (r.isNew) return [];
-        return [{ ...r, removed: true }];
-      }),
-    );
-  }
-
-  function undoRemove(key: string) {
-    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, removed: false } : r)));
-  }
-
   function handleSave() {
-    const active = rows.filter((r) => !r.removed);
-    const invalid = active.some((r) => !r.label.trim() || !r.short.trim());
-    if (invalid) {
-      toast.error('모든 세션에 이름과 약어를 입력해 주세요.');
-      return;
-    }
     mutation.mutate({
-      sessions: active.map((r) => ({
-        sessionId: r.sessionId,
-        label: r.label.trim(),
-        short: r.short.trim().toUpperCase().slice(0, 3),
+      sessions: expandSessionRows(rows).map((r) => ({
+        sessionId: r.id,
+        label: r.label,
         custom: r.custom,
       })),
     });
   }
+
+  const assignedEntries = Array.from(assignedCounts.entries());
 
   return (
     <>
@@ -131,87 +87,30 @@ export function SessionsBulkEditModal({
       </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
-          <DialogHeader>
+        <DialogContent className="sm:max-w-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader className="pb-2">
             <DialogTitle>세션 구성 전체 편집</DialogTitle>
           </DialogHeader>
-          <DialogBody>
+          <DialogBody className="pt-2 pb-2">
             <div className="space-y-3">
-              <p className="text-foreground-muted text-xs">
-                저장하면 목록에 없는 세션은 삭제되고, 배정되어 있던 참여자는 미배정 상태가 됩니다.
+              <p className="text-foreground-muted text-micro">
+                세션별 인원수를 +/- 로 조정하고, 필요하면 영문 이름으로 커스텀 세션을 추가하세요.
               </p>
 
-              {rows.length === 0 ? (
-                <p className="text-foreground-muted py-6 text-center text-sm">
-                  세션이 없습니다. 아래에서 추가해 주세요.
-                </p>
-              ) : (
-                <div>
-                  {rows.map((r) =>
-                    r.removed ? (
-                      <div key={r.key} className="flex items-center justify-between gap-2 py-3">
-                        <span className="text-foreground-muted min-w-0 truncate text-sm line-through">
-                          {r.short || '?'} · {r.label || '(이름 없음)'}
-                        </span>
-                        <div className="flex shrink-0 items-center gap-2">
-                          {r.assignedCount > 0 && (
-                            <p className="text-danger text-xs">배정된 참여자가 미배정 처리됩니다</p>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            aria-label="삭제 취소"
-                            className="text-foreground-muted hover:text-foreground h-10 shrink-0"
-                            onClick={() => undoRemove(r.key)}
-                          >
-                            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div key={r.key} className="flex items-center gap-2 py-3">
-                        <Input
-                          value={r.short}
-                          onChange={(e) => updateRow(r.key, { short: e.target.value })}
-                          maxLength={3}
-                          aria-label="약어"
-                          className="w-16 rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
-                        />
-                        <div className="flex-1">
-                          <Input
-                            value={r.label}
-                            onChange={(e) => updateRow(r.key, { label: e.target.value })}
-                            aria-label="세션 이름"
-                            className="w-full rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
-                          />
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          aria-label="세션 삭제"
-                          className="text-foreground-muted hover:text-foreground h-10 shrink-0"
-                          onClick={() => removeRow(r.key)}
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        </Button>
-                      </div>
-                    ),
-                  )}
-                </div>
-              )}
+              <SessionComposer rows={rows} onChange={setRows} requireAtLeastOne={false} />
 
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-foreground-muted hover:text-foreground"
-                onClick={addRow}
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                세션 추가
-              </Button>
+              <p className="text-foreground-sub text-micro">
+                저장하면 목록에 없는 세션은 삭제되고, 배정되어 있던 참여자는 미배정 상태가 됩니다.
+              </p>
+              {assignedEntries.length > 0 && (
+                <p className="text-danger text-xs">
+                  현재 배정된 세션:{' '}
+                  {assignedEntries.map(([label, count]) => `${label}(${count}명)`).join(', ')}
+                </p>
+              )}
             </div>
           </DialogBody>
-          <DialogFooter className="border-t-0">
+          <DialogFooter className="border-t-0 pt-2">
             <Button variant="ghost" className="h-8 rounded-[5px]" onClick={() => setOpen(false)}>
               취소
             </Button>
