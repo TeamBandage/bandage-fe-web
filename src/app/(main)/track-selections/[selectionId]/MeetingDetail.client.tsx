@@ -121,6 +121,10 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
   const [showCreateSetlist, setShowCreateSetlist] = useState(false);
   const [setlistTitle, setSetlistTitle] = useState('');
   const setlistTitleRef = useRef<HTMLInputElement>(null);
+  // Enter 키(입력창)와 '생성' 버튼 클릭이 각각 독립적으로 mutate를 호출하던 것을 하나로 합침.
+  // createSetlist.isPending 은 리렌더 이후에나 반영되므로, 두 트리거가 리렌더 전에 거의 동시에
+  // 들어오면(Enter 직후 곧바로 버튼 클릭 등) 중복 생성될 수 있어 ref로 동기적으로 막는다.
+  const isCreatingSetlistRef = useRef(false);
   const createSetlist = useCreateSetlist();
   const updateTrackSelection = useUpdateTrackSelection(meetingId);
   const router = useRouter();
@@ -316,6 +320,25 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
       },
       onError: () => toast.error('이름 수정에 실패했습니다.'),
     });
+  };
+
+  const handleCreateSetlist = () => {
+    if (isCreatingSetlistRef.current) return;
+    isCreatingSetlistRef.current = true;
+    createSetlist.mutate(
+      { trackSelectionId: meetingId, title: setlistTitle.trim() || undefined },
+      {
+        onSuccess: (data) => {
+          toast.success('셋리스트가 생성되었습니다.');
+          setShowCreateSetlist(false);
+          router.push(ROUTES.SETLIST_DETAIL(data.setlistId));
+        },
+        onError: () => toast.error('셋리스트 생성에 실패했습니다.'),
+        onSettled: () => {
+          isCreatingSetlistRef.current = false;
+        },
+      },
+    );
   };
 
   return (
@@ -710,19 +733,9 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 value={setlistTitle}
                 onChange={(e) => setSetlistTitle(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !createSetlist.isPending) {
+                  if (e.key === 'Enter') {
                     e.preventDefault();
-                    createSetlist.mutate(
-                      { trackSelectionId: meetingId, title: setlistTitle.trim() || undefined },
-                      {
-                        onSuccess: (data) => {
-                          toast.success('셋리스트가 생성되었습니다.');
-                          setShowCreateSetlist(false);
-                          router.push(ROUTES.SETLIST_DETAIL(data.setlistId));
-                        },
-                        onError: () => toast.error('셋리스트 생성에 실패했습니다.'),
-                      },
-                    );
+                    handleCreateSetlist();
                   }
                   if (e.key === 'Escape') setShowCreateSetlist(false);
                 }}
@@ -745,19 +758,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                 size="sm"
                 variant="primary"
                 disabled={createSetlist.isPending}
-                onClick={() =>
-                  createSetlist.mutate(
-                    { trackSelectionId: meetingId, title: setlistTitle.trim() || undefined },
-                    {
-                      onSuccess: (data) => {
-                        toast.success('셋리스트가 생성되었습니다.');
-                        setShowCreateSetlist(false);
-                        router.push(ROUTES.SETLIST_DETAIL(data.setlistId));
-                      },
-                      onError: () => toast.error('셋리스트 생성에 실패했습니다.'),
-                    },
-                  )
-                }
+                onClick={handleCreateSetlist}
                 className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
               >
                 {createSetlist.isPending ? '생성 중…' : '생성'}
