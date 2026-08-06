@@ -1,10 +1,17 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Minus, Plus, Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 
+import {
+  SessionComposer,
+  defaultSessionRows,
+  deriveSessionRows,
+  expandSessionRows,
+  type SessionRowState,
+} from '@/components/ui/session-composer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -37,42 +44,6 @@ export interface AddSongModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: ReactNode;
-}
-
-/** 기본 세션 4종. 설명(label)은 영문 대문자로 서버에 그대로 전송됨. */
-const DEFAULT_SESSION_LABELS: ReadonlyArray<string> = ['VOCAL', 'GUITAR', 'BASS', 'DRUM'];
-/** 세션 1개당 인원 상한(스테퍼 +/- 범위). */
-const MAX_SESSION_COUNT = 9;
-
-type SessionRowState = {
-  label: string;
-  count: number;
-  /** 기본 4종이 아닌, 사용자가 직접 추가한 세션만 X 로 삭제 가능. */
-  removable: boolean;
-};
-
-/** 세션 설명 입력값 정규화: 영문(대소문자 무관 입력)만 남기고 대문자로 변환. */
-function normalizeSessionLabel(raw: string): string {
-  return raw.replace(/[^a-zA-Z]/g, '').toUpperCase();
-}
-
-/** 기존 곡의 세션 목록 → 라벨별 인원수로 그룹핑(중복 라벨 = 카운트). */
-function deriveSessionRows(sessions: SessionDef[]): SessionRowState[] {
-  const counts = new Map<string, number>();
-  for (const s of sessions) {
-    const label = s.label.toUpperCase();
-    counts.set(label, (counts.get(label) ?? 0) + 1);
-  }
-  const rows: SessionRowState[] = DEFAULT_SESSION_LABELS.map((label) => ({
-    label,
-    count: counts.get(label) ?? 0,
-    removable: false,
-  }));
-  for (const [label, count] of counts) {
-    if (DEFAULT_SESSION_LABELS.includes(label)) continue;
-    rows.push({ label, count, removable: true });
-  }
-  return rows;
 }
 
 function clampNumeric(raw: string, max: number): string {
@@ -117,7 +88,9 @@ export function AddSongModal({
     if (song) {
       const dur = parseDuration(song.duration);
       return {
-        sessionRows: deriveSessionRows(song.sessions),
+        sessionRows: deriveSessionRows(
+          song.sessions.map((s) => ({ label: s.label, sessionId: s.id })),
+        ),
         durationMm: dur.mm,
         durationSs: dur.ss,
         formValues: {
@@ -130,11 +103,7 @@ export function AddSongModal({
       };
     }
     return {
-      sessionRows: DEFAULT_SESSION_LABELS.map((label) => ({
-        label,
-        count: 1,
-        removable: false,
-      })),
+      sessionRows: defaultSessionRows(),
       durationMm: '',
       durationSs: '',
       formValues: {
@@ -152,13 +121,10 @@ export function AddSongModal({
   // '계속해서 추가하기' 토글. 새로 추가 시에만 의미 있음(수정 모드에서는 비활성).
   const [keepOpen, setKeepOpen] = useState(false);
   const [sessionRows, setSessionRows] = useState<SessionRowState[]>(initial.sessionRows);
-  const [customSessionDraft, setCustomSessionDraft] = useState('');
   const [durationMm, setDurationMm] = useState(initial.durationMm);
   const [durationSs, setDurationSs] = useState(initial.durationSs);
   const ssInputRef = useRef<HTMLInputElement | null>(null);
   const titleRef = useRef<HTMLInputElement | null>(null);
-  const sessionListRef = useRef<HTMLDivElement | null>(null);
-  const justAddedSessionRef = useRef(false);
 
   const updateSong = useSetlistStore((s) => s.updateSong);
   const toast = useToast();
@@ -179,7 +145,6 @@ export function AddSongModal({
     setSearchQuery('');
     setKeepOpen(false);
     setSessionRows(initial.sessionRows);
-    setCustomSessionDraft('');
     setDurationMm(initial.durationMm);
     setDurationSs(initial.durationSs);
     form.reset(initial.formValues);
@@ -195,74 +160,33 @@ export function AddSongModal({
     setTimeout(() => titleRef.current?.focus(), 0);
   };
 
-  const updateSessionCount = (label: string, delta: number) => {
-    setSessionRows((prev) =>
-      prev.map((row) =>
-        row.label === label
-          ? { ...row, count: Math.max(0, Math.min(MAX_SESSION_COUNT, row.count + delta)) }
-          : row,
-      ),
-    );
-  };
-
-  const removeSessionRow = (label: string) => {
-    setSessionRows((prev) => prev.filter((row) => row.label !== label));
-  };
-
-  // 새 커스텀 세션 추가로 목록이 스크롤 영역을 넘어가면, 방금 추가한 행이 보이도록 하단으로 스크롤.
-  useEffect(() => {
-    if (!justAddedSessionRef.current) return;
-    justAddedSessionRef.current = false;
-    sessionListRef.current?.scrollTo({
-      top: sessionListRef.current.scrollHeight,
-      behavior: 'smooth',
-    });
-  }, [sessionRows]);
-
-  const addCustomSessionRow = () => {
-    const label = normalizeSessionLabel(customSessionDraft);
-    if (!label) return;
-    if (sessionRows.some((row) => row.label === label)) {
-      toast.warn('이미 같은 이름의 세션이 있습니다.');
-      return;
-    }
-    justAddedSessionRef.current = true;
-    setSessionRows((prev) => [...prev, { label, count: 1, removable: true }]);
-    setCustomSessionDraft('');
-  };
-
   // 세션 1개 = 인원 1명. 인원수(count)만큼 같은 라벨을 그대로 중복 전송(예: VOCAL 2명 → VOCAL, VOCAL).
-  const composedSessions = useMemo<SessionDef[]>(() => {
-    const out: SessionDef[] = [];
-    for (const row of sessionRows) {
-      for (let i = 0; i < row.count; i += 1) {
-        out.push({
-          id: `${row.label}-${i + 1}`,
-          label: row.label,
-          short: row.label.slice(0, 1),
-          need: 1,
-          custom: row.removable,
-        });
-      }
-    }
-    return out;
-  }, [sessionRows]);
+  const expandedSessions = useMemo(() => expandSessionRows(sessionRows), [sessionRows]);
+  // 로컬 mock store 낙관적 업데이트용. short 는 서버가 생성하므로 실제 값이 아닌 임시 표시값.
+  // 신규 자리는 아직 서버 sessionId 가 없으므로 로컬 전용 임시 키를 사용(다음 refetch 로 교체됨).
+  const composedSessions = useMemo<SessionDef[]>(
+    () =>
+      expandedSessions.map((s, i) => ({
+        id: s.sessionId ?? `local-${s.label}-${i}`,
+        label: s.label,
+        short: s.label.slice(0, 1),
+        need: 1,
+        custom: s.custom,
+      })),
+    [expandedSessions],
+  );
 
-  const canSubmit = form.formState.isValid && composedSessions.length > 0;
+  const canSubmit = form.formState.isValid && expandedSessions.length > 0;
 
   const onSubmit = form.handleSubmit(async (values) => {
-    if (composedSessions.length === 0) {
+    if (expandedSessions.length === 0) {
       toast.error('세션을 최소 1개 이상 선택해 주세요.');
       return;
     }
     const durationStr = formatDuration(durationMm, durationSs);
     const duration = mmSsToSeconds(durationStr);
 
-    const sessionDtos: SessionDefDto[] = composedSessions.map((s) => ({
-      custom: s.custom ?? false,
-      label: s.label,
-      sessionId: s.id,
-    }));
+    const sessionDtos: SessionDefDto[] = expandedSessions;
 
     if (song) {
       try {
@@ -377,7 +301,6 @@ export function AddSongModal({
           // Close 시 다음 오픈을 위해 상태 리셋.
           form.reset(initial.formValues);
           setSessionRows(initial.sessionRows);
-          setCustomSessionDraft('');
           setDurationMm(initial.durationMm);
           setDurationSs(initial.durationSs);
           setMode('manual');
@@ -574,64 +497,7 @@ export function AddSongModal({
                   세션별 인원수를 +/- 로 조정하고, 필요하면 영문 이름으로 커스텀 세션을 추가하세요.
                 </div>
 
-                <div ref={sessionListRef} className="max-h-28 overflow-y-auto">
-                  <div className="flex flex-wrap gap-x-3 gap-y-2">
-                    {sessionRows
-                      .filter((row) => !row.removable)
-                      .map((row) => (
-                        <SessionRowItem
-                          key={row.label}
-                          row={row}
-                          onChangeCount={updateSessionCount}
-                        />
-                      ))}
-                  </div>
-                  {sessionRows.some((row) => row.removable) && (
-                    <div className="mt-s-2 flex flex-wrap gap-x-3 gap-y-2">
-                      {sessionRows
-                        .filter((row) => row.removable)
-                        .map((row) => (
-                          <SessionRowItem
-                            key={row.label}
-                            row={row}
-                            onChangeCount={updateSessionCount}
-                            onRemove={removeSessionRow}
-                          />
-                        ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="gap-s-2 mt-s-3 flex items-center">
-                  <div className="flex-1">
-                    <Input
-                      value={customSessionDraft}
-                      onChange={(e) =>
-                        setCustomSessionDraft(normalizeSessionLabel(e.target.value).slice(0, 20))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key !== 'Enter') return;
-                        e.preventDefault();
-                        addCustomSessionRow();
-                      }}
-                      placeholder="예: PERCUSSION (영문 대문자로 자동 변환)"
-                      aria-label="커스텀 세션 이름"
-                      autoComplete="off"
-                      maxLength={20}
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={addCustomSessionRow}
-                    disabled={!customSessionDraft}
-                  >
-                    <Plus className="h-4 w-4" /> 추가
-                  </Button>
-                </div>
-                {composedSessions.length === 0 && (
-                  <p className="text-danger text-micro mt-s-2">최소 1개 세션을 선택하세요.</p>
-                )}
+                <SessionComposer rows={sessionRows} onChange={setSessionRows} />
               </div>
 
               <Textarea
@@ -675,62 +541,5 @@ export function AddSongModal({
         </form>
       </ResponsiveSheetContent>
     </ResponsiveSheet>
-  );
-}
-
-function SessionRowItem({
-  row,
-  onChangeCount,
-  onRemove,
-}: {
-  row: SessionRowState;
-  onChangeCount: (label: string, delta: number) => void;
-  onRemove?: (label: string) => void;
-}) {
-  return (
-    <div
-      className={cn(
-        'gap-s-1 px-s-2 py-s-1 inline-flex shrink-0 items-center rounded-full border transition-colors',
-        row.count > 0 ? 'border-white/40 bg-white/10' : 'bg-card border-border',
-      )}
-    >
-      <span
-        className={cn(
-          'px-s-2 text-micro font-mono font-bold whitespace-nowrap',
-          row.count > 0 ? 'text-white' : 'text-foreground-muted',
-        )}
-      >
-        {row.label}
-      </span>
-      <button
-        type="button"
-        onClick={() => onChangeCount(row.label, -1)}
-        disabled={row.count <= 0}
-        aria-label={`${row.label} 인원 감소`}
-        className="border-border text-foreground-sub hover:text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors outline-none hover:border-white/50 disabled:opacity-30"
-      >
-        <Minus className="h-3 w-3" />
-      </button>
-      <span className="text-micro w-3 shrink-0 text-center font-mono font-bold">{row.count}</span>
-      <button
-        type="button"
-        onClick={() => onChangeCount(row.label, 1)}
-        disabled={row.count >= MAX_SESSION_COUNT}
-        aria-label={`${row.label} 인원 추가`}
-        className="border-border text-foreground-sub hover:text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors outline-none hover:border-white/50 disabled:opacity-30"
-      >
-        <Plus className="h-3 w-3" />
-      </button>
-      {onRemove && (
-        <button
-          type="button"
-          onClick={() => onRemove(row.label)}
-          aria-label={`${row.label} 세션 삭제`}
-          className="text-foreground-muted hover:text-danger shrink-0 rounded p-0.5 transition-colors"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
   );
 }
