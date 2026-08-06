@@ -387,16 +387,12 @@ function FocusedSessionView({
               isFull ? 'bg-success-dim text-success' : 'bg-warn-dim text-warn',
             )}
           >
-            {conf.length}/{session.need} {isFull ? '확정 완료' : '확정 대기'}
+            {isFull ? '확정 완료' : '확정 대기'}
           </span>
         </div>
         <div className="text-foreground-sub text-caption gap-s-2 flex items-center">
           <span>
             지원자 <strong className="text-foreground">{apps.length}명</strong>
-          </span>
-          <span className="text-foreground-muted">·</span>
-          <span>
-            필요 <strong className="text-foreground">{session.need}명</strong>
           </span>
         </div>
       </div>
