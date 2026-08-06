@@ -1,3 +1,9 @@
+import type {
+  SetlistParticipantResponse,
+  SetlistResponse,
+  SetlistTrackResponse,
+} from '@/domain/setlist/types/res';
+
 export interface CreatePerformanceResponse {
   performanceId: string;
   title: string;
@@ -36,6 +42,13 @@ export interface PerformanceDetailResponse {
 export interface PerformanceSetlistResponse {
   performanceSetlistId: string;
   setlistId: string;
+}
+
+export interface PerformanceSetlistTracksResponse {
+  setlist: SetlistResponse;
+  tracks: SetlistTrackResponse[];
+  /** 해당 셋리스트 기준 참여자(매니저 + 트랙 배정자). 공연에 묶였다는 이유로 확장되지 않음. */
+  participants: SetlistParticipantResponse[];
 }
 
 export type PerformanceInvitationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELED';

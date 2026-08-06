@@ -1,4 +1,5 @@
 import { apiClient } from '@/global/api/apiClient';
+import type { CursorResponse } from '@/global/types';
 
 import type {
   CreatePerformancePosterRequest,
@@ -25,10 +26,13 @@ export async function issuePerformancePosterPresignedUrl(
 export async function getPerformancePosters(
   performanceId?: string,
 ): Promise<PerformancePosterResponse[]> {
-  const data = await apiClient.get<PerformancePosterResponse[]>(PREFIX, {
-    query: { performanceId },
-  });
-  return data ?? [];
+  // BE 응답이 배열 → CursorResponse 로 변경(pageSize 필수). 현재 소비 측 모두 목록을
+  // 그대로 순회만 하고 더보기 UI가 없어, 최대 pageSize 로 한 페이지에 몰아 받아 배열로 유지.
+  const data = await apiClient.get<CursorResponse<PerformancePosterResponse, string> | null>(
+    PREFIX,
+    { query: { performanceId, pageSize: 100 } },
+  );
+  return data?.content ?? [];
 }
 
 export async function createPerformancePoster(

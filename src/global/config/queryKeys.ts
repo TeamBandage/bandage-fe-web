@@ -54,6 +54,7 @@ export const queryKeys = {
     search: (keyword: string) => [...queryKeys.performance.all, 'search', keyword] as const,
     upcoming: (limit: number) => [...queryKeys.performance.all, 'upcoming', limit] as const,
     detail: (id: string) => [...queryKeys.performance.all, id] as const,
+    setlistTracks: (id: string) => [...queryKeys.performance.all, id, 'setlist-tracks'] as const,
   },
   trackSelection: {
     all: ['track-selection'] as const,

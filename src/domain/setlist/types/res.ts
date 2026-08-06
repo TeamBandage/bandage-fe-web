@@ -38,6 +38,26 @@ export interface SetlistTrackResponse {
   updatedAt?: string;
 }
 
+export interface MemberSummary {
+  memberId: number;
+  name: string;
+  profileImg?: string;
+}
+
+export interface SetlistParticipantSessionResponse {
+  setlistTrackId: string;
+  sessionId: string;
+  label: string;
+  short: string;
+}
+
+export interface SetlistParticipantResponse {
+  /** 탈퇴 회원이면 null */
+  member?: MemberSummary;
+  isManager: boolean;
+  sessions: SetlistParticipantSessionResponse[];
+}
+
 export interface RecurrenceResponse {
   freq: 'NONE' | 'DAILY' | 'WEEKLY' | 'BIWEEKLY';
   interval: number;
