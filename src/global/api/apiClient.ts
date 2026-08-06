@@ -4,7 +4,7 @@ import { ApiError, type ApiErrorFieldErrors } from '@/global/error/ApiError';
 import { useAuthStore } from '@/global/store/authStore';
 import type { ApiResponse } from '@/global/types/api';
 
-type QueryValue = string | number | boolean | null | undefined;
+type QueryValue = string | number | boolean | null | undefined | ReadonlyArray<string | number>;
 
 export type RequestConfig = {
   headers?: Record<string, string>;
@@ -44,6 +44,11 @@ function buildUrl(path: string, query?: Record<string, QueryValue>) {
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === null) continue;
+      // 배열은 반복 키(Spring List<T> 기본 바인딩 규약)로 직렬화: status=A&status=B
+      if (Array.isArray(value)) {
+        for (const item of value) url.searchParams.append(key, String(item));
+        continue;
+      }
       url.searchParams.set(key, String(value));
     }
   }

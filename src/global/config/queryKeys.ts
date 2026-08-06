@@ -59,8 +59,8 @@ export const queryKeys = {
     all: ['track-selection'] as const,
     my: () => [...(['track-selection'] as const), 'my'] as const,
     detail: (id: string) => [...(['track-selection'] as const), id] as const,
-    items: (selectionId: string) =>
-      [...(['track-selection'] as const), selectionId, 'items'] as const,
+    items: (selectionId: string, filter?: unknown) =>
+      [...(['track-selection'] as const), selectionId, 'items', filter ?? {}] as const,
     chat: (selectionId: string, itemId: string) =>
       [...(['track-selection'] as const), selectionId, 'items', itemId, 'chat'] as const,
   },
