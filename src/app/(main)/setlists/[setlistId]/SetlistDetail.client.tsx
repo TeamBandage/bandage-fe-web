@@ -39,8 +39,8 @@ function TrackRow({
         {track.sessions?.length > 0 ? '' : ''}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <p className="text-foreground truncate font-medium">{track.title}</p>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p className="text-foreground shrink-0 font-medium">{track.title}</p>
           {track.reference && (
             <a
               href={track.reference}
@@ -53,25 +53,24 @@ function TrackRow({
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
           )}
+          <p className="text-foreground-muted truncate text-sm">
+            {track.artist}
+            {track.album && ` · ${track.album}`}
+          </p>
         </div>
-        <p className="text-foreground-muted truncate text-sm">{track.artist}</p>
-        {track.album && <p className="text-foreground-sub truncate text-xs">{track.album}</p>}
-      </div>
-      <div className="flex shrink-0 items-center gap-3">
-        {track.duration !== undefined && (
-          <span className="text-foreground-muted flex items-center gap-1 text-xs">
-            <Clock className="h-3 w-3" />
-            {Math.round(track.duration / 60)}분
-          </span>
-        )}
         {track.sessions && track.sessions.length > 0 && (
           <TooltipProvider delayDuration={0}>
-            <div className="flex gap-1">
+            <div className="mt-1 flex flex-wrap gap-1">
               {track.sessions.map((s) => (
                 <Tooltip key={s.sessionId}>
                   <TooltipTrigger asChild>
                     <span className="bg-card border-border rounded px-1.5 py-0.5 text-xs">
                       {s.short}
+                      {s.participants.length > 0 && (
+                        <span className="text-foreground-muted ml-1">
+                          {s.participants.map((p) => p.name).join(', ')}
+                        </span>
+                      )}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
@@ -84,6 +83,14 @@ function TrackRow({
               ))}
             </div>
           </TooltipProvider>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        {track.duration !== undefined && (
+          <span className="text-foreground-muted flex items-center gap-1 text-xs">
+            <Clock className="h-3 w-3" />
+            {Math.round(track.duration / 60)}분
+          </span>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
