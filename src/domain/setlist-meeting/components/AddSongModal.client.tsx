@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Search, X } from 'lucide-react';
+import { Minus, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -18,7 +18,6 @@ import {
   ResponsiveSheetTrigger,
 } from '@/components/ui/responsive-sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/cn';
 import { useToast } from '@/hooks/useToast';
 import { useCreateTrackSelectionItem } from '@/domain/track-selection/hooks/useCreateTrackSelectionItem';
@@ -40,47 +39,41 @@ export interface AddSongModalProps {
   trigger?: ReactNode;
 }
 
-/** 표준 프리셋. 1행: 기본 + G2, 2행: 보조/멀티 세션. */
-const PRESETS: Record<string, SessionDef> = {
-  V: { id: 'V', label: '보컬', short: 'V', need: 1 },
-  G: { id: 'G', label: '기타', short: 'G', need: 1 },
-  B: { id: 'B', label: '베이스', short: 'B', need: 1 },
-  D: { id: 'D', label: '드럼', short: 'D', need: 1 },
-  V2: { id: 'V2', label: '보컬2', short: 'V2', need: 1 },
-  G2: { id: 'G2', label: '기타2', short: 'G2', need: 1 },
-  G3: { id: 'G3', label: '기타3', short: 'G3', need: 1 },
-  D2: { id: 'D2', label: '드럼2', short: 'D2', need: 1 },
-  S1: { id: 'S1', label: '신스1', short: 'S1', need: 1 },
-  S2: { id: 'S2', label: '신스2', short: 'S2', need: 1 },
+/** 기본 세션 4종. 설명(label)은 영문 대문자로 서버에 그대로 전송됨. */
+const DEFAULT_SESSION_LABELS: ReadonlyArray<string> = ['VOCAL', 'GUITAR', 'BASS', 'DRUM'];
+/** 세션 1개당 인원 상한(스테퍼 +/- 범위). */
+const MAX_SESSION_COUNT = 9;
+
+type SessionRowState = {
+  label: string;
+  count: number;
+  /** 기본 4종이 아닌, 사용자가 직접 추가한 세션만 X 로 삭제 가능. */
+  removable: boolean;
 };
 
-const PRESET_DISPLAY_ORDER: ReadonlyArray<string> = [
-  'V',
-  'G',
-  'G2',
-  'B',
-  'D',
-  'V2',
-  'G3',
-  'D2',
-  'S1',
-  'S2',
-];
+/** 세션 설명 입력값 정규화: 영문(대소문자 무관 입력)만 남기고 대문자로 변환. */
+function normalizeSessionLabel(raw: string): string {
+  return raw.replace(/[^a-zA-Z]/g, '').toUpperCase();
+}
 
-const CANONICAL_ORDER: ReadonlyArray<string> = [
-  'V',
-  'V2',
-  'G',
-  'G2',
-  'G3',
-  'B',
-  'D',
-  'D2',
-  'S1',
-  'S2',
-];
-
-const DEFAULT_ACTIVE_PRESETS: ReadonlyArray<string> = ['V', 'G', 'B', 'D'];
+/** 기존 곡의 세션 목록 → 라벨별 인원수로 그룹핑(중복 라벨 = 카운트). */
+function deriveSessionRows(sessions: SessionDef[]): SessionRowState[] {
+  const counts = new Map<string, number>();
+  for (const s of sessions) {
+    const label = s.label.toUpperCase();
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  const rows: SessionRowState[] = DEFAULT_SESSION_LABELS.map((label) => ({
+    label,
+    count: counts.get(label) ?? 0,
+    removable: false,
+  }));
+  for (const [label, count] of counts) {
+    if (DEFAULT_SESSION_LABELS.includes(label)) continue;
+    rows.push({ label, count, removable: true });
+  }
+  return rows;
+}
 
 function clampNumeric(raw: string, max: number): string {
   const digits = raw.replace(/[^0-9]/g, '').slice(0, 2);
@@ -103,19 +96,6 @@ function parseDuration(d?: string): { mm: string; ss: string } {
   return { mm: m[1]!.padStart(2, '0'), ss: m[2]! };
 }
 
-function splitSessions(sessions: SessionDef[]): {
-  activeIds: ReadonlyArray<string>;
-  extras: SessionDef[];
-} {
-  const activeIds: string[] = [];
-  const extras: SessionDef[] = [];
-  for (const s of sessions) {
-    if (s.id in PRESETS) activeIds.push(s.id);
-    else extras.push(s);
-  }
-  return { activeIds, extras };
-}
-
 type Mode = 'manual' | 'search';
 
 export function AddSongModal({
@@ -135,11 +115,9 @@ export function AddSongModal({
 
   const initial = useMemo(() => {
     if (song) {
-      const split = splitSessions(song.sessions);
       const dur = parseDuration(song.duration);
       return {
-        activeIds: split.activeIds,
-        extras: split.extras,
+        sessionRows: deriveSessionRows(song.sessions),
         durationMm: dur.mm,
         durationSs: dur.ss,
         formValues: {
@@ -152,8 +130,11 @@ export function AddSongModal({
       };
     }
     return {
-      activeIds: DEFAULT_ACTIVE_PRESETS,
-      extras: [] as SessionDef[],
+      sessionRows: DEFAULT_SESSION_LABELS.map((label) => ({
+        label,
+        count: 1,
+        removable: false,
+      })),
       durationMm: '',
       durationSs: '',
       formValues: {
@@ -170,15 +151,14 @@ export function AddSongModal({
   const [searchQuery, setSearchQuery] = useState('');
   // '계속해서 추가하기' 토글. 새로 추가 시에만 의미 있음(수정 모드에서는 비활성).
   const [keepOpen, setKeepOpen] = useState(false);
-  const [activePresetIds, setActivePresetIds] = useState<ReadonlyArray<string>>(initial.activeIds);
-  const [extras, setExtras] = useState<SessionDef[]>(initial.extras);
-  const [extraDraft, setExtraDraft] = useState('');
-  const [extraShortDraft, setExtraShortDraft] = useState('');
+  const [sessionRows, setSessionRows] = useState<SessionRowState[]>(initial.sessionRows);
+  const [customSessionDraft, setCustomSessionDraft] = useState('');
   const [durationMm, setDurationMm] = useState(initial.durationMm);
   const [durationSs, setDurationSs] = useState(initial.durationSs);
   const ssInputRef = useRef<HTMLInputElement | null>(null);
   const titleRef = useRef<HTMLInputElement | null>(null);
-  const extraShortInputRef = useRef<HTMLInputElement | null>(null);
+  const sessionListRef = useRef<HTMLDivElement | null>(null);
+  const justAddedSessionRef = useRef(false);
 
   const updateSong = useSetlistStore((s) => s.updateSong);
   const toast = useToast();
@@ -198,10 +178,8 @@ export function AddSongModal({
     setMode('manual');
     setSearchQuery('');
     setKeepOpen(false);
-    setActivePresetIds(initial.activeIds);
-    setExtras(initial.extras);
-    setExtraDraft('');
-    setExtraShortDraft('');
+    setSessionRows(initial.sessionRows);
+    setCustomSessionDraft('');
     setDurationMm(initial.durationMm);
     setDurationSs(initial.durationSs);
     form.reset(initial.formValues);
@@ -217,34 +195,58 @@ export function AddSongModal({
     setTimeout(() => titleRef.current?.focus(), 0);
   };
 
-  const togglePreset = (id: string) =>
-    setActivePresetIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+  const updateSessionCount = (label: string, delta: number) => {
+    setSessionRows((prev) =>
+      prev.map((row) =>
+        row.label === label
+          ? { ...row, count: Math.max(0, Math.min(MAX_SESSION_COUNT, row.count + delta)) }
+          : row,
+      ),
     );
-
-  const composedSessions = useMemo<SessionDef[]>(() => {
-    const ordered: SessionDef[] = [];
-    for (const id of CANONICAL_ORDER) {
-      if (activePresetIds.includes(id)) ordered.push(PRESETS[id]!);
-    }
-    return [...ordered, ...extras];
-  }, [activePresetIds, extras]);
-
-  const addExtra = () => {
-    const label = extraDraft.trim();
-    const short = extraShortDraft.trim().toUpperCase();
-    if (!label || !short) return;
-    const id = short;
-    if (composedSessions.some((s) => s.id === id || s.short === short || s.label === label)) {
-      toast.warn('이미 같은 라벨 또는 약어의 세션이 있습니다.');
-      return;
-    }
-    setExtras((prev) => [...prev, { id, label, short, need: 1, custom: true }]);
-    setExtraDraft('');
-    setExtraShortDraft('');
   };
 
-  const removeExtra = (id: string) => setExtras((prev) => prev.filter((s) => s.id !== id));
+  const removeSessionRow = (label: string) => {
+    setSessionRows((prev) => prev.filter((row) => row.label !== label));
+  };
+
+  // 새 커스텀 세션 추가로 목록이 스크롤 영역을 넘어가면, 방금 추가한 행이 보이도록 하단으로 스크롤.
+  useEffect(() => {
+    if (!justAddedSessionRef.current) return;
+    justAddedSessionRef.current = false;
+    sessionListRef.current?.scrollTo({
+      top: sessionListRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, [sessionRows]);
+
+  const addCustomSessionRow = () => {
+    const label = normalizeSessionLabel(customSessionDraft);
+    if (!label) return;
+    if (sessionRows.some((row) => row.label === label)) {
+      toast.warn('이미 같은 이름의 세션이 있습니다.');
+      return;
+    }
+    justAddedSessionRef.current = true;
+    setSessionRows((prev) => [...prev, { label, count: 1, removable: true }]);
+    setCustomSessionDraft('');
+  };
+
+  // 세션 1개 = 인원 1명. 인원수(count)만큼 같은 라벨을 그대로 중복 전송(예: VOCAL 2명 → VOCAL, VOCAL).
+  const composedSessions = useMemo<SessionDef[]>(() => {
+    const out: SessionDef[] = [];
+    for (const row of sessionRows) {
+      for (let i = 0; i < row.count; i += 1) {
+        out.push({
+          id: `${row.label}-${i + 1}`,
+          label: row.label,
+          short: row.label.slice(0, 1),
+          need: 1,
+          custom: row.removable,
+        });
+      }
+    }
+    return out;
+  }, [sessionRows]);
 
   const canSubmit = form.formState.isValid && composedSessions.length > 0;
 
@@ -260,7 +262,6 @@ export function AddSongModal({
       custom: s.custom ?? false,
       label: s.label,
       sessionId: s.id,
-      short: s.short,
     }));
 
     if (song) {
@@ -316,19 +317,13 @@ export function AddSongModal({
   });
 
   // Enter 로 다음 입력 필드 포커스 이동. 마지막 ss 까지 가면 더 이상 이동하지 않고 유지(submit 은 버튼).
-  const advanceTo = (
-    target: 'artist' | 'album' | 'mmInput' | 'ssInput' | 'reference' | 'note' | 'extraShort',
-  ) => {
+  const advanceTo = (target: 'artist' | 'album' | 'mmInput' | 'ssInput' | 'reference' | 'note') => {
     if (target === 'mmInput') {
       // mm input ref 는 별도로 관리하지 않음 — 그냥 album 다음은 ss 또는 note 로.
       return;
     }
     if (target === 'ssInput') {
       ssInputRef.current?.focus();
-      return;
-    }
-    if (target === 'extraShort') {
-      extraShortInputRef.current?.focus();
       return;
     }
     form.setFocus(target);
@@ -381,10 +376,8 @@ export function AddSongModal({
         if (!v) {
           // Close 시 다음 오픈을 위해 상태 리셋.
           form.reset(initial.formValues);
-          setActivePresetIds(initial.activeIds);
-          setExtras(initial.extras);
-          setExtraDraft('');
-          setExtraShortDraft('');
+          setSessionRows(initial.sessionRows);
+          setCustomSessionDraft('');
           setDurationMm(initial.durationMm);
           setDurationSs(initial.durationSs);
           setMode('manual');
@@ -578,99 +571,60 @@ export function AddSongModal({
                   세션 구성
                 </div>
                 <div className="text-foreground-muted text-micro mb-s-2">
-                  자주 쓰는 세션을 토글하고, 필요하면 라벨과 약어를 직접 입력해 커스텀 세션을
-                  추가하세요.
+                  세션별 인원수를 +/- 로 조정하고, 필요하면 영문 이름으로 커스텀 세션을 추가하세요.
                 </div>
 
-                <div className="gap-s-2 flex flex-col">
-                  <TooltipProvider delayDuration={0}>
-                    <div className="gap-s-2 flex flex-wrap">
-                      {PRESET_DISPLAY_ORDER.map((id) => {
-                        const p = PRESETS[id]!;
-                        const active = activePresetIds.includes(id);
-                        return (
-                          <Tooltip key={id}>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                onClick={() => togglePreset(id)}
-                                aria-pressed={active}
-                                className={cn(
-                                  'px-s-3 py-s-1 text-caption rounded-md border font-mono font-bold transition-colors',
-                                  active
-                                    ? 'border-white/40 bg-white/10 text-white'
-                                    : 'bg-card border-border text-foreground-muted hover:border-border-hi',
-                                )}
-                              >
-                                {p.short}
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom">{p.label}</TooltipContent>
-                          </Tooltip>
-                        );
-                      })}
-                    </div>
-                  </TooltipProvider>
-                  {extras.length > 0 && (
-                    <div className="gap-s-2 flex flex-wrap">
-                      {extras.map((s) => (
-                        <span
-                          key={s.id}
-                          title={s.label}
-                          className="px-s-2 py-s-1 text-caption gap-s-1 inline-flex items-center rounded-md border border-white/40 bg-white/10 font-mono font-bold text-white"
-                        >
-                          {s.short}
-                          <button
-                            type="button"
-                            onClick={() => removeExtra(s.id)}
-                            aria-label={`${s.label} 세션 제거`}
-                            className="hover:text-danger"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
+                <div ref={sessionListRef} className="max-h-28 overflow-y-auto">
+                  <div className="flex flex-wrap gap-x-3 gap-y-2">
+                    {sessionRows
+                      .filter((row) => !row.removable)
+                      .map((row) => (
+                        <SessionRowItem
+                          key={row.label}
+                          row={row}
+                          onChangeCount={updateSessionCount}
+                        />
                       ))}
+                  </div>
+                  {sessionRows.some((row) => row.removable) && (
+                    <div className="mt-s-2 flex flex-wrap gap-x-3 gap-y-2">
+                      {sessionRows
+                        .filter((row) => row.removable)
+                        .map((row) => (
+                          <SessionRowItem
+                            key={row.label}
+                            row={row}
+                            onChangeCount={updateSessionCount}
+                            onRemove={removeSessionRow}
+                          />
+                        ))}
                     </div>
                   )}
                 </div>
 
-                <div className="gap-s-2 mt-s-3 flex items-end">
+                <div className="gap-s-2 mt-s-3 flex items-center">
                   <div className="flex-1">
                     <Input
-                      value={extraDraft}
-                      onChange={(e) => setExtraDraft(e.target.value.slice(0, 20))}
+                      value={customSessionDraft}
+                      onChange={(e) =>
+                        setCustomSessionDraft(normalizeSessionLabel(e.target.value).slice(0, 20))
+                      }
                       onKeyDown={(e) => {
                         if (e.key !== 'Enter') return;
                         e.preventDefault();
-                        advanceTo('extraShort');
+                        addCustomSessionRow();
                       }}
-                      placeholder="예: Guitar4"
-                      aria-label="세션 이름"
+                      placeholder="예: PERCUSSION (영문 대문자로 자동 변환)"
+                      aria-label="커스텀 세션 이름"
                       autoComplete="off"
                       maxLength={20}
-                    />
-                  </div>
-                  <div className="w-20">
-                    <Input
-                      ref={extraShortInputRef}
-                      value={extraShortDraft}
-                      onChange={(e) => setExtraShortDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key !== 'Enter') return;
-                        e.preventDefault();
-                        addExtra();
-                      }}
-                      placeholder="예: G4"
-                      aria-label="약어"
-                      autoComplete="off"
-                      maxLength={3}
                     />
                   </div>
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={addExtra}
-                    disabled={!extraDraft || !extraShortDraft}
+                    onClick={addCustomSessionRow}
+                    disabled={!customSessionDraft}
                   >
                     <Plus className="h-4 w-4" /> 추가
                   </Button>
@@ -721,5 +675,62 @@ export function AddSongModal({
         </form>
       </ResponsiveSheetContent>
     </ResponsiveSheet>
+  );
+}
+
+function SessionRowItem({
+  row,
+  onChangeCount,
+  onRemove,
+}: {
+  row: SessionRowState;
+  onChangeCount: (label: string, delta: number) => void;
+  onRemove?: (label: string) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        'gap-s-1 px-s-2 py-s-1 inline-flex shrink-0 items-center rounded-full border transition-colors',
+        row.count > 0 ? 'border-white/40 bg-white/10' : 'bg-card border-border',
+      )}
+    >
+      <span
+        className={cn(
+          'px-s-2 text-micro font-mono font-bold whitespace-nowrap',
+          row.count > 0 ? 'text-white' : 'text-foreground-muted',
+        )}
+      >
+        {row.label}
+      </span>
+      <button
+        type="button"
+        onClick={() => onChangeCount(row.label, -1)}
+        disabled={row.count <= 0}
+        aria-label={`${row.label} 인원 감소`}
+        className="border-border text-foreground-sub hover:text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors outline-none hover:border-white/50 disabled:opacity-30"
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <span className="text-micro w-3 shrink-0 text-center font-mono font-bold">{row.count}</span>
+      <button
+        type="button"
+        onClick={() => onChangeCount(row.label, 1)}
+        disabled={row.count >= MAX_SESSION_COUNT}
+        aria-label={`${row.label} 인원 추가`}
+        className="border-border text-foreground-sub hover:text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors outline-none hover:border-white/50 disabled:opacity-30"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={() => onRemove(row.label)}
+          aria-label={`${row.label} 세션 삭제`}
+          className="text-foreground-muted hover:text-danger shrink-0 rounded p-0.5 transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { normalizeSessionLabel } from '@/components/ui/session-composer';
 import { useDeleteSession } from '@/domain/jam/hooks/useDeleteSession';
 import { useUpdateSession } from '@/domain/jam/hooks/useUpdateSession';
 import { useToast } from '@/hooks/useToast';
@@ -30,7 +31,6 @@ export function SessionRow({ jamId, session }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [labelDraft, setLabelDraft] = useState(session.label);
-  const [shortDraft, setShortDraft] = useState(session.short);
 
   const deleteMutation = useDeleteSession(jamId, {
     onSuccess: () => {
@@ -50,19 +50,15 @@ export function SessionRow({ jamId, session }: Props) {
 
   function startEdit() {
     setLabelDraft(session.label);
-    setShortDraft(session.short);
     setEditing(true);
   }
 
   function saveEdit() {
-    if (!labelDraft.trim() || !shortDraft.trim()) {
-      toast.error('세션 이름과 약어를 입력해 주세요.');
+    if (!labelDraft.trim()) {
+      toast.error('세션 이름을 입력해 주세요.');
       return;
     }
-    updateMutation.mutate({
-      label: labelDraft.trim(),
-      short: shortDraft.toUpperCase().slice(0, 3),
-    });
+    updateMutation.mutate({ label: labelDraft.trim() });
   }
 
   // 세션 1개 = 정원 1명 고정. 배정된 사람이 있으면 이름을, 없으면 빈 자리임을 표시.
@@ -71,17 +67,10 @@ export function SessionRow({ jamId, session }: Props) {
   if (editing) {
     return (
       <div className="border-border flex items-center gap-2 border-b py-3 last:border-b-0 last:pb-0">
-        <Input
-          value={shortDraft}
-          onChange={(e) => setShortDraft(e.target.value)}
-          maxLength={3}
-          aria-label="약어"
-          className="w-16 rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
-        />
         <div className="flex-1">
           <Input
             value={labelDraft}
-            onChange={(e) => setLabelDraft(e.target.value)}
+            onChange={(e) => setLabelDraft(normalizeSessionLabel(e.target.value).slice(0, 20))}
             aria-label="세션 이름"
             className="w-full rounded-[5px] border-white/20 hover:border-white/35 focus-visible:border-white/70 focus-visible:ring-0"
           />
