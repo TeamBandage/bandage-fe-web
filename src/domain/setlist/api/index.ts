@@ -52,6 +52,11 @@ export function updateSetlist(
   return apiClient.patch<SetlistResponse>(`${PREFIX}/${setlistId}`, body);
 }
 
+/** 셋리스트 삭제 */
+export function deleteSetlist(setlistId: string): Promise<void> {
+  return apiClient.delete<void>(`${PREFIX}/${setlistId}`);
+}
+
 /** 셋리스트 기반 합주 일괄 생성 */
 export function createJamsFromSetlist(setlistId: string, body: SetlistToJamRequest): Promise<void> {
   return apiClient.post<void>(`${PREFIX}/${setlistId}/jams`, body);
