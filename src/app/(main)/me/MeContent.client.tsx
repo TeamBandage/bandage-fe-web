@@ -1,9 +1,9 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronLeft, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ErrorState } from '@/components/feedback/error-state';
@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { PasswordStrength } from '@/components/ui/password-strength';
 import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
@@ -40,8 +41,6 @@ import {
   type UpdateMeSchema,
   type WeeklyRuleRequest,
 } from '@/domain/member/types';
-import { useMyPerformances } from '@/domain/performance/hooks/useMyPerformances';
-import { useMyJams } from '@/domain/jam/hooks/useMyJams';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
 
@@ -50,24 +49,10 @@ export function MeContent() {
   const toast = useToast();
   const { data: me, isLoading, isError, refetch } = useMe();
   const { data: availability } = useMyAvailability();
-  const { data: practicesData } = useMyJams(100);
-  const { data: performancesData } = useMyPerformances(100);
 
-  const practices = practicesData?.pages.flatMap((p) => p.content) ?? [];
-  const performances = performancesData?.pages.flatMap((p) => p.content) ?? [];
-
-  const [isEditing, setEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'schedule' | 'profile'>('schedule');
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-
-  const editContainerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!isEditing) return;
-    const id = requestAnimationFrame(() => {
-      (document.activeElement as HTMLElement)?.blur();
-    });
-    return () => cancelAnimationFrame(id);
-  }, [isEditing]);
 
   const updateAvailabilityMutation = useUpdateMyAvailability({
     onSuccess: () => {
@@ -124,94 +109,81 @@ export function MeContent() {
   }
 
   return (
-    <div ref={editContainerRef} tabIndex={-1} className="space-y-s-6 outline-none">
-      {/* 프로필 정보 섹션 */}
+    <div className="space-y-s-6">
+      {/* 프로필 정보 요약 — 탭과 무관하게 항상 표시 */}
       <section>
-        <div className="mb-s-3 relative flex min-h-8 items-center">
-          {isEditing && (
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="text-foreground hover:text-foreground-sub absolute top-1/2 -left-10 -translate-y-1/2 transition-colors"
-              aria-label="뒤로가기"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-          )}
-          <h2 className="text-foreground text-title flex-1 font-bold">
-            {isEditing ? '프로필 정보 관리' : '프로필 정보'}
-          </h2>
-          {!isEditing && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setEditing(true)}
-              className="rounded-[5px]"
-            >
-              프로필 정보 관리
-            </Button>
-          )}
-        </div>
-
-        {isEditing ? (
-          <EditCard member={me} onSaved={() => setEditing(false)} />
-        ) : (
-          <Card padding="lg" className="rounded-md border-[3px]">
-            <div className="flex items-start gap-[40px]">
-              <Avatar
-                src={me.profileImg ?? undefined}
-                fallback={me.name}
-                className="h-[72px] w-[72px] rounded-md text-xl"
-              />
-              <div className="space-y-1 pt-0.5">
-                <div className="text-foreground text-lg font-semibold">{me.name}</div>
-                <div className="text-foreground-sub text-sm">{me.email}</div>
-              </div>
+        <h2 className="text-foreground text-title mb-s-3 font-bold">프로필 정보</h2>
+        <Card padding="lg" className="rounded-md border-[3px]">
+          <div className="flex items-start gap-[40px]">
+            <Avatar
+              src={me.profileImg ?? undefined}
+              fallback={me.name}
+              className="h-[72px] w-[72px] rounded-md text-xl"
+            />
+            <div className="space-y-1 pt-0.5">
+              <div className="text-foreground text-lg font-semibold">{me.name}</div>
+              <div className="text-foreground-sub text-sm">{me.email}</div>
             </div>
-          </Card>
-        )}
+          </div>
+        </Card>
       </section>
 
-      {/* 주간 타임테이블 — 편집 모드에서는 숨김 */}
-      {!isEditing && (
-        <WeeklyTimetable
-          availability={availability}
-          practices={practices}
-          performances={performances}
-          onManageSchedule={() => setScheduleModalOpen(true)}
-        />
-      )}
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as 'schedule' | 'profile')}
+        variant="underline"
+      >
+        <TabsList aria-label="마이페이지 탭">
+          <TabsTrigger
+            value="schedule"
+            className="data-[state=active]:text-foreground data-[state=active]:border-foreground"
+          >
+            나의 스케줄 관리
+          </TabsTrigger>
+          <TabsTrigger
+            value="profile"
+            className="data-[state=active]:text-foreground data-[state=active]:border-foreground"
+          >
+            프로필 정보 관리
+          </TabsTrigger>
+        </TabsList>
 
-      {/* 비밀번호 변경 — 편집 모드에서만 표시 */}
-      {isEditing && (
-        <section className="mt-[60px]">
-          <h2 className="text-foreground mb-s-3 text-[16px] font-bold">비밀번호 변경</h2>
-          <PasswordChangeCard />
-        </section>
-      )}
+        <TabsContent value="schedule">
+          <WeeklyTimetable
+            availability={availability}
+            onManageSchedule={() => setScheduleModalOpen(true)}
+          />
+        </TabsContent>
 
-      {/* 계정 탈퇴 — 편집 모드에서만 표시 */}
-      {isEditing && (
-        <section className="mt-[60px]">
-          <h2 className="text-foreground mb-s-3 text-[16px] font-bold">계정 탈퇴</h2>
-          <Card padding="lg" className="border-foreground-sub bg-bg">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-foreground-sub text-[14px]">
-                탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를
-                진행하시겠습니까?
-              </p>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => setWithdrawOpen(true)}
-                className="shrink-0 rounded-[5px]"
-              >
-                회원 탈퇴
-              </Button>
-            </div>
-          </Card>
-        </section>
-      )}
+        <TabsContent value="profile" className="space-y-s-6">
+          <EditCard member={me} onSaved={() => {}} />
+
+          <section>
+            <h2 className="text-foreground mb-s-3 text-[16px] font-bold">비밀번호 변경</h2>
+            <PasswordChangeCard />
+          </section>
+
+          <section>
+            <h2 className="text-foreground mb-s-3 text-[16px] font-bold">계정 탈퇴</h2>
+            <Card padding="lg" className="border-foreground-sub bg-bg">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-foreground-sub text-[14px]">
+                  탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를
+                  진행하시겠습니까?
+                </p>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setWithdrawOpen(true)}
+                  className="shrink-0 rounded-[5px]"
+                >
+                  회원 탈퇴
+                </Button>
+              </div>
+            </Card>
+          </section>
+        </TabsContent>
+      </Tabs>
 
       {/* 모바일 전용 로그아웃 — 데스크톱은 사이드바에서 처리 */}
       <section className="lg:hidden">
