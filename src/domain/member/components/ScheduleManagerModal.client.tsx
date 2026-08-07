@@ -3,7 +3,7 @@
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { Check, Plus, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -30,8 +30,8 @@ const DAY_OF_WEEK_KEYS: DayOfWeek[] = [
 ];
 const DAY_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
-const START_SLOT = 18;
-const END_SLOT = 44;
+const START_SLOT = 0;
+const END_SLOT = 48;
 const SLOT_COUNT = END_SLOT - START_SLOT;
 const CELL_HEIGHT = 22;
 
@@ -138,9 +138,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
   const [newExcStartTime, setNewExcStartTime] = useState('09:00');
   const [newExcEndTime, setNewExcEndTime] = useState('18:00');
 
-  const dragState = {
-    current: null as { active: boolean; dayIdx: number; painting: boolean } | null,
-  };
+  const dragState = useRef<{ active: boolean; dayIdx: number; painting: boolean } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -340,7 +338,7 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                       {hourSlots.map((slotIdx) => (
                         <span
                           key={slotIdx}
-                          className="text-foreground-muted absolute right-2 text-right text-[9px] leading-none"
+                          className="text-foreground-muted absolute right-2 text-right text-[9px] leading-none whitespace-nowrap"
                           style={{
                             top: slotIdx * CELL_HEIGHT + (slotIdx === 0 ? 7 : 0),
                             transform: 'translateY(-50%)',
@@ -350,10 +348,10 @@ export function ScheduleManagerModal({ open, onClose, availability, onSave, isSa
                         </span>
                       ))}
                       <span
-                        className="text-foreground-muted absolute right-2 text-right text-[9px] leading-none"
+                        className="text-foreground-muted absolute right-2 text-right text-[9px] leading-none whitespace-nowrap"
                         style={{ top: SLOT_COUNT * CELL_HEIGHT - 7, transform: 'translateY(-50%)' }}
                       >
-                        22:00
+                        24:00
                       </span>
                       <div style={{ height: SLOT_COUNT * CELL_HEIGHT }} />
                     </div>
