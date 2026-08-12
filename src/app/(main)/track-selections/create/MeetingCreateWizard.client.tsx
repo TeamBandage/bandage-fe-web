@@ -610,14 +610,16 @@ function StepParticipants({
                 {p.memberId === myMemberId && (
                   <span className="text-micro font-bold text-white">나</span>
                 )}
-                <button
-                  type="button"
-                  onClick={() => onRemoveParticipant(p.memberId)}
-                  aria-label={`${p.name} 제거`}
-                  className="text-foreground-muted hover:text-danger ml-1"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                {p.memberId !== myMemberId && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveParticipant(p.memberId)}
+                    aria-label={`${p.name} 제거`}
+                    className="text-foreground-muted hover:text-danger ml-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </li>
             ))}
           </ul>
