@@ -223,19 +223,19 @@ function ScheduleBoardFormModal({
       <ResponsiveSheetContent>
         <ResponsiveSheetHeader>
           <ResponsiveSheetTitle>
-            {mode === 'create' ? '새 시간표 시안' : '시안 설정'}
+            {mode === 'create' ? '새 시간표' : '시간표 설정'}
           </ResponsiveSheetTitle>
         </ResponsiveSheetHeader>
         <form onSubmit={handleSubmit}>
           <ResponsiveSheetBody>
             <div className="gap-s-3 flex flex-col">
               <Input
-                label="시안 이름"
+                label="시간표 이름"
                 required
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="예: 1차 시안"
+                placeholder="예: 1차 시간표"
               />
               <div className="grid grid-cols-2 gap-3">
                 <Input
@@ -512,7 +512,7 @@ export function SetlistScheduleBoard({
   const [recurrenceBlock, setRecurrenceBlock] = useState<ScheduleBlockResponse | null>(null);
   const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
 
-  // 시안 목록이 처음 로드되거나, 활성 시안이 삭제됐을 때 첫 시안을 자동 선택.
+  // 시간표 목록이 처음 로드되거나, 활성 시간표가 삭제됐을 때 첫 시간표를 자동 선택.
   useEffect(() => {
     if (!boards) return;
     if (activeBoardId && boards.some((b) => b.boardId === activeBoardId)) return;
@@ -559,10 +559,10 @@ export function SetlistScheduleBoard({
         { boardId: boardModal.board.boardId, body },
         {
           onSuccess: () => {
-            toast.success('시안 설정을 저장했습니다.');
+            toast.success('시간표 설정을 저장했습니다.');
             setBoardModal(null);
           },
-          onError: () => toast.error('시안 설정 저장에 실패했습니다.'),
+          onError: () => toast.error('시간표 설정 저장에 실패했습니다.'),
         },
       );
       return;
@@ -570,10 +570,10 @@ export function SetlistScheduleBoard({
     createBoard.mutate(body, {
       onSuccess: (board) => {
         setActiveBoardId(board.boardId);
-        toast.success('시간표 시안을 만들었습니다.');
+        toast.success('시간표를 만들었습니다.');
         setBoardModal(null);
       },
-      onError: () => toast.error('시안 생성에 실패했습니다.'),
+      onError: () => toast.error('시간표 생성에 실패했습니다.'),
     });
   }
 
@@ -707,13 +707,13 @@ export function SetlistScheduleBoard({
       </div>
 
       <div className="flex h-full min-w-0 flex-1 flex-col">
-        {/* 시안 전환/생성/설정/삭제 */}
+        {/* 시간표 전환/생성/설정/삭제 */}
         <div className="border-border gap-s-2 flex shrink-0 items-center border-b px-4 py-3">
           {boards && boards.length > 0 ? (
             <select
               value={activeBoardId ?? ''}
               onChange={(e) => setActiveBoardId(e.target.value)}
-              aria-label="시간표 시안 선택"
+              aria-label="시간표 선택"
               className="bg-card border-border text-caption h-8 min-w-0 flex-1 rounded-[5px] border px-2 outline-none"
             >
               {boards.map((b) => (
@@ -723,7 +723,7 @@ export function SetlistScheduleBoard({
               ))}
             </select>
           ) : (
-            <p className="text-foreground-muted text-caption flex-1">아직 시안이 없습니다.</p>
+            <p className="text-foreground-muted text-caption flex-1">아직 시간표가 없습니다.</p>
           )}
 
           {activeBoard && (
@@ -731,7 +731,7 @@ export function SetlistScheduleBoard({
               <button
                 type="button"
                 onClick={() => setBoardModal({ mode: 'edit', board: activeBoard })}
-                aria-label="시안 설정"
+                aria-label="시간표 설정"
                 className="text-foreground-muted hover:text-foreground shrink-0 rounded p-1 transition-colors"
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -739,7 +739,7 @@ export function SetlistScheduleBoard({
               <button
                 type="button"
                 onClick={() => setPendingDeleteBoard(true)}
-                aria-label="시안 삭제"
+                aria-label="시간표 삭제"
                 className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -753,22 +753,20 @@ export function SetlistScheduleBoard({
             className="shrink-0 rounded-[5px]"
             onClick={() => setBoardModal({ mode: 'create' })}
           >
-            <Plus className="h-4 w-4" /> 새 시안
+            <Plus className="h-4 w-4" /> 새 시간표
           </Button>
         </div>
 
         {!isPending && boards && boards.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-            <p className="text-foreground-muted text-sm">
-              시간표 시안을 만들어 트랙을 배치해 보세요.
-            </p>
+            <p className="text-foreground-muted text-sm">시간표를 만들어 트랙을 배치해 보세요.</p>
             <Button
               type="button"
               size="sm"
               variant="secondary"
               onClick={() => setBoardModal({ mode: 'create' })}
             >
-              <Plus className="h-4 w-4" /> 새 시안 만들기
+              <Plus className="h-4 w-4" /> 새 시간표 만들기
             </Button>
           </div>
         ) : (
@@ -953,14 +951,14 @@ export function SetlistScheduleBoard({
       <ConfirmDialog
         open={pendingDeleteBoard}
         onOpenChange={setPendingDeleteBoard}
-        title="시안 삭제"
-        description="이 시간표 시안을 정말 삭제하시겠습니까? 배치된 블록도 함께 사라집니다."
+        title="시간표 삭제"
+        description="이 시간표를 정말 삭제하시겠습니까? 배치된 블록도 함께 사라집니다."
         confirmLabel="삭제"
         tone="danger"
         onConfirm={() => {
           if (!activeBoard) return;
           deleteBoard.mutate(activeBoard.boardId, {
-            onError: () => toast.error('시안 삭제에 실패했습니다.'),
+            onError: () => toast.error('시간표 삭제에 실패했습니다.'),
           });
         }}
       />
