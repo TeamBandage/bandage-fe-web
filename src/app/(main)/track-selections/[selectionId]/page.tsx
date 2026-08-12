@@ -22,7 +22,7 @@ export default async function TrackSelectionDetailPage({
           href={ROUTES.TRACK_SELECTIONS}
           className="text-foreground-sub hover:text-foreground inline-flex items-center gap-1 text-sm no-underline transition-colors"
         >
-          ← 선곡 목록
+          ← 선곡 회의 목록
         </Link>
       </div>
       <div className="min-h-0 flex-1">

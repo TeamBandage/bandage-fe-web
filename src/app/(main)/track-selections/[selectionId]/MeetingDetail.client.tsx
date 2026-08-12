@@ -116,6 +116,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
 
   const isManager = selection ? selection.managerId === me?.id : false;
   const isLocked = Boolean(selection?.lockedAt);
+  const canManageParticipants = isManager && !isLocked;
   const [pendingLockAction, setPendingLockAction] = useState<'lock' | 'unlock' | null>(null);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [showCreateSetlist, setShowCreateSetlist] = useState(false);
@@ -463,17 +464,15 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
                   }
                 />
               )}
-              {isManager && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setShowParticipantsModal(true)}
-                  aria-label="참여자 관리"
-                  className="rounded-[5px]"
-                >
-                  <Users className="h-4 w-4" /> 참여자
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowParticipantsModal(true)}
+                aria-label={canManageParticipants ? '참여자 관리' : '참여자 목록'}
+                className="rounded-[5px]"
+              >
+                <Users className="h-4 w-4" /> 참여자
+              </Button>
               {isManager && !isLocked && (
                 <Button
                   size="sm"
@@ -706,7 +705,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
         }}
       />
 
-      {/* 참여자 관리 모달 — 매니저 전용. */}
+      {/* 참여자 관리 모달 — 확정 전 매니저만 추가/제거 가능, 그 외(비매니저·확정 후)는 목록 조회만. */}
       {showParticipantsModal && selection && (
         <ParticipantsModal
           selectionId={meetingId}
@@ -714,6 +713,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
           participants={selection.participants}
           members={members}
           currentUserId={currentUserId}
+          readOnly={!canManageParticipants}
           onClose={() => setShowParticipantsModal(false)}
         />
       )}

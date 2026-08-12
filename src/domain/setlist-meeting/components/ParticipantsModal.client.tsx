@@ -19,6 +19,7 @@ export interface ParticipantsModalProps {
   participants: TrackSelectionParticipant[];
   members: Member[];
   currentUserId: string;
+  readOnly?: boolean;
   onClose: () => void;
 }
 
@@ -28,6 +29,7 @@ export function ParticipantsModal({
   participants,
   members,
   currentUserId,
+  readOnly = false,
   onClose,
 }: ParticipantsModalProps) {
   const [memberQuery, setMemberQuery] = useState('');
@@ -67,7 +69,7 @@ export function ParticipantsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="bg-surface border-border w-full max-w-md rounded-xl border shadow-xl">
         <header className="border-border px-s-5 py-s-4 flex items-center justify-between border-b">
-          <h2 className="text-title font-bold">참여자 관리</h2>
+          <h2 className="text-title font-bold">{readOnly ? '참여자 목록' : '참여자 관리'}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -82,7 +84,7 @@ export function ParticipantsModal({
           {/* 현재 참여자 목록 */}
           <section>
             <p className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">
-              현재 참여자 ({participants.length})
+              현재 참여자
             </p>
             <ul className="gap-s-1 flex flex-col">
               {participants.flatMap((p) => {
@@ -105,7 +107,7 @@ export function ParticipantsModal({
                       <span className="text-caption font-semibold">{name}</span>
                       {isSelf && <span className="text-micro ml-s-2 font-bold text-white">나</span>}
                     </div>
-                    {!isSelf && (
+                    {!readOnly && !isSelf && (
                       <button
                         type="button"
                         onClick={() => handleRemove(memberId)}
@@ -126,61 +128,65 @@ export function ParticipantsModal({
           </section>
 
           {/* 멤버 검색으로 추가 */}
-          <section>
-            <p className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">멤버 추가</p>
-            <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 mb-s-2 flex items-center rounded-md border">
-              <Search className="text-foreground-muted h-4 w-4 shrink-0" />
-              <input
-                type="search"
-                value={memberQuery}
-                onChange={(e) => setMemberQuery(e.target.value)}
-                placeholder="이름 · 이메일로 검색"
-                className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
-                aria-label="멤버 검색"
-              />
-              {searching && <Loader2 className="text-foreground-muted h-4 w-4 animate-spin" />}
-            </div>
+          {!readOnly && (
+            <section>
+              <p className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">
+                멤버 추가
+              </p>
+              <div className="bg-card border-border gap-s-2 px-s-3 py-s-2 mb-s-2 flex items-center rounded-md border">
+                <Search className="text-foreground-muted h-4 w-4 shrink-0" />
+                <input
+                  type="search"
+                  value={memberQuery}
+                  onChange={(e) => setMemberQuery(e.target.value)}
+                  placeholder="이름 · 이메일로 검색"
+                  className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
+                  aria-label="멤버 검색"
+                />
+                {searching && <Loader2 className="text-foreground-muted h-4 w-4 animate-spin" />}
+              </div>
 
-            {memberQuery.trim() && (
-              <ul className="border-border rounded-md border">
-                {searchResults.length === 0 && !searching ? (
-                  <li className="text-foreground-muted text-caption px-s-4 py-s-3 text-center">
-                    일치하는 멤버가 없습니다.
-                  </li>
-                ) : (
-                  searchResults.map((m) => {
-                    const already = participantIds.has(m.memberId);
-                    return (
-                      <li key={m.memberId} className="border-border border-b last:border-b-0">
-                        <button
-                          type="button"
-                          onClick={() => !already && handleAdd(m.memberId)}
-                          disabled={already || updateParticipants.isPending}
-                          className="hover:bg-card gap-s-3 px-s-3 py-s-2 flex w-full items-center text-left disabled:cursor-default"
-                        >
-                          <Avatar src={m.profileImg ?? undefined} fallback={m.name} size="sm" />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-caption truncate font-semibold">{m.name}</div>
-                            <div className="text-foreground-muted text-micro truncate">
-                              {m.email}
-                            </div>
-                          </div>
-                          <span
-                            className={cn(
-                              'text-micro px-s-2 shrink-0 rounded-full py-0.5 font-bold',
-                              already ? 'bg-success-dim text-success' : 'bg-white/10 text-white',
-                            )}
+              {memberQuery.trim() && (
+                <ul className="border-border rounded-md border">
+                  {searchResults.length === 0 && !searching ? (
+                    <li className="text-foreground-muted text-caption px-s-4 py-s-3 text-center">
+                      일치하는 멤버가 없습니다.
+                    </li>
+                  ) : (
+                    searchResults.map((m) => {
+                      const already = participantIds.has(m.memberId);
+                      return (
+                        <li key={m.memberId} className="border-border border-b last:border-b-0">
+                          <button
+                            type="button"
+                            onClick={() => !already && handleAdd(m.memberId)}
+                            disabled={already || updateParticipants.isPending}
+                            className="hover:bg-card gap-s-3 px-s-3 py-s-2 flex w-full items-center text-left disabled:cursor-default"
                           >
-                            {already ? '참여 중' : <UserPlus className="h-3 w-3" />}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })
-                )}
-              </ul>
-            )}
-          </section>
+                            <Avatar src={m.profileImg ?? undefined} fallback={m.name} size="sm" />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-caption truncate font-semibold">{m.name}</div>
+                              <div className="text-foreground-muted text-micro truncate">
+                                {m.email}
+                              </div>
+                            </div>
+                            <span
+                              className={cn(
+                                'text-micro px-s-2 shrink-0 rounded-full py-0.5 font-bold',
+                                already ? 'bg-success-dim text-success' : 'bg-white/10 text-white',
+                              )}
+                            >
+                              {already ? '참여 중' : <UserPlus className="h-3 w-3" />}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+              )}
+            </section>
+          )}
         </div>
       </div>
     </div>
