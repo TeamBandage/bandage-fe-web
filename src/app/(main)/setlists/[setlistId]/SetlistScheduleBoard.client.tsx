@@ -510,7 +510,7 @@ export function SetlistScheduleBoard({
   const [boardModal, setBoardModal] = useState<BoardModalState>(null);
   const [pendingDeleteBoard, setPendingDeleteBoard] = useState(false);
   const [recurrenceBlock, setRecurrenceBlock] = useState<ScheduleBlockResponse | null>(null);
-  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   // 시간표 목록이 처음 로드되거나, 활성 시간표가 삭제됐을 때 첫 시간표를 자동 선택.
   useEffect(() => {
@@ -520,7 +520,7 @@ export function SetlistScheduleBoard({
   }, [boards, activeBoardId]);
 
   const activeBoard = boards?.find((b) => b.boardId === activeBoardId) ?? null;
-  const hoveredBlock = activeBoard?.blocks.find((b) => b.blockId === hoveredBlockId) ?? null;
+  const selectedBlock = activeBoard?.blocks.find((b) => b.blockId === selectedBlockId) ?? null;
 
   const days = useMemo(() => {
     const monday = mondayOf(new Date());
@@ -541,17 +541,17 @@ export function SetlistScheduleBoard({
   );
   const unplacedTracks = tracks.filter((t) => !placedTrackIds.has(t.setlistTrackId));
 
-  // 호버된 블록의 날짜+시간 기준으로 멤버 가능/불가능 분류 (임시 mock — 실제 가용 시간 API 연동 전).
-  const hoverAvailability = useMemo(() => {
-    if (!hoveredBlock) return null;
-    const dateSlotKey = `${hoveredBlock.startDate}-${hoveredBlock.startSlot}`;
+  // 선택된 블록의 날짜+시간 기준으로 멤버 가능/불가능 분류 (임시 mock — 실제 가용 시간 API 연동 전).
+  const blockAvailability = useMemo(() => {
+    if (!selectedBlock) return null;
+    const dateSlotKey = `${selectedBlock.startDate}-${selectedBlock.startSlot}`;
     const available: MockSessionMember[] = [];
     const unavailable: MockSessionMember[] = [];
     for (const m of MOCK_SESSION_MEMBERS) {
       (mockIsAvailable(m.memberId, dateSlotKey) ? available : unavailable).push(m);
     }
     return { available, unavailable, dateSlotKey };
-  }, [hoveredBlock]);
+  }, [selectedBlock]);
 
   function handleBoardFormSubmit(body: ScheduleBoardCreateRequest) {
     if (boardModal?.mode === 'edit') {
@@ -661,34 +661,34 @@ export function SetlistScheduleBoard({
 
   return (
     <div className="flex h-full min-w-0">
-      {/* 세션 멤버 목록 — 블록 호버 시 가능/불가능으로 분류(임시 mock, 실제 가용 시간 API 연동 전). */}
+      {/* 세션 멤버 목록 — 블록 클릭 시 가능/불가능으로 분류(임시 mock, 실제 가용 시간 API 연동 전). */}
       <div className="border-border bg-surface flex w-64 shrink-0 flex-col overflow-y-auto border-r">
         <div className="text-foreground-muted text-micro border-border border-b px-3 py-2 font-bold tracking-wider uppercase">
           세션 멤버
         </div>
-        {hoverAvailability ? (
+        {blockAvailability ? (
           <div className="gap-s-4 flex flex-col px-3 py-3">
             <div>
               <p className="text-success gap-s-1 mb-s-2 flex items-center text-sm font-bold">
-                <Check className="h-4 w-4" /> 가능 ({hoverAvailability.available.length}명)
+                <Check className="h-4 w-4" /> 가능 ({blockAvailability.available.length}명)
               </p>
               <div className="gap-s-2 flex flex-col">
-                {hoverAvailability.available.map((m) => (
+                {blockAvailability.available.map((m) => (
                   <MemberRow key={m.memberId} member={m} tone="available" />
                 ))}
               </div>
             </div>
             <div>
               <p className="text-danger gap-s-1 mb-s-2 flex items-center text-sm font-bold">
-                <X className="h-4 w-4" /> 불가 ({hoverAvailability.unavailable.length}명)
+                <X className="h-4 w-4" /> 불가 ({blockAvailability.unavailable.length}명)
               </p>
               <div className="gap-s-2 flex flex-col">
-                {hoverAvailability.unavailable.map((m) => (
+                {blockAvailability.unavailable.map((m) => (
                   <MemberRow
                     key={m.memberId}
                     member={m}
                     tone="unavailable"
-                    reason={mockUnavailableReason(m.memberId, hoverAvailability.dateSlotKey)}
+                    reason={mockUnavailableReason(m.memberId, blockAvailability.dateSlotKey)}
                   />
                 ))}
               </div>
@@ -700,7 +700,7 @@ export function SetlistScheduleBoard({
               <MemberRow key={m.memberId} member={m} tone="neutral" />
             ))}
             <p className="text-foreground-muted text-micro mt-s-2">
-              블록에 마우스를 올리면 가능 여부를 볼 수 있습니다.
+              블록을 클릭하면 가능 여부를 볼 수 있습니다.
             </p>
           </div>
         )}
@@ -850,8 +850,11 @@ export function SetlistScheduleBoard({
                           e.dataTransfer.setData(BLOCK_DRAG_TYPE, block.blockId);
                           e.dataTransfer.effectAllowed = 'move';
                         }}
-                        onMouseEnter={() => setHoveredBlockId(block.blockId)}
-                        onMouseLeave={() => setHoveredBlockId(null)}
+                        onClick={() =>
+                          setSelectedBlockId((prev) =>
+                            prev === block.blockId ? null : block.blockId,
+                          )
+                        }
                         className={cn(
                           'm-px flex flex-col overflow-hidden rounded-sm border px-1.5 py-1 text-left',
                           tone.softBg,
