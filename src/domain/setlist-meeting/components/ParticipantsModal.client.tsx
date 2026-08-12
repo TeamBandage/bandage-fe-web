@@ -84,7 +84,7 @@ export function ParticipantsModal({
           {/* 현재 참여자 목록 */}
           <section>
             <p className="text-foreground-muted text-micro mb-s-2 font-bold uppercase">
-              현재 참여자 ({participants.length})
+              현재 참여자
             </p>
             <ul className="gap-s-1 flex flex-col">
               {participants.flatMap((p) => {
