@@ -40,5 +40,6 @@ export function toSong(item: TrackSelectionItemResponse): Song {
       item.sessions.map((s) => [s.sessionId, s.confirmed.map((p) => String(p.memberId))]),
     ),
     isSelected: item.selected,
+    chatMessageCount: item.chatMessageCount,
   };
 }

@@ -44,6 +44,8 @@ export type Song = {
   confirmed: Record<string, string[]>;
   /** 매니저가 최종 선곡으로 확정한 항목. */
   isSelected?: boolean;
+  /** 곡 의견 채팅 전체 메시지 수. */
+  chatMessageCount?: number;
 };
 
 export type MeetingPurpose = 'performance' | 'general';

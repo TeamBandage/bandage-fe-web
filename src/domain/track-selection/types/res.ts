@@ -57,6 +57,7 @@ export interface TrackSelectionItemResponse {
   proposer?: SessionParticipantInfo;
   sessions: SessionDefResponse[];
   selected: boolean;
+  chatMessageCount: number;
   createdAt?: string;
   updatedAt?: string;
 }
