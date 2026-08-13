@@ -13,7 +13,14 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type DragEvent,
+  type FormEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -30,7 +37,10 @@ import {
 } from '@/components/ui/responsive-sheet';
 import { Textarea } from '@/components/ui/textarea';
 import { songTone } from '@/domain/schedule-coordination/components/palette';
-import { WeeklyScheduleGrid } from '@/domain/schedule-coordination/components/WeeklyScheduleGrid.client';
+import {
+  SLOT_HEIGHT,
+  WeeklyScheduleGrid,
+} from '@/domain/schedule-coordination/components/WeeklyScheduleGrid.client';
 import {
   dayOfWeek,
   enumerateDays,
@@ -60,7 +70,10 @@ import { cn } from '@/lib/cn';
 /** 표시 범위 0:00~24:00 (slot 0=00:00, 30분 단위). */
 const SLOT_START = 0;
 const SLOT_END = 48;
-const DEFAULT_DURATION_SLOTS = 4;
+/** 새 블록 배치 시 기본 길이 — 곡 실제 재생시간과 무관하게 1시간(2슬롯)으로 고정, 이후 드래그로 조정. */
+const DEFAULT_BLOCK_SPAN_SLOTS = 2;
+/** 리사이즈 드래그 시 블록 최소 길이 — 30분(1슬롯). */
+const MIN_BLOCK_SPAN_SLOTS = 1;
 
 const TRACK_DRAG_TYPE = 'application/x-track-id';
 const BLOCK_DRAG_TYPE = 'application/x-block-id';
@@ -80,10 +93,6 @@ function mondayOf(base: Date): Date {
   d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
   d.setHours(0, 0, 0, 0);
   return d;
-}
-
-function durationSlotsOf(track: SetlistTrackResponse): number {
-  return track.duration ? Math.max(2, Math.ceil(track.duration / 60 / 30)) : DEFAULT_DURATION_SLOTS;
 }
 
 function spanOf(block: { startSlot: number; endSlot: number }): number {
@@ -214,7 +223,7 @@ function ScheduleBoardFormModal({
 
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange}>
-      <ResponsiveSheetContent>
+      <ResponsiveSheetContent onOpenAutoFocus={(e) => e.preventDefault()}>
         <ResponsiveSheetHeader>
           <ResponsiveSheetTitle>
             {mode === 'create' ? '새 시간표' : '시간표 설정'}
@@ -226,7 +235,6 @@ function ScheduleBoardFormModal({
               <Input
                 label="시간표 이름"
                 required
-                autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="예: 1차 시간표"
@@ -284,11 +292,17 @@ function ScheduleBoardFormModal({
           </ResponsiveSheetBody>
           <ResponsiveSheetFooter>
             <ResponsiveSheetClose asChild>
-              <Button type="button" variant="ghost">
+              <Button type="button" variant="ghost" size="sm" className="rounded-[5px]">
                 취소
               </Button>
             </ResponsiveSheetClose>
-            <Button type="submit" variant="primary" disabled={!name.trim() || isPending}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={!name.trim() || isPending}
+              className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+            >
               {mode === 'create' ? '만들기' : '저장'}
             </Button>
           </ResponsiveSheetFooter>
@@ -507,6 +521,12 @@ export function SetlistScheduleBoard({
   const [pendingDeleteBoard, setPendingDeleteBoard] = useState(false);
   const [recurrenceBlock, setRecurrenceBlock] = useState<ScheduleBlockResponse | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  // 블록 리사이즈 드래그 중인 미확정 시작/종료 슬롯 — 체크 버튼을 눌러야 upsertBlock API 호출로 확정.
+  const [pendingResize, setPendingResize] = useState<{
+    blockId: string;
+    startSlot: number;
+    endSlot: number;
+  } | null>(null);
   const [mode, setMode] = useState<'view' | 'edit'>('view');
   const hasBoards = Boolean(boards && boards.length > 0);
   // 시간표 생성/삭제는 보기/편집 모드와 무관하게 매니저면 항상 가능. 편집 모드는 블록(트랙 배치)
@@ -647,7 +667,7 @@ export function SetlistScheduleBoard({
       if (trackId) {
         const track = trackById.get(trackId);
         if (!track) return;
-        const span = durationSlotsOf(track);
+        const span = DEFAULT_BLOCK_SPAN_SLOTS;
         upsertBlock.mutate({
           boardId: activeBoard.boardId,
           blockId: crypto.randomUUID(),
@@ -662,6 +682,93 @@ export function SetlistScheduleBoard({
         });
       }
     };
+  }
+
+  /** 리사이즈 핸들(상/하) 드래그 시작 — 로컬 pendingResize만 갱신, API 호출은 확정 시점에만. */
+  function startBlockEdgeDrag(block: ScheduleBlockResponse, edge: 'start' | 'end') {
+    return (e: ReactPointerEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const startY = e.clientY;
+      const baseStartSlot =
+        pendingResize?.blockId === block.blockId ? pendingResize.startSlot : block.startSlot;
+      const baseEndSlot =
+        pendingResize?.blockId === block.blockId ? pendingResize.endSlot : block.endSlot;
+      let dragged = false;
+      const onMove = (moveEvent: PointerEvent) => {
+        dragged = true;
+        const deltaSlots = Math.round((moveEvent.clientY - startY) / SLOT_HEIGHT);
+        if (edge === 'end') {
+          const nextEndSlot = Math.min(
+            SLOT_END - 1,
+            Math.max(baseStartSlot + MIN_BLOCK_SPAN_SLOTS - 1, baseEndSlot + deltaSlots),
+          );
+          setPendingResize({
+            blockId: block.blockId,
+            startSlot: baseStartSlot,
+            endSlot: nextEndSlot,
+          });
+        } else {
+          const nextStartSlot = Math.max(
+            SLOT_START,
+            Math.min(baseEndSlot - MIN_BLOCK_SPAN_SLOTS + 1, baseStartSlot + deltaSlots),
+          );
+          setPendingResize({
+            blockId: block.blockId,
+            startSlot: nextStartSlot,
+            endSlot: baseEndSlot,
+          });
+        }
+      };
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        if (dragged) {
+          // 드래그 종료 지점이 커진 블록 영역 안이면 브라우저가 그 자리에 합성 click 이벤트를 쏴서
+          // 블록의 선택 토글(onClick)이 다시 발동해 선택이 풀려버린다 — 드래그 직후 click 한 번만 무시.
+          window.addEventListener(
+            'click',
+            (clickEvent) => {
+              clickEvent.stopPropagation();
+              clickEvent.preventDefault();
+            },
+            { capture: true, once: true },
+          );
+        }
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    };
+  }
+
+  function handleConfirmResize(block: ScheduleBlockResponse) {
+    if (!activeBoard) return;
+    const newStartSlot =
+      pendingResize?.blockId === block.blockId ? pendingResize.startSlot : block.startSlot;
+    const newEndSlot =
+      pendingResize?.blockId === block.blockId ? pendingResize.endSlot : block.endSlot;
+    setSelectedBlockId(null);
+    setPendingResize(null);
+    if (newStartSlot === block.startSlot && newEndSlot === block.endSlot) return; // 변경 없음.
+    upsertBlock.mutate(
+      {
+        boardId: activeBoard.boardId,
+        blockId: block.blockId,
+        body: {
+          trackIds: block.trackIds,
+          startDate: block.startDate,
+          startSlot: newStartSlot,
+          endDate: block.endDate,
+          endSlot: newEndSlot,
+          pinned: block.pinned,
+          title: block.title,
+        },
+      },
+      {
+        onSuccess: () => toast.success('블록 길이를 수정했습니다.'),
+        onError: () => toast.error('블록 길이 수정에 실패했습니다.'),
+      },
+    );
   }
 
   return (
@@ -802,15 +909,28 @@ export function SetlistScheduleBoard({
                 dayColMinWidth={72}
                 onCellDragOver={canEdit ? () => (e) => e.preventDefault() : undefined}
                 onCellDrop={canEdit ? handleDropOnCell : undefined}
-                overlay={activeBoard.blocks.map((block) => {
+                overlay={activeBoard.blocks.flatMap((block) => {
                   const dIdx = days.indexOf(block.startDate);
-                  if (dIdx === -1) return null;
+                  if (dIdx === -1) return [];
                   const trackTitles = block.trackIds
                     .map((id) => trackById.get(id)?.title)
                     .filter(Boolean)
                     .join(', ');
                   const tone = songTone(block.trackIds[0] ?? block.blockId, 0);
-                  return (
+                  const isSelected = selectedBlockId === block.blockId;
+                  const displayStartSlot =
+                    pendingResize?.blockId === block.blockId
+                      ? pendingResize.startSlot
+                      : block.startSlot;
+                  const displayEndSlot =
+                    pendingResize?.blockId === block.blockId
+                      ? pendingResize.endSlot
+                      : block.endSlot;
+                  const displaySpan = displayEndSlot - displayStartSlot + 1;
+                  // 30분(1슬롯)짜리 블록은 상하 리사이즈 핸들(각 8px)을 다 얹으면 제목/아이콘 줄과
+                  // 겹쳐 잘려 보인다 — 이땐 핸들을 얇게 줄이고 손잡이 표시(grip bar)는 생략.
+                  const compactBlock = displaySpan <= 1;
+                  const blockEl = (
                     <div
                       key={block.blockId}
                       draggable={canEdit && !block.pinned}
@@ -822,23 +942,25 @@ export function SetlistScheduleBoard({
                             }
                           : undefined
                       }
-                      onClick={() =>
+                      onClick={() => {
+                        setPendingResize(null);
                         setSelectedBlockId((prev) =>
                           prev === block.blockId ? null : block.blockId,
-                        )
-                      }
+                        );
+                      }}
                       className={cn(
-                        'm-px flex flex-col overflow-hidden rounded-sm px-1.5 py-1 text-left',
+                        'relative m-px flex flex-col overflow-hidden rounded-sm px-1.5 text-left',
+                        // 30분~1시간짜리 짧은 블록은 위아래 여백을 넉넉히 주면 제목/시간 텍스트가
+                        // 리사이즈 핸들과 겹치거나 잘린다 — 블록이 충분히 길 때만 여백을 넓힌다.
+                        displaySpan <= 2 ? 'py-1' : 'py-2',
                         tone.softBg,
-                        selectedBlockId === block.blockId
-                          ? cn('border-2', tone.border)
-                          : cn('border', tone.softBorder),
+                        isSelected ? cn('border-2', tone.border) : cn('border', tone.softBorder),
                         canEdit && !block.pinned
                           ? 'cursor-grab active:cursor-grabbing'
                           : 'cursor-pointer',
                       )}
                       style={{
-                        gridRow: `${block.startSlot - SLOT_START + 2} / span ${spanOf(block)}`,
+                        gridRow: `${displayStartSlot - SLOT_START + 2} / span ${displaySpan}`,
                         gridColumn: dIdx + 2,
                       }}
                     >
@@ -896,10 +1018,58 @@ export function SetlistScheduleBoard({
                         )}
                       </div>
                       <p className="text-foreground-muted truncate text-[10px]">
-                        {slotToTime(block.startSlot)}~{slotToTime(block.endSlot + 1)}
+                        {slotToTime(displayStartSlot)}~{slotToTime(displayEndSlot + 1)}
                       </p>
+                      {canEdit && isSelected && (
+                        <>
+                          <div
+                            onPointerDown={startBlockEdgeDrag(block, 'start')}
+                            aria-label="블록 시작 시간 조절"
+                            className={cn(
+                              'absolute inset-x-0 top-0 flex cursor-ns-resize touch-none items-center justify-center',
+                              compactBlock ? 'h-1' : 'h-2',
+                            )}
+                          >
+                            {!compactBlock && (
+                              <span className="h-0.5 w-6 rounded-full bg-white/70" />
+                            )}
+                          </div>
+                          <div
+                            onPointerDown={startBlockEdgeDrag(block, 'end')}
+                            aria-label="블록 종료 시간 조절"
+                            className={cn(
+                              'absolute inset-x-0 bottom-0 flex cursor-ns-resize touch-none items-center justify-center',
+                              compactBlock ? 'h-1' : 'h-2',
+                            )}
+                          >
+                            {!compactBlock && (
+                              <span className="h-0.5 w-6 rounded-full bg-white/70" />
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
+                  if (!canEdit || !isSelected) return [blockEl];
+                  const confirmEl = (
+                    <button
+                      key={`${block.blockId}-confirm`}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConfirmResize(block);
+                      }}
+                      aria-label="블록 길이 확정"
+                      style={{
+                        gridRow: `${displayEndSlot - SLOT_START + 2} / span 1`,
+                        gridColumn: dIdx + 2,
+                      }}
+                      className="z-20 h-5 w-5 translate-x-1/3 translate-y-1/3 self-end justify-self-end rounded-full bg-white text-neutral-900 shadow-md hover:bg-neutral-100"
+                    >
+                      <Check className="mx-auto h-3.5 w-3.5" />
+                    </button>
+                  );
+                  return [blockEl, confirmEl];
                 })}
               />
             </div>
@@ -920,7 +1090,7 @@ export function SetlistScheduleBoard({
                   배치할 트랙이 없습니다.
                 </p>
               ) : (
-                <ul className="gap-s-1 flex flex-col py-2 pr-2 pl-[18px]">
+                <ul className="gap-s-1 flex flex-col py-2 pr-2 pl-4.5">
                   {unplacedTracks.map((track) => {
                     const tone = songTone(track.setlistTrackId, 0);
                     return (
@@ -980,8 +1150,10 @@ export function SetlistScheduleBoard({
             </div>
           ) : (
             <p className="text-foreground-muted text-micro px-3 py-3">
-              곡(블록)마다 필요한 세션 멤버가 다를 수 있어요. 블록을 클릭하면 가능 여부를 볼 수
-              있습니다.
+              곡(블록)마다 필요한 세션 멤버가 다를 수 있습니다.
+              <br />
+              <br />
+              블록을 클릭해 해당 곡에 필요한 세션 멤버의 참여 가능 여부를 확인하세요.
             </p>
           )}
         </div>
