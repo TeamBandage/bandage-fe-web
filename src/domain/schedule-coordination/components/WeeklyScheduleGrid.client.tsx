@@ -4,7 +4,7 @@ import { useEffect, useRef, type CSSProperties, type DragEvent, type ReactNode }
 
 import { cn } from '@/lib/cn';
 
-import { dayOfWeek, isHoliday, slotToTime } from '../utils';
+import { dayOfWeek, slotToTime } from '../utils';
 
 const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 export const SLOT_HEIGHT = 22;
@@ -51,6 +51,8 @@ export interface WeeklyScheduleGridProps {
    * 기본값 false — 기존 고정폭(mx-auto, DAY_COL_WIDTH) 유지, 다른 화면엔 영향 없음.
    */
   fillWidth?: boolean;
+  /** fillWidth 모드에서 일자 컬럼의 최소 폭(minmax 하한). 기본값 DAY_COL_WIDTH. */
+  dayColMinWidth?: number;
 }
 
 /** 행=시간 슬롯, 열=일자. 좌측 시간 라벨 sticky, 상단 일자 헤더 sticky. */
@@ -71,14 +73,15 @@ export function WeeklyScheduleGrid({
   gridRef,
   className,
   fillWidth = false,
+  dayColMinWidth = DAY_COL_WIDTH,
 }: WeeklyScheduleGridProps) {
   const slotCount = slotEnd - slotStart;
   const slots = Array.from({ length: slotCount }, (_, i) => slotStart + i);
   const gridStyle: CSSProperties = {
     gridTemplateColumns: fillWidth
-      ? `${TIME_COL_WIDTH}px repeat(${days.length}, minmax(${DAY_COL_WIDTH}px, 1fr))`
+      ? `${TIME_COL_WIDTH}px repeat(${days.length}, minmax(${dayColMinWidth}px, 1fr))`
       : `${TIME_COL_WIDTH}px repeat(${days.length}, ${DAY_COL_WIDTH}px)`,
-    gridTemplateRows: `36px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
+    gridTemplateRows: `44px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
   };
 
   /**
@@ -130,18 +133,16 @@ export function WeeklyScheduleGrid({
           style={{ gridRow: 1, gridColumn: 1 }}
         />
 
-        {/* 일자 헤더 — 색 규칙: 일/공휴일 = danger, 토 = accent, 평일 = 기본 */}
+        {/* 일자 헤더 — 색 규칙: 일 = danger, 토 = blue, 평일 = 기본 */}
         {days.map((d, i) => {
           const dow = dayOfWeek(d);
-          const holiday = isHoliday(d);
           const inWindow = isInWindow(d);
-          const tone =
-            dow === 0 || holiday ? 'text-danger' : dow === 6 ? 'text-accent' : 'text-foreground';
+          const tone = dow === 0 ? 'text-danger' : dow === 6 ? 'text-blue' : 'text-foreground';
           return (
             <div
               key={`h-${d}-${i}`}
               className={cn(
-                'bg-surface border-border sticky top-0 z-20 border-b px-2 py-1 text-center',
+                'bg-surface border-border sticky top-0 z-20 flex flex-col items-center justify-center gap-0.5 border-b px-2 pt-1 pb-2 text-center',
                 !inWindow && 'opacity-30',
                 tone,
               )}
