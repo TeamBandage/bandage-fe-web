@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMe } from '@/domain/member/hooks/useMe';
 import { useCreateJamsFromSetlist } from '@/domain/setlist/hooks/useCreateJamsFromSetlist';
 import { useDeleteSetlistTrack } from '@/domain/setlist/hooks/useDeleteSetlistTrack';
 import { useSetlist } from '@/domain/setlist/hooks/useSetlist';
@@ -34,10 +35,7 @@ function TrackRow({
   onDelete: (track: SetlistTrackResponse) => void;
 }) {
   return (
-    <div className="border-border hover:bg-card flex items-center gap-4 border-b px-5 py-3 transition-colors">
-      <div className="text-foreground-muted w-8 shrink-0 text-center text-sm">
-        {track.sessions?.length > 0 ? '' : ''}
-      </div>
+    <div className="border-border hover:bg-card flex items-center gap-4 border-b py-3 pr-5 pl-7.5 transition-colors">
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-1.5">
           <p className="text-foreground shrink-0 font-medium">{track.title}</p>
@@ -89,7 +87,7 @@ function TrackRow({
         {track.duration !== undefined && (
           <span className="text-foreground-muted flex items-center gap-1 text-xs">
             <Clock className="h-3 w-3" />
-            {Math.round(track.duration / 60)}분
+            {formatDurationLabel(track.duration)}
           </span>
         )}
       </div>
@@ -115,21 +113,30 @@ function TrackRow({
   );
 }
 
-const DURATION_STEP_MINUTES = 30;
-const DURATION_OPTIONS_MINUTES = [30, 60, 90, 120, 150, 180];
-
-function formatDurationLabel(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m}분`;
-  if (m === 0) return `${h}시간`;
-  return `${h}시간 ${m}분`;
+function clampNumeric(raw: string, max: number): string {
+  const digits = raw.replace(/[^0-9]/g, '').slice(0, 2);
+  if (digits === '') return '';
+  const n = Math.min(parseInt(digits, 10), max);
+  return String(n);
 }
 
-function snapToDurationStep(durationSeconds: number): number {
-  const minutes = Math.round(durationSeconds / 60 / DURATION_STEP_MINUTES) * DURATION_STEP_MINUTES;
-  const max = DURATION_OPTIONS_MINUTES[DURATION_OPTIONS_MINUTES.length - 1]!;
-  return Math.min(Math.max(minutes, DURATION_STEP_MINUTES), max);
+function secondsToMmSs(totalSeconds?: number): { mm: string; ss: string } {
+  if (totalSeconds === undefined) return { mm: '', ss: '' };
+  const mm = Math.floor(totalSeconds / 60);
+  const ss = totalSeconds % 60;
+  return { mm: String(mm).padStart(2, '0'), ss: String(ss).padStart(2, '0') };
+}
+
+function mmSsToSeconds(mm: string, ss: string): number | undefined {
+  if (mm === '' && ss === '') return undefined;
+  const m = mm === '' ? 0 : parseInt(mm, 10);
+  const s = ss === '' ? 0 : parseInt(ss, 10);
+  return m * 60 + s;
+}
+
+function formatDurationLabel(totalSeconds: number): string {
+  const { mm, ss } = secondsToMmSs(totalSeconds);
+  return `${mm}:${ss}`;
 }
 
 function TrackEditForm({
@@ -153,9 +160,10 @@ function TrackEditForm({
   const [title, setTitle] = useState(track.title);
   const [artist, setArtist] = useState(track.artist);
   const [album, setAlbum] = useState(track.album ?? '');
-  const [durationMin, setDurationMin] = useState(
-    track.duration !== undefined ? String(snapToDurationStep(track.duration)) : '',
-  );
+  const initialDuration = secondsToMmSs(track.duration);
+  const [durationMm, setDurationMm] = useState(initialDuration.mm);
+  const [durationSs, setDurationSs] = useState(initialDuration.ss);
+  const ssInputRef = useRef<HTMLInputElement | null>(null);
   const [note, setNote] = useState(track.note ?? '');
   const [reference, setReference] = useState(track.reference ?? '');
 
@@ -165,14 +173,14 @@ function TrackEditForm({
       title: title.trim() || undefined,
       artist: artist.trim() || undefined,
       album: album.trim() || undefined,
-      duration: durationMin ? Number(durationMin) * 60 : undefined,
+      duration: mmSsToSeconds(durationMm, durationSs),
       note: note.trim() || undefined,
       reference: reference.trim() || undefined,
     });
   };
 
   const inputClass =
-    'bg-card border-border text-body placeholder:text-foreground-muted w-full rounded-md border px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-current';
+    'bg-card border-border text-body placeholder:text-foreground-muted w-full rounded-[5px] border px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-current';
 
   return (
     <form onSubmit={handleSubmit} className="border-border bg-card space-y-3 border-b px-5 py-4">
@@ -215,22 +223,45 @@ function TrackEditForm({
           />
         </div>
         <div>
-          <label className="text-xs font-semibold" htmlFor={`duration-${track.setlistTrackId}`}>
-            재생시간 (30분 단위)
+          <label className="text-xs font-semibold" htmlFor={`duration-mm-${track.setlistTrackId}`}>
+            재생 시간
           </label>
-          <select
-            id={`duration-${track.setlistTrackId}`}
-            value={durationMin}
-            onChange={(e) => setDurationMin(e.target.value)}
-            className={`mt-1 ${inputClass}`}
-          >
-            <option value="">선택 안함</option>
-            {DURATION_OPTIONS_MINUTES.map((min) => (
-              <option key={min} value={min}>
-                {formatDurationLabel(min)}
-              </option>
-            ))}
-          </select>
+          <div className="bg-card border-border hover:border-border-hi mt-1 flex h-9 items-center gap-1 rounded-[5px] border px-3 transition-colors focus-within:ring-1 focus-within:ring-current">
+            <input
+              id={`duration-mm-${track.setlistTrackId}`}
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
+              value={durationMm}
+              onChange={(e) => {
+                const next = clampNumeric(e.target.value, 99);
+                setDurationMm(next);
+                // 두 자리 입력되면 자동으로 초 필드로 이동.
+                if (next.length === 2) ssInputRef.current?.focus();
+              }}
+              onBlur={() => {
+                if (durationMm.length === 1) setDurationMm(durationMm.padStart(2, '0'));
+              }}
+              placeholder="00"
+              aria-label="재생 시간 분"
+              className="placeholder:text-foreground-muted w-7 bg-transparent text-center font-mono text-sm tabular-nums outline-none"
+            />
+            <span className="text-foreground-muted font-mono text-sm">:</span>
+            <input
+              ref={ssInputRef}
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
+              value={durationSs}
+              onChange={(e) => setDurationSs(clampNumeric(e.target.value, 59))}
+              onBlur={() => {
+                if (durationSs.length === 1) setDurationSs(durationSs.padStart(2, '0'));
+              }}
+              placeholder="00"
+              aria-label="재생 시간 초"
+              className="placeholder:text-foreground-muted w-7 bg-transparent text-center font-mono text-sm tabular-nums outline-none"
+            />
+          </div>
         </div>
       </div>
       <div>
@@ -260,10 +291,23 @@ function TrackEditForm({
         />
       </div>
       <div className="flex justify-end gap-2">
-        <Button type="button" size="sm" variant="secondary" onClick={onCancel} disabled={isPending}>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={isPending}
+          className="rounded-[5px]"
+        >
           취소
         </Button>
-        <Button type="submit" size="sm" variant="primary" disabled={isPending}>
+        <Button
+          type="submit"
+          size="sm"
+          variant="primary"
+          disabled={isPending}
+          className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+        >
           {isPending ? '저장 중…' : '저장'}
         </Button>
       </div>
@@ -364,6 +408,8 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
 
   const { data: setlist, isPending: setlistPending, error: setlistError } = useSetlist(setlistId);
   const { data: tracks, isPending: tracksPending } = useSetlistTracks(setlistId);
+  const { data: me } = useMe();
+  const isManager = setlist ? setlist.managerId === me?.id : false;
 
   const updateSetlist = useUpdateSetlist(setlistId);
   const updateTrack = useUpdateSetlistTrack(setlistId);
@@ -610,7 +656,7 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
 
         {/* 합주 시간표 시안 — 드래그로 트랙 배치 */}
         <TabsContent value="schedule" className="mt-0 flex min-h-0 flex-1 flex-col">
-          <SetlistScheduleBoard setlistId={setlistId} tracks={trackList} />
+          <SetlistScheduleBoard setlistId={setlistId} tracks={trackList} isManager={isManager} />
         </TabsContent>
       </Tabs>
 

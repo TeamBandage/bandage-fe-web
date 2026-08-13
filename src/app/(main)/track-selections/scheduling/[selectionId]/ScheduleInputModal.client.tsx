@@ -19,13 +19,7 @@ import {
   useScheduleStore,
 } from '@/domain/schedule-coordination/store/scheduleStore';
 import type { SlotMask } from '@/domain/schedule-coordination/types';
-import {
-  addDays,
-  dayOfWeek,
-  isHoliday,
-  isWeekend,
-  startOfWeek,
-} from '@/domain/schedule-coordination/utils';
+import { addDays, dayOfWeek, isWeekend, startOfWeek } from '@/domain/schedule-coordination/utils';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
@@ -188,16 +182,14 @@ function Step1Dates({
   availableDates: string[];
   setAvailableDates: (next: string[]) => void;
 }) {
-  // 다중 필터 — 평일 / 주말 (포함 조건) + 공휴일 제외 (배제 조건). 모두 독립 토글.
+  // 다중 필터 — 평일 / 주말 (포함 조건). 독립 토글.
   const [includeWeekday, setIncludeWeekday] = useState(true);
   const [includeWeekend, setIncludeWeekend] = useState(true);
-  const [excludeHolidays, setExcludeHolidays] = useState(false);
 
   const passesFilter = (d: string) => {
     const wk = isWeekend(d);
     if (wk && !includeWeekend) return false;
     if (!wk && !includeWeekday) return false;
-    if (excludeHolidays && isHoliday(d)) return false;
     return true;
   };
 
@@ -246,11 +238,6 @@ function Step1Dates({
       <div className="gap-s-2 flex flex-wrap items-center">
         <Chip label="평일" active={includeWeekday} onClick={() => setIncludeWeekday((v) => !v)} />
         <Chip label="주말" active={includeWeekend} onClick={() => setIncludeWeekend((v) => !v)} />
-        <Chip
-          label="공휴일 제외"
-          active={excludeHolidays}
-          onClick={() => setExcludeHolidays((v) => !v)}
-        />
         <button
           type="button"
           onClick={applyFilter}
@@ -271,7 +258,6 @@ function Step1Dates({
         {allDays.map((d) => {
           const selected = availableDates.includes(d);
           const dim = !passesFilter(d);
-          const holiday = isHoliday(d);
           return (
             <button
               key={d}
@@ -282,7 +268,6 @@ function Step1Dates({
                 selected
                   ? 'bg-accent text-foreground'
                   : 'bg-card text-foreground-muted hover:bg-card-hover',
-                holiday && !selected && 'text-danger',
                 dim && !selected && 'opacity-40',
               )}
             >

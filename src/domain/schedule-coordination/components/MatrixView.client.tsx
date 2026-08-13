@@ -12,7 +12,7 @@ import { useBoardStore } from '../store/boardStore';
 import { useScheduleViewStore } from '../store/scheduleViewStore';
 import type { MemberSchedule, ScheduleBlock } from '../types';
 import { DEFAULT_BOARD_CONSTRAINTS } from '../types';
-import { dayOfWeek, isHoliday, slotToTime, startOfWeek } from '../utils';
+import { dayOfWeek, slotToTime, startOfWeek } from '../utils';
 import { autoRescheduleAfterMove } from '../utils/autoReschedule';
 import { buildCoverageHeatmap, coverageRatio } from '../utils/coverageHeatmap';
 import { copyWeekBlocks } from '../utils/copyWeekBlocks';
@@ -483,20 +483,11 @@ export function MatrixView({
             <tbody>
               {allDays.map((d) => {
                 const dow = dayOfWeek(d);
-                const holiday = isHoliday(d);
-                /**
-                 * 색상 규칙: 일·공휴일 → red, 토 → accent, 그 외 평일 → 기본 텍스트
-                 * (이전엔 holiday 가 isSun 분기를 가로채 평일 공휴일도 좌측 일자 컬럼에서 일요일
-                 *  배지 색을 받았다. 명시적 변수로 정리해 평일은 평일 색을 유지.)
-                 */
+                // 색상 규칙: 일 → red, 토 → accent, 그 외 평일 → 기본 텍스트
                 const dowToneText =
-                  dow === 0 || holiday
-                    ? 'text-danger'
-                    : dow === 6
-                      ? 'text-accent'
-                      : 'text-foreground';
+                  dow === 0 ? 'text-danger' : dow === 6 ? 'text-accent' : 'text-foreground';
                 const dowToneBadge =
-                  dow === 0 || holiday
+                  dow === 0
                     ? 'bg-danger-dim text-danger'
                     : dow === 6
                       ? 'bg-accent-dim text-accent'
