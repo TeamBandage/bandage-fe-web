@@ -246,24 +246,29 @@ export function SongTable({
                           e.stopPropagation();
                           onOpenChat(song.id);
                         }}
-                        aria-label={`${song.title} 의견 채팅`}
+                        aria-label={`${song.title} 의견 채팅${song.chatMessageCount ? ` (${song.chatMessageCount}개)` : ''}`}
                         title="의견 채팅"
-                        className="text-foreground-muted inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-white/10 hover:text-white"
+                        className="text-foreground-muted relative inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-white/10 hover:text-white"
                       >
-                        <MessageSquare className="h-3.5 w-3.5" />
+                        <MessageSquare className="h-4.5 w-4.5" />
+                        {!!song.chatMessageCount && song.chatMessageCount > 0 && (
+                          <span className="bg-foreground text-bg absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[9px] leading-none font-bold">
+                            {song.chatMessageCount > 99 ? '99+' : song.chatMessageCount}
+                          </span>
+                        )}
                       </button>
                     )}
                     {(() => {
                       // 잠긴 후: 선택된 곡은 읽기 전용 핀으로 표시, 수정/삭제 불가.
+                      // 고정 여부와 무관하게 채팅 아이콘 위치를 통일하기 위해 슬롯 너비(w-7)는 항상 유지.
                       if (isLocked) {
-                        if (!song.isSelected) return null;
                         return (
                           <span
-                            aria-label="셋리스트 선택됨"
-                            title="셋리스트에 포함된 곡"
+                            aria-label={song.isSelected ? '셋리스트 선택됨' : undefined}
+                            title={song.isSelected ? '셋리스트에 포함된 곡' : undefined}
                             className="text-warn inline-flex h-7 w-7 items-center justify-center"
                           >
-                            <Pin className="h-4 w-4" fill="currentColor" />
+                            {song.isSelected && <Pin className="h-4 w-4" fill="currentColor" />}
                           </span>
                         );
                       }
