@@ -4,6 +4,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Eye,
   Pencil,
   Pin,
   PinOff,
@@ -30,7 +31,12 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { songTone } from '@/domain/schedule-coordination/components/palette';
 import { WeeklyScheduleGrid } from '@/domain/schedule-coordination/components/WeeklyScheduleGrid.client';
-import { enumerateDays, slotToTime, toLocalISODate } from '@/domain/schedule-coordination/utils';
+import {
+  dayOfWeek,
+  enumerateDays,
+  slotToTime,
+  toLocalISODate,
+} from '@/domain/schedule-coordination/utils';
 import { useCreateScheduleBoard } from '@/domain/setlist/hooks/useCreateScheduleBoard';
 import { useDeleteScheduleBlock } from '@/domain/setlist/hooks/useDeleteScheduleBlock';
 import { useDeleteScheduleBoard } from '@/domain/setlist/hooks/useDeleteScheduleBoard';
@@ -51,13 +57,15 @@ import type {
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
-/** 표시 범위 10:00~24:00 (slot 0=00:00, 30분 단위). */
-const SLOT_START = 20;
+/** 표시 범위 0:00~24:00 (slot 0=00:00, 30분 단위). */
+const SLOT_START = 0;
 const SLOT_END = 48;
 const DEFAULT_DURATION_SLOTS = 4;
 
 const TRACK_DRAG_TYPE = 'application/x-track-id';
 const BLOCK_DRAG_TYPE = 'application/x-block-id';
+
+const KOREAN_DOW = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
 const DEFAULT_CONSTRAINTS: ScheduleBoardConstraints = {
   workingHoursStart: 9,
@@ -96,13 +104,6 @@ function mockIsAvailable(memberId: number, dateSlotKey: string): boolean {
   return hashOf(`${memberId}-${dateSlotKey}`) % 3 !== 0;
 }
 
-const MOCK_UNAVAILABLE_REASONS = ['선약', '시간'] as const;
-
-function mockUnavailableReason(memberId: number, dateSlotKey: string): string {
-  const idx = hashOf(`reason-${memberId}-${dateSlotKey}`) % MOCK_UNAVAILABLE_REASONS.length;
-  return MOCK_UNAVAILABLE_REASONS[idx]!;
-}
-
 interface MockSessionMember {
   memberId: number;
   name: string;
@@ -122,11 +123,9 @@ const MOCK_SESSION_MEMBERS: MockSessionMember[] = [
 function MemberRow({
   member,
   tone,
-  reason,
 }: {
   member: MockSessionMember;
-  tone: 'available' | 'unavailable' | 'neutral';
-  reason?: string;
+  tone: 'available' | 'unavailable';
 }) {
   return (
     <div
@@ -144,11 +143,6 @@ function MemberRow({
       </span>
       <span className="text-caption min-w-0 flex-1 truncate font-semibold">{member.name}</span>
       <span className="text-foreground-muted text-micro shrink-0">{member.role}</span>
-      {reason && (
-        <span className="bg-danger/20 text-danger text-micro shrink-0 rounded-full px-2 py-0.5 font-bold">
-          {reason}
-        </span>
-      )}
     </div>
   );
 }
@@ -492,9 +486,11 @@ function BlockSettingsModal({
 export function SetlistScheduleBoard({
   setlistId,
   tracks,
+  isManager,
 }: {
   setlistId: string;
   tracks: SetlistTrackResponse[];
+  isManager: boolean;
 }) {
   const toast = useToast();
   const { data: boards, isPending } = useScheduleBoards(setlistId);
@@ -511,6 +507,11 @@ export function SetlistScheduleBoard({
   const [pendingDeleteBoard, setPendingDeleteBoard] = useState(false);
   const [recurrenceBlock, setRecurrenceBlock] = useState<ScheduleBlockResponse | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const hasBoards = Boolean(boards && boards.length > 0);
+  // 시간표 생성/삭제는 보기/편집 모드와 무관하게 매니저면 항상 가능. 편집 모드는 블록(트랙 배치)
+  // 편집 권한만 통제.
+  const canEdit = isManager && mode === 'edit';
 
   // 시간표 목록이 처음 로드되거나, 활성 시간표가 삭제됐을 때 첫 시간표를 자동 선택.
   useEffect(() => {
@@ -525,13 +526,17 @@ export function SetlistScheduleBoard({
   const days = useMemo(() => {
     const monday = mondayOf(new Date());
     monday.setDate(monday.getDate() + weekOffset * 7);
-    const friday = new Date(monday);
-    friday.setDate(friday.getDate() + 4);
-    return enumerateDays(toLocalISODate(monday), toLocalISODate(friday));
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+    return enumerateDays(toLocalISODate(monday), toLocalISODate(sunday));
   }, [weekOffset]);
 
-  const rangeLabel =
-    days.length > 0 ? `${days[0]!.slice(5)} ~ ${days[days.length - 1]!.slice(5)}` : '';
+  const rangeLabel = (() => {
+    if (days.length === 0) return '';
+    const first = days[0]!;
+    const last = days[days.length - 1]!;
+    return `${first} (${KOREAN_DOW[dayOfWeek(first)]}) ~ ${last.slice(5)} (${KOREAN_DOW[dayOfWeek(last)]})`;
+  })();
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.setlistTrackId, t])), [tracks]);
 
@@ -550,7 +555,7 @@ export function SetlistScheduleBoard({
     for (const m of MOCK_SESSION_MEMBERS) {
       (mockIsAvailable(m.memberId, dateSlotKey) ? available : unavailable).push(m);
     }
-    return { available, unavailable, dateSlotKey };
+    return { available, unavailable };
   }, [selectedBlock]);
 
   function handleBoardFormSubmit(body: ScheduleBoardCreateRequest) {
@@ -661,215 +666,187 @@ export function SetlistScheduleBoard({
 
   return (
     <div className="flex h-full min-w-0">
-      {/* 세션 멤버 목록 — 블록 클릭 시 가능/불가능으로 분류(임시 mock, 실제 가용 시간 API 연동 전). */}
+      {/* 시간표 목록 — 전환/생성/설정/삭제. */}
       <div className="border-border bg-surface flex w-64 shrink-0 flex-col overflow-y-auto border-r">
-        <div className="text-foreground-muted text-micro border-border border-b px-3 py-2 font-bold tracking-wider uppercase">
-          세션 멤버
+        <div className="text-foreground-muted text-micro border-border flex h-10 items-center justify-between border-b px-3 font-bold tracking-wider uppercase">
+          <span>시간표</span>
+          {isManager && (
+            <button
+              type="button"
+              onClick={() => setBoardModal({ mode: 'create' })}
+              aria-label="새 시간표"
+              className="text-foreground-muted hover:text-foreground rounded p-0.5 normal-case transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
-        {blockAvailability ? (
-          <div className="gap-s-4 flex flex-col px-3 py-3">
-            <div>
-              <p className="text-success gap-s-1 mb-s-2 flex items-center text-sm font-bold">
-                <Check className="h-4 w-4" /> 가능 ({blockAvailability.available.length}명)
-              </p>
-              <div className="gap-s-2 flex flex-col">
-                {blockAvailability.available.map((m) => (
-                  <MemberRow key={m.memberId} member={m} tone="available" />
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-danger gap-s-1 mb-s-2 flex items-center text-sm font-bold">
-                <X className="h-4 w-4" /> 불가 ({blockAvailability.unavailable.length}명)
-              </p>
-              <div className="gap-s-2 flex flex-col">
-                {blockAvailability.unavailable.map((m) => (
-                  <MemberRow
-                    key={m.memberId}
-                    member={m}
-                    tone="unavailable"
-                    reason={mockUnavailableReason(m.memberId, blockAvailability.dateSlotKey)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+        {boards && boards.length > 0 ? (
+          <ul className="gap-s-1 flex flex-col p-2">
+            {boards.map((b) => {
+              const active = b.boardId === activeBoardId;
+              return (
+                <li key={b.boardId}>
+                  <div
+                    className={cn(
+                      'gap-s-1 flex items-center rounded-md border px-2 py-1.5',
+                      active ? 'border-white/25 bg-white/10' : 'hover:bg-card border-transparent',
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setActiveBoardId(b.boardId)}
+                      className="text-caption min-w-0 flex-1 truncate text-left font-semibold"
+                    >
+                      {b.name}
+                    </button>
+                    {active && canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => setBoardModal({ mode: 'edit', board: b })}
+                        aria-label="시간표 설정"
+                        className="text-foreground-muted hover:text-foreground shrink-0 rounded p-1 transition-colors"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {active && isManager && (
+                      <button
+                        type="button"
+                        onClick={() => setPendingDeleteBoard(true)}
+                        aria-label="시간표 삭제"
+                        className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         ) : (
-          <div className="gap-s-2 flex flex-col px-3 py-3">
-            {MOCK_SESSION_MEMBERS.map((m) => (
-              <MemberRow key={m.memberId} member={m} tone="neutral" />
-            ))}
-            <p className="text-foreground-muted text-micro mt-s-2">
-              블록을 클릭하면 가능 여부를 볼 수 있습니다.
-            </p>
-          </div>
+          <p className="text-foreground-muted text-caption px-3 py-3">아직 시간표가 없습니다.</p>
         )}
       </div>
 
       <div className="flex h-full min-w-0 flex-1 flex-col">
-        {/* 시간표 전환/생성/설정/삭제 */}
-        <div className="border-border gap-s-2 flex shrink-0 items-center border-b px-4 py-3">
-          {boards && boards.length > 0 ? (
-            <select
-              value={activeBoardId ?? ''}
-              onChange={(e) => setActiveBoardId(e.target.value)}
-              aria-label="시간표 선택"
-              className="bg-card border-border text-caption h-8 min-w-0 flex-1 rounded-[5px] border px-2 outline-none"
-            >
-              {boards.map((b) => (
-                <option key={b.boardId} value={b.boardId}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <p className="text-foreground-muted text-caption flex-1">아직 시간표가 없습니다.</p>
-          )}
-
+        <div className="border-border grid h-10 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b px-4">
+          <p className="text-foreground text-sm font-semibold">합주 시간표</p>
           {activeBoard && (
-            <>
+            <div className="gap-s-1 flex items-center justify-self-center">
               <button
                 type="button"
-                onClick={() => setBoardModal({ mode: 'edit', board: activeBoard })}
-                aria-label="시간표 설정"
-                className="text-foreground-muted hover:text-foreground shrink-0 rounded p-1 transition-colors"
+                onClick={() => setWeekOffset((w) => w - 1)}
+                aria-label="이전 주"
+                className="text-foreground-muted hover:text-foreground rounded p-1 transition-colors"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-4 w-4" />
               </button>
+              <span className="text-foreground-muted text-caption text-center font-mono">
+                {rangeLabel}
+              </span>
               <button
                 type="button"
-                onClick={() => setPendingDeleteBoard(true)}
-                aria-label="시간표 삭제"
-                className="text-foreground-muted hover:text-danger shrink-0 rounded p-1 transition-colors"
+                onClick={() => setWeekOffset((w) => w + 1)}
+                aria-label="다음 주"
+                className="text-foreground-muted hover:text-foreground rounded p-1 transition-colors"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <ChevronRight className="h-4 w-4" />
               </button>
-            </>
+            </div>
           )}
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            className="shrink-0 rounded-[5px]"
-            onClick={() => setBoardModal({ mode: 'create' })}
-          >
-            <Plus className="h-4 w-4" /> 새 시간표
-          </Button>
+          {isManager && hasBoards && (
+            <button
+              type="button"
+              onClick={() => setMode((m) => (m === 'edit' ? 'view' : 'edit'))}
+              aria-label={mode === 'edit' ? '보기 모드로 전환' : '편집 모드로 전환'}
+              title={mode === 'edit' ? '보기 모드로 전환' : '편집 모드로 전환'}
+              className="text-foreground-muted hover:text-foreground gap-s-1 flex items-center justify-self-end rounded px-2 py-1 text-xs font-semibold transition-colors"
+            >
+              {mode === 'edit' ? (
+                <Pencil className="h-3.5 w-3.5" />
+              ) : (
+                <Eye className="h-3.5 w-3.5" />
+              )}
+              {mode === 'edit' ? '편집 중' : '보기 모드'}
+            </button>
+          )}
         </div>
 
         {!isPending && boards && boards.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-            <p className="text-foreground-muted text-sm">시간표를 만들어 트랙을 배치해 보세요.</p>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => setBoardModal({ mode: 'create' })}
-            >
-              <Plus className="h-4 w-4" /> 새 시간표 만들기
-            </Button>
+            <p className="text-foreground-muted text-sm">
+              {isManager ? '시간표를 만들어 트랙을 배치해 보세요.' : '아직 시간표가 없습니다.'}
+            </p>
+            {isManager && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setBoardModal({ mode: 'create' })}
+              >
+                <Plus className="h-4 w-4" /> 새 시간표 만들기
+              </Button>
+            )}
           </div>
         ) : (
           activeBoard && (
-            <>
-              {/* 미배치 트랙 — 그리드로 드래그해서 배치 */}
-              {unplacedTracks.length > 0 && (
-                <div className="border-border gap-s-1 flex shrink-0 flex-wrap border-b px-4 py-2">
-                  {unplacedTracks.map((track) => {
-                    const tone = songTone(track.setlistTrackId, 0);
-                    return (
-                      <span
-                        key={track.setlistTrackId}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData(TRACK_DRAG_TYPE, track.setlistTrackId);
-                          e.dataTransfer.effectAllowed = 'copy';
-                        }}
-                        className={cn(
-                          'cursor-grab truncate rounded-sm border px-1.5 py-0.5 text-[11px] font-semibold active:cursor-grabbing',
-                          tone.softBg,
-                          tone.softBorder,
-                          tone.text,
-                        )}
-                        title={track.title}
-                      >
-                        {track.title}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-2">
-                <p className="text-foreground text-sm font-semibold">합주 시간표</p>
-                <div className="gap-s-1 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => setWeekOffset((w) => w - 1)}
-                    aria-label="이전 주"
-                    className="text-foreground-muted hover:text-foreground rounded p-1 transition-colors"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <span className="text-foreground-muted text-caption min-w-[84px] text-center font-mono">
-                    {rangeLabel}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setWeekOffset((w) => w + 1)}
-                    aria-label="다음 주"
-                    className="text-foreground-muted hover:text-foreground rounded p-1 transition-colors"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="min-h-0 flex-1 px-4 py-3">
-                <WeeklyScheduleGrid
-                  days={days}
-                  slotStart={SLOT_START}
-                  slotEnd={SLOT_END}
-                  className="h-full"
-                  fillWidth
-                  onCellDragOver={() => (e) => e.preventDefault()}
-                  onCellDrop={handleDropOnCell}
-                  overlay={activeBoard.blocks.map((block) => {
-                    const dIdx = days.indexOf(block.startDate);
-                    if (dIdx === -1) return null;
-                    const trackTitles = block.trackIds
-                      .map((id) => trackById.get(id)?.title)
-                      .filter(Boolean)
-                      .join(', ');
-                    const tone = songTone(block.trackIds[0] ?? block.blockId, 0);
-                    return (
-                      <div
-                        key={block.blockId}
-                        draggable={!block.pinned}
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData(BLOCK_DRAG_TYPE, block.blockId);
-                          e.dataTransfer.effectAllowed = 'move';
-                        }}
-                        onClick={() =>
-                          setSelectedBlockId((prev) =>
-                            prev === block.blockId ? null : block.blockId,
-                          )
-                        }
-                        className={cn(
-                          'm-px flex flex-col overflow-hidden rounded-sm border px-1.5 py-1 text-left',
-                          tone.softBg,
-                          tone.softBorder,
-                          !block.pinned && 'cursor-grab active:cursor-grabbing',
-                        )}
-                        style={{
-                          gridRow: `${block.startSlot - SLOT_START + 2} / span ${spanOf(block)}`,
-                          gridColumn: dIdx + 2,
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-1">
-                          <p className={cn('truncate text-[11px] font-semibold', tone.text)}>
-                            {block.title || trackTitles || '(빈 블록)'}
-                          </p>
+            <div className="min-h-0 flex-1 px-4 py-3">
+              <WeeklyScheduleGrid
+                days={days}
+                slotStart={SLOT_START}
+                slotEnd={SLOT_END}
+                className="h-full"
+                fillWidth
+                dayColMinWidth={72}
+                onCellDragOver={canEdit ? () => (e) => e.preventDefault() : undefined}
+                onCellDrop={canEdit ? handleDropOnCell : undefined}
+                overlay={activeBoard.blocks.map((block) => {
+                  const dIdx = days.indexOf(block.startDate);
+                  if (dIdx === -1) return null;
+                  const trackTitles = block.trackIds
+                    .map((id) => trackById.get(id)?.title)
+                    .filter(Boolean)
+                    .join(', ');
+                  const tone = songTone(block.trackIds[0] ?? block.blockId, 0);
+                  return (
+                    <div
+                      key={block.blockId}
+                      draggable={canEdit && !block.pinned}
+                      onDragStart={
+                        canEdit
+                          ? (e) => {
+                              e.dataTransfer.setData(BLOCK_DRAG_TYPE, block.blockId);
+                              e.dataTransfer.effectAllowed = 'move';
+                            }
+                          : undefined
+                      }
+                      onClick={() =>
+                        setSelectedBlockId((prev) =>
+                          prev === block.blockId ? null : block.blockId,
+                        )
+                      }
+                      className={cn(
+                        'm-px flex flex-col overflow-hidden rounded-sm px-1.5 py-1 text-left',
+                        tone.softBg,
+                        selectedBlockId === block.blockId
+                          ? cn('border-2', tone.border)
+                          : cn('border', tone.softBorder),
+                        canEdit && !block.pinned
+                          ? 'cursor-grab active:cursor-grabbing'
+                          : 'cursor-pointer',
+                      )}
+                      style={{
+                        gridRow: `${block.startSlot - SLOT_START + 2} / span ${spanOf(block)}`,
+                        gridColumn: dIdx + 2,
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <p className={cn('truncate text-[11px] font-semibold', tone.text)}>
+                          {block.title || trackTitles || '(빈 블록)'}
+                        </p>
+                        {canEdit && (
                           <div className="flex shrink-0 items-center gap-0.5">
                             <button
                               type="button"
@@ -916,18 +893,98 @@ export function SetlistScheduleBoard({
                               <X className="h-3 w-3" />
                             </button>
                           </div>
-                        </div>
-                        <p className="text-foreground-muted truncate text-[10px]">
-                          {slotToTime(block.startSlot)}~{slotToTime(block.endSlot + 1)}
-                        </p>
+                        )}
                       </div>
-                    );
-                  })}
-                />
-              </div>
-            </>
+                      <p className="text-foreground-muted truncate text-[10px]">
+                        {slotToTime(block.startSlot)}~{slotToTime(block.endSlot + 1)}
+                      </p>
+                    </div>
+                  );
+                })}
+              />
+            </div>
           )
         )}
+      </div>
+
+      <div className="border-border bg-surface flex h-full w-64 shrink-0 flex-col border-l">
+        {/* 트랙 목록 — 편집 모드에서만 노출, 그리드로 드래그해서 배치. 자체 스크롤. */}
+        {canEdit && (
+          <div className="border-border flex max-h-64 shrink-0 flex-col overflow-hidden border-b">
+            <div className="text-foreground-muted text-micro border-border flex h-10 shrink-0 items-center border-b px-3 font-bold tracking-wider uppercase">
+              트랙 목록
+            </div>
+            <div className="min-h-0 overflow-y-auto">
+              {unplacedTracks.length === 0 ? (
+                <p className="text-foreground-muted text-micro px-3 py-3">
+                  배치할 트랙이 없습니다.
+                </p>
+              ) : (
+                <ul className="gap-s-1 flex flex-col py-2 pr-2 pl-[18px]">
+                  {unplacedTracks.map((track) => {
+                    const tone = songTone(track.setlistTrackId, 0);
+                    return (
+                      <li key={track.setlistTrackId}>
+                        <div
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData(TRACK_DRAG_TYPE, track.setlistTrackId);
+                            e.dataTransfer.effectAllowed = 'copy';
+                          }}
+                          className={cn(
+                            'text-caption cursor-grab truncate rounded-sm border px-2 py-1.5 font-semibold active:cursor-grabbing',
+                            tone.softBg,
+                            tone.softBorder,
+                            tone.text,
+                          )}
+                          title={track.title}
+                        >
+                          {track.title}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 세션 멤버 목록 — 블록 클릭 시 가능/불가능으로 분류(임시 mock, 실제 가용 시간 API 연동 전). 곡마다 세션 멤버가 달라질 수 있어 그리드 바로 옆에 배치. */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="text-foreground-muted text-micro border-border flex h-10 shrink-0 items-center border-b px-3 font-bold tracking-wider uppercase">
+            세션 멤버
+          </div>
+          {blockAvailability ? (
+            <div className="gap-s-4 flex flex-col px-3 py-3">
+              <div>
+                <p className="text-success gap-s-1 mb-s-2 flex items-center text-sm font-bold">
+                  <Check className="h-4 w-4" /> 가능 ({blockAvailability.available.length}명)
+                </p>
+                <div className="gap-s-2 flex flex-col">
+                  {blockAvailability.available.map((m) => (
+                    <MemberRow key={m.memberId} member={m} tone="available" />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-danger gap-s-1 mb-s-2 flex items-center text-sm font-bold">
+                  <X className="h-4 w-4" /> 불가 ({blockAvailability.unavailable.length}명)
+                </p>
+                <div className="gap-s-2 flex flex-col">
+                  {blockAvailability.unavailable.map((m) => (
+                    <MemberRow key={m.memberId} member={m} tone="unavailable" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-foreground-muted text-micro px-3 py-3">
+              곡(블록)마다 필요한 세션 멤버가 다를 수 있어요. 블록을 클릭하면 가능 여부를 볼 수
+              있습니다.
+            </p>
+          )}
+        </div>
       </div>
 
       <ScheduleBoardFormModal

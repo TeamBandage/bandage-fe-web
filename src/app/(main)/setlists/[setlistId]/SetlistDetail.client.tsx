@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useMe } from '@/domain/member/hooks/useMe';
 import { useCreateJamsFromSetlist } from '@/domain/setlist/hooks/useCreateJamsFromSetlist';
 import { useDeleteSetlistTrack } from '@/domain/setlist/hooks/useDeleteSetlistTrack';
 import { useSetlist } from '@/domain/setlist/hooks/useSetlist';
@@ -34,10 +35,7 @@ function TrackRow({
   onDelete: (track: SetlistTrackResponse) => void;
 }) {
   return (
-    <div className="border-border hover:bg-card flex items-center gap-4 border-b px-5 py-3 transition-colors">
-      <div className="text-foreground-muted w-8 shrink-0 text-center text-sm">
-        {track.sessions?.length > 0 ? '' : ''}
-      </div>
+    <div className="border-border hover:bg-card flex items-center gap-4 border-b py-3 pr-5 pl-7.5 transition-colors">
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-1.5">
           <p className="text-foreground shrink-0 font-medium">{track.title}</p>
@@ -364,6 +362,8 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
 
   const { data: setlist, isPending: setlistPending, error: setlistError } = useSetlist(setlistId);
   const { data: tracks, isPending: tracksPending } = useSetlistTracks(setlistId);
+  const { data: me } = useMe();
+  const isManager = setlist ? setlist.managerId === me?.id : false;
 
   const updateSetlist = useUpdateSetlist(setlistId);
   const updateTrack = useUpdateSetlistTrack(setlistId);
@@ -610,7 +610,7 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
 
         {/* 합주 시간표 시안 — 드래그로 트랙 배치 */}
         <TabsContent value="schedule" className="mt-0 flex min-h-0 flex-1 flex-col">
-          <SetlistScheduleBoard setlistId={setlistId} tracks={trackList} />
+          <SetlistScheduleBoard setlistId={setlistId} tracks={trackList} isManager={isManager} />
         </TabsContent>
       </Tabs>
 
