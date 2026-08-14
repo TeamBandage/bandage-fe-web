@@ -162,7 +162,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down h-4 w-4 shrink-0 transition-transform"
+            class="lucide lucide-chevron-down -mr-1.5 h-4 w-4 shrink-0 transition-transform"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -240,7 +240,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down h-4 w-4 shrink-0 transition-transform"
+            class="lucide lucide-chevron-down -mr-1.5 h-4 w-4 shrink-0 transition-transform"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -301,7 +301,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           </span>
           <svg
             aria-hidden="true"
-            class="lucide lucide-chevron-down h-4 w-4 shrink-0 transition-transform"
+            class="lucide lucide-chevron-down -mr-1.5 h-4 w-4 shrink-0 transition-transform"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -320,11 +320,11 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       </div>
       <a
         class="gap-s-3 py-s-2 flex items-center rounded-[8px] text-[13px] font-medium transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none text-foreground-sub hover:bg-card hover:text-foreground px-s-3 no-underline hover:no-underline"
-        href="/me"
+        href="/me/schedule"
       >
         <svg
           aria-hidden="true"
-          class="lucide lucide-user h-3.25 w-3.25 shrink-0"
+          class="lucide lucide-clock h-3.25 w-3.25 shrink-0"
           fill="none"
           height="24"
           stroke="currentColor"
@@ -335,27 +335,33 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           width="24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path
-            d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
-          />
           <circle
             cx="12"
-            cy="7"
-            r="4"
+            cy="12"
+            r="10"
+          />
+          <path
+            d="M12 6v6l4 2"
           />
         </svg>
         <span
           class="truncate"
         >
-          마이페이지
+          스케줄 관리
         </span>
       </a>
     </nav>
     <div
       class="border-border mt-s-3 pt-s-3 gap-s-1 flex flex-col border-t"
     >
-      <div
-        class="py-s-1 gap-s-2 flex items-center"
+      <button
+        aria-expanded="false"
+        aria-haspopup="menu"
+        aria-label="계정 메뉴"
+        class="py-s-1 gap-s-2 hover:bg-card flex w-full items-center rounded-md text-left transition-colors focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        data-state="closed"
+        id="radix-_r_0_"
+        type="button"
       >
         <span
           class="bg-card-hover text-foreground-sub rounded-pill inline-flex items-center justify-center overflow-hidden font-semibold select-none h-7 w-7 shrink-0 text-xs"
@@ -367,7 +373,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
           </span>
         </span>
         <div
-          class="min-w-0"
+          class="min-w-0 flex-1"
         >
           <div
             class="text-foreground text-caption truncate font-semibold"
@@ -380,12 +386,35 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
             sooyeon@example.com
           </div>
         </div>
-      </div>
-      <button
-        class="inline-flex items-center justify-center gap-2 font-medium transition-colors no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg disabled:opacity-50 disabled:pointer-events-none bg-surface text-foreground border border-border hover:bg-card-hover h-8 px-3 text-sm w-full rounded-[5px]"
-        type="button"
-      >
-        로그아웃
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-ellipsis-vertical text-foreground-muted mr-s-1 h-4 w-4 shrink-0 self-start mt-1"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="1"
+          />
+          <circle
+            cx="12"
+            cy="5"
+            r="1"
+          />
+          <circle
+            cx="12"
+            cy="19"
+            r="1"
+          />
+        </svg>
       </button>
     </div>
   </aside>

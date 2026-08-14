@@ -2,7 +2,7 @@
 
 import { Bell, CheckCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type UIEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type UIEvent } from 'react';
 
 import { cn } from '@/lib/cn';
 import { formatRelative } from '@/lib/date';
@@ -17,6 +17,9 @@ import type { NotifyCategory } from '../types/res';
 interface Props {
   collapsed: boolean;
   placement?: 'sidebar' | 'topbar';
+  /** 외부에서 열림 상태를 제어(예: 모바일에서 프로필 메뉴와 배타적으로 하나만 열림). 미지정 시 내부 상태로 동작. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 function resolveHref(category: NotifyCategory, referenceId: string): string | null {
@@ -49,8 +52,18 @@ function resolveHref(category: NotifyCategory, referenceId: string): string | nu
   }
 }
 
-export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
-  const [open, setOpen] = useState(false);
+export function NotificationBell({
+  collapsed,
+  placement = 'sidebar',
+  open: openProp,
+  onOpenChange,
+}: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = onOpenChange ? (openProp ?? false) : internalOpen;
+  const setOpen = useCallback(
+    (value: boolean) => (onOpenChange ? onOpenChange(value) : setInternalOpen(value)),
+    [onOpenChange],
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -73,7 +86,7 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
+  }, [open, setOpen]);
 
   function handleScroll(e: UIEvent<HTMLUListElement>) {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -101,7 +114,7 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         aria-label="알림"
         aria-expanded={open}
         className={cn(
@@ -144,7 +157,7 @@ export function NotificationBell({ collapsed, placement = 'sidebar' }: Props) {
           aria-label="알림 패널"
         >
           {placement === 'topbar' && (
-            <span className="bg-card border-border absolute -top-2 right-4 h-4 w-4 rotate-45 border-t border-l" />
+            <span className="border-b-card absolute -top-2 right-4 h-0 w-0 border-x-8 border-b-8 border-x-transparent" />
           )}
           <div className="border-border flex items-center justify-between gap-2 border-b px-4 py-3">
             <span className="text-foreground text-sm font-semibold">알림</span>

@@ -21,6 +21,7 @@ export const ROUTES = {
 
   ME: '/me',
   ME_EDIT: '/me/edit',
+  ME_SCHEDULE: '/me/schedule',
 
   SETLISTS: '/setlists',
   SETLIST_DETAIL: (id: string) => `/setlists/${id}`,

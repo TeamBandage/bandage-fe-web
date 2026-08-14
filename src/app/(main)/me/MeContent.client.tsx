@@ -1,13 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { ErrorState } from '@/components/feedback/error-state';
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -18,28 +16,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { PasswordStrength } from '@/components/ui/password-strength';
 import { ProfileImageUpload } from '@/components/ui/profile-image-upload';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChangePassword } from '@/domain/auth/hooks/useChangePassword';
-import { useLogout } from '@/domain/auth/hooks/useLogout';
 import { passwordChangeSchema, type PasswordChangeSchema } from '@/domain/auth/types/schema';
-import { ScheduleManagerModal } from '@/domain/member/components/ScheduleManagerModal.client';
-import { WeeklyTimetable } from '@/domain/member/components/WeeklyTimetable.client';
 import { useMe } from '@/domain/member/hooks/useMe';
-import { useMyAvailability } from '@/domain/member/hooks/useMyAvailability';
-import { useUpdateMyAvailability } from '@/domain/member/hooks/useUpdateMyAvailability';
 import { useDeleteMyProfileImage } from '@/domain/member/hooks/useDeleteMyProfileImage';
 import { useUpdateMe } from '@/domain/member/hooks/useUpdateMe';
 import { useWithdraw } from '@/domain/member/hooks/useWithdraw';
 import {
   updateMeSchema,
-  type AvailabilityExceptionRequest,
   type MemberInfoResponse,
   type UpdateMeSchema,
-  type WeeklyRuleRequest,
 } from '@/domain/member/types';
 import { ROUTES } from '@/global/config/routes';
 import { useToast } from '@/hooks/useToast';
@@ -48,43 +38,8 @@ export function MeContent() {
   const router = useRouter();
   const toast = useToast();
   const { data: me, isLoading, isError, refetch } = useMe();
-  const { data: availability } = useMyAvailability();
 
-  const [activeTab, setActiveTab] = useState<'schedule' | 'profile'>('schedule');
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-
-  const updateAvailabilityMutation = useUpdateMyAvailability({
-    onSuccess: () => {
-      toast.success('스케줄이 저장되었습니다.');
-      setScheduleModalOpen(false);
-    },
-    onError: (err) => toast.error(err.message || '스케줄 저장에 실패했습니다.'),
-  });
-
-  const handleSaveSchedule = (
-    weeklyRules: WeeklyRuleRequest[],
-    note: string,
-    exceptions: AvailabilityExceptionRequest[],
-    effectiveFrom: string,
-    effectiveTo: string,
-  ) => {
-    updateAvailabilityMutation.mutate({
-      weeklyRules,
-      exceptions,
-      note,
-      effectiveFrom,
-      effectiveTo,
-    });
-  };
-
-  const logoutMutation = useLogout({
-    onSuccess: () => {
-      toast.success('로그아웃되었습니다.');
-      router.replace(ROUTES.LOGIN);
-    },
-    onError: (err) => toast.error(err.message || '로그아웃에 실패했습니다.'),
-  });
 
   const withdrawMutation = useWithdraw({
     onSuccess: () => {
@@ -110,110 +65,42 @@ export function MeContent() {
 
   return (
     <div className="space-y-s-6">
-      {/* 프로필 정보 요약 — 탭과 무관하게 항상 표시 */}
       <section>
         <h2 className="text-foreground text-title mb-s-3 font-bold">프로필 정보</h2>
-        <Card padding="lg" className="rounded-md border-[3px]">
-          <div className="flex items-start gap-[40px]">
-            <Avatar
-              src={me.profileImg ?? undefined}
-              fallback={me.name}
-              className="h-[72px] w-[72px] rounded-md text-xl"
-            />
-            <div className="space-y-1 pt-0.5">
-              <div className="text-foreground text-lg font-semibold">{me.name}</div>
-              <div className="text-foreground-sub text-sm">{me.email}</div>
-            </div>
+        <EditCard member={me} onSaved={() => {}} />
+      </section>
+
+      <section>
+        <h2 className="text-foreground mb-s-3 text-[16px] font-bold">비밀번호 변경</h2>
+        <PasswordChangeCard />
+      </section>
+
+      <section>
+        <h2 className="text-foreground mb-s-3 text-[16px] font-bold">계정 탈퇴</h2>
+        <Card padding="lg" className="border-foreground-sub bg-bg">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-foreground-sub text-[14px]">
+              탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를
+              진행하시겠습니까?
+            </p>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setWithdrawOpen(true)}
+              className="shrink-0 rounded-[5px]"
+            >
+              회원 탈퇴
+            </Button>
           </div>
         </Card>
       </section>
-
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as 'schedule' | 'profile')}
-        variant="underline"
-      >
-        <TabsList aria-label="마이페이지 탭">
-          <TabsTrigger
-            value="schedule"
-            className="data-[state=active]:text-foreground data-[state=active]:border-foreground"
-          >
-            나의 스케줄 관리
-          </TabsTrigger>
-          <TabsTrigger
-            value="profile"
-            className="data-[state=active]:text-foreground data-[state=active]:border-foreground"
-          >
-            프로필 정보 관리
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="schedule">
-          <WeeklyTimetable
-            availability={availability}
-            onManageSchedule={() => setScheduleModalOpen(true)}
-          />
-        </TabsContent>
-
-        <TabsContent value="profile" className="space-y-s-6">
-          <EditCard member={me} onSaved={() => {}} />
-
-          <section>
-            <h2 className="text-foreground mb-s-3 text-[16px] font-bold">비밀번호 변경</h2>
-            <PasswordChangeCard />
-          </section>
-
-          <section>
-            <h2 className="text-foreground mb-s-3 text-[16px] font-bold">계정 탈퇴</h2>
-            <Card padding="lg" className="border-foreground-sub bg-bg">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-foreground-sub text-[14px]">
-                  탈퇴 후에는 참여 중인 밴드·합주·공연 데이터에 접근할 수 없습니다. 탈퇴를
-                  진행하시겠습니까?
-                </p>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => setWithdrawOpen(true)}
-                  className="shrink-0 rounded-[5px]"
-                >
-                  회원 탈퇴
-                </Button>
-              </div>
-            </Card>
-          </section>
-        </TabsContent>
-      </Tabs>
-
-      {/* 모바일 전용 로그아웃 — 데스크톱은 사이드바에서 처리 */}
-      <section className="lg:hidden">
-        <Card padding="md">
-          <Button
-            variant="ghost"
-            onClick={() => logoutMutation.mutate()}
-            loading={logoutMutation.isPending}
-            className="w-full justify-start"
-          >
-            <LogOut className="h-4 w-4" />
-            로그아웃
-          </Button>
-        </Card>
-      </section>
-
-      <ScheduleManagerModal
-        open={scheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-        availability={availability}
-        onSave={handleSaveSchedule}
-        isSaving={updateAvailabilityMutation.isPending}
-      />
 
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
         <DialogContent>
           <DialogHeader className="border-0">
             <DialogTitle>정말 탈퇴하시겠어요?</DialogTitle>
             <DialogDescription>
-              이 동작은 되돌릴 수 없으며 일부 기록은 감사 로그 목적 상 보관됩니다.
+              탈퇴 후에는 계정과 관련된 정보가 삭제되며, 이 작업은 되돌릴 수 없습니다.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="border-0">

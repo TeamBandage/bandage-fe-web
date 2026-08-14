@@ -1,14 +1,17 @@
 'use client';
 
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Home,
   ListMusic,
+  MoreVertical,
   Music,
-  User,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -24,7 +27,6 @@ import { useUiStore } from '@/global/store/uiStore';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 import { Avatar } from '../ui/avatar';
-import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
 type SubItem = { href: string; label: string };
@@ -68,7 +70,7 @@ const mainNav: NavItem[] = [
       { href: ROUTES.SETLISTS, label: '셋리스트 목록' },
     ],
   },
-  { href: ROUTES.ME, label: '마이페이지', icon: User },
+  { href: ROUTES.ME_SCHEDULE, label: '스케줄 관리', icon: Clock },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -93,6 +95,9 @@ function isSubActive(pathname: string, href: string) {
 export interface SidebarProps {
   className?: string;
 }
+
+/** 계정 드롭다운 메뉴 항목 — nav 항목(text-[13px] font-medium)과 글자 스타일 통일. */
+const MENU_ITEM_CLASS = 'cursor-pointer px-4 py-2.5 text-[13px] font-medium outline-none';
 
 /**
  * 데스크톱(>=960px) 좌측 네비게이션.
@@ -189,42 +194,119 @@ export function Sidebar({ className }: SidebarProps) {
       </nav>
 
       <div className="border-border mt-s-3 pt-s-3 gap-s-1 flex flex-col border-t">
-        {!collapsed &&
-          (meLoading ? (
-            <div className="py-s-1 gap-s-2 flex items-center">
-              <Skeleton rounded="pill" className="h-7 w-7 shrink-0" />
-              <div className="space-y-1">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-2.5 w-28" />
-              </div>
-            </div>
+        {collapsed ? (
+          meLoading ? (
+            <Skeleton rounded="pill" className="h-7 w-7 shrink-0 self-center" />
           ) : (
-            <div className="py-s-1 gap-s-2 flex items-center">
+            <Link href={ROUTES.ME} className="flex justify-center" aria-label="마이페이지">
               <Avatar
                 src={me?.profileImg ?? undefined}
                 fallback={me?.name ?? me?.email ?? '?'}
                 className="h-7 w-7 shrink-0 text-xs"
               />
-              <div className="min-w-0">
-                <div className="text-foreground text-caption truncate font-semibold">
-                  {me?.name ?? '게스트'}
-                </div>
-                <div className="text-foreground-muted text-micro truncate">
-                  {me?.email ?? '로그인이 필요합니다'}
-                </div>
-              </div>
+            </Link>
+          )
+        ) : meLoading ? (
+          <div className="py-s-1 gap-s-2 flex items-center">
+            <Skeleton rounded="pill" className="h-7 w-7 shrink-0" />
+            <div className="space-y-1">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-2.5 w-28" />
             </div>
-          ))}
-        {!collapsed && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => logoutMutation.mutate()}
-            loading={logoutMutation.isPending}
-            className="w-full rounded-[5px]"
-          >
-            로그아웃
-          </Button>
+          </div>
+        ) : (
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                type="button"
+                aria-label="계정 메뉴"
+                className={cn(
+                  'py-s-1 gap-s-2 hover:bg-card flex w-full items-center rounded-md text-left transition-colors',
+                  'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                )}
+              >
+                <Avatar
+                  src={me?.profileImg ?? undefined}
+                  fallback={me?.name ?? me?.email ?? '?'}
+                  className="h-7 w-7 shrink-0 text-xs"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-foreground text-caption truncate font-semibold">
+                    {me?.name ?? '게스트'}
+                  </div>
+                  <div className="text-foreground-muted text-micro truncate">
+                    {me?.email ?? '로그인이 필요합니다'}
+                  </div>
+                </div>
+                <MoreVertical
+                  className="text-foreground-muted mr-s-1 mt-1 h-4 w-4 shrink-0 self-start"
+                  aria-hidden="true"
+                />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                side="top"
+                align="start"
+                sideOffset={8}
+                onCloseAutoFocus={(e) => e.preventDefault()}
+                className={cn(
+                  'bg-card border-border z-50 rounded-lg border py-1 shadow-lg',
+                  'data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out',
+                )}
+                style={{ width: 'var(--radix-dropdown-menu-trigger-width)' }}
+              >
+                <DropdownMenu.Sub>
+                  <DropdownMenu.SubTrigger
+                    className={cn(
+                      MENU_ITEM_CLASS,
+                      'text-foreground hover:bg-surface-hi flex items-center justify-between',
+                    )}
+                  >
+                    언어설정
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  </DropdownMenu.SubTrigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.SubContent
+                      sideOffset={8}
+                      className={cn(
+                        'bg-card border-border z-50 min-w-35 rounded-lg border py-1 shadow-lg',
+                        'data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out',
+                      )}
+                    >
+                      <DropdownMenu.Item
+                        className={cn(
+                          MENU_ITEM_CLASS,
+                          'text-foreground hover:bg-surface-hi flex items-center justify-between',
+                        )}
+                      >
+                        한국어
+                        <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      </DropdownMenu.Item>
+                    </DropdownMenu.SubContent>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Sub>
+                <DropdownMenu.Item asChild>
+                  <Link
+                    href={ROUTES.ME}
+                    className={cn(
+                      MENU_ITEM_CLASS,
+                      'text-foreground hover:bg-surface-hi block no-underline hover:no-underline',
+                    )}
+                  >
+                    마이페이지
+                  </Link>
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator className="border-border my-1 border-t" />
+                <DropdownMenu.Item
+                  className={cn(MENU_ITEM_CLASS, 'text-danger hover:bg-surface-hi')}
+                  onSelect={() => logoutMutation.mutate()}
+                >
+                  로그아웃
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         )}
       </div>
     </aside>
@@ -297,7 +379,7 @@ function NavRow({
         <Icon className="h-3.25 w-3.25 shrink-0" aria-hidden="true" />
         <span className="flex-1 truncate text-left">{label}</span>
         <ChevronDown
-          className={cn('h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
+          className={cn('-mr-1.5 h-4 w-4 shrink-0 transition-transform', open && 'rotate-180')}
           aria-hidden="true"
         />
       </button>
