@@ -1,16 +1,16 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import { useState } from 'react';
 
-import { Skeleton } from '@/components/ui/skeleton';
 import { NotificationBell } from '@/domain/notification/components/NotificationBell.client';
-import { useMe } from '@/domain/member/hooks/useMe';
-import { Avatar } from '@/components/ui/avatar';
-import { ROUTES } from '@/global/config/routes';
+
+import { ProfileMenu } from './ProfileMenu.client';
+
+type ActivePanel = 'notification' | 'profile' | null;
 
 export function GlobalTopbar() {
-  const { data: me, isLoading: meLoading } = useMe();
+  const [activePanel, setActivePanel] = useState<ActivePanel>(null);
 
   return (
     // z-[35]: 페이지 내부 sticky 요소(예: WeeklyScheduleGrid 헤더 z-30)보다는 위,
@@ -26,18 +26,20 @@ export function GlobalTopbar() {
         className="lg:invisible"
       />
       <div className="flex items-center gap-5">
-        <NotificationBell collapsed placement="topbar" />
-        {meLoading ? (
-          <Skeleton rounded="pill" className="h-7 w-7 shrink-0" />
-        ) : (
-          <Link href={ROUTES.ME} aria-label="마이페이지" className="mr-4 inline-flex items-center">
-            <Avatar
-              src={me?.profileImg ?? undefined}
-              fallback={me?.name ?? me?.email ?? '?'}
-              className="h-7 w-7 text-xs"
-            />
-          </Link>
-        )}
+        {/* 아바타가 사라지는 데스크톱에서는 알림벨이 우측 끝에 바짝 붙어 살짝 왼쪽으로 띄움 */}
+        <div className="lg:mr-3">
+          <NotificationBell
+            collapsed
+            placement="topbar"
+            open={activePanel === 'notification'}
+            onOpenChange={(v) => setActivePanel(v ? 'notification' : null)}
+          />
+        </div>
+        {/* 데스크톱은 사이드바 하단에 프로필 메뉴가 이미 있어 topbar에서는 모바일에서만 노출 */}
+        <ProfileMenu
+          open={activePanel === 'profile'}
+          onOpenChange={(v) => setActivePanel(v ? 'profile' : null)}
+        />
       </div>
     </header>
   );

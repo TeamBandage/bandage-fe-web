@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, Home, ListMusic, Music, User, Users, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Clock, Home, ListMusic, Music, Users, type LucideIcon } from 'lucide-react';
 import { GuardedLink as Link } from '@/global/navigation/guarded-link';
 import { usePathname } from 'next/navigation';
 
@@ -19,7 +19,7 @@ const tabs: Tab[] = [
   { href: ROUTES.JAMS, icon: Music, label: '합주' },
   { href: ROUTES.PERFORMANCES, icon: CalendarDays, label: '공연' },
   { href: ROUTES.TRACK_SELECTIONS, icon: ListMusic, label: '선곡 회의' },
-  { href: ROUTES.ME, icon: User, label: 'MY' },
+  { href: ROUTES.ME_SCHEDULE, icon: Clock, label: '스케줄' },
 ];
 
 function isActive(pathname: string, href: string) {

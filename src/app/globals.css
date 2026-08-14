@@ -63,7 +63,7 @@
 
   /* Layout widths (Shell / Pane-Split. CSS 변수로 소비: w-[var(--sidebar-w)] 또는 style)
      mvp-1-fix-v5 Task 1: MBA 13(1280px) 기준 사이드바+마스터 합 ≤ 38% 가 되도록 축소 (이전 240+360=600px → 200+280=480px). */
-  --sidebar-w: 200px;
+  --sidebar-w: 220px;
   --list-pane-w: 280px;
   --band-list-pane-w: 280px;
 
