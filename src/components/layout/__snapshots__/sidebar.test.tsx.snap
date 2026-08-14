@@ -388,7 +388,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
         </div>
         <svg
           aria-hidden="true"
-          class="lucide lucide-ellipsis-vertical text-foreground-muted mr-s-1 h-4 w-4 shrink-0 self-start mt-1"
+          class="lucide lucide-ellipsis-vertical text-foreground-muted mr-s-1 mt-1 h-4 w-4 shrink-0 self-start"
           fill="none"
           height="24"
           stroke="currentColor"
