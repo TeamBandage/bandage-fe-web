@@ -26,11 +26,19 @@ export function GlobalTopbar() {
         className="lg:invisible"
       />
       <div className="flex items-center gap-5">
-        <NotificationBell collapsed placement="topbar" />
+        {/* 아바타가 사라지는 데스크톱에서는 알림벨이 우측 끝에 바짝 붙어 살짝 왼쪽으로 띄움 */}
+        <div className="lg:mr-3">
+          <NotificationBell collapsed placement="topbar" />
+        </div>
+        {/* 데스크톱은 사이드바 하단에 프로필이 이미 있어 topbar에서는 모바일에서만 노출 */}
         {meLoading ? (
-          <Skeleton rounded="pill" className="h-7 w-7 shrink-0" />
+          <Skeleton rounded="pill" className="h-7 w-7 shrink-0 lg:hidden" />
         ) : (
-          <Link href={ROUTES.ME} aria-label="마이페이지" className="mr-4 inline-flex items-center">
+          <Link
+            href={ROUTES.ME}
+            aria-label="마이페이지"
+            className="inline-flex items-center lg:hidden"
+          >
             <Avatar
               src={me?.profileImg ?? undefined}
               fallback={me?.name ?? me?.email ?? '?'}

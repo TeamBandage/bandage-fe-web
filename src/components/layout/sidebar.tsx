@@ -23,6 +23,7 @@ import { ROUTES } from '@/global/config/routes';
 import { useUiStore } from '@/global/store/uiStore';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
+import { Avatar } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
@@ -117,7 +118,9 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'bg-surface border-border py-s-4 gap-s-1 relative z-30 hidden shrink-0 flex-col border-r lg:flex',
+        // z-36: topbar(z-35)보다 위에 그려져야 데스크톱에서 사이드바 로고가 topbar에 가리지 않음
+        // (topbar 로고는 lg:invisible — 원래부터 데스크톱에서는 사이드바 로고가 그 자리를 덮도록 설계됨).
+        'bg-surface border-border py-s-4 gap-s-1 relative z-36 hidden shrink-0 flex-col border-r lg:flex',
         'transition-[width] duration-200 ease-in-out',
         collapsed ? 'px-s-2' : 'px-s-3',
         className,
@@ -188,17 +191,27 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="border-border mt-s-3 pt-s-3 gap-s-1 flex flex-col border-t">
         {!collapsed &&
           (meLoading ? (
-            <div className="px-s-4 py-s-1 space-y-1">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-2.5 w-28" />
+            <div className="py-s-1 gap-s-2 flex items-center">
+              <Skeleton rounded="pill" className="h-7 w-7 shrink-0" />
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-2.5 w-28" />
+              </div>
             </div>
           ) : (
-            <div className="px-s-4 py-s-1 min-w-0">
-              <div className="text-foreground text-caption truncate font-semibold">
-                {me?.name ?? '게스트'}
-              </div>
-              <div className="text-foreground-muted text-micro truncate">
-                {me?.email ?? '로그인이 필요합니다'}
+            <div className="py-s-1 gap-s-2 flex items-center">
+              <Avatar
+                src={me?.profileImg ?? undefined}
+                fallback={me?.name ?? me?.email ?? '?'}
+                className="h-7 w-7 shrink-0 text-xs"
+              />
+              <div className="min-w-0">
+                <div className="text-foreground text-caption truncate font-semibold">
+                  {me?.name ?? '게스트'}
+                </div>
+                <div className="text-foreground-muted text-micro truncate">
+                  {me?.email ?? '로그인이 필요합니다'}
+                </div>
               </div>
             </div>
           ))}
