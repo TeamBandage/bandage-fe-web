@@ -41,7 +41,6 @@ export function useUpsertScheduleBlock(setlistId: string) {
                       pinned: body.pinned ?? b.pinned,
                       title: body.title ?? b.title,
                       note: body.note ?? b.note,
-                      recurrence: body.recurrence ?? b.recurrence,
                     }
                   : b,
               )
@@ -56,7 +55,6 @@ export function useUpsertScheduleBlock(setlistId: string) {
                   trackIds: body.trackIds,
                   pinned: body.pinned ?? false,
                   placementOrigin: 'MANUAL' as const,
-                  recurrence: { freq: 'NONE' as const, interval: 1 },
                   note: body.note,
                   title: body.title,
                 },
