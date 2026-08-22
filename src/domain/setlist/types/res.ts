@@ -1,5 +1,3 @@
-import type { ScheduleBoardConstraints } from './req';
-
 export interface SetlistResponse {
   setlistId: string;
   title: string;
@@ -58,24 +56,17 @@ export interface SetlistParticipantResponse {
   sessions: SetlistParticipantSessionResponse[];
 }
 
-export interface RecurrenceResponse {
-  freq: 'NONE' | 'DAILY' | 'WEEKLY' | 'BIWEEKLY';
-  interval: number;
-  count?: number;
-  until?: string;
-}
-
 export interface ScheduleBlockResponse {
   blockId: string;
   trackIds: string[];
   startDate: string;
   startSlot: number;
+  /** 반열린 구간 [startSlot, endSlot) — 24:00 종료는 48. */
   endDate: string;
   endSlot: number;
   pinned: boolean;
   title?: string;
   note?: string;
-  recurrence: RecurrenceResponse;
   placementOrigin: 'MANUAL' | 'AUTO' | 'ANCHORED';
 }
 
@@ -84,7 +75,10 @@ export interface ScheduleBoardResponse {
   setlistId: string;
   name: string;
   confirmed: boolean;
-  constraints: ScheduleBoardConstraints;
+  /** 근무 시작 슬롯(0~47). */
+  boardTimeRangeFrom: number;
+  /** 근무 종료 슬롯(1~48, 반열린 구간). */
+  boardTimeRangeTo: number;
   windowFrom?: string;
   windowTo?: string;
   blocks: ScheduleBlockResponse[];

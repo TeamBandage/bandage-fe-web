@@ -2,14 +2,16 @@
 
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Eye,
   Pencil,
   Pin,
   PinOff,
   Plus,
-  Repeat,
+  Settings,
   Trash2,
   X,
 } from 'lucide-react';
@@ -24,7 +26,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Divider } from '@/components/ui/divider';
+import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
   ResponsiveSheet,
@@ -54,11 +56,7 @@ import { useScheduleBoards } from '@/domain/setlist/hooks/useScheduleBoards';
 import { useSetScheduleBlockPin } from '@/domain/setlist/hooks/useSetScheduleBlockPin';
 import { useUpdateScheduleBoard } from '@/domain/setlist/hooks/useUpdateScheduleBoard';
 import { useUpsertScheduleBlock } from '@/domain/setlist/hooks/useUpsertScheduleBlock';
-import type {
-  ScheduleBlockRecurrenceRequest,
-  ScheduleBoardConstraints,
-  ScheduleBoardCreateRequest,
-} from '@/domain/setlist/types/req';
+import type { ScheduleBoardCreateRequest } from '@/domain/setlist/types/req';
 import type {
   ScheduleBlockResponse,
   ScheduleBoardResponse,
@@ -80,13 +78,6 @@ const BLOCK_DRAG_TYPE = 'application/x-block-id';
 
 const KOREAN_DOW = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
-const DEFAULT_CONSTRAINTS: ScheduleBoardConstraints = {
-  workingHoursStart: 9,
-  workingHoursEnd: 22,
-  excludeLateNight: true,
-  maxConsecutiveMinutes: 240,
-};
-
 function mondayOf(base: Date): Date {
   const d = new Date(base);
   const day = d.getDay();
@@ -96,7 +87,7 @@ function mondayOf(base: Date): Date {
 }
 
 function spanOf(block: { startSlot: number; endSlot: number }): number {
-  return block.endSlot - block.startSlot + 1;
+  return block.endSlot - block.startSlot;
 }
 
 /**
@@ -156,6 +147,53 @@ function MemberRow({
   );
 }
 
+/** 30분 단위 슬롯 값을 'HH:MM' 표기로 보여주는 커스텀 스텝퍼 — 네이티브 time input은
+ * 브라우저/OS 로케일에 따라 12시간·오전/오후 표기로 렌더돼 형식을 직접 통제할 수 없어 대체. */
+function SlotTimeStepper({
+  label,
+  slot,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  slot: number;
+  min: number;
+  max: number;
+  onChange: (slot: number) => void;
+}) {
+  return (
+    <Field label={label}>
+      {({ inputId }) => (
+        <div
+          id={inputId}
+          className="border-border hover:border-border-hi bg-surface flex h-10 w-full items-center justify-between rounded-[5px] border px-3"
+        >
+          <span className="text-foreground font-mono text-sm">{slotToTime(slot)}</span>
+          <div className="flex flex-col">
+            <button
+              type="button"
+              aria-label={`${label} 30분 증가`}
+              onClick={() => onChange(Math.min(max, slot + 1))}
+              className="text-foreground-muted hover:text-foreground"
+            >
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              aria-label={`${label} 30분 감소`}
+              onClick={() => onChange(Math.max(min, slot - 1))}
+              className="text-foreground-muted hover:text-foreground"
+            >
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
+    </Field>
+  );
+}
+
 type BoardModalState = { mode: 'create' } | { mode: 'edit'; board: ScheduleBoardResponse } | null;
 
 function ScheduleBoardFormModal({
@@ -176,12 +214,8 @@ function ScheduleBoardFormModal({
   const [name, setName] = useState('');
   const [windowFrom, setWindowFrom] = useState('');
   const [windowTo, setWindowTo] = useState('');
-  const [workingHoursStart, setWorkingHoursStart] = useState(DEFAULT_CONSTRAINTS.workingHoursStart);
-  const [workingHoursEnd, setWorkingHoursEnd] = useState(DEFAULT_CONSTRAINTS.workingHoursEnd);
-  const [excludeLateNight, setExcludeLateNight] = useState(DEFAULT_CONSTRAINTS.excludeLateNight);
-  const [maxConsecutiveMinutes, setMaxConsecutiveMinutes] = useState(
-    DEFAULT_CONSTRAINTS.maxConsecutiveMinutes,
-  );
+  const [boardSlotStart, setBoardSlotStart] = useState(SLOT_START);
+  const [boardSlotEnd, setBoardSlotEnd] = useState(SLOT_END);
 
   useEffect(() => {
     if (!open) return;
@@ -189,18 +223,14 @@ function ScheduleBoardFormModal({
       setName(initial.name);
       setWindowFrom(initial.windowFrom ?? '');
       setWindowTo(initial.windowTo ?? '');
-      setWorkingHoursStart(initial.constraints.workingHoursStart);
-      setWorkingHoursEnd(initial.constraints.workingHoursEnd);
-      setExcludeLateNight(initial.constraints.excludeLateNight);
-      setMaxConsecutiveMinutes(initial.constraints.maxConsecutiveMinutes);
+      setBoardSlotStart(initial.boardTimeRangeFrom);
+      setBoardSlotEnd(initial.boardTimeRangeTo);
     } else {
       setName('');
       setWindowFrom('');
       setWindowTo('');
-      setWorkingHoursStart(DEFAULT_CONSTRAINTS.workingHoursStart);
-      setWorkingHoursEnd(DEFAULT_CONSTRAINTS.workingHoursEnd);
-      setExcludeLateNight(DEFAULT_CONSTRAINTS.excludeLateNight);
-      setMaxConsecutiveMinutes(DEFAULT_CONSTRAINTS.maxConsecutiveMinutes);
+      setBoardSlotStart(SLOT_START);
+      setBoardSlotEnd(SLOT_END);
     }
   }, [open, mode, initial]);
 
@@ -212,12 +242,8 @@ function ScheduleBoardFormModal({
       name: trimmed,
       windowFrom: windowFrom || undefined,
       windowTo: windowTo || undefined,
-      constraints: {
-        workingHoursStart,
-        workingHoursEnd,
-        excludeLateNight,
-        maxConsecutiveMinutes,
-      },
+      boardTimeRangeFrom: boardSlotStart,
+      boardTimeRangeTo: boardSlotEnd,
     });
   }
 
@@ -254,43 +280,24 @@ function ScheduleBoardFormModal({
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="근무시간 시작"
-                  type="number"
-                  min={0}
-                  max={23}
-                  value={workingHoursStart}
-                  onChange={(e) => setWorkingHoursStart(Number(e.target.value))}
+                <SlotTimeStepper
+                  label="시간표 시작 시각"
+                  slot={boardSlotStart}
+                  min={SLOT_START}
+                  max={boardSlotEnd - 1}
+                  onChange={setBoardSlotStart}
                 />
-                <Input
-                  label="근무시간 종료"
-                  type="number"
-                  min={0}
-                  max={23}
-                  value={workingHoursEnd}
-                  onChange={(e) => setWorkingHoursEnd(Number(e.target.value))}
+                <SlotTimeStepper
+                  label="시간표 종료 시각"
+                  slot={boardSlotEnd}
+                  min={boardSlotStart + 1}
+                  max={SLOT_END}
+                  onChange={setBoardSlotEnd}
                 />
               </div>
-              <Input
-                label="최대 연속 배치 시간 (분)"
-                type="number"
-                min={30}
-                step={30}
-                value={maxConsecutiveMinutes}
-                onChange={(e) => setMaxConsecutiveMinutes(Number(e.target.value))}
-              />
-              <label className="gap-s-2 flex items-center">
-                <input
-                  type="checkbox"
-                  checked={excludeLateNight}
-                  onChange={(e) => setExcludeLateNight(e.target.checked)}
-                  className="h-4 w-4"
-                />
-                <span className="text-caption">심야(근무시간 이후) 배치 금지</span>
-              </label>
             </div>
           </ResponsiveSheetBody>
-          <ResponsiveSheetFooter>
+          <ResponsiveSheetFooter className="border-t-0">
             <ResponsiveSheetClose asChild>
               <Button type="button" variant="ghost" size="sm" className="rounded-[5px]">
                 취소
@@ -312,14 +319,6 @@ function ScheduleBoardFormModal({
   );
 }
 
-const RECURRENCE_FREQ_OPTIONS: { value: ScheduleBlockRecurrenceRequest['freq']; label: string }[] =
-  [
-    { value: 'NONE', label: '반복 안함' },
-    { value: 'DAILY', label: '매일' },
-    { value: 'WEEKLY', label: '매주' },
-    { value: 'BIWEEKLY', label: '격주' },
-  ];
-
 function BlockSettingsModal({
   open,
   block,
@@ -330,54 +329,22 @@ function BlockSettingsModal({
   open: boolean;
   block: ScheduleBlockResponse | null;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: {
-    title: string;
-    note: string;
-    recurrence: ScheduleBlockRecurrenceRequest;
-  }) => void;
+  onSubmit: (values: { title: string; note: string }) => void;
   isPending: boolean;
 }) {
   const [title, setTitle] = useState('');
   const [note, setNote] = useState('');
-  const [freq, setFreq] = useState<ScheduleBlockRecurrenceRequest['freq']>('NONE');
-  const [interval, setIntervalValue] = useState(1);
-  const [endMode, setEndMode] = useState<'until' | 'count'>('until');
-  const [until, setUntil] = useState('');
-  const [count, setCount] = useState(1);
 
   useEffect(() => {
     if (!open || !block) return;
     setTitle(block.title ?? '');
     setNote(block.note ?? '');
-    setFreq(block.recurrence.freq);
-    setIntervalValue(block.recurrence.interval || 1);
-    if (block.recurrence.count) {
-      setEndMode('count');
-      setCount(block.recurrence.count);
-      setUntil('');
-    } else {
-      setEndMode('until');
-      setUntil(block.recurrence.until ?? '');
-      setCount(1);
-    }
   }, [open, block]);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const recurrence: ScheduleBlockRecurrenceRequest =
-      freq === 'NONE'
-        ? { freq: 'NONE', interval: 1 }
-        : {
-            freq,
-            interval,
-            until: endMode === 'until' ? until || undefined : undefined,
-            count: endMode === 'count' ? count : undefined,
-          };
-    onSubmit({ title: title.trim(), note: note.trim(), recurrence });
+    onSubmit({ title: title.trim(), note: note.trim() });
   }
-
-  const selectClass =
-    'bg-card border-border text-caption mt-1 h-9 w-full rounded-[5px] border px-2 outline-none';
 
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange}>
@@ -402,92 +369,21 @@ function BlockSettingsModal({
                 placeholder="선택"
                 rows={3}
               />
-
-              <Divider className="my-1" />
-
-              <div>
-                <label className="text-xs font-semibold" htmlFor="recurrence-freq">
-                  반복 주기
-                </label>
-                <select
-                  id="recurrence-freq"
-                  value={freq}
-                  onChange={(e) =>
-                    setFreq(e.target.value as ScheduleBlockRecurrenceRequest['freq'])
-                  }
-                  className={selectClass}
-                >
-                  {RECURRENCE_FREQ_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {freq !== 'NONE' && (
-                <>
-                  <Input
-                    label="반복 간격"
-                    hint={
-                      freq === 'DAILY'
-                        ? '예: 2 → 2일마다'
-                        : freq === 'WEEKLY'
-                          ? '예: 2 → 2주마다'
-                          : '예: 1 → 격주(2주)마다'
-                    }
-                    type="number"
-                    min={1}
-                    value={interval}
-                    onChange={(e) => setIntervalValue(Number(e.target.value))}
-                  />
-                  <div className="gap-s-3 flex items-center">
-                    <label className="gap-s-1 flex items-center text-xs">
-                      <input
-                        type="radio"
-                        name="recurrence-end-mode"
-                        checked={endMode === 'until'}
-                        onChange={() => setEndMode('until')}
-                      />
-                      종료일까지
-                    </label>
-                    <label className="gap-s-1 flex items-center text-xs">
-                      <input
-                        type="radio"
-                        name="recurrence-end-mode"
-                        checked={endMode === 'count'}
-                        onChange={() => setEndMode('count')}
-                      />
-                      반복 횟수
-                    </label>
-                  </div>
-                  {endMode === 'until' ? (
-                    <Input
-                      label="종료일"
-                      type="date"
-                      value={until}
-                      onChange={(e) => setUntil(e.target.value)}
-                    />
-                  ) : (
-                    <Input
-                      label="반복 횟수"
-                      type="number"
-                      min={1}
-                      value={count}
-                      onChange={(e) => setCount(Number(e.target.value))}
-                    />
-                  )}
-                </>
-              )}
             </div>
           </ResponsiveSheetBody>
-          <ResponsiveSheetFooter>
+          <ResponsiveSheetFooter className="border-t-0">
             <ResponsiveSheetClose asChild>
-              <Button type="button" variant="ghost">
+              <Button type="button" variant="ghost" size="sm" className="rounded-[5px]">
                 취소
               </Button>
             </ResponsiveSheetClose>
-            <Button type="submit" variant="primary" disabled={isPending}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={isPending}
+              className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+            >
               저장
             </Button>
           </ResponsiveSheetFooter>
@@ -519,7 +415,9 @@ export function SetlistScheduleBoard({
   const [weekOffset, setWeekOffset] = useState(0);
   const [boardModal, setBoardModal] = useState<BoardModalState>(null);
   const [pendingDeleteBoard, setPendingDeleteBoard] = useState(false);
-  const [recurrenceBlock, setRecurrenceBlock] = useState<ScheduleBlockResponse | null>(null);
+  const [blockSettingsTarget, setBlockSettingsTarget] = useState<ScheduleBlockResponse | null>(
+    null,
+  );
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   // 블록 리사이즈 드래그 중인 미확정 시작/종료 슬롯 — 체크 버튼을 눌러야 upsertBlock API 호출로 확정.
   const [pendingResize, setPendingResize] = useState<{
@@ -560,11 +458,27 @@ export function SetlistScheduleBoard({
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.setlistTrackId, t])), [tracks]);
 
-  const placedTrackIds = useMemo(
-    () => new Set(activeBoard?.blocks.flatMap((b) => b.trackIds) ?? []),
-    [activeBoard],
+  // 트랙별 배치 횟수 — 시간표(보드)별로 따로 집계. 반복 배치(같은 곡을 여러 블록에)를 허용하므로
+  // 트랙 목록에서 지우지 않고, 배치 여부만 구분해서 표시한다.
+  const placementCountByTrackId = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const b of activeBoard?.blocks ?? []) {
+      for (const trackId of b.trackIds) {
+        counts.set(trackId, (counts.get(trackId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [activeBoard]);
+  // 하나도 안 배치된 트랙이 위로 오도록 정렬(그룹 내 원래 순서는 유지 — stable sort).
+  const sortedTracks = useMemo(
+    () =>
+      [...tracks].sort((a, b) => {
+        const aPlaced = (placementCountByTrackId.get(a.setlistTrackId) ?? 0) > 0 ? 1 : 0;
+        const bPlaced = (placementCountByTrackId.get(b.setlistTrackId) ?? 0) > 0 ? 1 : 0;
+        return aPlaced - bPlaced;
+      }),
+    [tracks, placementCountByTrackId],
   );
-  const unplacedTracks = tracks.filter((t) => !placedTrackIds.has(t.setlistTrackId));
 
   // 선택된 블록의 날짜+시간 기준으로 멤버 가능/불가능 분류 (임시 mock — 실제 가용 시간 API 연동 전).
   const blockAvailability = useMemo(() => {
@@ -602,14 +516,10 @@ export function SetlistScheduleBoard({
     });
   }
 
-  function handleBlockSettingsSubmit(values: {
-    title: string;
-    note: string;
-    recurrence: ScheduleBlockRecurrenceRequest;
-  }) {
-    if (!activeBoard || !recurrenceBlock) return;
+  function handleBlockSettingsSubmit(values: { title: string; note: string }) {
+    if (!activeBoard || !blockSettingsTarget) return;
     const boardId = activeBoard.boardId;
-    const base = recurrenceBlock;
+    const base = blockSettingsTarget;
 
     upsertBlock.mutate(
       {
@@ -624,13 +534,12 @@ export function SetlistScheduleBoard({
           pinned: base.pinned,
           title: values.title || undefined,
           note: values.note || undefined,
-          recurrence: values.recurrence,
         },
       },
       {
         onSuccess: () => {
           toast.success('블록 설정을 저장했습니다.');
-          setRecurrenceBlock(null);
+          setBlockSettingsTarget(null);
         },
         onError: () => toast.error('블록 설정 저장에 실패했습니다.'),
       },
@@ -655,7 +564,7 @@ export function SetlistScheduleBoard({
             startDate: date,
             startSlot: slot,
             endDate: date,
-            endSlot: slot + span - 1,
+            endSlot: slot + span,
             pinned: block.pinned,
             title: block.title,
           },
@@ -676,7 +585,7 @@ export function SetlistScheduleBoard({
             startDate: date,
             startSlot: slot,
             endDate: date,
-            endSlot: slot + span - 1,
+            endSlot: slot + span,
             pinned: false,
           },
         });
@@ -700,8 +609,8 @@ export function SetlistScheduleBoard({
         const deltaSlots = Math.round((moveEvent.clientY - startY) / SLOT_HEIGHT);
         if (edge === 'end') {
           const nextEndSlot = Math.min(
-            SLOT_END - 1,
-            Math.max(baseStartSlot + MIN_BLOCK_SPAN_SLOTS - 1, baseEndSlot + deltaSlots),
+            SLOT_END,
+            Math.max(baseStartSlot + MIN_BLOCK_SPAN_SLOTS, baseEndSlot + deltaSlots),
           );
           setPendingResize({
             blockId: block.blockId,
@@ -711,7 +620,7 @@ export function SetlistScheduleBoard({
         } else {
           const nextStartSlot = Math.max(
             SLOT_START,
-            Math.min(baseEndSlot - MIN_BLOCK_SPAN_SLOTS + 1, baseStartSlot + deltaSlots),
+            Math.min(baseEndSlot - MIN_BLOCK_SPAN_SLOTS, baseStartSlot + deltaSlots),
           );
           setPendingResize({
             blockId: block.blockId,
@@ -926,7 +835,7 @@ export function SetlistScheduleBoard({
                     pendingResize?.blockId === block.blockId
                       ? pendingResize.endSlot
                       : block.endSlot;
-                  const displaySpan = displayEndSlot - displayStartSlot + 1;
+                  const displaySpan = displayEndSlot - displayStartSlot;
                   // 30분(1슬롯)짜리 블록은 상하 리사이즈 핸들(각 8px)을 다 얹으면 제목/아이콘 줄과
                   // 겹쳐 잘려 보인다 — 이땐 핸들을 얇게 줄이고 손잡이 표시(grip bar)는 생략.
                   const compactBlock = displaySpan <= 1;
@@ -972,16 +881,16 @@ export function SetlistScheduleBoard({
                           <div className="flex shrink-0 items-center gap-0.5">
                             <button
                               type="button"
-                              onClick={() => setRecurrenceBlock(block)}
+                              onClick={() => setBlockSettingsTarget(block)}
                               aria-label="블록 설정"
                               className={cn(
                                 'rounded p-0.5',
-                                block.recurrence.freq !== 'NONE' || block.title || block.note
+                                block.title || block.note
                                   ? 'text-foreground'
                                   : 'text-foreground-muted hover:text-foreground',
                               )}
                             >
-                              <Repeat className="h-3 w-3" />
+                              <Settings className="h-3 w-3" />
                             </button>
                             <button
                               type="button"
@@ -1018,7 +927,7 @@ export function SetlistScheduleBoard({
                         )}
                       </div>
                       <p className="text-foreground-muted truncate text-[10px]">
-                        {slotToTime(displayStartSlot)}~{slotToTime(displayEndSlot + 1)}
+                        {slotToTime(displayStartSlot)}~{slotToTime(displayEndSlot)}
                       </p>
                       {canEdit && isSelected && (
                         <>
@@ -1061,7 +970,7 @@ export function SetlistScheduleBoard({
                       }}
                       aria-label="블록 길이 확정"
                       style={{
-                        gridRow: `${displayEndSlot - SLOT_START + 2} / span 1`,
+                        gridRow: `${displayEndSlot - SLOT_START + 1} / span 1`,
                         gridColumn: dIdx + 2,
                       }}
                       className="z-20 h-5 w-5 translate-x-1/3 translate-y-1/3 self-end justify-self-end rounded-full bg-white text-neutral-900 shadow-md hover:bg-neutral-100"
@@ -1085,14 +994,16 @@ export function SetlistScheduleBoard({
               트랙 목록
             </div>
             <div className="min-h-0 overflow-y-auto">
-              {unplacedTracks.length === 0 ? (
+              {sortedTracks.length === 0 ? (
                 <p className="text-foreground-muted text-micro px-3 py-3">
                   배치할 트랙이 없습니다.
                 </p>
               ) : (
                 <ul className="gap-s-1 flex flex-col py-2 pr-2 pl-4.5">
-                  {unplacedTracks.map((track) => {
+                  {sortedTracks.map((track) => {
                     const tone = songTone(track.setlistTrackId, 0);
+                    const placedCount = placementCountByTrackId.get(track.setlistTrackId) ?? 0;
+                    const placed = placedCount > 0;
                     return (
                       <li key={track.setlistTrackId}>
                         <div
@@ -1102,14 +1013,19 @@ export function SetlistScheduleBoard({
                             e.dataTransfer.effectAllowed = 'copy';
                           }}
                           className={cn(
-                            'text-caption cursor-grab truncate rounded-sm border px-2 py-1.5 font-semibold active:cursor-grabbing',
+                            'text-caption gap-s-1.5 flex cursor-grab items-center rounded-sm border px-2 py-1.5 font-semibold active:cursor-grabbing',
                             tone.softBg,
                             tone.softBorder,
                             tone.text,
                           )}
                           title={track.title}
                         >
-                          {track.title}
+                          <span className="min-w-0 flex-1 truncate">{track.title}</span>
+                          {placed && (
+                            <span className="bg-surface text-foreground-muted border-border shrink-0 rounded-full border px-1.5 text-[10px] leading-4 font-bold">
+                              {placedCount}
+                            </span>
+                          )}
                         </div>
                       </li>
                     );
@@ -1171,10 +1087,10 @@ export function SetlistScheduleBoard({
       />
 
       <BlockSettingsModal
-        open={recurrenceBlock !== null}
-        block={recurrenceBlock}
+        open={blockSettingsTarget !== null}
+        block={blockSettingsTarget}
         onOpenChange={(open) => {
-          if (!open) setRecurrenceBlock(null);
+          if (!open) setBlockSettingsTarget(null);
         }}
         onSubmit={handleBlockSettingsSubmit}
         isPending={upsertBlock.isPending}
