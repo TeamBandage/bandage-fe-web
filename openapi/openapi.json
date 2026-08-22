@@ -5214,6 +5214,450 @@
                     "startSlot"
                 ],
                 "type": "object"
+            },
+            "SetlistScheduleBoardCreateRequest": {
+                "description": "\uc2dc\uac04\ud45c \uc2dc\uc548 \uc0dd\uc131/\uc218\uc815 \uc694\uccad",
+                "properties": {
+                    "boardTimeRangeFrom": {
+                        "format": "int32",
+                        "type": "integer",
+                        "description": "\uc2dc\uac04\ud45c \uc2dc\uc791 \uc2ac\ub86f(0~47, 30\ubd84 \ub2e8\uc704)"
+                    },
+                    "boardTimeRangeTo": {
+                        "format": "int32",
+                        "type": "integer",
+                        "description": "\uc2dc\uac04\ud45c \uc885\ub8cc \uc2ac\ub86f(1~48, \ubc18\uc5f4\ub9b0 \uad6c\uac04 \u2014 24:00\uc740 48)"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "windowFrom": {
+                        "format": "date",
+                        "type": "string"
+                    },
+                    "windowTo": {
+                        "format": "date",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "boardTimeRangeFrom",
+                    "boardTimeRangeTo",
+                    "name"
+                ],
+                "type": "object"
+            },
+            "SetlistScheduleBoardUpdateRequest": {
+                "description": "\uc2dc\uac04\ud45c \uc2dc\uc548 \ubd80\ubd84 \uc218\uc815 \uc694\uccad \u2014 \uc804\ub2ec\ud55c \ud544\ub4dc\ub9cc \uac31\uc2e0",
+                "properties": {
+                    "boardTimeRangeFrom": {
+                        "format": "int32",
+                        "type": "integer",
+                        "description": "\uc2dc\uac04\ud45c \uc2dc\uc791 \uc2ac\ub86f(0~47, 30\ubd84 \ub2e8\uc704)"
+                    },
+                    "boardTimeRangeTo": {
+                        "format": "int32",
+                        "type": "integer",
+                        "description": "\uc2dc\uac04\ud45c \uc885\ub8cc \uc2ac\ub86f(1~48, \ubc18\uc5f4\ub9b0 \uad6c\uac04 \u2014 24:00\uc740 48)"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "windowFrom": {
+                        "format": "date",
+                        "type": "string"
+                    },
+                    "windowTo": {
+                        "format": "date",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SetlistScheduleBlockUpsertRequest": {
+                "description": "\uc2dc\uac04\ud45c \ube14\ub85d \ub4f1\ub85d/\uc218\uc815(upsert) \uc694\uccad",
+                "properties": {
+                    "endDate": {
+                        "format": "date",
+                        "type": "string"
+                    },
+                    "endSlot": {
+                        "format": "int32",
+                        "type": "integer",
+                        "description": "\ubc18\uc5f4\ub9b0 \uad6c\uac04 [startSlot, endSlot) \u2014 24:00 \uc885\ub8cc\ub294 48"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "pinned": {
+                        "type": "boolean"
+                    },
+                    "startDate": {
+                        "format": "date",
+                        "type": "string"
+                    },
+                    "startSlot": {
+                        "format": "int32",
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "trackIds": {
+                        "items": {
+                            "format": "uuid",
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "endDate",
+                    "endSlot",
+                    "startDate",
+                    "startSlot",
+                    "trackIds"
+                ],
+                "type": "object"
+            },
+            "SetlistScheduleBlockPinRequest": {
+                "description": "\uc2dc\uac04\ud45c \ube14\ub85d \ud540 \ud1a0\uae00 \uc694\uccad",
+                "properties": {
+                    "pinned": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "pinned"
+                ],
+                "type": "object"
+            },
+            "SetlistScheduleBlockResponse": {
+                "description": "\uc2dc\uac04\ud45c \ube14\ub85d \uc751\ub2f5",
+                "properties": {
+                    "blockId": {
+                        "format": "uuid",
+                        "type": "string"
+                    },
+                    "endDate": {
+                        "format": "date",
+                        "type": "string"
+                    },
+                    "endSlot": {
+                        "format": "int32",
+                        "type": "integer",
+                        "description": "\ubc18\uc5f4\ub9b0 \uad6c\uac04 [startSlot, endSlot) \u2014 24:00 \uc885\ub8cc\ub294 48"
+                    },
+                    "note": {
+                        "type": "string"
+                    },
+                    "pinned": {
+                        "type": "boolean"
+                    },
+                    "placementOrigin": {
+                        "enum": [
+                            "MANUAL",
+                            "AUTO",
+                            "ANCHORED"
+                        ],
+                        "type": "string"
+                    },
+                    "startDate": {
+                        "format": "date",
+                        "type": "string"
+                    },
+                    "startSlot": {
+                        "format": "int32",
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "trackIds": {
+                        "items": {
+                            "format": "uuid",
+                            "type": "string"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "blockId",
+                    "endDate",
+                    "endSlot",
+                    "pinned",
+                    "placementOrigin",
+                    "startDate",
+                    "startSlot",
+                    "trackIds"
+                ],
+                "type": "object"
+            },
+            "SetlistScheduleBoardResponse": {
+                "description": "\uc2dc\uac04\ud45c \uc2dc\uc548 \uc751\ub2f5",
+                "properties": {
+                    "blocks": {
+                        "items": {
+                            "$ref": "#/components/schemas/SetlistScheduleBlockResponse"
+                        },
+                        "type": "array"
+                    },
+                    "boardId": {
+                        "format": "uuid",
+                        "type": "string"
+                    },
+                    "boardTimeRangeFrom": {
+                        "format": "int32",
+                        "type": "integer",
+                        "description": "\uc2dc\uac04\ud45c \uc2dc\uc791 \uc2ac\ub86f(0~47, 30\ubd84 \ub2e8\uc704)"
+                    },
+                    "boardTimeRangeTo": {
+                        "format": "int32",
+                        "type": "integer",
+                        "description": "\uc2dc\uac04\ud45c \uc885\ub8cc \uc2ac\ub86f(1~48, \ubc18\uc5f4\ub9b0 \uad6c\uac04 \u2014 24:00\uc740 48)"
+                    },
+                    "confirmed": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "setlistId": {
+                        "format": "uuid",
+                        "type": "string"
+                    },
+                    "windowFrom": {
+                        "format": "date",
+                        "type": "string"
+                    },
+                    "windowTo": {
+                        "format": "date",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "blocks",
+                    "boardId",
+                    "boardTimeRangeFrom",
+                    "boardTimeRangeTo",
+                    "confirmed",
+                    "createdAt",
+                    "name",
+                    "setlistId"
+                ],
+                "type": "object"
+            },
+            "ScheduleAutoScheduleRequest": {
+                "description": "\uc2dc\uac04\ud45c \uc790\ub3d9 \ubc30\uce58 \uc694\uccad \u2014 \uc0c1\uc138 \ud544\ub4dc\ub294 \ubc31\uc5d4\ub4dc \uc2e4\uc81c \uc2a4\ud399 \ud655\uc778 \ud6c4 \ubcf4\uac15 \ud544\uc694(\ud604\uc7ac FE \ubbf8\uc5f0\ub3d9)",
+                "type": "object"
+            },
+            "SlotAvailabilityResponse": {
+                "description": "\uc2ac\ub86f\ubcc4 \uba64\ubc84 \uac00\uc6a9 \ud604\ud669 \uc751\ub2f5 \u2014 \uc0c1\uc138 \ud544\ub4dc\ub294 \ubc31\uc5d4\ub4dc \uc2e4\uc81c \uc2a4\ud399 \ud655\uc778 \ud6c4 \ubcf4\uac15 \ud544\uc694(\ud604\uc7ac FE \ubbf8\uc5f0\ub3d9)",
+                "type": "object"
+            },
+            "SchedulePlacementResponse": {
+                "description": "\uc2dc\uac04\ud45c \uc2dc\uc548\uc758 \ud2b8\ub799\ubcc4 \ubc30\uce58 \ud604\ud669 \uc751\ub2f5 \u2014 \uc0c1\uc138 \ud544\ub4dc\ub294 \ubc31\uc5d4\ub4dc \uc2e4\uc81c \uc2a4\ud399 \ud655\uc778 \ud6c4 \ubcf4\uac15 \ud544\uc694(\ud604\uc7ac FE \ubbf8\uc5f0\ub3d9)",
+                "type": "object"
+            },
+            "ApiResponseSetlistScheduleBoardResponse": {
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "fieldErrors": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "timestamp": {
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/SetlistScheduleBoardResponse"
+                    }
+                },
+                "required": [
+                    "success",
+                    "timestamp"
+                ],
+                "type": "object"
+            },
+            "ApiResponseListSetlistScheduleBoardResponse": {
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "fieldErrors": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "timestamp": {
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/SetlistScheduleBoardResponse"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "success",
+                    "timestamp"
+                ],
+                "type": "object"
+            },
+            "ApiResponseSetlistScheduleBlockResponse": {
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "fieldErrors": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "timestamp": {
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/SetlistScheduleBlockResponse"
+                    }
+                },
+                "required": [
+                    "success",
+                    "timestamp"
+                ],
+                "type": "object"
+            },
+            "ApiResponseScheduleAutoScheduleRequest": {
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "fieldErrors": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "timestamp": {
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/ScheduleAutoScheduleRequest"
+                    }
+                },
+                "required": [
+                    "success",
+                    "timestamp"
+                ],
+                "type": "object",
+                "description": "\uc790\ub3d9 \ubc30\uce58 \uc2e4\ud589 \uacb0\uacfc \u2014 \uc0c1\uc138 \ud544\ub4dc \ubbf8\ud655\uc815(\ud604\uc7ac FE \ubbf8\uc5f0\ub3d9)"
+            },
+            "ApiResponseListSlotAvailabilityResponse": {
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "fieldErrors": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "timestamp": {
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/SlotAvailabilityResponse"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "success",
+                    "timestamp"
+                ],
+                "type": "object"
+            },
+            "ApiResponseListSchedulePlacementResponse": {
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "fieldErrors": {
+                        "additionalProperties": {
+                            "type": "string"
+                        },
+                        "type": "object"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "success": {
+                        "type": "boolean"
+                    },
+                    "timestamp": {
+                        "format": "date-time",
+                        "type": "string"
+                    },
+                    "data": {
+                        "items": {
+                            "$ref": "#/components/schemas/SchedulePlacementResponse"
+                        },
+                        "type": "array"
+                    }
+                },
+                "required": [
+                    "success",
+                    "timestamp"
+                ],
+                "type": "object"
             }
         }
     },
@@ -9113,6 +9557,463 @@
                     "uploads"
                 ]
             }
+        },
+        "/api/v1/setlists/{setlistId}/schedule-boards": {
+            "get": {
+                "operationId": "getBoards",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseListSetlistScheduleBoardResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \uc2dc\uc548 \ubaa9\ub85d",
+                "tags": [
+                    "schedule-boards"
+                ]
+            },
+            "post": {
+                "operationId": "createBoard",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SetlistScheduleBoardCreateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseSetlistScheduleBoardResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \uc2dc\uc548 \uc0dd\uc131",
+                "tags": [
+                    "schedule-boards"
+                ]
+            }
+        },
+        "/api/v1/setlists/{setlistId}/schedule-boards/{boardId}": {
+            "delete": {
+                "operationId": "deleteBoard",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "boardId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseUnit"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \uc2dc\uc548 \uc0ad\uc81c",
+                "tags": [
+                    "schedule-boards"
+                ]
+            },
+            "patch": {
+                "operationId": "updateBoard",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "boardId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SetlistScheduleBoardUpdateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseSetlistScheduleBoardResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \uc2dc\uc548 \uc218\uc815",
+                "tags": [
+                    "schedule-boards"
+                ]
+            }
+        },
+        "/api/v1/setlists/{setlistId}/schedule-boards/{boardId}/placements": {
+            "get": {
+                "description": "FE \ubbf8\uc5f0\ub3d9 \u2014 \uc751\ub2f5 \uc0c1\uc138 \ud544\ub4dc\ub294 \ubc31\uc5d4\ub4dc \uc2e4\uc81c \uc2a4\ud399 \ud655\uc778 \ud544\uc694",
+                "operationId": "getBoardPlacements",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "boardId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseListSchedulePlacementResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \uc2dc\uc548\uc758 \ud2b8\ub799\ubcc4 \ubc30\uce58 \ud604\ud669",
+                "tags": [
+                    "schedule-boards"
+                ]
+            }
+        },
+        "/api/v1/setlists/{setlistId}/schedule-boards/{boardId}/auto-schedule": {
+            "post": {
+                "description": "FE \ubbf8\uc5f0\ub3d9 \u2014 \uc694\uccad/\uc751\ub2f5 \uc0c1\uc138 \ud544\ub4dc\ub294 \ubc31\uc5d4\ub4dc \uc2e4\uc81c \uc2a4\ud399 \ud655\uc778 \ud544\uc694",
+                "operationId": "autoSchedule",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "boardId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ScheduleAutoScheduleRequest"
+                            }
+                        }
+                    },
+                    "required": false
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseScheduleAutoScheduleRequest"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \uc790\ub3d9 \ubc30\uce58",
+                "tags": [
+                    "schedule-auto-place"
+                ]
+            }
+        },
+        "/api/v1/setlists/{setlistId}/schedule-boards/{boardId}/blocks/{blockId}": {
+            "delete": {
+                "operationId": "deleteBlock",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "boardId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "blockId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseUnit"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \ube14\ub85d \uc0ad\uc81c",
+                "tags": [
+                    "schedule-blocks"
+                ]
+            },
+            "put": {
+                "operationId": "upsertBlock",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "boardId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "blockId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SetlistScheduleBlockUpsertRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseSetlistScheduleBlockResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \ube14\ub85d \ub4f1\ub85d/\uc218\uc815",
+                "tags": [
+                    "schedule-blocks"
+                ]
+            }
+        },
+        "/api/v1/setlists/{setlistId}/schedule-boards/{boardId}/blocks/{blockId}/pin": {
+            "patch": {
+                "operationId": "setPin",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "boardId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "blockId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SetlistScheduleBlockPinRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseSetlistScheduleBlockResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2dc\uac04\ud45c \ube14\ub85d \ud540 \ud1a0\uae00",
+                "tags": [
+                    "schedule-blocks"
+                ]
+            }
+        },
+        "/api/v1/setlists/{setlistId}/slot-availabilities": {
+            "get": {
+                "description": "FE \ubbf8\uc5f0\ub3d9 \u2014 \uc751\ub2f5 \uc0c1\uc138 \ud544\ub4dc\ub294 \ubc31\uc5d4\ub4dc \uc2e4\uc81c \uc2a4\ud399 \ud655\uc778 \ud544\uc694",
+                "operationId": "getSlotAvailabilities",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "setlistId",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseListSlotAvailabilityResponse"
+                                }
+                            }
+                        },
+                        "description": "OK"
+                    }
+                },
+                "summary": "\uc2ac\ub86f\ubcc4 \uba64\ubc84 \uac00\uc6a9 \ud604\ud669 \uc870\ud68c",
+                "tags": [
+                    "schedule-availability"
+                ]
+            }
         }
     },
     "servers": [
@@ -9181,6 +10082,10 @@
         {
             "description": "\uacf5\uc5f0 API",
             "name": "performances"
+        },
+        {
+            "name": "schedule-availability",
+            "description": "\uc2dc\uac04\ud45c \uc2ac\ub86f\ubcc4 \uba64\ubc84 \uac00\uc6a9 \ud604\ud669 API"
         }
     ]
 }
