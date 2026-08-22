@@ -23,6 +23,9 @@ export function useAutoScheduleBoard(setlistId: string) {
         boards?.map((b) => (b.boardId === board.boardId ? board : b)),
       );
       void qc.invalidateQueries({ queryKey });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.setlist.scheduleBoardPlacements(setlistId, board.boardId),
+      });
     },
   });
 }

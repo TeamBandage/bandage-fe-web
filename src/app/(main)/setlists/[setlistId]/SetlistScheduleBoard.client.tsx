@@ -24,6 +24,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 
+import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Field } from '@/components/ui/field';
@@ -53,8 +54,10 @@ import { useAutoScheduleBoard } from '@/domain/setlist/hooks/useAutoScheduleBoar
 import { useCreateScheduleBoard } from '@/domain/setlist/hooks/useCreateScheduleBoard';
 import { useDeleteScheduleBlock } from '@/domain/setlist/hooks/useDeleteScheduleBlock';
 import { useDeleteScheduleBoard } from '@/domain/setlist/hooks/useDeleteScheduleBoard';
+import { useScheduleBoardPlacements } from '@/domain/setlist/hooks/useScheduleBoardPlacements';
 import { useScheduleBoards } from '@/domain/setlist/hooks/useScheduleBoards';
 import { useSetScheduleBlockPin } from '@/domain/setlist/hooks/useSetScheduleBlockPin';
+import { useSlotAvailabilities } from '@/domain/setlist/hooks/useSlotAvailabilities';
 import { useUpdateScheduleBoard } from '@/domain/setlist/hooks/useUpdateScheduleBoard';
 import { useUpsertScheduleBlock } from '@/domain/setlist/hooks/useUpsertScheduleBlock';
 import type {
@@ -67,6 +70,7 @@ import type {
   ScheduleBlockResponse,
   ScheduleBoardResponse,
   SetlistTrackResponse,
+  SlotAvailabilityResponse,
 } from '@/domain/setlist/types/res';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
@@ -105,41 +109,17 @@ function weekOffsetForDate(dateISO: string): number {
   return Math.round(diffDays / 7);
 }
 
-/**
- * 임시 mock — 멤버 가용 시간 API 연동 전까지 memberId+날짜+슬롯 기반 결정적 패턴으로
- * 가능/불가능을 대략 2:1 비율로 나눠 보여준다. 실제 가용 데이터가 아님.
- */
-function hashOf(key: string): number {
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) % 997;
-  return hash;
-}
-
-function mockIsAvailable(memberId: number, dateSlotKey: string): boolean {
-  return hashOf(`${memberId}-${dateSlotKey}`) % 3 !== 0;
-}
-
-interface MockSessionMember {
+interface ScheduleSessionMember {
   memberId: number;
   name: string;
-  role: string;
-  avatarColor: string;
+  profileImg?: string;
 }
-
-/** 임시 mock 멤버 목록 — 실제 셋리스트 세션 참여자/가용 시간 API 연동 전까지 사용. */
-const MOCK_SESSION_MEMBERS: MockSessionMember[] = [
-  { memberId: 1, name: '정선우', role: '기타', avatarColor: '#F5A623' },
-  { memberId: 2, name: '이정빈', role: '베이스', avatarColor: '#E5484D' },
-  { memberId: 3, name: '유승희', role: '보컬', avatarColor: '#3B82F6' },
-  { memberId: 4, name: '조수빈', role: '드럼', avatarColor: '#8B5CF6' },
-  { memberId: 5, name: '채민주', role: '키보드', avatarColor: '#22D3EE' },
-];
 
 function MemberRow({
   member,
   tone,
 }: {
-  member: MockSessionMember;
+  member: ScheduleSessionMember;
   tone: 'available' | 'unavailable';
 }) {
   return (
@@ -150,14 +130,8 @@ function MemberRow({
         tone === 'unavailable' && 'bg-danger-dim/20 border-danger/20 border',
       )}
     >
-      <span
-        className="text-caption inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-white"
-        style={{ backgroundColor: member.avatarColor }}
-      >
-        {member.name.slice(0, 1)}
-      </span>
+      <Avatar size="sm" src={member.profileImg} fallback={member.name} />
       <span className="text-caption min-w-0 flex-1 truncate font-semibold">{member.name}</span>
-      <span className="text-foreground-muted text-micro shrink-0">{member.role}</span>
     </div>
   );
 }
@@ -779,6 +753,7 @@ export function SetlistScheduleBoard({
     null,
   );
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ date: string; slot: number } | null>(null);
   // 블록 리사이즈 드래그 중인 미확정 시작/종료 슬롯 — 체크 버튼을 눌러야 upsertBlock API 호출로 확정.
   const [pendingResize, setPendingResize] = useState<{
     blockId: string;
@@ -818,17 +793,16 @@ export function SetlistScheduleBoard({
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.setlistTrackId, t])), [tracks]);
 
-  // 트랙별 배치 횟수 — 시간표(보드)별로 따로 집계. 반복 배치(같은 곡을 여러 블록에)를 허용하므로
-  // 트랙 목록에서 지우지 않고, 배치 여부만 구분해서 표시한다.
+  // 트랙별 배치 횟수 — 서버가 보드별로 집계해주는 값을 그대로 사용(블록 등록/삭제/자동배치 후
+  // 각 훅이 이 쿼리를 함께 invalidate 하므로 항상 최신 상태로 재조회된다).
+  const placements = useScheduleBoardPlacements(setlistId, activeBoard?.boardId ?? null);
   const placementCountByTrackId = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const b of activeBoard?.blocks ?? []) {
-      for (const trackId of b.trackIds) {
-        counts.set(trackId, (counts.get(trackId) ?? 0) + 1);
-      }
+    for (const p of placements.data ?? []) {
+      counts.set(p.trackId, p.placementCount);
     }
     return counts;
-  }, [activeBoard]);
+  }, [placements.data]);
   // 하나도 안 배치된 트랙이 위로 오도록 정렬(그룹 내 원래 순서는 유지 — stable sort).
   const sortedTracks = useMemo(
     () =>
@@ -840,17 +814,77 @@ export function SetlistScheduleBoard({
     [tracks, placementCountByTrackId],
   );
 
-  // 선택된 블록의 날짜+시간 기준으로 멤버 가능/불가능 분류 (임시 mock — 실제 가용 시간 API 연동 전).
-  const blockAvailability = useMemo(() => {
-    if (!selectedBlock) return null;
-    const dateSlotKey = `${selectedBlock.startDate}-${selectedBlock.startSlot}`;
-    const available: MockSessionMember[] = [];
-    const unavailable: MockSessionMember[] = [];
-    for (const m of MOCK_SESSION_MEMBERS) {
-      (mockIsAvailable(m.memberId, dateSlotKey) ? available : unavailable).push(m);
+  // 화면에 보이는 주(월~일) 단위로 벌크 조회 — 주 이동 시 from/to 가 바뀌면서 자동 재조회된다.
+  const slotAvailabilities = useSlotAvailabilities(
+    setlistId,
+    days[0] ?? '',
+    days[days.length - 1] ?? '',
+  );
+  const slotAvailabilityByKey = useMemo(() => {
+    const map = new Map<string, SlotAvailabilityResponse>();
+    for (const s of slotAvailabilities.data ?? []) {
+      map.set(`${s.date}-${s.slot}`, s);
     }
-    return { available, unavailable };
-  }, [selectedBlock]);
+    return map;
+  }, [slotAvailabilities.data]);
+
+  // 멤버 이름/프로필 표시용 조회 테이블 — 트랙 세션 참여자 정보에서 가져온다. 빈 칸(전체 멤버)
+  // 케이스에서 "누가 셋리스트 멤버인지"는 slot-availabilities 응답 자체(available+unavailable
+  // ID를 합친 것)가 이미 전체 멤버를 알려주므로, 여기서는 이름 조회 용도로만 쓴다.
+  const memberDisplayById = useMemo(() => {
+    const map = new Map<number, { name: string; profileImg?: string }>();
+    for (const track of tracks) {
+      for (const session of track.sessions) {
+        for (const p of session.participants) {
+          map.set(p.memberId, { name: p.name, profileImg: p.profileImg });
+        }
+      }
+    }
+    return map;
+  }, [tracks]);
+
+  // 선택된 블록(해당 트랙 참여자만) 또는 빈 칸(셋리스트 전체 멤버)의 가용 현황을 분류.
+  const sessionAvailability = useMemo(() => {
+    const toDisplayMember = (memberId: number): ScheduleSessionMember => {
+      const display = memberDisplayById.get(memberId);
+      return {
+        memberId,
+        name: display?.name ?? `멤버 ${memberId}`,
+        profileImg: display?.profileImg,
+      };
+    };
+
+    if (selectedBlock) {
+      const slotData = slotAvailabilityByKey.get(
+        `${selectedBlock.startDate}-${selectedBlock.startSlot}`,
+      );
+      const availableIds = new Set(slotData?.availableMemberIds ?? []);
+      const unavailableIds = new Set(slotData?.unavailableMemberIds ?? []);
+      const participantIds = new Set<number>();
+      for (const trackId of selectedBlock.trackIds) {
+        for (const session of trackById.get(trackId)?.sessions ?? []) {
+          for (const p of session.participants) participantIds.add(p.memberId);
+        }
+      }
+      // 셋리스트 멤버(slot-availabilities가 알려주는 available+unavailable)와 해당 트랙 세션
+      // 참여자의 교집합만 표시 — 둘 중 하나에도 없는 멤버는 제외.
+      const available: ScheduleSessionMember[] = [];
+      const unavailable: ScheduleSessionMember[] = [];
+      for (const memberId of participantIds) {
+        if (availableIds.has(memberId)) available.push(toDisplayMember(memberId));
+        else if (unavailableIds.has(memberId)) unavailable.push(toDisplayMember(memberId));
+      }
+      return { available, unavailable };
+    }
+    if (selectedCell) {
+      const slotData = slotAvailabilityByKey.get(`${selectedCell.date}-${selectedCell.slot}`);
+      return {
+        available: (slotData?.availableMemberIds ?? []).map(toDisplayMember),
+        unavailable: (slotData?.unavailableMemberIds ?? []).map(toDisplayMember),
+      };
+    }
+    return null;
+  }, [selectedBlock, selectedCell, trackById, slotAvailabilityByKey, memberDisplayById]);
 
   function handleBoardFormSubmit(body: ScheduleBoardCreateRequest) {
     if (boardModal?.mode === 'edit') {
@@ -1221,6 +1255,10 @@ export function SetlistScheduleBoard({
                 dayColMinWidth={72}
                 onCellDragOver={canEdit ? () => (e) => e.preventDefault() : undefined}
                 onCellDrop={canEdit ? handleDropOnCell : undefined}
+                onCellClick={(date, slot) => {
+                  setSelectedBlockId(null);
+                  setSelectedCell({ date, slot });
+                }}
                 overlay={activeBoard.blocks.flatMap((block) => {
                   const dIdx = days.indexOf(block.startDate);
                   if (dIdx === -1) return [];
@@ -1256,6 +1294,7 @@ export function SetlistScheduleBoard({
                       }
                       onClick={() => {
                         setPendingResize(null);
+                        setSelectedCell(null);
                         setSelectedBlockId((prev) =>
                           prev === block.blockId ? null : block.blockId,
                         );
@@ -1439,29 +1478,30 @@ export function SetlistScheduleBoard({
           </div>
         )}
 
-        {/* 세션 멤버 목록 — 블록 클릭 시 가능/불가능으로 분류(임시 mock, 실제 가용 시간 API 연동 전). 곡마다 세션 멤버가 달라질 수 있어 그리드 바로 옆에 배치. */}
+        {/* 세션 멤버 목록 — 블록 클릭 시 해당 트랙 참여자만, 빈 칸 클릭 시 셋리스트 전체 멤버를
+            가능/불가능으로 분류. 곡마다 세션 멤버가 달라질 수 있어 그리드 바로 옆에 배치. */}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="text-foreground-muted text-micro border-border flex h-10 shrink-0 items-center border-b px-3 font-bold tracking-wider uppercase">
             세션 멤버
           </div>
-          {blockAvailability ? (
+          {sessionAvailability ? (
             <div className="gap-s-4 flex flex-col px-3 py-3">
               <div>
                 <p className="text-success gap-s-1 mb-s-2 flex items-center text-sm font-bold">
-                  <Check className="h-4 w-4" /> 가능 ({blockAvailability.available.length}명)
+                  <Check className="h-4 w-4" /> 가능 ({sessionAvailability.available.length}명)
                 </p>
                 <div className="gap-s-2 flex flex-col">
-                  {blockAvailability.available.map((m) => (
+                  {sessionAvailability.available.map((m) => (
                     <MemberRow key={m.memberId} member={m} tone="available" />
                   ))}
                 </div>
               </div>
               <div>
                 <p className="text-danger gap-s-1 mb-s-2 flex items-center text-sm font-bold">
-                  <X className="h-4 w-4" /> 불가 ({blockAvailability.unavailable.length}명)
+                  <X className="h-4 w-4" /> 불가 ({sessionAvailability.unavailable.length}명)
                 </p>
                 <div className="gap-s-2 flex flex-col">
-                  {blockAvailability.unavailable.map((m) => (
+                  {sessionAvailability.unavailable.map((m) => (
                     <MemberRow key={m.memberId} member={m} tone="unavailable" />
                   ))}
                 </div>
@@ -1472,7 +1512,8 @@ export function SetlistScheduleBoard({
               곡(블록)마다 필요한 세션 멤버가 다를 수 있습니다.
               <br />
               <br />
-              블록을 클릭해 해당 곡에 필요한 세션 멤버의 참여 가능 여부를 확인하세요.
+              블록을 클릭하면 해당 곡 참여자만, 빈 칸을 클릭하면 셋리스트 전체 멤버의 참여 가능
+              여부를 확인할 수 있습니다.
             </p>
           )}
         </div>

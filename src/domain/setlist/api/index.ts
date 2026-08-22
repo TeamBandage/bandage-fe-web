@@ -13,9 +13,11 @@ import type {
 } from '../types/req';
 import type {
   ScheduleBlockResponse,
+  ScheduleBoardPlacementResponse,
   ScheduleBoardResponse,
   SetlistResponse,
   SetlistTrackResponse,
+  SlotAvailabilityResponse,
 } from '../types/res';
 
 const PREFIX = '/api/v1/setlists';
@@ -168,4 +170,24 @@ export function setScheduleBlockPin(
     `${PREFIX}/${setlistId}/schedule-boards/${boardId}/blocks/${blockId}/pin`,
     { pinned },
   );
+}
+
+/** 시간표 시안의 트랙별 배치 현황 */
+export function getScheduleBoardPlacements(
+  setlistId: string,
+  boardId: string,
+): Promise<ScheduleBoardPlacementResponse[]> {
+  return apiClient.get<ScheduleBoardPlacementResponse[]>(
+    `${PREFIX}/${setlistId}/schedule-boards/${boardId}/placements`,
+  );
+}
+
+/** 슬롯별 멤버 가용 현황 조회 — 조회 기간(from~to)은 최대 31일. */
+export function getSlotAvailabilities(
+  setlistId: string,
+  params: { from: string; to: string },
+): Promise<SlotAvailabilityResponse[]> {
+  return apiClient.get<SlotAvailabilityResponse[]>(`${PREFIX}/${setlistId}/slot-availabilities`, {
+    query: { from: params.from, to: params.to },
+  });
 }

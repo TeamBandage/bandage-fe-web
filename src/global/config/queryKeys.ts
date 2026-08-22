@@ -46,6 +46,10 @@ export const queryKeys = {
     detail: (setlistId: string) => ['setlist', setlistId] as const,
     tracks: (setlistId: string) => ['setlist', setlistId, 'tracks'] as const,
     scheduleBoards: (setlistId: string) => ['setlist', setlistId, 'schedule-boards'] as const,
+    scheduleBoardPlacements: (setlistId: string, boardId: string) =>
+      ['setlist', setlistId, 'schedule-boards', boardId, 'placements'] as const,
+    slotAvailabilities: (setlistId: string, from: string, to: string) =>
+      ['setlist', setlistId, 'slot-availabilities', from, to] as const,
   },
   performance: {
     all: ['performance'] as const,
