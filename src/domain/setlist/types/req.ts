@@ -52,3 +52,24 @@ export interface ScheduleBlockUpsertRequest {
   title?: string;
   note?: string;
 }
+
+export type ScheduleAutoScheduleInterval = 'ONCE' | 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+
+export type ScheduleAutoScheduleDayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY';
+
+export interface ScheduleAutoScheduleRequest {
+  interval: ScheduleAutoScheduleInterval;
+  jamDurationSlots: number;
+  maxJamsPerDay: number;
+  maxEmptySlotsBetweenJams: number;
+  dayPreference: ScheduleAutoScheduleDayOfWeek[];
+  startTimePreference: number;
+  endTimePreference: number;
+}

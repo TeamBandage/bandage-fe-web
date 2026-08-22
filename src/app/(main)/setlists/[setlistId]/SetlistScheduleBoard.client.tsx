@@ -49,6 +49,7 @@ import {
   slotToTime,
   toLocalISODate,
 } from '@/domain/schedule-coordination/utils';
+import { useAutoScheduleBoard } from '@/domain/setlist/hooks/useAutoScheduleBoard';
 import { useCreateScheduleBoard } from '@/domain/setlist/hooks/useCreateScheduleBoard';
 import { useDeleteScheduleBlock } from '@/domain/setlist/hooks/useDeleteScheduleBlock';
 import { useDeleteScheduleBoard } from '@/domain/setlist/hooks/useDeleteScheduleBoard';
@@ -56,7 +57,12 @@ import { useScheduleBoards } from '@/domain/setlist/hooks/useScheduleBoards';
 import { useSetScheduleBlockPin } from '@/domain/setlist/hooks/useSetScheduleBlockPin';
 import { useUpdateScheduleBoard } from '@/domain/setlist/hooks/useUpdateScheduleBoard';
 import { useUpsertScheduleBlock } from '@/domain/setlist/hooks/useUpsertScheduleBlock';
-import type { ScheduleBoardCreateRequest } from '@/domain/setlist/types/req';
+import type {
+  ScheduleAutoScheduleDayOfWeek,
+  ScheduleAutoScheduleInterval,
+  ScheduleAutoScheduleRequest,
+  ScheduleBoardCreateRequest,
+} from '@/domain/setlist/types/req';
 import type {
   ScheduleBlockResponse,
   ScheduleBoardResponse,
@@ -88,6 +94,15 @@ function mondayOf(base: Date): Date {
 
 function spanOf(block: { startSlot: number; endSlot: number }): number {
   return block.endSlot - block.startSlot;
+}
+
+/** 특정 날짜가 속한 주(월요일 기준)가 이번 주로부터 몇 주 떨어져 있는지. 자동 배치로 생긴 블록이
+ * 현재 보고 있는 주 바깥에 놓였을 때 그 주로 화면을 이동시키는 데 사용. */
+function weekOffsetForDate(dateISO: string): number {
+  const targetMonday = mondayOf(new Date(`${dateISO}T00:00:00`));
+  const thisMonday = mondayOf(new Date());
+  const diffDays = Math.round((targetMonday.getTime() - thisMonday.getTime()) / 86_400_000);
+  return Math.round(diffDays / 7);
 }
 
 /**
@@ -191,6 +206,349 @@ function SlotTimeStepper({
         </div>
       )}
     </Field>
+  );
+}
+
+const ALL_AUTO_SCHEDULE_INTERVALS: ScheduleAutoScheduleInterval[] = [
+  'ONCE',
+  'DAILY',
+  'WEEKLY',
+  'BIWEEKLY',
+  'MONTHLY',
+];
+const AUTO_SCHEDULE_INTERVAL_LABEL: Record<ScheduleAutoScheduleInterval, string> = {
+  ONCE: '한 번만',
+  DAILY: '매일',
+  WEEKLY: '매주',
+  BIWEEKLY: '격주',
+  MONTHLY: '매월',
+};
+const DOW_ORDER: ScheduleAutoScheduleDayOfWeek[] = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
+];
+const DOW_SHORT_LABEL: Record<ScheduleAutoScheduleDayOfWeek, string> = {
+  MONDAY: '월',
+  TUESDAY: '화',
+  WEDNESDAY: '수',
+  THURSDAY: '목',
+  FRIDAY: '금',
+  SATURDAY: '토',
+  SUNDAY: '일',
+};
+type AutoScheduleWizardStep =
+  | 'interval'
+  | 'duration'
+  | 'maxJamsPerDay'
+  | 'gap'
+  | 'dayPreference'
+  | 'timePreference';
+
+const AUTO_SCHEDULE_STEPS: AutoScheduleWizardStep[] = [
+  'interval',
+  'duration',
+  'maxJamsPerDay',
+  'gap',
+  'dayPreference',
+  'timePreference',
+];
+
+function slotsToDurationLabel(slots: number): string {
+  const minutes = slots * 30;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}분`;
+  if (m === 0) return `${h}시간`;
+  return `${h}시간 ${m}분`;
+}
+
+/** 슬롯 값을 시각(SlotTimeStepper)이 아닌 '소요 시간'으로 보여주는 스텝퍼 — 곡당 합주 시간,
+ * 합주 사이 허용 공백처럼 시각이 아니라 길이를 다루는 값에 사용. */
+function SlotDurationStepper({
+  label,
+  slots,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  slots: number;
+  min: number;
+  max: number;
+  onChange: (slots: number) => void;
+}) {
+  return (
+    <Field label={label}>
+      {({ inputId }) => (
+        <div
+          id={inputId}
+          className="border-border hover:border-border-hi bg-surface flex h-10 w-full items-center justify-between rounded-[5px] border px-3"
+        >
+          <span className="text-foreground font-mono text-sm">{slotsToDurationLabel(slots)}</span>
+          <div className="flex flex-col">
+            <button
+              type="button"
+              aria-label={`${label} 증가`}
+              onClick={() => onChange(Math.min(max, slots + 1))}
+              className="text-foreground-muted hover:text-foreground"
+            >
+              <ChevronUp className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              aria-label={`${label} 감소`}
+              onClick={() => onChange(Math.max(min, slots - 1))}
+              className="text-foreground-muted hover:text-foreground"
+            >
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
+    </Field>
+  );
+}
+
+function AutoScheduleModal({
+  open,
+  board,
+  onOpenChange,
+  onSubmit,
+  isPending,
+}: {
+  open: boolean;
+  board: ScheduleBoardResponse | null;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (body: ScheduleAutoScheduleRequest) => void;
+  isPending: boolean;
+}) {
+  const [step, setStep] = useState(0);
+  const [recurrenceInterval, setRecurrenceInterval] =
+    useState<ScheduleAutoScheduleInterval>('ONCE');
+  const [jamDurationSlots, setJamDurationSlots] = useState(DEFAULT_BLOCK_SPAN_SLOTS);
+  const [maxJamsPerDay, setMaxJamsPerDay] = useState(1);
+  const [maxEmptySlotsBetweenJams, setMaxEmptySlotsBetweenJams] = useState(1);
+  const [dayPreference, setDayPreference] = useState<ScheduleAutoScheduleDayOfWeek[]>([
+    ...DOW_ORDER,
+  ]);
+  const [startTimePreference, setStartTimePreference] = useState(SLOT_START);
+  const [endTimePreference, setEndTimePreference] = useState(SLOT_END);
+
+  useEffect(() => {
+    if (!open) return;
+    setStep(0);
+    setRecurrenceInterval('ONCE');
+    setJamDurationSlots(DEFAULT_BLOCK_SPAN_SLOTS);
+    setMaxJamsPerDay(1);
+    setMaxEmptySlotsBetweenJams(1);
+    setDayPreference([...DOW_ORDER]);
+    setStartTimePreference(SLOT_START);
+    setEndTimePreference(SLOT_END);
+  }, [open, board?.boardId]);
+
+  function toggleDay(day: ScheduleAutoScheduleDayOfWeek) {
+    setDayPreference((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+    );
+  }
+
+  function handleFinalSubmit() {
+    onSubmit({
+      interval: recurrenceInterval,
+      jamDurationSlots,
+      maxJamsPerDay,
+      maxEmptySlotsBetweenJams,
+      dayPreference,
+      startTimePreference,
+      endTimePreference,
+    });
+  }
+
+  const steps = AUTO_SCHEDULE_STEPS;
+  const currentStep = steps[step];
+  const isLastStep = step === steps.length - 1;
+  const canGoNext = currentStep !== 'dayPreference' || dayPreference.length > 0;
+
+  return (
+    <ResponsiveSheet open={open} onOpenChange={onOpenChange}>
+      <ResponsiveSheetContent onOpenAutoFocus={(e) => e.preventDefault()}>
+        <ResponsiveSheetHeader>
+          <ResponsiveSheetTitle>
+            자동 배치 ({step + 1}/{steps.length})
+          </ResponsiveSheetTitle>
+        </ResponsiveSheetHeader>
+        <ResponsiveSheetBody>
+          <div className="gap-s-3 flex flex-col">
+            {currentStep === 'interval' && (
+              <div className="gap-s-2 flex flex-col">
+                <p className="text-foreground-muted text-caption">반복 주기를 선택하세요.</p>
+                <div className="gap-s-2 flex flex-wrap">
+                  {ALL_AUTO_SCHEDULE_INTERVALS.map((opt) => {
+                    const selected = recurrenceInterval === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setRecurrenceInterval(opt)}
+                        className={cn(
+                          'text-caption rounded-[5px] border px-3 py-1.5 font-semibold transition-colors',
+                          selected
+                            ? 'border-white bg-white text-neutral-900'
+                            : 'border-border text-foreground-muted hover:text-foreground',
+                        )}
+                      >
+                        {AUTO_SCHEDULE_INTERVAL_LABEL[opt]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {currentStep === 'duration' && (
+              <SlotDurationStepper
+                label="곡(합주)당 소요 시간"
+                slots={jamDurationSlots}
+                min={1}
+                max={SLOT_END}
+                onChange={setJamDurationSlots}
+              />
+            )}
+            {currentStep === 'maxJamsPerDay' && (
+              <Field label="하루 최대 합주 수">
+                {({ inputId }) => (
+                  <div
+                    id={inputId}
+                    className="border-border hover:border-border-hi bg-surface flex h-10 w-full items-center justify-between rounded-[5px] border px-3"
+                  >
+                    <span className="text-foreground font-mono text-sm">{maxJamsPerDay}개</span>
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        aria-label="하루 최대 합주 수 증가"
+                        onClick={() => setMaxJamsPerDay((n) => Math.min(20, n + 1))}
+                        className="text-foreground-muted hover:text-foreground"
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="하루 최대 합주 수 감소"
+                        onClick={() => setMaxJamsPerDay((n) => Math.max(1, n - 1))}
+                        className="text-foreground-muted hover:text-foreground"
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </Field>
+            )}
+            {currentStep === 'gap' && (
+              <SlotDurationStepper
+                label="합주 사이 허용 공백"
+                slots={maxEmptySlotsBetweenJams}
+                min={0}
+                max={46}
+                onChange={setMaxEmptySlotsBetweenJams}
+              />
+            )}
+            {currentStep === 'dayPreference' && (
+              <div className="gap-s-2 flex flex-col">
+                <p className="text-foreground-muted text-caption">
+                  배치를 허용할 요일을 선택하세요.
+                </p>
+                <div className="gap-s-2 flex flex-wrap">
+                  {DOW_ORDER.map((day) => {
+                    const selected = dayPreference.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleDay(day)}
+                        className={cn(
+                          'text-caption h-9 w-9 rounded-[5px] border font-semibold transition-colors',
+                          selected
+                            ? 'border-white bg-white text-neutral-900'
+                            : 'border-border text-foreground-muted hover:text-foreground',
+                        )}
+                      >
+                        {DOW_SHORT_LABEL[day]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {currentStep === 'timePreference' && (
+              <div className="grid grid-cols-2 gap-3">
+                <SlotTimeStepper
+                  label="선호 시작 시각"
+                  slot={startTimePreference}
+                  min={SLOT_START}
+                  max={endTimePreference - 1}
+                  onChange={setStartTimePreference}
+                />
+                <SlotTimeStepper
+                  label="선호 종료 시각"
+                  slot={endTimePreference}
+                  min={startTimePreference + 1}
+                  max={SLOT_END}
+                  onChange={setEndTimePreference}
+                />
+              </div>
+            )}
+          </div>
+        </ResponsiveSheetBody>
+        <ResponsiveSheetFooter className="border-t-0">
+          {step > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-[5px]"
+              onClick={() => setStep((s) => s - 1)}
+            >
+              이전
+            </Button>
+          ) : (
+            <ResponsiveSheetClose asChild>
+              <Button type="button" variant="ghost" size="sm" className="rounded-[5px]">
+                취소
+              </Button>
+            </ResponsiveSheetClose>
+          )}
+          {isLastStep ? (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              loading={isPending}
+              disabled={isPending || dayPreference.length === 0}
+              onClick={handleFinalSubmit}
+              className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+            >
+              자동 배치 실행
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={!canGoNext}
+              onClick={() => setStep((s) => s + 1)}
+              className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
+            >
+              다음
+            </Button>
+          )}
+        </ResponsiveSheetFooter>
+      </ResponsiveSheetContent>
+    </ResponsiveSheet>
   );
 }
 
@@ -410,10 +768,12 @@ export function SetlistScheduleBoard({
   const upsertBlock = useUpsertScheduleBlock(setlistId);
   const deleteBlock = useDeleteScheduleBlock(setlistId);
   const setPin = useSetScheduleBlockPin(setlistId);
+  const autoSchedule = useAutoScheduleBoard(setlistId);
 
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const [boardModal, setBoardModal] = useState<BoardModalState>(null);
+  const [autoScheduleOpen, setAutoScheduleOpen] = useState(false);
   const [pendingDeleteBoard, setPendingDeleteBoard] = useState(false);
   const [blockSettingsTarget, setBlockSettingsTarget] = useState<ScheduleBlockResponse | null>(
     null,
@@ -514,6 +874,36 @@ export function SetlistScheduleBoard({
       },
       onError: () => toast.error('시간표 생성에 실패했습니다.'),
     });
+  }
+
+  function handleAutoScheduleSubmit(body: ScheduleAutoScheduleRequest) {
+    if (!activeBoard) return;
+    // 응답의 blocks 는 기존에 수동으로 넣어둔 블록까지 포함한 보드 전체 상태라, 개수만 보면
+    // "새로 배치된 게 없음"과 "기존 블록만 있음"을 구분할 수 없다 — 이전 blockId 집합과 비교해
+    // 실제로 새로 생긴 블록만 골라낸다.
+    const previousBlockIds = new Set(activeBoard.blocks.map((b) => b.blockId));
+    autoSchedule.mutate(
+      { boardId: activeBoard.boardId, body },
+      {
+        onSuccess: (updatedBoard) => {
+          setAutoScheduleOpen(false);
+          const newlyPlacedBlocks = updatedBoard.blocks.filter(
+            (b) => !previousBlockIds.has(b.blockId),
+          );
+          if (newlyPlacedBlocks.length === 0) {
+            toast.error('조건에 맞는 배치를 찾지 못했습니다. 요일·시간 범위를 넓혀보세요.');
+            return;
+          }
+          toast.success('자동 배치를 완료했습니다.');
+          // 새로 배치된 블록이 지금 보고 있는 주 바깥에 있을 수 있어, 가장 이른 블록의 주로 이동.
+          const firstBlock = [...newlyPlacedBlocks].sort((a, b) =>
+            a.startDate.localeCompare(b.startDate),
+          )[0];
+          if (firstBlock) setWeekOffset(weekOffsetForDate(firstBlock.startDate));
+        },
+        onError: () => toast.error('자동 배치에 실패했습니다.'),
+      },
+    );
   }
 
   function handleBlockSettingsSubmit(values: { title: string; note: string }) {
@@ -773,20 +1163,33 @@ export function SetlistScheduleBoard({
             </div>
           )}
           {isManager && hasBoards && (
-            <button
-              type="button"
-              onClick={() => setMode((m) => (m === 'edit' ? 'view' : 'edit'))}
-              aria-label={mode === 'edit' ? '보기 모드로 전환' : '편집 모드로 전환'}
-              title={mode === 'edit' ? '보기 모드로 전환' : '편집 모드로 전환'}
-              className="text-foreground-muted hover:text-foreground gap-s-1 flex items-center justify-self-end rounded px-2 py-1 text-xs font-semibold transition-colors"
-            >
-              {mode === 'edit' ? (
-                <Pencil className="h-3.5 w-3.5" />
-              ) : (
-                <Eye className="h-3.5 w-3.5" />
+            <div className="gap-s-2 flex items-center justify-self-end">
+              {activeBoard && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAutoScheduleOpen(true)}
+                  className="text-foreground-muted hover:text-foreground hover:border-foreground border-foreground-muted h-auto rounded-[5px] border px-2 py-1 text-xs"
+                >
+                  자동 배치
+                </Button>
               )}
-              {mode === 'edit' ? '편집 중' : '보기 모드'}
-            </button>
+              <button
+                type="button"
+                onClick={() => setMode((m) => (m === 'edit' ? 'view' : 'edit'))}
+                aria-label={mode === 'edit' ? '보기 모드로 전환' : '편집 모드로 전환'}
+                title={mode === 'edit' ? '보기 모드로 전환' : '편집 모드로 전환'}
+                className="text-foreground-muted hover:text-foreground gap-s-1 flex items-center rounded px-2 py-1 text-xs font-semibold transition-colors"
+              >
+                {mode === 'edit' ? (
+                  <Pencil className="h-3.5 w-3.5" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )}
+                {mode === 'edit' ? '편집 중' : '보기 모드'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -1084,6 +1487,14 @@ export function SetlistScheduleBoard({
         }}
         onSubmit={handleBoardFormSubmit}
         isPending={createBoard.isPending || updateBoard.isPending}
+      />
+
+      <AutoScheduleModal
+        open={autoScheduleOpen && activeBoard !== null}
+        board={activeBoard}
+        onOpenChange={setAutoScheduleOpen}
+        onSubmit={handleAutoScheduleSubmit}
+        isPending={autoSchedule.isPending}
       />
 
       <BlockSettingsModal

@@ -2,6 +2,7 @@ import { apiClient } from '@/global/api/apiClient';
 import type { CursorResponse } from '@/global/types';
 
 import type {
+  ScheduleAutoScheduleRequest,
   ScheduleBlockUpsertRequest,
   ScheduleBoardCreateRequest,
   ScheduleBoardUpdateRequest,
@@ -118,6 +119,18 @@ export function updateScheduleBoard(
 /** 시간표 시안 삭제 */
 export function deleteScheduleBoard(setlistId: string, boardId: string): Promise<void> {
   return apiClient.delete<void>(`${PREFIX}/${setlistId}/schedule-boards/${boardId}`);
+}
+
+/** 시간표 자동 배치 — 기존 배치가 있어도 덮어쓴다. */
+export function autoScheduleBoard(
+  setlistId: string,
+  boardId: string,
+  body: ScheduleAutoScheduleRequest,
+): Promise<ScheduleBoardResponse> {
+  return apiClient.post<ScheduleBoardResponse>(
+    `${PREFIX}/${setlistId}/schedule-boards/${boardId}/auto-schedule`,
+    body,
+  );
 }
 
 /** 시간표 블록 등록/수정(upsert) */
