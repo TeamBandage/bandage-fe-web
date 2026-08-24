@@ -84,3 +84,17 @@ export interface ScheduleBoardResponse {
   blocks: ScheduleBlockResponse[];
   createdAt: string;
 }
+
+export interface ScheduleBoardPlacementResponse {
+  trackId: string;
+  placementCount: number;
+  placed: boolean;
+}
+
+/** 슬롯별 멤버 가용 현황 — slot 0~47(30분 단위). */
+export interface SlotAvailabilityResponse {
+  date: string;
+  slot: number;
+  availableMemberIds: number[];
+  unavailableMemberIds: number[];
+}

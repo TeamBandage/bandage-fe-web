@@ -31,8 +31,11 @@ export function useDeleteScheduleBlock(setlistId: string) {
     onError: (_err, _vars, context) => {
       if (context?.previous) qc.setQueryData(queryKey, context.previous);
     },
-    onSettled: () => {
+    onSettled: (_data, _err, { boardId }) => {
       void qc.invalidateQueries({ queryKey });
+      void qc.invalidateQueries({
+        queryKey: queryKeys.setlist.scheduleBoardPlacements(setlistId, boardId),
+      });
     },
   });
 }

@@ -2,6 +2,7 @@ import { apiClient } from '@/global/api/apiClient';
 import type { CursorResponse } from '@/global/types';
 
 import type {
+  ScheduleAutoScheduleRequest,
   ScheduleBlockUpsertRequest,
   ScheduleBoardCreateRequest,
   ScheduleBoardUpdateRequest,
@@ -12,9 +13,11 @@ import type {
 } from '../types/req';
 import type {
   ScheduleBlockResponse,
+  ScheduleBoardPlacementResponse,
   ScheduleBoardResponse,
   SetlistResponse,
   SetlistTrackResponse,
+  SlotAvailabilityResponse,
 } from '../types/res';
 
 const PREFIX = '/api/v1/setlists';
@@ -120,6 +123,18 @@ export function deleteScheduleBoard(setlistId: string, boardId: string): Promise
   return apiClient.delete<void>(`${PREFIX}/${setlistId}/schedule-boards/${boardId}`);
 }
 
+/** 시간표 자동 배치 — 기존 배치가 있어도 덮어쓴다. */
+export function autoScheduleBoard(
+  setlistId: string,
+  boardId: string,
+  body: ScheduleAutoScheduleRequest,
+): Promise<ScheduleBoardResponse> {
+  return apiClient.post<ScheduleBoardResponse>(
+    `${PREFIX}/${setlistId}/schedule-boards/${boardId}/auto-schedule`,
+    body,
+  );
+}
+
 /** 시간표 블록 등록/수정(upsert) */
 export function upsertScheduleBlock(
   setlistId: string,
@@ -155,4 +170,24 @@ export function setScheduleBlockPin(
     `${PREFIX}/${setlistId}/schedule-boards/${boardId}/blocks/${blockId}/pin`,
     { pinned },
   );
+}
+
+/** 시간표 시안의 트랙별 배치 현황 */
+export function getScheduleBoardPlacements(
+  setlistId: string,
+  boardId: string,
+): Promise<ScheduleBoardPlacementResponse[]> {
+  return apiClient.get<ScheduleBoardPlacementResponse[]>(
+    `${PREFIX}/${setlistId}/schedule-boards/${boardId}/placements`,
+  );
+}
+
+/** 슬롯별 멤버 가용 현황 조회 — 조회 기간(from~to)은 최대 31일. */
+export function getSlotAvailabilities(
+  setlistId: string,
+  params: { from: string; to: string },
+): Promise<SlotAvailabilityResponse[]> {
+  return apiClient.get<SlotAvailabilityResponse[]>(`${PREFIX}/${setlistId}/slot-availabilities`, {
+    query: { from: params.from, to: params.to },
+  });
 }
