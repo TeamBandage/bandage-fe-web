@@ -14,12 +14,14 @@ export interface InviteManagerModalProps {
 
 export function InviteManagerModal({ open, onOpenChange, onConfirm }: InviteManagerModalProps) {
   return (
-    <EntityPickerModal<MemberSearchItemResponse>
+    <EntityPickerModal<MemberSearchItemResponse, number>
       open={open}
       onOpenChange={onOpenChange}
       title="매니저 초대"
       placeholder="이름 · 이메일로 검색"
-      fetcher={searchMembers}
+      paginatedFetcher={({ keyword, lastId, pageSize }) =>
+        searchMembers(keyword, { pageSize, lastId })
+      }
       getKey={(m) => String(m.memberId)}
       footerClassName="border-t-0"
       cancelButtonClassName="h-8 rounded-[5px]"
