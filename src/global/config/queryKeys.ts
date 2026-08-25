@@ -45,6 +45,7 @@ export const queryKeys = {
     search: (title: string) => ['setlist', 'search', title] as const,
     detail: (setlistId: string) => ['setlist', setlistId] as const,
     tracks: (setlistId: string) => ['setlist', setlistId, 'tracks'] as const,
+    participants: (setlistId: string) => ['setlist', setlistId, 'participants'] as const,
     scheduleBoards: (setlistId: string) => ['setlist', setlistId, 'schedule-boards'] as const,
     scheduleBoardPlacements: (setlistId: string, boardId: string) =>
       ['setlist', setlistId, 'schedule-boards', boardId, 'placements'] as const,

@@ -98,18 +98,31 @@ export function SetlistsMobileShell() {
   const [deletingSetlist, setDeletingSetlist] = useState<SetlistResponse | null>(null);
   const [confirmText, setConfirmText] = useState('');
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMySetlists();
+  const {
+    data,
+    isLoading,
+    fetchNextPage: fetchNextMySetlists,
+    hasNextPage: hasNextMySetlists,
+    isFetchingNextPage: isFetchingNextMySetlists,
+  } = useMySetlists();
   const mySetlists = data?.pages.flatMap((p) => p.content) ?? [];
-  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   const {
     data: searchData,
     isLoading: isSearchLoading,
     isError: isSearchError,
+    fetchNextPage: fetchNextSearch,
+    hasNextPage: hasNextSearch,
+    isFetchingNextPage: isFetchingNextSearch,
   } = useSetlistsByTitle(query);
+  const searchSetlists = searchData?.pages.flatMap((p) => p.content) ?? [];
 
-  const setlists = hasQuery ? (searchData ?? []) : mySetlists;
+  const setlists = hasQuery ? searchSetlists : mySetlists;
   const setlistsLoading = hasQuery ? isSearchLoading : isLoading;
+  const hasNextPage = hasQuery ? hasNextSearch : hasNextMySetlists;
+  const isFetchingNextPage = hasQuery ? isFetchingNextSearch : isFetchingNextMySetlists;
+  const fetchNextPage = hasQuery ? fetchNextSearch : fetchNextMySetlists;
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   const deleteMutation = useDeleteSetlist();
 
@@ -190,8 +203,8 @@ export function SetlistsMobileShell() {
               );
             })}
           </ul>
-          {!hasQuery && hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
-          {!hasQuery && isFetchingNextPage && (
+          {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+          {isFetchingNextPage && (
             <div className="space-y-s-2 mt-s-2">
               <Skeleton className="h-14 w-full" rounded="md" />
             </div>

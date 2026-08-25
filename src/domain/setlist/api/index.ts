@@ -15,6 +15,7 @@ import type {
   ScheduleBlockResponse,
   ScheduleBoardPlacementResponse,
   ScheduleBoardResponse,
+  SetlistParticipantResponse,
   SetlistResponse,
   SetlistTrackResponse,
   SlotAvailabilityResponse,
@@ -37,9 +38,16 @@ export function getMySetlists(params?: {
   });
 }
 
-/** 제목으로 셋리스트 조회 */
-export function getSetlistByTitle(title: string): Promise<SetlistResponse[]> {
-  return apiClient.get<SetlistResponse[]>(`${PREFIX}/by-title`, { query: { title } });
+/** 제목으로 셋리스트 검색 (커서 페이징). OpenAPI상 파라미터 이름은 "query"(객체 스키마)로 보이지만,
+ * 실제 와이어 키는 그 객체 필드명(title, lastId, pageSize) 그대로다. */
+export function getSetlistByTitle(params: {
+  title: string;
+  lastId?: string;
+  pageSize: number;
+}): Promise<CursorResponse<SetlistResponse, string>> {
+  return apiClient.get<CursorResponse<SetlistResponse, string>>(`${PREFIX}/by-title`, {
+    query: { title: params.title, pageSize: params.pageSize, lastId: params.lastId },
+  });
 }
 
 /** 셋리스트 단건 조회 */
@@ -65,18 +73,31 @@ export function createJamsFromSetlist(setlistId: string, body: SetlistToJamReque
   return apiClient.post<void>(`${PREFIX}/${setlistId}/jams`, body);
 }
 
-/** 셋리스트 트랙 목록 조회 */
+/** 셋리스트 트랙 목록 조회 (커서 페이징, pageSize 필수) */
 export function getSetlistTracks(
   setlistId: string,
+  params: { lastId?: string; pageSize: number },
 ): Promise<CursorResponse<SetlistTrackResponse, string>> {
   return apiClient.get<CursorResponse<SetlistTrackResponse, string>>(
     `${PREFIX}/${setlistId}/tracks`,
+    { query: { pageSize: params.pageSize, lastId: params.lastId } },
   );
 }
 
 /** 셋리스트 트랙 단건 조회 */
 export function getSetlistTrack(setlistId: string, trackId: string): Promise<SetlistTrackResponse> {
   return apiClient.get<SetlistTrackResponse>(`${PREFIX}/${setlistId}/tracks/${trackId}`);
+}
+
+/** 셋리스트 참여 멤버 목록 조회 (커서 페이징, pageSize 필수, 커서는 memberId) */
+export function getSetlistParticipants(
+  setlistId: string,
+  params: { lastId?: number; pageSize: number },
+): Promise<CursorResponse<SetlistParticipantResponse, number>> {
+  return apiClient.get<CursorResponse<SetlistParticipantResponse, number>>(
+    `${PREFIX}/${setlistId}/participants`,
+    { query: { pageSize: params.pageSize, lastId: params.lastId } },
+  );
 }
 
 /** 셋리스트 트랙 수정 */
