@@ -1,18 +1,18 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-
 import { queryKeys } from '@/global/config/queryKeys';
 import { useIsAuthenticated } from '@/global/store/authStore';
+import { useInfiniteCursor } from '@/hooks/useInfiniteCursor';
 
 import { getMyPerformanceInvitations } from '../api/getMyPerformanceInvitations';
 import type { PerformanceInvitationResponse } from '../types/res';
 
-export function useMyPerformanceInvitations(options?: { enabled?: boolean }) {
+export function useMyPerformanceInvitations(options?: { enabled?: boolean; pageSize?: number }) {
   const authenticated = useIsAuthenticated();
-  return useQuery<PerformanceInvitationResponse[], Error>({
-    queryKey: [...queryKeys.performanceInvitation.my()],
-    queryFn: () => getMyPerformanceInvitations(),
-    enabled: (options?.enabled ?? true) && authenticated,
-  });
+  return useInfiniteCursor<PerformanceInvitationResponse, string>(
+    queryKeys.performanceInvitation.my(),
+    ({ lastId, pageSize }) => getMyPerformanceInvitations({ pageSize, lastId }),
+    options?.pageSize ?? 20,
+    { enabled: (options?.enabled ?? true) && authenticated },
+  );
 }
