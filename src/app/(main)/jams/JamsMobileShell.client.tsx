@@ -15,6 +15,7 @@ import { useSearchMyJams } from '@/domain/jam/hooks/useSearchMyJams';
 import type { JamListItemResponse } from '@/domain/jam/types';
 import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { cn } from '@/lib/cn';
 import { useRouter } from 'next/navigation';
 import { formatKst, parseKst } from '@/lib/date';
@@ -75,14 +76,30 @@ export function JamsMobileShell() {
 
   const isSearching = query.trim().length > 0;
 
-  const { data: myData, isLoading: myLoading } = useMyJams(50);
+  const {
+    data: myData,
+    isLoading: myLoading,
+    fetchNextPage: fetchNextMyJams,
+    hasNextPage: hasNextMyJams,
+    isFetchingNextPage: isFetchingNextMyJams,
+  } = useMyJams(20);
   const myJams = myData?.pages.flatMap((p) => p.content) ?? [];
 
-  const { data: searchData, isLoading: searchLoading } = useSearchMyJams(query, 50);
+  const {
+    data: searchData,
+    isLoading: searchLoading,
+    fetchNextPage: fetchNextSearchJams,
+    hasNextPage: hasNextSearchJams,
+    isFetchingNextPage: isFetchingNextSearchJams,
+  } = useSearchMyJams(query, 20);
   const searchJams = searchData?.pages.flatMap((p) => p.content) ?? [];
 
   const jams = isSearching ? searchJams : myJams;
   const isLoading = isSearching ? searchLoading : myLoading;
+  const hasNextPage = isSearching ? hasNextSearchJams : hasNextMyJams;
+  const isFetchingNextPage = isSearching ? isFetchingNextSearchJams : isFetchingNextMyJams;
+  const fetchNextPage = isSearching ? fetchNextSearchJams : fetchNextMyJams;
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   return (
     <>
@@ -133,6 +150,16 @@ export function JamsMobileShell() {
               onClick={() => setSelectedPracticeId(p.jamId)}
             />
           ))}
+          {hasNextPage && (
+            <li aria-hidden="true">
+              <div ref={loadMoreRef} className="h-4" />
+            </li>
+          )}
+          {isFetchingNextPage && (
+            <li>
+              <Skeleton className="h-14 w-full" rounded="md" />
+            </li>
+          )}
         </ul>
       )}
 
