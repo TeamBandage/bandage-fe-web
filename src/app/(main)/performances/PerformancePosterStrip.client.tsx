@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAllPerformancePosters } from '@/domain/performance-poster/hooks/useAllPerformancePosters';
+import { useMyPerformancePosters } from '@/domain/performance-poster/hooks/useMyPerformancePosters';
 import type { PerformancePosterResponse } from '@/domain/performance-poster/types/res';
 import { ROUTES } from '@/global/config/routes';
 
@@ -29,9 +30,14 @@ function PosterCard({ poster }: { poster: PerformancePosterResponse }) {
   );
 }
 
-export function PerformancePosterStrip() {
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useAllPerformancePosters();
+/** 가로 스크롤 포스터 캐러셀 본체 — 전체 포스터/내 포스터 두 데이터 소스가 공유. */
+function PosterStripBody({
+  data,
+  isLoading,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+}: ReturnType<typeof useAllPerformancePosters>) {
   const posters = useMemo(() => data?.pages.flatMap((p) => p.content) ?? [], [data]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -114,4 +120,14 @@ export function PerformancePosterStrip() {
       )}
     </div>
   );
+}
+
+/** 전체 공연 포스터 캐러셀 — 공연 "탐색" 탭 상단. */
+export function PerformancePosterStrip() {
+  return <PosterStripBody {...useAllPerformancePosters()} />;
+}
+
+/** 내가 참여 중인 공연 포스터 캐러셀 — 공연 "내 공연" 탭 상단. */
+export function MyPerformancePosterStrip() {
+  return <PosterStripBody {...useMyPerformancePosters()} />;
 }

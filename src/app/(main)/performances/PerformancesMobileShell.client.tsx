@@ -24,7 +24,7 @@ import { DOMAIN_TONES } from '@/lib/domain-icons';
 import { ROUTES } from '@/global/config/routes';
 
 import { PerformanceDetailContent } from './[performanceId]/PerformanceDetailContent.client';
-import { PerformancePosterStrip } from './PerformancePosterStrip.client';
+import { MyPerformancePosterStrip, PerformancePosterStrip } from './PerformancePosterStrip.client';
 
 function PerformanceSelectRow({
   performance,
@@ -179,6 +179,10 @@ export function PerformancesMobileShell() {
         </div>
 
         <TabsContent value="mine">
+          <div className="mb-s-3">
+            <MyPerformancePosterStrip />
+          </div>
+
           {myLoading ? (
             <div className="space-y-s-2">
               <Skeleton className="h-14 w-full" rounded="md" />

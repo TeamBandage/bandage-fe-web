@@ -652,7 +652,7 @@ export function PerformanceDetailContent({
                   }}
                 />
                 {existingPoster && (
-                  <div className="mt-s-4 flex items-end gap-2">
+                  <div className="mt-s-4 flex items-center gap-2">
                     <div className="flex-1">
                       <Input
                         label="포스터 설명 (선택)"

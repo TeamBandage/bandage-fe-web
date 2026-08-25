@@ -41,6 +41,19 @@ export async function getPerformancePosters(params: {
   return data ?? { content: [], nextCursor: null, hasNext: false };
 }
 
+/** 내가 참여 중인 공연들의 포스터. OpenAPI상 파라미터 이름은 "query"(객체 스키마)로 보이지만,
+ * 실제 와이어 키는 그 객체 필드명(lastId, pageSize) 그대로다. */
+export async function getMyPerformancePosters(params: {
+  lastId?: string;
+  pageSize: number;
+}): Promise<CursorResponse<PerformancePosterResponse, string>> {
+  const data = await apiClient.get<CursorResponse<PerformancePosterResponse, string> | null>(
+    `${PREFIX}/me`,
+    { query: { lastId: params.lastId, pageSize: params.pageSize } },
+  );
+  return data ?? { content: [], nextCursor: null, hasNext: false };
+}
+
 export async function createPerformancePoster(
   req: CreatePerformancePosterRequest,
 ): Promise<PerformancePosterResponse> {
