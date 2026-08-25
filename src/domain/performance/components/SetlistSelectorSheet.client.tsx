@@ -33,8 +33,14 @@ export function SetlistSelectorSheet({
   onConfirm,
   excludeIds = [],
 }: SetlistSelectorSheetProps) {
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMySetlists();
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage: fetchNextMySetlists,
+    hasNextPage: hasNextMySetlists,
+    isFetchingNextPage: isFetchingNextMySetlists,
+  } = useMySetlists();
   const setlists = useMemo(
     () =>
       (data?.pages.flatMap((p) => p.content) ?? []).filter(
@@ -42,7 +48,6 @@ export function SetlistSelectorSheet({
       ),
     [data, excludeIds],
   );
-  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   const [selection, setSelection] = useState<SetlistResponse[]>(initialSelection);
   const [query, setQuery] = useState('');
@@ -52,9 +57,15 @@ export function SetlistSelectorSheet({
     data: searchData,
     isLoading: isSearchLoading,
     isError: isSearchError,
-  } = useSetlistsByTitle(query, { enabled: open });
+    fetchNextPage: fetchNextSearch,
+    hasNextPage: hasNextSearch,
+    isFetchingNextPage: isFetchingNextSearch,
+  } = useSetlistsByTitle(query, 20, { enabled: open });
   const searchResults = useMemo(
-    () => (searchData ?? []).filter((s) => !excludeIds.includes(s.setlistId)),
+    () =>
+      (searchData?.pages.flatMap((p) => p.content) ?? []).filter(
+        (s) => !excludeIds.includes(s.setlistId),
+      ),
     [searchData, excludeIds],
   );
 
@@ -69,6 +80,10 @@ export function SetlistSelectorSheet({
   const filtered = hasQuery ? searchResults : setlists;
   const filteredLoading = hasQuery ? isSearchLoading : isLoading;
   const filteredError = hasQuery ? isSearchError : isError;
+  const hasNextPage = hasQuery ? hasNextSearch : hasNextMySetlists;
+  const isFetchingNextPage = hasQuery ? isFetchingNextSearch : isFetchingNextMySetlists;
+  const fetchNextPage = hasQuery ? fetchNextSearch : fetchNextMySetlists;
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   function toggle(item: SetlistResponse) {
     setSelection((prev) =>
@@ -162,7 +177,7 @@ export function SetlistSelectorSheet({
                   </li>
                 );
               })}
-              {!hasQuery && hasNextPage && (
+              {hasNextPage && (
                 <li aria-hidden="true">
                   <div ref={loadMoreRef} className="h-4" />
                 </li>

@@ -3,7 +3,7 @@
 import { ArrowLeft, Clock, Edit2, ExternalLink, Music, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/empty-state';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { useUpdateSetlistTrack } from '@/domain/setlist/hooks/useUpdateSetlistTr
 import type { SetlistTrackResponse } from '@/domain/setlist/types/res';
 import { ROUTES } from '@/global/config/routes';
 import { formatKst } from '@/lib/date';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 
 import { SetlistScheduleBoard } from './SetlistScheduleBoard.client';
@@ -407,7 +408,37 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
   const searchParams = useSearchParams();
 
   const { data: setlist, isPending: setlistPending, error: setlistError } = useSetlist(setlistId);
-  const { data: tracks, isPending: tracksPending } = useSetlistTracks(setlistId);
+
+  // 트랙 탭 목록 — 스크롤 시 다음 페이지 로드.
+  const {
+    data: tracksData,
+    isPending: tracksPending,
+    fetchNextPage: fetchNextTracks,
+    hasNextPage: hasNextTracks,
+    isFetchingNextPage: isFetchingNextTracks,
+  } = useSetlistTracks(setlistId);
+  const trackList = useMemo(() => tracksData?.pages.flatMap((p) => p.content) ?? [], [tracksData]);
+  const tracksLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextTracks,
+    isFetchingNextPage: isFetchingNextTracks,
+    fetchNextPage: fetchNextTracks,
+  });
+
+  // 시간표 탭(SetlistScheduleBoard)용 — 드래그 배치에 전체 트랙이 필요하므로 스크롤 UI 없이 끝까지 이어받는다.
+  // 트랙 탭과는 pageSize가 달라 별도 캐시 키를 쓰므로 서로의 페이지네이션 상태에 영향을 주지 않는다.
+  const {
+    data: allTracksData,
+    fetchNextPage: fetchNextAllTracks,
+    hasNextPage: hasNextAllTracks,
+    isFetchingNextPage: isFetchingNextAllTracks,
+  } = useSetlistTracks(setlistId, 100);
+  useEffect(() => {
+    if (hasNextAllTracks && !isFetchingNextAllTracks) fetchNextAllTracks();
+  }, [hasNextAllTracks, isFetchingNextAllTracks, fetchNextAllTracks]);
+  const allTrackList = useMemo(
+    () => allTracksData?.pages.flatMap((p) => p.content) ?? [],
+    [allTracksData],
+  );
   const { data: me } = useMe();
   const isManager = setlist ? setlist.managerId === me?.id : false;
 
@@ -526,7 +557,6 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
     );
   }
 
-  const trackList = tracks?.content ?? [];
   const hasTrack = trackList.length > 0;
 
   return (
@@ -630,6 +660,12 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
                   />
                 ),
               )}
+              {hasNextTracks && <div ref={tracksLoadMoreRef} className="h-4" aria-hidden="true" />}
+              {isFetchingNextTracks && (
+                <div className="space-y-2 px-5 py-4">
+                  <Skeleton className="h-14 w-full" />
+                </div>
+              )}
             </div>
           )}
 
@@ -656,7 +692,7 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
 
         {/* 합주 시간표 시안 — 드래그로 트랙 배치 */}
         <TabsContent value="schedule" className="mt-0 flex min-h-0 flex-1 flex-col">
-          <SetlistScheduleBoard setlistId={setlistId} tracks={trackList} isManager={isManager} />
+          <SetlistScheduleBoard setlistId={setlistId} tracks={allTrackList} isManager={isManager} />
         </TabsContent>
       </Tabs>
 
