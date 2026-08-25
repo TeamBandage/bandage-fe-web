@@ -23,16 +23,35 @@ export async function issuePerformancePosterPresignedUrl(
   return data;
 }
 
-export async function getPerformancePosters(
-  performanceId?: string,
-): Promise<PerformancePosterResponse[]> {
-  // BE 응답이 배열 → CursorResponse 로 변경(pageSize 필수). 현재 소비 측 모두 목록을
-  // 그대로 순회만 하고 더보기 UI가 없어, 최대 pageSize 로 한 페이지에 몰아 받아 배열로 유지.
+export async function getPerformancePosters(params: {
+  performanceId?: string;
+  lastId?: string;
+  pageSize: number;
+}): Promise<CursorResponse<PerformancePosterResponse, string>> {
   const data = await apiClient.get<CursorResponse<PerformancePosterResponse, string> | null>(
     PREFIX,
-    { query: { performanceId, pageSize: 100 } },
+    {
+      query: {
+        performanceId: params.performanceId,
+        lastId: params.lastId,
+        pageSize: params.pageSize,
+      },
+    },
   );
-  return data?.content ?? [];
+  return data ?? { content: [], nextCursor: null, hasNext: false };
+}
+
+/** 내가 참여 중인 공연들의 포스터. OpenAPI상 파라미터 이름은 "query"(객체 스키마)로 보이지만,
+ * 실제 와이어 키는 그 객체 필드명(lastId, pageSize) 그대로다. */
+export async function getMyPerformancePosters(params: {
+  lastId?: string;
+  pageSize: number;
+}): Promise<CursorResponse<PerformancePosterResponse, string>> {
+  const data = await apiClient.get<CursorResponse<PerformancePosterResponse, string> | null>(
+    `${PREFIX}/me`,
+    { query: { lastId: params.lastId, pageSize: params.pageSize } },
+  );
+  return data ?? { content: [], nextCursor: null, hasNext: false };
 }
 
 export async function createPerformancePoster(

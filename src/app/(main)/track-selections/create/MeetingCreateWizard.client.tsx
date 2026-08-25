@@ -80,7 +80,19 @@ export function MeetingCreateWizard() {
     isFetchingNextPage: isFetchingNextMyBands,
     fetchNextPage: fetchNextMyBands,
   });
-  const { data: memberSearchResults = [] } = useMemberSearch(memberQuery);
+  const {
+    data: memberSearchData,
+    isFetching: memberSearchIsFetching,
+    fetchNextPage: fetchNextMemberSearch,
+    hasNextPage: hasNextMemberSearch,
+    isFetchingNextPage: isFetchingNextMemberSearch,
+  } = useMemberSearch(memberQuery, 20);
+  const memberSearchResults = memberSearchData?.pages.flatMap((p) => p.content) ?? [];
+  const memberSearchLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextMemberSearch,
+    isFetchingNextPage: isFetchingNextMemberSearch,
+    fetchNextPage: fetchNextMemberSearch,
+  });
   const {
     data: bandSearchData,
     isFetching: bandSearchIsFetching,
@@ -235,6 +247,10 @@ export function MeetingCreateWizard() {
           memberQuery={memberQuery}
           setMemberQuery={setMemberQuery}
           memberSearchResults={memberSearchResults}
+          memberSearchLoading={memberSearchIsFetching}
+          hasNextMemberSearch={hasNextMemberSearch}
+          isFetchingNextMemberSearch={isFetchingNextMemberSearch}
+          memberSearchLoadMoreRef={memberSearchLoadMoreRef}
           participants={participants}
           onAddParticipant={addParticipant}
           onRemoveParticipant={removeParticipant}
@@ -328,6 +344,10 @@ function StepParticipants({
   memberQuery,
   setMemberQuery,
   memberSearchResults,
+  memberSearchLoading,
+  hasNextMemberSearch,
+  isFetchingNextMemberSearch,
+  memberSearchLoadMoreRef,
   participants,
   onAddParticipant,
   onRemoveParticipant,
@@ -356,6 +376,10 @@ function StepParticipants({
   memberQuery: string;
   setMemberQuery: (q: string) => void;
   memberSearchResults: MemberSearchItemResponse[];
+  memberSearchLoading: boolean;
+  hasNextMemberSearch: boolean | undefined;
+  isFetchingNextMemberSearch: boolean;
+  memberSearchLoadMoreRef: (node: HTMLDivElement | null) => void;
   participants: Participant[];
   onAddParticipant: (m: MemberSearchItemResponse) => void;
   onRemoveParticipant: (memberId: number) => void;
@@ -541,12 +565,15 @@ function StepParticipants({
               aria-label="멤버 검색"
               className="text-body placeholder:text-foreground-muted w-full bg-transparent outline-none"
             />
+            {memberSearchLoading && (
+              <Loader2 className="text-foreground-muted h-4 w-4 animate-spin" />
+            )}
           </div>
           {!memberQuery.trim() ? (
             <p className="text-foreground-muted text-caption py-s-4 text-center">
               이름 또는 이메일로 참여 멤버를 검색하세요.
             </p>
-          ) : memberSearchResults.length === 0 ? (
+          ) : memberSearchResults.length === 0 && !memberSearchLoading ? (
             <p className="text-foreground-muted text-caption py-s-4 text-center">
               일치하는 멤버가 없습니다.
             </p>
@@ -581,6 +608,10 @@ function StepParticipants({
                   );
                 })}
               </ul>
+              {hasNextMemberSearch && (
+                <div ref={memberSearchLoadMoreRef} className="h-4" aria-hidden="true" />
+              )}
+              {isFetchingNextMemberSearch && <Skeleton className="h-10 w-full" rounded="md" />}
             </div>
           )}
         </>

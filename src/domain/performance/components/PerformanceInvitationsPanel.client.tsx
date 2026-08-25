@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/feedback/empty-state';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { InviteManagerModal } from '@/domain/performance/components/InviteManagerModal.client';
 import { useDecidePerformanceInvitation } from '@/domain/performance/hooks/useDecidePerformanceInvitation';
 import { useMyPerformanceInvitations } from '@/domain/performance/hooks/useMyPerformanceInvitations';
@@ -16,6 +17,7 @@ import type {
   PerformanceInvitationResponse,
   PerformanceInvitationStatus,
 } from '@/domain/performance/types/res';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 
 const STATUS_LABEL: Record<PerformanceInvitationStatus, string> = {
@@ -49,10 +51,31 @@ export function PerformanceInvitationsPanel({
   const toast = useToast();
   const [inviteOpen, setInviteOpen] = useState(false);
 
-  const { data: sentInvitations = [] } = usePerformanceInvitations(performanceId, {
-    enabled: isOwner,
+  const {
+    data: sentInvitationsData,
+    fetchNextPage: fetchNextSentInvitations,
+    hasNextPage: hasNextSentInvitations,
+    isFetchingNextPage: isFetchingNextSentInvitations,
+  } = usePerformanceInvitations(performanceId, { enabled: isOwner });
+  const sentInvitations = sentInvitationsData?.pages.flatMap((p) => p.content) ?? [];
+  const sentInvitationsLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextSentInvitations,
+    isFetchingNextPage: isFetchingNextSentInvitations,
+    fetchNextPage: fetchNextSentInvitations,
   });
-  const { data: myInvitations = [] } = useMyPerformanceInvitations({ enabled: !isOwner });
+
+  const {
+    data: myInvitationsData,
+    fetchNextPage: fetchNextMyInvitations,
+    hasNextPage: hasNextMyInvitations,
+    isFetchingNextPage: isFetchingNextMyInvitations,
+  } = useMyPerformanceInvitations({ enabled: !isOwner });
+  const myInvitations = myInvitationsData?.pages.flatMap((p) => p.content) ?? [];
+  const myInvitationsLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextMyInvitations,
+    isFetchingNextPage: isFetchingNextMyInvitations,
+    fetchNextPage: fetchNextMyInvitations,
+  });
 
   const sendMutation = useSendPerformanceInvitation(performanceId, {
     onSuccess: () => toast.success('초대를 보냈습니다.'),
@@ -82,6 +105,16 @@ export function PerformanceInvitationsPanel({
             {sentInvitations.map((inv) => (
               <SentInvitationRow key={inv.invitationId} invitation={inv} />
             ))}
+            {hasNextSentInvitations && (
+              <li aria-hidden="true">
+                <div ref={sentInvitationsLoadMoreRef} className="h-4" />
+              </li>
+            )}
+            {isFetchingNextSentInvitations && (
+              <li>
+                <Skeleton className="h-16 w-full" rounded="md" />
+              </li>
+            )}
           </ul>
         )}
 
@@ -105,6 +138,16 @@ export function PerformanceInvitationsPanel({
       {myInvitationsForPerformance.map((inv) => (
         <MyInvitationRow key={inv.invitationId} performanceId={performanceId} invitation={inv} />
       ))}
+      {hasNextMyInvitations && (
+        <li aria-hidden="true">
+          <div ref={myInvitationsLoadMoreRef} className="h-4" />
+        </li>
+      )}
+      {isFetchingNextMyInvitations && (
+        <li>
+          <Skeleton className="h-16 w-full" rounded="md" />
+        </li>
+      )}
     </ul>
   );
 }

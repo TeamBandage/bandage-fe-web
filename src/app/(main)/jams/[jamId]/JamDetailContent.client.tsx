@@ -40,6 +40,7 @@ import { addParticipantSchema, type AddParticipantSchema } from '@/domain/jam/ty
 import { useMemberSearch } from '@/domain/member/hooks/useMemberSearch';
 import type { MemberSearchItemResponse } from '@/domain/member/types';
 import { ROUTES } from '@/global/config/routes';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 
 function toDatetimeLocal(kst: string) {
@@ -131,8 +132,19 @@ export function JamDetailContent({
   });
   const [memberQuery, setMemberQuery] = useState('');
   const [selectedMember, setSelectedMember] = useState<MemberSearchItemResponse | null>(null);
-  const { data: memberSearchResults = [], isFetching: searchingMembers } =
-    useMemberSearch(memberQuery);
+  const {
+    data: memberSearchData,
+    isFetching: searchingMembers,
+    fetchNextPage: fetchNextMemberSearch,
+    hasNextPage: hasNextMemberSearch,
+    isFetchingNextPage: isFetchingNextMemberSearch,
+  } = useMemberSearch(memberQuery, 20);
+  const memberSearchResults = memberSearchData?.pages.flatMap((p) => p.content) ?? [];
+  const memberSearchLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextMemberSearch,
+    isFetchingNextPage: isFetchingNextMemberSearch,
+    fetchNextPage: fetchNextMemberSearch,
+  });
 
   const resetAddParticipantForm = () => {
     addParticipantForm.reset({ memberId: undefined as unknown as number, sessionId: '' });
@@ -414,33 +426,45 @@ export function JamDetailContent({
                             일치하는 멤버가 없습니다.
                           </li>
                         ) : (
-                          memberSearchResults.map((m) => (
-                            <li key={m.memberId}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedMember(m);
-                                  addParticipantForm.setValue('memberId', m.memberId, {
-                                    shouldValidate: true,
-                                  });
-                                  setMemberQuery('');
-                                }}
-                                className="hover:bg-card gap-s-2 px-s-3 py-s-2 flex w-full items-center text-left"
-                              >
-                                <Avatar
-                                  size="sm"
-                                  src={m.profileImg ?? undefined}
-                                  fallback={m.name}
-                                />
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate text-sm font-medium">{m.name}</div>
-                                  <div className="text-foreground-muted truncate text-xs">
-                                    {m.email}
+                          <>
+                            {memberSearchResults.map((m) => (
+                              <li key={m.memberId}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedMember(m);
+                                    addParticipantForm.setValue('memberId', m.memberId, {
+                                      shouldValidate: true,
+                                    });
+                                    setMemberQuery('');
+                                  }}
+                                  className="hover:bg-card gap-s-2 px-s-3 py-s-2 flex w-full items-center text-left"
+                                >
+                                  <Avatar
+                                    size="sm"
+                                    src={m.profileImg ?? undefined}
+                                    fallback={m.name}
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-sm font-medium">{m.name}</div>
+                                    <div className="text-foreground-muted truncate text-xs">
+                                      {m.email}
+                                    </div>
                                   </div>
-                                </div>
-                              </button>
-                            </li>
-                          ))
+                                </button>
+                              </li>
+                            ))}
+                            {hasNextMemberSearch && (
+                              <li aria-hidden="true">
+                                <div ref={memberSearchLoadMoreRef} className="h-4" />
+                              </li>
+                            )}
+                            {isFetchingNextMemberSearch && (
+                              <li className="px-s-3 py-s-2">
+                                <Skeleton className="h-8 w-full" rounded="md" />
+                              </li>
+                            )}
+                          </>
                         )}
                       </ul>
                     )}

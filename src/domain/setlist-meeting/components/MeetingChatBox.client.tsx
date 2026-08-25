@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageSquare, Send, X } from 'lucide-react';
+import { Loader2, MessageSquare, Send, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 
 import { createChatMessage } from '@/domain/track-selection/api/createChatMessage';
@@ -27,10 +27,15 @@ export function MeetingChatBox({ selectionId, songId, onClose }: MeetingChatBoxP
   const song = useMemo(() => songs.find((x) => x.id === songId), [songs, songId]);
   const { data: me } = useMe();
 
-  const { data: chatData } = useChatMessages(selectionId, songId);
-  // 서버는 최신순으로 내려주므로 과거 → 최신 순으로 뒤집어서 표시.
+  const {
+    data: chatData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useChatMessages(selectionId, songId);
+  // 서버는 페이지별로 최신순으로 내려주므로(다음 페이지=더 과거) createdAt 기준으로 과거 → 최신 순 정렬해 표시.
   const messages = useMemo(() => {
-    const raw = chatData?.content ?? [];
+    const raw = chatData?.pages.flatMap((p) => p.content) ?? [];
     return [...raw].sort((a, b) => {
       if (!a.createdAt || !b.createdAt) return 0;
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -49,14 +54,31 @@ export function MeetingChatBox({ selectionId, songId, onClose }: MeetingChatBoxP
   const qc = useQueryClient();
 
   const listRef = useRef<HTMLDivElement | null>(null);
+  const prevScrollHeightRef = useRef<number | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    if (prevScrollHeightRef.current !== null) {
+      // 이전 메시지를 위에 붙인 경우: 새로 늘어난 높이만큼 보정해 보던 위치가 그대로 보이게 유지.
+      el.scrollTop = el.scrollHeight - prevScrollHeightRef.current;
+      prevScrollHeightRef.current = null;
+    } else {
+      // 최초 로드 또는 새 메시지 도착: 맨 아래로.
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages.length]);
+
+  const handleScroll = () => {
+    const el = listRef.current;
+    if (!el || !hasNextPage || isFetchingNextPage) return;
+    if (el.scrollTop < 80) {
+      prevScrollHeightRef.current = el.scrollHeight;
+      fetchNextPage();
+    }
+  };
 
   if (!song) return null;
 
@@ -103,7 +125,12 @@ export function MeetingChatBox({ selectionId, songId, onClose }: MeetingChatBoxP
         )}
       </header>
 
-      <div ref={listRef} className="px-s-5 py-s-3 flex-1 overflow-y-auto">
+      <div ref={listRef} onScroll={handleScroll} className="px-s-5 py-s-3 flex-1 overflow-y-auto">
+        {isFetchingNextPage && (
+          <div className="py-s-2 flex items-center justify-center">
+            <Loader2 className="text-foreground-muted h-4 w-4 animate-spin" aria-hidden="true" />
+          </div>
+        )}
         {messages.length === 0 ? (
           <div className="text-foreground-muted py-s-6 text-caption text-center">
             첫 의견을 남겨주세요.

@@ -24,6 +24,7 @@ import { useMyTrackSelections } from '@/domain/track-selection/hooks/useMyTrackS
 import type { TrackSelectionResponse } from '@/domain/track-selection/types/res';
 import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
@@ -89,8 +90,11 @@ export function TrackSelectionsMobileShell() {
   const [deletingMeeting, setDeletingMeeting] = useState<TrackSelectionResponse | null>(null);
   const [confirmText, setConfirmText] = useState('');
 
-  const { data, isLoading } = useMyTrackSelections(50);
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useMyTrackSelections(20);
   const meetings = data?.pages.flatMap((p) => p.content) ?? [];
+
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   const deleteMutation = useDeleteTrackSelection(deletingMeeting?.selectionId ?? '', {
     onSuccess: () => {
@@ -144,24 +148,32 @@ export function TrackSelectionsMobileShell() {
           참여 중인 선곡회의가 없습니다.
         </p>
       ) : (
-        <ul className="gap-s-1 flex flex-col">
-          {meetings.map((item) => {
-            const href = ROUTES.TRACK_SELECTION_DETAIL(item.selectionId);
-            const active = pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <MeetingRow
-                key={item.selectionId}
-                item={item}
-                active={active}
-                isManager={item.managerId === me?.id}
-                onDeleteClick={() => {
-                  setDeletingMeeting(item);
-                  setConfirmText('');
-                }}
-              />
-            );
-          })}
-        </ul>
+        <>
+          <ul className="gap-s-1 flex flex-col">
+            {meetings.map((item) => {
+              const href = ROUTES.TRACK_SELECTION_DETAIL(item.selectionId);
+              const active = pathname === href || pathname.startsWith(`${href}/`);
+              return (
+                <MeetingRow
+                  key={item.selectionId}
+                  item={item}
+                  active={active}
+                  isManager={item.managerId === me?.id}
+                  onDeleteClick={() => {
+                    setDeletingMeeting(item);
+                    setConfirmText('');
+                  }}
+                />
+              );
+            })}
+          </ul>
+          {hasNextPage && <div ref={loadMoreRef} className="h-4" aria-hidden="true" />}
+          {isFetchingNextPage && (
+            <div className="space-y-s-2 py-2">
+              <Skeleton className="h-14 w-full" rounded="md" />
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={!!deletingMeeting} onOpenChange={handleOpenChange}>

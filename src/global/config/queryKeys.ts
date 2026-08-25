@@ -73,6 +73,7 @@ export const queryKeys = {
     all: ['performance-poster'] as const,
     list: (performanceId: string) => [...queryKeys.performancePoster.all, performanceId] as const,
     listAll: () => [...queryKeys.performancePoster.all, 'all'] as const,
+    my: () => [...queryKeys.performancePoster.all, 'my'] as const,
     detail: (posterId: string) => [...queryKeys.performancePoster.all, 'detail', posterId] as const,
   },
   performanceInvitation: {

@@ -110,7 +110,18 @@ export function PerformanceDetailContent({
   const tracksBySetlistId = new Map(
     (perfSetlistTracks ?? []).map((entry) => [entry.setlist.setlistId, entry.tracks]),
   );
-  const { data: myInvitations = [] } = useMyPerformanceInvitations({ enabled: !isManager });
+  // 탭 노출 여부 판정에는 전체 목록이 필요하므로(화면에 노출되는 리스트가 아님) hasNextPage 인
+  // 동안 계속 이어서 가져온다.
+  const {
+    data: myInvitationsData,
+    fetchNextPage: fetchNextMyInvitations,
+    hasNextPage: hasNextMyInvitations,
+    isFetchingNextPage: isFetchingNextMyInvitations,
+  } = useMyPerformanceInvitations({ enabled: !isManager });
+  useEffect(() => {
+    if (hasNextMyInvitations && !isFetchingNextMyInvitations) fetchNextMyInvitations();
+  }, [hasNextMyInvitations, isFetchingNextMyInvitations, fetchNextMyInvitations]);
+  const myInvitations = myInvitationsData?.pages.flatMap((p) => p.content) ?? [];
   const hasMyInvitation = myInvitations.some((inv) => inv.performanceId === performanceId);
   const showInvitationsTab = isOwner || (!isManager && hasMyInvitation);
 
@@ -641,7 +652,7 @@ export function PerformanceDetailContent({
                   }}
                 />
                 {existingPoster && (
-                  <div className="mt-s-4 flex items-end gap-2">
+                  <div className="mt-s-4 flex items-center gap-2">
                     <div className="flex-1">
                       <Input
                         label="포스터 설명 (선택)"

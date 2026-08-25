@@ -8,10 +8,12 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useMyJams } from '@/domain/jam/hooks/useMyJams';
 import { useSearchMyJams } from '@/domain/jam/hooks/useSearchMyJams';
 import type { JamListItemResponse } from '@/domain/jam/types';
 import { ROUTES } from '@/global/config/routes';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
 
@@ -50,15 +52,31 @@ export function JamsListPane() {
   const pathname = usePathname() ?? '';
   const [query, setQuery] = useState('');
 
-  const { data: myData, isLoading: myLoading } = useMyJams(20);
+  const {
+    data: myData,
+    isLoading: myLoading,
+    fetchNextPage: fetchNextMyJams,
+    hasNextPage: hasNextMyJams,
+    isFetchingNextPage: isFetchingNextMyJams,
+  } = useMyJams(20);
   const myJams = myData?.pages.flatMap((p) => p.content) ?? [];
 
-  const { data: searchData, isLoading: searchLoading } = useSearchMyJams(query, 20);
+  const {
+    data: searchData,
+    isLoading: searchLoading,
+    fetchNextPage: fetchNextSearchJams,
+    hasNextPage: hasNextSearchJams,
+    isFetchingNextPage: isFetchingNextSearchJams,
+  } = useSearchMyJams(query, 20);
   const searchJams = searchData?.pages.flatMap((p) => p.content) ?? [];
 
   const isSearching = query.trim().length > 0;
   const jams = isSearching ? searchJams : myJams;
   const isLoading = isSearching ? searchLoading : myLoading;
+  const hasNextPage = isSearching ? hasNextSearchJams : hasNextMyJams;
+  const isFetchingNextPage = isSearching ? isFetchingNextSearchJams : isFetchingNextMyJams;
+  const fetchNextPage = isSearching ? fetchNextSearchJams : fetchNextMyJams;
+  const loadMoreRef = useInfiniteScrollSentinel({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   return (
     <aside
@@ -100,6 +118,16 @@ export function JamsListPane() {
             {jams.map((p) => (
               <PracticeRow key={p.jamId} p={p} pathname={pathname} />
             ))}
+            {hasNextPage && (
+              <li aria-hidden="true">
+                <div ref={loadMoreRef} className="h-4" />
+              </li>
+            )}
+            {isFetchingNextPage && (
+              <li className="p-s-2">
+                <Skeleton className="h-10 w-full" rounded="md" />
+              </li>
+            )}
           </ul>
         )}
       </div>

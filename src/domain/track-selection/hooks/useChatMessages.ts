@@ -1,16 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
-
 import { useIsAuthenticated } from '@/global/store/authStore';
 import { queryKeys } from '@/global/config/queryKeys';
+import { useInfiniteCursor } from '@/hooks/useInfiniteCursor';
 
-import { getChatMessages } from '../api/getChatMessages';
+import { getChatMessages, type SetlistChatMessageResponse } from '../api/getChatMessages';
 
-export function useChatMessages(selectionId: string, itemId: string) {
+export function useChatMessages(selectionId: string, itemId: string, pageSize: number = 30) {
   const authenticated = useIsAuthenticated();
-  return useQuery({
-    queryKey: queryKeys.trackSelection.chat(selectionId, itemId),
-    queryFn: () => getChatMessages(selectionId, itemId, { pageSize: 100 }),
-    enabled: authenticated && Boolean(selectionId) && Boolean(itemId),
-    refetchInterval: 5000,
-  });
+  return useInfiniteCursor<SetlistChatMessageResponse, string>(
+    queryKeys.trackSelection.chat(selectionId, itemId),
+    ({ lastId, pageSize: size }) =>
+      getChatMessages(selectionId, itemId, { lastId, pageSize: size }),
+    pageSize,
+    {
+      enabled: authenticated && Boolean(selectionId) && Boolean(itemId),
+      refetchInterval: 5000,
+    },
+  );
 }

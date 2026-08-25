@@ -4,10 +4,12 @@ import { Loader2, Search, UserMinus, UserPlus, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberSearch } from '@/domain/member/hooks/useMemberSearch';
 import { useUpdateParticipants } from '@/domain/track-selection/hooks/useUpdateParticipants';
 import type { TrackSelectionParticipant } from '@/domain/track-selection/types/res';
 import { resolveMemberId } from '@/domain/track-selection/utils/resolveMemberId';
+import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
 
@@ -35,7 +37,19 @@ export function ParticipantsModal({
   const [memberQuery, setMemberQuery] = useState('');
   const toast = useToast();
   const updateParticipants = useUpdateParticipants(selectionId);
-  const { data: searchResults = [], isFetching: searching } = useMemberSearch(memberQuery);
+  const {
+    data: memberSearchData,
+    isFetching: searching,
+    fetchNextPage: fetchNextMemberSearch,
+    hasNextPage: hasNextMemberSearch,
+    isFetchingNextPage: isFetchingNextMemberSearch,
+  } = useMemberSearch(memberQuery, 20);
+  const searchResults = memberSearchData?.pages.flatMap((p) => p.content) ?? [];
+  const memberSearchLoadMoreRef = useInfiniteScrollSentinel({
+    hasNextPage: hasNextMemberSearch,
+    isFetchingNextPage: isFetchingNextMemberSearch,
+    fetchNextPage: fetchNextMemberSearch,
+  });
 
   const participantIds = new Set(
     participants.map((p) => resolveMemberId(p)).filter((id): id is number => id !== undefined),
@@ -153,35 +167,49 @@ export function ParticipantsModal({
                       일치하는 멤버가 없습니다.
                     </li>
                   ) : (
-                    searchResults.map((m) => {
-                      const already = participantIds.has(m.memberId);
-                      return (
-                        <li key={m.memberId} className="border-border border-b last:border-b-0">
-                          <button
-                            type="button"
-                            onClick={() => !already && handleAdd(m.memberId)}
-                            disabled={already || updateParticipants.isPending}
-                            className="hover:bg-card gap-s-3 px-s-3 py-s-2 flex w-full items-center text-left disabled:cursor-default"
-                          >
-                            <Avatar src={m.profileImg ?? undefined} fallback={m.name} size="sm" />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-caption truncate font-semibold">{m.name}</div>
-                              <div className="text-foreground-muted text-micro truncate">
-                                {m.email}
-                              </div>
-                            </div>
-                            <span
-                              className={cn(
-                                'text-micro px-s-2 shrink-0 rounded-full py-0.5 font-bold',
-                                already ? 'bg-success-dim text-success' : 'bg-white/10 text-white',
-                              )}
+                    <>
+                      {searchResults.map((m) => {
+                        const already = participantIds.has(m.memberId);
+                        return (
+                          <li key={m.memberId} className="border-border border-b last:border-b-0">
+                            <button
+                              type="button"
+                              onClick={() => !already && handleAdd(m.memberId)}
+                              disabled={already || updateParticipants.isPending}
+                              className="hover:bg-card gap-s-3 px-s-3 py-s-2 flex w-full items-center text-left disabled:cursor-default"
                             >
-                              {already ? '참여 중' : <UserPlus className="h-3 w-3" />}
-                            </span>
-                          </button>
+                              <Avatar src={m.profileImg ?? undefined} fallback={m.name} size="sm" />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-caption truncate font-semibold">{m.name}</div>
+                                <div className="text-foreground-muted text-micro truncate">
+                                  {m.email}
+                                </div>
+                              </div>
+                              <span
+                                className={cn(
+                                  'text-micro px-s-2 shrink-0 rounded-full py-0.5 font-bold',
+                                  already
+                                    ? 'bg-success-dim text-success'
+                                    : 'bg-white/10 text-white',
+                                )}
+                              >
+                                {already ? '참여 중' : <UserPlus className="h-3 w-3" />}
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                      {hasNextMemberSearch && (
+                        <li aria-hidden="true">
+                          <div ref={memberSearchLoadMoreRef} className="h-4" />
                         </li>
-                      );
-                    })
+                      )}
+                      {isFetchingNextMemberSearch && (
+                        <li className="px-s-3 py-s-2">
+                          <Skeleton className="h-8 w-full" rounded="md" />
+                        </li>
+                      )}
+                    </>
                   )}
                 </ul>
               )}
