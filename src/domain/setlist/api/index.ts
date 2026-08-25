@@ -15,6 +15,7 @@ import type {
   ScheduleBlockResponse,
   ScheduleBoardPlacementResponse,
   ScheduleBoardResponse,
+  SetlistParticipantResponse,
   SetlistResponse,
   SetlistTrackResponse,
   SlotAvailabilityResponse,
@@ -86,6 +87,17 @@ export function getSetlistTracks(
 /** 셋리스트 트랙 단건 조회 */
 export function getSetlistTrack(setlistId: string, trackId: string): Promise<SetlistTrackResponse> {
   return apiClient.get<SetlistTrackResponse>(`${PREFIX}/${setlistId}/tracks/${trackId}`);
+}
+
+/** 셋리스트 참여 멤버 목록 조회 (커서 페이징, pageSize 필수, 커서는 memberId) */
+export function getSetlistParticipants(
+  setlistId: string,
+  params: { lastId?: number; pageSize: number },
+): Promise<CursorResponse<SetlistParticipantResponse, number>> {
+  return apiClient.get<CursorResponse<SetlistParticipantResponse, number>>(
+    `${PREFIX}/${setlistId}/participants`,
+    { query: { pageSize: params.pageSize, lastId: params.lastId } },
+  );
 }
 
 /** 셋리스트 트랙 수정 */

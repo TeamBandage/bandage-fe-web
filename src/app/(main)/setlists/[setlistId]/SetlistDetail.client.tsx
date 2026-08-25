@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Clock, Edit2, ExternalLink, Music, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, Edit2, ExternalLink, Music, Pencil, Trash2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useMe } from '@/domain/member/hooks/useMe';
+import { SetlistParticipantsModal } from '@/domain/setlist/components/SetlistParticipantsModal.client';
 import { useCreateJamsFromSetlist } from '@/domain/setlist/hooks/useCreateJamsFromSetlist';
 import { useDeleteSetlistTrack } from '@/domain/setlist/hooks/useDeleteSetlistTrack';
 import { useSetlist } from '@/domain/setlist/hooks/useSetlist';
@@ -439,6 +440,10 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
     () => allTracksData?.pages.flatMap((p) => p.content) ?? [],
     [allTracksData],
   );
+  const trackTitleById = useMemo(
+    () => new Map(allTrackList.map((t) => [t.setlistTrackId, t.title])),
+    [allTrackList],
+  );
   const { data: me } = useMe();
   const isManager = setlist ? setlist.managerId === me?.id : false;
 
@@ -455,6 +460,7 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
   const [editingTrack, setEditingTrack] = useState<SetlistTrackResponse | null>(null);
   const [pendingDeleteTrack, setPendingDeleteTrack] = useState<SetlistTrackResponse | null>(null);
   const [showJamForm, setShowJamForm] = useState(false);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'tracks');
 
   useEffect(() => {
@@ -600,11 +606,24 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
           </div>
         )}
 
-        {setlist.createdAt && (
-          <p className="text-foreground-muted mt-1 text-xs">
-            생성일: {formatKst(new Date(setlist.createdAt))}
-          </p>
-        )}
+        <div className="mt-1 flex items-center justify-between">
+          {setlist.createdAt ? (
+            <p className="text-foreground-muted text-xs">
+              생성일: {formatKst(new Date(setlist.createdAt))}
+            </p>
+          ) : (
+            <span />
+          )}
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setShowParticipantsModal(true)}
+            aria-label="참여자 목록"
+            className="rounded-[5px]"
+          >
+            <Users className="h-4 w-4" /> 참여자
+          </Button>
+        </div>
       </header>
 
       <Tabs
@@ -715,6 +734,14 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
         tone="danger"
         onConfirm={handleTrackDelete}
       />
+
+      {showParticipantsModal && (
+        <SetlistParticipantsModal
+          setlistId={setlistId}
+          trackTitleById={trackTitleById}
+          onClose={() => setShowParticipantsModal(false)}
+        />
+      )}
     </div>
   );
 }
