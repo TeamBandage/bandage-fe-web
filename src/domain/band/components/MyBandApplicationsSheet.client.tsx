@@ -74,7 +74,7 @@ function ApplicationRow({ item }: { item: MyBandApplicationResponse }) {
         <img
           src={item.bandProfileImg || '/img/band_img.png'}
           alt={item.bandName}
-          className="h-10 w-10 shrink-0 rounded-md object-cover"
+          className="h-8 w-8 shrink-0 rounded-sm object-cover"
         />
         <div className="min-w-0 flex-1">
           <div className="gap-s-2 flex items-center">

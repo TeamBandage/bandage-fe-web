@@ -66,7 +66,7 @@ function SetlistRow({
             src={DOMAIN_IMAGES.setlist}
             alt=""
             aria-hidden="true"
-            className="h-9 w-9 shrink-0 rounded-md object-cover"
+            className="h-8 w-8 shrink-0 rounded-sm object-cover"
           />
           <div className="gap-s-2 flex min-w-0 flex-1 items-center">
             <span className="text-caption truncate font-semibold">{item.title}</span>

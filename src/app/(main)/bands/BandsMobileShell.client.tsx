@@ -52,7 +52,7 @@ function BandSelectRow({
         <img
           src={band.profileImg || '/img/band_img.png'}
           alt={band.bandName}
-          className="h-10 w-10 shrink-0 rounded-md object-cover"
+          className="h-8 w-8 shrink-0 rounded-sm object-cover"
         />
         <div className="min-w-0 flex-1">
           <div className="gap-s-2 flex items-center">
