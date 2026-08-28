@@ -1,6 +1,6 @@
 'use client';
 
-import { ListMusic, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
   ResponsiveSheetHeader,
   ResponsiveSheetTitle,
 } from '@/components/ui/responsive-sheet';
+import { DOMAIN_IMAGES } from '@/lib/domain-icons';
 
 import { useSetlistStore } from '../store/setlistStore';
 import type { Meeting } from '../types';
@@ -116,9 +117,13 @@ export function SetlistPickerModal({
                           (sel ? 'border-accent bg-accent-dim' : '')
                         }
                       >
-                        <span className="bg-accent-dim text-accent mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
-                          <ListMusic className="h-4 w-4" aria-hidden="true" />
-                        </span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={DOMAIN_IMAGES.setlist}
+                          alt=""
+                          aria-hidden="true"
+                          className="mt-0.5 h-9 w-9 shrink-0 rounded-md object-cover"
+                        />
 
                         <div className="min-w-0 flex-1 space-y-1">
                           <p className="text-foreground-muted text-caption truncate font-medium">

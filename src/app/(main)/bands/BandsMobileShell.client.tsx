@@ -1,13 +1,12 @@
 'use client';
 
 import { Root, Portal, Overlay, Content, Title, Close } from '@radix-ui/react-dialog';
-import { ClipboardList, Maximize2, Plus, Search, Users, X } from 'lucide-react';
+import { ClipboardList, Maximize2, Plus, Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
-import { IconTile } from '@/components/ui/icon-tile';
 import { MyItemMarker } from '@/components/ui/my-item-marker';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,7 +21,6 @@ import { useIsDesktop } from '@/hooks/use-media-query';
 import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { cn } from '@/lib/cn';
 import { ROUTES } from '@/global/config/routes';
-import { DOMAIN_TONES } from '@/lib/domain-icons';
 
 import { BandDetailContent } from './[bandId]/BandDetailContent.client';
 
@@ -50,16 +48,12 @@ function BandSelectRow({
           isSelected ? 'border-l-[3px] border-l-white/60' : '',
         )}
       >
-        {band.profileImg ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={band.profileImg}
-            alt={band.bandName}
-            className="h-10 w-10 shrink-0 rounded-md object-cover"
-          />
-        ) : (
-          <IconTile icon={<Users />} size="sm" tone={DOMAIN_TONES.band} />
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={band.profileImg || '/img/band_img.png'}
+          alt={band.bandName}
+          className="h-10 w-10 shrink-0 rounded-md object-cover"
+        />
         <div className="min-w-0 flex-1">
           <div className="gap-s-2 flex items-center">
             <span className="text-caption truncate font-semibold">{band.bandName}</span>

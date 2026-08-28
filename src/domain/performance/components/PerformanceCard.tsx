@@ -1,16 +1,13 @@
 import { CalendarDays, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
-import { IconTile } from '@/components/ui/icon-tile';
 import { ROUTES } from '@/global/config/routes';
 import { formatKst, parseKst } from '@/lib/date';
-import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
+import { DOMAIN_IMAGES, DOMAIN_LIST_SELECTED_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
 
 import { PerformanceDday } from './PerformanceDday';
 import type { PerformanceListItemResponse } from '../types';
-
-const PerformanceIcon = DOMAIN_ICONS.performance;
 
 export function PerformanceCard({
   performance,
@@ -37,7 +34,13 @@ export function PerformanceCard({
         'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
       )}
     >
-      <IconTile icon={<PerformanceIcon />} size="md" tone={DOMAIN_TONES.performance} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={DOMAIN_IMAGES.performance}
+        alt=""
+        aria-hidden="true"
+        className="h-10 w-10 shrink-0 rounded-md object-cover"
+      />
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-start justify-between gap-2">
           <p className="text-foreground line-clamp-1 text-base font-semibold">

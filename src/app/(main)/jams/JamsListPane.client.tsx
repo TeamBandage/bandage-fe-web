@@ -7,17 +7,14 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { IconTile } from '@/components/ui/icon-tile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMyJams } from '@/domain/jam/hooks/useMyJams';
 import { useSearchMyJams } from '@/domain/jam/hooks/useSearchMyJams';
 import type { JamListItemResponse } from '@/domain/jam/types';
 import { ROUTES } from '@/global/config/routes';
 import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
-import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
+import { DOMAIN_IMAGES, DOMAIN_LIST_SELECTED_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
-
-const PracticeIcon = DOMAIN_ICONS.practice;
 
 function PracticeRow({ p, pathname }: { p: JamListItemResponse; pathname: string }) {
   const href = ROUTES.JAM_DETAIL(p.jamId);
@@ -35,7 +32,13 @@ function PracticeRow({ p, pathname }: { p: JamListItemResponse; pathname: string
           'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         )}
       >
-        <IconTile icon={<PracticeIcon />} size="sm" tone={DOMAIN_TONES.practice} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={DOMAIN_IMAGES.practice}
+          alt=""
+          aria-hidden="true"
+          className="h-8 w-8 shrink-0 rounded-sm object-cover"
+        />
         <div className="min-w-0 flex-1">
           <div className="text-caption truncate font-semibold">{p.title}</div>
           <div className="text-foreground-muted text-caption gap-s-2 mt-0.5 flex items-center">

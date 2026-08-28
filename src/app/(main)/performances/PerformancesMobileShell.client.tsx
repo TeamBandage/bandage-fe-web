@@ -1,14 +1,13 @@
 'use client';
 
 import { Root, Portal, Overlay, Content, Title, Close } from '@radix-ui/react-dialog';
-import { CalendarDays, MapPin, Maximize2, Plus, Search, X } from 'lucide-react';
+import { MapPin, Maximize2, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
-import { IconTile } from '@/components/ui/icon-tile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PerformanceDday } from '@/domain/performance/components/PerformanceDday';
@@ -20,7 +19,7 @@ import { useIsDesktop } from '@/hooks/use-media-query';
 import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { cn } from '@/lib/cn';
 import { formatKst, parseKst } from '@/lib/date';
-import { DOMAIN_TONES } from '@/lib/domain-icons';
+import { DOMAIN_IMAGES } from '@/lib/domain-icons';
 import { ROUTES } from '@/global/config/routes';
 
 import { PerformanceDetailContent } from './[performanceId]/PerformanceDetailContent.client';
@@ -53,7 +52,13 @@ function PerformanceSelectRow({
           isSelected ? 'border-l-[3px] border-l-white/60' : '',
         )}
       >
-        <IconTile icon={<CalendarDays />} size="sm" tone={DOMAIN_TONES.performance} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={DOMAIN_IMAGES.performance}
+          alt=""
+          aria-hidden="true"
+          className="h-8 w-8 shrink-0 rounded-sm object-cover"
+        />
         <div className="min-w-0 flex-1">
           <div className="gap-s-1 flex items-center">
             <span className="text-caption truncate font-semibold">{performance.title}</span>

@@ -7,7 +7,6 @@ import { useState } from 'react';
 
 import { BottomSheet, BottomSheetContent, BottomSheetTitle } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
-import { IconTile } from '@/components/ui/icon-tile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { JamDday } from '@/domain/jam/components/JamDday';
 import { useMyJams } from '@/domain/jam/hooks/useMyJams';
@@ -19,11 +18,9 @@ import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { cn } from '@/lib/cn';
 import { useRouter } from 'next/navigation';
 import { formatKst, parseKst } from '@/lib/date';
-import { DOMAIN_ICONS, DOMAIN_TONES } from '@/lib/domain-icons';
+import { DOMAIN_IMAGES } from '@/lib/domain-icons';
 
 import { JamDetailContent } from './[jamId]/JamDetailContent.client';
-
-const PracticeIcon = DOMAIN_ICONS.practice;
 
 function PracticeSelectRow({
   practice,
@@ -46,7 +43,13 @@ function PracticeSelectRow({
           isSelected && 'border-l-[3px] border-l-white/60',
         )}
       >
-        <IconTile icon={<PracticeIcon />} size="sm" tone={DOMAIN_TONES.practice} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={DOMAIN_IMAGES.practice}
+          alt=""
+          aria-hidden="true"
+          className="h-8 w-8 shrink-0 rounded-sm object-cover"
+        />
         <div className="min-w-0 flex-1">
           <div className="gap-s-1 flex items-center">
             <span className="text-caption truncate font-semibold">{practice.title}</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import { ListMusic, Search, Trash2 } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -27,6 +27,7 @@ import { useIsDesktop } from '@/hooks/use-media-query';
 import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
+import { DOMAIN_IMAGES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
 
 function SetlistRow({
@@ -60,9 +61,13 @@ function SetlistRow({
           data-slot="setlist-row"
           className="gap-s-3 focus-visible:ring-offset-bg flex min-w-0 flex-1 items-center text-inherit no-underline focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/15 text-white">
-            <ListMusic className="h-4 w-4" />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={DOMAIN_IMAGES.setlist}
+            alt=""
+            aria-hidden="true"
+            className="h-9 w-9 shrink-0 rounded-md object-cover"
+          />
           <div className="gap-s-2 flex min-w-0 flex-1 items-center">
             <span className="text-caption truncate font-semibold">{item.title}</span>
             {isManager && (

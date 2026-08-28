@@ -1,6 +1,6 @@
 'use client';
 
-import { ListMusic, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { useMySetlists } from '@/domain/setlist/hooks/useMySetlists';
 import { useSetlistsByTitle } from '@/domain/setlist/hooks/useSetlistsByTitle';
 import type { SetlistResponse } from '@/domain/setlist/types/res';
 import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
+import { DOMAIN_IMAGES } from '@/lib/domain-icons';
 
 export interface SetlistSelectorSheetProps {
   open: boolean;
@@ -151,14 +152,13 @@ export function SetlistSelectorSheet({
                             : 'border-white/15 bg-white/8 hover:bg-white/12')
                         }
                       >
-                        <span
-                          className={
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors ' +
-                            (sel ? 'bg-white/30 text-white' : 'bg-white/15 text-white/80')
-                          }
-                        >
-                          <ListMusic className="h-4 w-4" aria-hidden="true" />
-                        </span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={DOMAIN_IMAGES.setlist}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-9 w-9 shrink-0 rounded-md object-cover"
+                        />
                         <div className="min-w-0 flex-1">
                           <p className="text-body truncate font-semibold">{item.title}</p>
                           {date && (

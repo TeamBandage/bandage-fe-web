@@ -15,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { IconTile } from '@/components/ui/icon-tile';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMe } from '@/domain/member/hooks/useMe';
@@ -26,10 +25,8 @@ import { ROUTES } from '@/global/config/routes';
 import { useIsDesktop } from '@/hooks/use-media-query';
 import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
-import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES } from '@/lib/domain-icons';
+import { DOMAIN_IMAGES, DOMAIN_LIST_SELECTED_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
-
-const TrackSelectionIcon = DOMAIN_ICONS['track-selection'];
 
 function MeetingRow({
   item,
@@ -53,7 +50,13 @@ function MeetingRow({
           data-slot="track-selection-row"
           className="gap-s-3 focus-visible:ring-offset-bg flex min-w-0 flex-1 items-center text-white no-underline focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          <IconTile icon={<TrackSelectionIcon />} size="sm" className="bg-white/15 text-white" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={DOMAIN_IMAGES['track-selection']}
+            alt=""
+            aria-hidden="true"
+            className="h-8 w-8 shrink-0 rounded-sm object-cover"
+          />
           <div className="min-w-0 flex-1">
             <div className="gap-s-1 flex items-center">
               <span className="text-caption truncate font-semibold">{item.title}</span>
