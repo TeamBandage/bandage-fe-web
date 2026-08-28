@@ -113,18 +113,12 @@ export function BandDetailContent({ bandId }: { bandId: string }) {
       >
         <div className="flex min-w-0 items-center gap-3">
           <div className="border-border bg-card h-12 w-12 shrink-0 overflow-hidden rounded-lg border">
-            {band.profileImg ? (
-              // eslint-disable-next-line @next/next/no-img-element -- 외부 origin 허용 위해 native img
-              <img
-                src={band.profileImg}
-                alt={`${band.bandName} 프로필`}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="text-foreground-muted flex h-full w-full items-center justify-center">
-                <ImagePlus className="h-5 w-5" aria-hidden="true" />
-              </div>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element -- 외부 origin 허용 위해 native img */}
+            <img
+              src={band.profileImg || '/img/band_img.png'}
+              alt={`${band.bandName} 프로필`}
+              className="h-full w-full object-cover"
+            />
           </div>
           <h1 className="text-foreground truncate text-[22px] leading-snug font-bold">
             {band.bandName}

@@ -7,7 +7,6 @@ import { useMemo } from 'react';
 
 import { cn } from '@/lib/cn';
 
-import { IconTile } from '@/components/ui/icon-tile';
 import {
   selectSchedulingProgress,
   useScheduleStore,
@@ -16,10 +15,8 @@ import { useTimetableStore } from '@/domain/schedule-coordination/store/timetabl
 import { useSetlistStore } from '@/domain/setlist-meeting/store/setlistStore';
 import type { Meeting } from '@/domain/setlist-meeting/types';
 import { ROUTES } from '@/global/config/routes';
-import { DOMAIN_ICONS, DOMAIN_LIST_SELECTED_TONES, DOMAIN_TONES } from '@/lib/domain-icons';
+import { DOMAIN_IMAGES, DOMAIN_LIST_SELECTED_TONES } from '@/lib/domain-icons';
 import { listItemClasses } from '@/lib/list-item-styles';
-
-const TrackSelectionIcon = DOMAIN_ICONS['track-selection'];
 
 interface SchedulingSummary {
   meeting: Meeting;
@@ -45,7 +42,13 @@ function SchedulingRow({ summary, active }: { summary: SchedulingSummary; active
           'focus-visible:ring-accent focus-visible:ring-offset-bg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         )}
       >
-        <IconTile icon={<TrackSelectionIcon />} size="sm" tone={DOMAIN_TONES['track-selection']} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={DOMAIN_IMAGES['track-selection']}
+          alt=""
+          aria-hidden="true"
+          className="h-8 w-8 shrink-0 rounded-sm object-cover"
+        />
         <div className="min-w-0 flex-1">
           <div className={cn('text-micro truncate font-semibold', labelTone)}>
             {meeting.bandName}
