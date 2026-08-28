@@ -122,7 +122,7 @@ export function SetlistPickerModal({
                           src={DOMAIN_IMAGES.setlist}
                           alt=""
                           aria-hidden="true"
-                          className="mt-0.5 h-9 w-9 shrink-0 rounded-md object-cover"
+                          className="mt-0.5 h-8 w-8 shrink-0 rounded-sm object-cover"
                         />
 
                         <div className="min-w-0 flex-1 space-y-1">
