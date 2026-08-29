@@ -4,13 +4,13 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
 <DocumentFragment>
   <aside
     aria-label="주 탐색"
-    class="bg-surface border-border py-s-4 gap-s-1 relative z-36 hidden shrink-0 flex-col border-r lg:flex transition-[width] duration-200 ease-in-out px-s-3"
+    class="bg-surface border-border py-s-4 gap-s-1 relative z-20 hidden shrink-0 flex-col border-r pt-14 lg:flex transition-[width] duration-200 ease-in-out px-s-3"
     data-slot="sidebar"
     style="width: var(--sidebar-w);"
   >
     <button
       aria-label="사이드바 접기"
-      class="bg-surface border-border absolute top-[17px] -right-3.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-md text-foreground-muted hover:text-foreground transition-colors focus-visible:ring-accent focus-visible:ring-2 focus-visible:outline-none"
+      class="bg-surface border-border absolute top-14 -right-3.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border shadow-md text-foreground-muted hover:text-foreground transition-colors focus-visible:ring-accent focus-visible:ring-2 focus-visible:outline-none"
       type="button"
     >
       <svg
@@ -32,21 +32,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       </svg>
     </button>
     <div
-      class="border-border mb-s-2 pb-s-4 pt-s-1 flex items-center border-b px-s-2"
-    >
-      <img
-        alt="Bandage"
-        data-nimg="1"
-        decoding="async"
-        height="21"
-        src="/_next/image?url=%2Fbrand%2Fbandage_wave_text_white.png&w=256&q=75"
-        srcset="/_next/image?url=%2Fbrand%2Fbandage_wave_text_white.png&w=128&q=75 1x, /_next/image?url=%2Fbrand%2Fbandage_wave_text_white.png&w=256&q=75 2x"
-        style="color: transparent;"
-        width="100"
-      />
-    </div>
-    <div
-      class="text-foreground-muted pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase px-s-3"
+      class="text-foreground-muted mt-1.25 pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase px-s-3"
     >
       Navigation
     </div>

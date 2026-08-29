@@ -16,7 +16,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { GuardedLink as Link } from '@/global/navigation/guarded-link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -123,9 +122,8 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        // z-36: topbar(z-35)보다 위에 그려져야 데스크톱에서 사이드바 로고가 topbar에 가리지 않음
-        // (topbar 로고는 lg:invisible — 원래부터 데스크톱에서는 사이드바 로고가 그 자리를 덮도록 설계됨).
-        'bg-surface border-border py-s-4 gap-s-1 relative z-36 hidden shrink-0 flex-col border-r lg:flex',
+        // z-20: 로고를 전담하는 topbar(z-37)보다 항상 아래 — 사이드바 상단이 topbar에 가려지는 게 의도된 동작.
+        'bg-surface border-border py-s-4 gap-s-1 relative z-20 hidden shrink-0 flex-col border-r pt-14 lg:flex',
         'transition-[width] duration-200 ease-in-out',
         collapsed ? 'px-s-2' : 'px-s-3',
         className,
@@ -134,13 +132,14 @@ export function Sidebar({ className }: SidebarProps) {
       data-slot="sidebar"
       aria-label="주 탐색"
     >
-      {/* 사이드바 우측 경계에 떠있는 토글 버튼 */}
+      {/* 접기/펼치기 토글 — aside 자체를 기준으로 위치를 잡아야 collapsed 시 패딩(px-s-2)이 달라져도
+          항상 절반은 사이드바 안쪽, 절반은 바깥쪽에 걸치게 유지됨(row에 얹으면 그 row의 안쪽 패딩만큼 밀려서 계산이 틀어짐). */}
       <button
         type="button"
         onClick={toggleSidebar}
         aria-label={collapsed ? '사이드바 펼치기' : '사이드바 접기'}
         className={cn(
-          'bg-surface border-border absolute top-[17px] -right-3.5 z-10',
+          'bg-surface border-border absolute top-14 -right-3.5 z-10',
           'flex h-7 w-7 items-center justify-center rounded-full border shadow-md',
           'text-foreground-muted hover:text-foreground transition-colors',
           'focus-visible:ring-accent focus-visible:ring-2 focus-visible:outline-none',
@@ -153,36 +152,9 @@ export function Sidebar({ className }: SidebarProps) {
         )}
       </button>
 
-      {/* 로고 */}
+      {/* NAVIGATION 라벨 — topbar와 살짝 떨어지도록 위쪽 여백 추가 */}
       <div
-        className={cn(
-          'border-border mb-s-2 pb-s-4 pt-s-1 flex items-center border-b',
-          collapsed ? 'justify-center px-0' : 'px-s-2',
-        )}
-      >
-        {collapsed ? (
-          <Image
-            key="collapsed-logo"
-            src="/brand/bandage_pick_logo_white.png"
-            alt="Bandage"
-            width={18}
-            height={18}
-            priority
-          />
-        ) : (
-          <Image
-            key="expanded-logo"
-            src="/brand/bandage_wave_text_white.png"
-            alt="Bandage"
-            width={100}
-            height={21}
-            priority
-          />
-        )}
-      </div>
-
-      <div
-        className={`text-foreground-muted pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase ${collapsed ? 'text-center' : 'px-s-3'}`}
+        className={`text-foreground-muted pb-s-2 pt-s-1 text-micro mt-1.25 font-bold tracking-wider uppercase ${collapsed ? 'text-center' : 'px-s-3'}`}
       >
         {collapsed ? 'NAV' : 'Navigation'}
       </div>
