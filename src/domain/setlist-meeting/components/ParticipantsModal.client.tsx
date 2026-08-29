@@ -1,14 +1,29 @@
 'use client';
 
-import { Loader2, Search, UserMinus, UserPlus, X } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { LogOut, Loader2, MoreVertical, Search, UserPlus, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberSearch } from '@/domain/member/hooks/useMemberSearch';
+import { useLeaveSelection } from '@/domain/track-selection/hooks/useLeaveSelection';
+import { useTransferManager } from '@/domain/track-selection/hooks/useTransferManager';
 import { useUpdateParticipants } from '@/domain/track-selection/hooks/useUpdateParticipants';
 import type { TrackSelectionParticipant } from '@/domain/track-selection/types/res';
 import { resolveMemberId } from '@/domain/track-selection/utils/resolveMemberId';
+import { ROUTES } from '@/global/config/routes';
 import { useInfiniteScrollSentinel } from '@/hooks/useInfiniteScrollSentinel';
 import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/cn';
@@ -21,8 +36,185 @@ export interface ParticipantsModalProps {
   participants: TrackSelectionParticipant[];
   members: Member[];
   currentUserId: string;
+  /** 매니저가 확정 전(선곡 진행 중)일 때만 false — 참여자 추가/제거 가능 여부. 매니저 위임은 이와 무관하게 항상 가능. */
   readOnly?: boolean;
+  /** 매니저 위임 가능 여부 — 확정/잠김 상태와 무관하게 매니저 본인이면 항상 true. */
+  isManager?: boolean;
   onClose: () => void;
+}
+
+function ParticipantRow({
+  selectionId,
+  memberId,
+  name,
+  avatarSrc,
+  isSelf,
+  readOnly,
+  canTransferManager,
+  onRemove,
+  removePending,
+  onClose,
+}: {
+  selectionId: string;
+  memberId: number;
+  name: string;
+  avatarSrc?: string;
+  isSelf: boolean;
+  readOnly: boolean;
+  canTransferManager: boolean;
+  onRemove: (memberId: number) => void;
+  removePending: boolean;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const [delegateOpen, setDelegateOpen] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+
+  const transferMutation = useTransferManager(selectionId, {
+    onSuccess: () => {
+      toast.success('매니저 권한을 위임했습니다.');
+      setDelegateOpen(false);
+    },
+    onError: (err) => toast.error(err.message || '매니저 위임에 실패했습니다.'),
+  });
+
+  const leaveMutation = useLeaveSelection(selectionId, {
+    onSuccess: () => {
+      toast.success('선곡 회의에서 떠났습니다.');
+      onClose();
+      router.replace(ROUTES.TRACK_SELECTIONS);
+    },
+    onError: (err) => toast.error(err.message || '떠나기에 실패했습니다.'),
+  });
+
+  return (
+    <li className="bg-card border-border gap-s-3 px-s-3 py-s-2 flex items-center rounded-md border">
+      <Avatar src={avatarSrc} fallback={name} size="sm" />
+      <div className="min-w-0 flex-1">
+        <span className="text-caption font-semibold">{name}</span>
+        {isSelf && <span className="text-micro ml-s-2 font-bold text-white">나</span>}
+      </div>
+
+      {isSelf && (
+        <button
+          type="button"
+          onClick={() => setLeaveOpen(true)}
+          aria-label="선곡 회의 떠나기"
+          className="text-foreground-muted hover:text-danger gap-s-1 rounded-md p-1 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
+      )}
+
+      {!isSelf && (canTransferManager || !readOnly) && (
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button
+              type="button"
+              aria-label={`${name} 옵션`}
+              className="text-foreground-muted hover:text-foreground rounded-sm p-1 transition-colors"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="end"
+              sideOffset={4}
+              className={cn(
+                'bg-card border-border z-50 min-w-[110px] rounded-lg border py-1 shadow-lg',
+                'data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out',
+              )}
+            >
+              {canTransferManager && (
+                <DropdownMenu.Item
+                  className="text-foreground hover:bg-surface-hi cursor-pointer px-4 py-2.5 text-sm outline-none"
+                  onSelect={() => setDelegateOpen(true)}
+                >
+                  매니저 위임
+                </DropdownMenu.Item>
+              )}
+              {!readOnly && (
+                <DropdownMenu.Item
+                  className="text-danger hover:bg-surface-hi cursor-pointer px-4 py-2.5 text-sm outline-none"
+                  onSelect={() => onRemove(memberId)}
+                >
+                  내보내기
+                </DropdownMenu.Item>
+              )}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+      )}
+
+      {/* 매니저 위임 다이얼로그 */}
+      <Dialog open={delegateOpen} onOpenChange={setDelegateOpen}>
+        <DialogContent>
+          <DialogHeader className="border-b-0 pb-2">
+            <DialogTitle>매니저 권한 위임</DialogTitle>
+            <DialogDescription>
+              해당 참여자에게 매니저 권한을 넘깁니다. 위임 후 본인은 일반 참여자로 전환됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="border-border mx-5 border-b" />
+          <DialogBody>
+            <p className="text-foreground-sub text-sm">
+              <span className="text-nav-active font-bold">{name}</span> 에게 매니저를
+              위임하시겠어요? 이 동작은 되돌릴 수 없습니다.
+            </p>
+          </DialogBody>
+          <DialogFooter className="border-t-0">
+            <Button variant="ghost" className="h-8" onClick={() => setDelegateOpen(false)}>
+              취소
+            </Button>
+            <Button
+              variant="secondary"
+              className="h-8 rounded-[5px] border-white bg-white px-2 text-neutral-900 hover:border-neutral-100 hover:bg-neutral-100"
+              loading={transferMutation.isPending}
+              onClick={() => transferMutation.mutate(memberId)}
+            >
+              위임하기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 떠나기 다이얼로그 */}
+      <Dialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+        <DialogContent>
+          <DialogHeader className="border-b-0 pb-2">
+            <DialogTitle>선곡 회의를 떠나시겠어요?</DialogTitle>
+            <DialogDescription>
+              떠난 후에는 해당 선곡 회의의 곡·채팅에 접근할 수 없습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="border-border mx-5 border-b" />
+          <DialogFooter className="border-t-0">
+            <Button
+              variant="ghost"
+              className="h-8 rounded-[5px]"
+              onClick={() => setLeaveOpen(false)}
+            >
+              취소
+            </Button>
+            <Button
+              variant="danger"
+              className="h-8 rounded-[5px] px-2"
+              loading={leaveMutation.isPending}
+              onClick={() => leaveMutation.mutate()}
+            >
+              떠나기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {!isSelf && removePending && (
+        <Loader2 className="text-foreground-muted h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+      )}
+    </li>
+  );
 }
 
 export function ParticipantsModal({
@@ -32,6 +224,7 @@ export function ParticipantsModal({
   members,
   currentUserId,
   readOnly = false,
+  isManager = false,
   onClose,
 }: ParticipantsModalProps) {
   const [memberQuery, setMemberQuery] = useState('');
@@ -108,34 +301,19 @@ export function ParticipantsModal({
                 const name = member?.name ?? p.member?.name ?? `멤버 #${memberId}`;
                 const isSelf = String(memberId) === currentUserId;
                 return (
-                  <li
+                  <ParticipantRow
                     key={memberId}
-                    className="bg-card border-border gap-s-3 px-s-3 py-s-2 flex items-center rounded-md border"
-                  >
-                    <Avatar
-                      src={member?.profileImg ?? p.member?.profileImg ?? undefined}
-                      fallback={name}
-                      size="sm"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <span className="text-caption font-semibold">{name}</span>
-                      {isSelf && <span className="text-micro ml-s-2 font-bold text-white">나</span>}
-                    </div>
-                    {!readOnly && !isSelf && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemove(memberId)}
-                        disabled={updateParticipants.isPending}
-                        aria-label={`${name} 제거`}
-                        className={cn(
-                          'text-foreground-muted hover:text-danger rounded-md p-1 transition-colors',
-                          updateParticipants.isPending && 'cursor-not-allowed opacity-40',
-                        )}
-                      >
-                        <UserMinus className="h-4 w-4" />
-                      </button>
-                    )}
-                  </li>
+                    selectionId={selectionId}
+                    memberId={memberId}
+                    name={name}
+                    avatarSrc={member?.profileImg ?? p.member?.profileImg ?? undefined}
+                    isSelf={isSelf}
+                    readOnly={readOnly}
+                    canTransferManager={isManager}
+                    onRemove={handleRemove}
+                    removePending={updateParticipants.isPending}
+                    onClose={onClose}
+                  />
                 );
               })}
             </ul>
