@@ -64,12 +64,14 @@ export type ScheduleAutoScheduleDayOfWeek =
   | 'SATURDAY'
   | 'SUNDAY';
 
+/** 필드 전부 옵셔널 — 백엔드 스펙상 바디 자체는 필수지만 개별 필드는 전부 옵셔널이라, 마법사가
+ * 기간이 짧아 질문을 건너뛴 필드는 아예 보내지 않고 백엔드 기본값에 맡길 수 있다. */
 export interface ScheduleAutoScheduleRequest {
-  interval: ScheduleAutoScheduleInterval;
-  jamDurationSlots: number;
-  maxJamsPerDay: number;
-  maxEmptySlotsBetweenJams: number;
-  dayPreference: ScheduleAutoScheduleDayOfWeek[];
-  startTimePreference: number;
-  endTimePreference: number;
+  interval?: ScheduleAutoScheduleInterval;
+  jamDurationSlots?: number;
+  maxJamsPerDay?: number;
+  maxEmptySlotsBetweenJams?: number;
+  dayPreference?: ScheduleAutoScheduleDayOfWeek[];
+  startTimePreference?: number;
+  endTimePreference?: number;
 }
