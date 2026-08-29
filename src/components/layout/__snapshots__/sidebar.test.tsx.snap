@@ -32,7 +32,7 @@ exports[`Sidebar > 활성 경로(/bands) 및 로그인 사용자 정보 렌더 �
       </svg>
     </button>
     <div
-      class="text-foreground-muted mt-1.25 pb-s-2 pt-s-1 text-micro font-bold tracking-wider uppercase px-s-3"
+      class="text-foreground-muted pb-s-2 pt-s-1 text-micro mt-1.25 font-bold tracking-wider uppercase px-s-3"
     >
       Navigation
     </div>
