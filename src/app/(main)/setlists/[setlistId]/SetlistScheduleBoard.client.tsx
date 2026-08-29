@@ -48,6 +48,7 @@ import {
   WeeklyScheduleGrid,
 } from '@/domain/schedule-coordination/components/WeeklyScheduleGrid.client';
 import {
+  addDays,
   dayOfWeek,
   enumerateDays,
   slotToTime,
@@ -1199,6 +1200,18 @@ export function SetlistScheduleBoard({
   );
   const [overlapPickerBlockId, setOverlapPickerBlockId] = useState<string | null>(null);
 
+  // Ctrl/Cmd+C로 복사한 블록 내용 — 트랙 구성·길이·제목/메모에 더해 원본의 날짜·시작 슬롯도
+  // 같이 들고 있는다. Ctrl/Cmd+V 시점에 다른 자리를 선택해뒀으면 그 자리(겹쳐 놓기 포함)에,
+  // 아무것도 선택 안 해뒀으면 원본과 같은 요일·시간에 새 블록을 만든다.
+  const [blockClipboard, setBlockClipboard] = useState<{
+    trackIds: string[];
+    title?: string;
+    note?: string;
+    span: number;
+    originDate: string;
+    originSlot: number;
+  } | null>(null);
+
   const days = useMemo(() => {
     const monday = mondayOf(new Date());
     monday.setDate(monday.getDate() + weekOffset * 7);
@@ -1206,6 +1219,87 @@ export function SetlistScheduleBoard({
     sunday.setDate(sunday.getDate() + 6);
     return enumerateDays(toLocalISODate(monday), toLocalISODate(sunday));
   }, [weekOffset]);
+
+  useEffect(() => {
+    if (!canEdit || !activeBoard) return;
+    const board = activeBoard;
+
+    function isEditableTarget(target: EventTarget | null) {
+      if (!(target instanceof HTMLElement)) return false;
+      return (
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+      );
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || isEditableTarget(e.target)) return;
+      const key = e.key.toLowerCase();
+
+      if (key === 'c') {
+        if (!selectedBlock) return;
+        e.preventDefault();
+        setBlockClipboard({
+          trackIds: selectedBlock.trackIds,
+          title: selectedBlock.title ?? undefined,
+          note: selectedBlock.note ?? undefined,
+          span: spanOf(selectedBlock),
+          originDate: selectedBlock.startDate,
+          originSlot: selectedBlock.startSlot,
+        });
+        // 복사한 원본 블록 선택을 그대로 두면, 그 뒤로 다른 주로 이동해서 붙여넣기를 눌러도
+        // "선택된 블록이 있으니 그 자리에" 우선순위에 걸려 계속 원본 자리로만 붙여넣기가
+        // 됐다(사실상 선택 해제 전까지 원본을 벗어날 수 없었음) — 복사 직후엔 선택을 풀어서,
+        // 명시적으로 다른 자리를 새로 클릭하지 않는 한 "지금 보고 있는 주의 같은 요일"
+        // 기본값이 적용되게 한다.
+        setSelectedBlockId(null);
+        setSelectedCell(null);
+        toast.success('블록을 복사했습니다.');
+        return;
+      }
+
+      if (key === 'v') {
+        if (!blockClipboard) return;
+        // 붙여넣을 자리 — 블록이 선택돼 있으면 그 블록의 시작 지점(겹쳐 놓기), 선택된 게 없으면
+        // 클릭해 둔 빈 셀, 그마저 없으면 원본과 같은 요일·시간. 지금 보고 있는 주의 그 요일로
+        // 계산하되, 그게 원본과 정확히 같은 날짜(=원본과 같은 주를 보고 있는 경우)면 다음 주
+        // 같은 요일로 한 번 더 밀어서 원본 위에 그대로 겹쳐 생성되는 걸 막는다.
+        let sameWeekdayFallback =
+          days.find((d) => dayOfWeek(d) === dayOfWeek(blockClipboard.originDate)) ??
+          blockClipboard.originDate;
+        if (sameWeekdayFallback === blockClipboard.originDate) {
+          sameWeekdayFallback = addDays(blockClipboard.originDate, 7);
+        }
+        const pasteTarget = selectedBlock
+          ? { date: selectedBlock.startDate, slot: selectedBlock.startSlot }
+          : (selectedCell ?? { date: sameWeekdayFallback, slot: blockClipboard.originSlot });
+        e.preventDefault();
+        const startSlot = clampBlockStartSlot(pasteTarget.slot, blockClipboard.span);
+        upsertBlock.mutate(
+          {
+            boardId: board.boardId,
+            blockId: crypto.randomUUID(),
+            body: {
+              trackIds: blockClipboard.trackIds,
+              startDate: pasteTarget.date,
+              startSlot,
+              endDate: pasteTarget.date,
+              endSlot: startSlot + blockClipboard.span,
+              pinned: false,
+              title: blockClipboard.title,
+              note: blockClipboard.note,
+            },
+          },
+          {
+            onSuccess: () => toast.success('블록을 붙여넣었습니다.'),
+            onError: () => toast.error('블록 붙여넣기에 실패했습니다.'),
+          },
+        );
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [canEdit, activeBoard, selectedBlock, selectedCell, blockClipboard, upsertBlock, toast, days]);
 
   const rangeLabel = (() => {
     if (days.length === 0) return '';
