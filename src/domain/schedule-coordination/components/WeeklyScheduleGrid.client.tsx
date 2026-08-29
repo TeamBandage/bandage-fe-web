@@ -223,7 +223,7 @@ export function WeeklyScheduleGrid({
                   !inWindow && 'bg-surface/40',
                   (onCellClick || onPaintStart) &&
                     inWindow &&
-                    'hover:bg-accent/40 hover:ring-accent cursor-pointer touch-none select-none hover:ring-2 hover:ring-inset',
+                    'hover:bg-foreground-sub/30 hover:ring-foreground-sub cursor-pointer touch-none select-none hover:ring-2 hover:ring-inset',
                   extraClass,
                 )}
                 style={{ gridRow: sIdx + 2, gridColumn: dIdx + 2 }}
