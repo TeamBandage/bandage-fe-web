@@ -714,6 +714,7 @@ export function MeetingDetail({ meetingId }: { meetingId: string }) {
           members={members}
           currentUserId={currentUserId}
           readOnly={!canManageParticipants}
+          isManager={isManager}
           onClose={() => setShowParticipantsModal(false)}
         />
       )}
