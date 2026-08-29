@@ -100,6 +100,14 @@ export function getSetlistParticipants(
   );
 }
 
+/** 셋리스트 매니저 권한을 다른 참여자에게 양도. */
+export function transferSetlistManager(
+  setlistId: string,
+  managerId: number,
+): Promise<SetlistResponse> {
+  return apiClient.patch<SetlistResponse>(`${PREFIX}/${setlistId}/manager`, { managerId });
+}
+
 /** 셋리스트 트랙 수정 */
 export function updateSetlistTrack(
   setlistId: string,

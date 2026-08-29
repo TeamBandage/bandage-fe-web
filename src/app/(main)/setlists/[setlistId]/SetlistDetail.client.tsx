@@ -739,6 +739,8 @@ export function SetlistDetail({ setlistId }: { setlistId: string }) {
         <SetlistParticipantsModal
           setlistId={setlistId}
           trackTitleById={trackTitleById}
+          isManager={isManager}
+          currentMemberId={me?.id}
           onClose={() => setShowParticipantsModal(false)}
         />
       )}
