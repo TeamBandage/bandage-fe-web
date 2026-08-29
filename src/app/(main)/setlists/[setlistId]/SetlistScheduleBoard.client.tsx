@@ -1610,6 +1610,13 @@ export function SetlistScheduleBoard({
                 days={days}
                 slotStart={SLOT_START}
                 slotEnd={SLOT_END}
+                // 적용 시작일~종료일(windowFrom/To) 밖의 날짜는 회색으로 비활성 표시하고 블록을
+                // 못 넣게 막는다 — 미설정 보드는 기존처럼 전체 허용.
+                isInWindow={(date) =>
+                  !activeBoard.windowFrom || !activeBoard.windowTo
+                    ? true
+                    : date >= activeBoard.windowFrom && date <= activeBoard.windowTo
+                }
                 className="h-full"
                 fillWidth
                 dayColMinWidth={72}
