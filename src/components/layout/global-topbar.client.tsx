@@ -13,17 +13,16 @@ export function GlobalTopbar() {
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
 
   return (
-    // z-[35]: 페이지 내부 sticky 요소(예: WeeklyScheduleGrid 헤더 z-30)보다는 위,
-    // 전체화면 오버레이/모달(z-40 이상)보다는 아래에 둬서 알림 드롭다운이 항상 콘텐츠 위에 뜨게 함.
-    <header className="bg-surface border-border fixed top-0 right-0 left-0 z-35 flex h-14 shrink-0 items-center justify-between border-b px-4">
-      {/* 로고 — 데스크톱에서는 사이드바에 가려짐, 모바일에서만 표시 */}
+    // z-37: 사이드바(z-20)보다 위, 전체화면 오버레이/모달(z-40 이상)보다는 아래에 둬서
+    // 알림 드롭다운이 항상 콘텐츠 위에 뜨고, topbar 로고도 사이드바에 가리지 않게 함.
+    // 로고는 이제 여기 한 곳에서만 렌더 — 사이드바는 접힘/펼침과 무관하게 자체 로고를 갖지 않음.
+    <header className="bg-surface border-border fixed top-0 right-0 left-0 z-37 flex h-14 shrink-0 items-center justify-between border-b px-4">
       <Image
         src="/brand/bandage_wave_text_white.png"
         alt="Bandage"
-        width={80}
-        height={17}
+        width={110}
+        height={23}
         priority
-        className="lg:invisible"
       />
       <div className="flex items-center gap-5">
         {/* 아바타가 사라지는 데스크톱에서는 알림벨이 우측 끝에 바짝 붙어 살짝 왼쪽으로 띄움 */}
