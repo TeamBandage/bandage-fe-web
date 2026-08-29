@@ -108,6 +108,63 @@ function spanOf(block: { startSlot: number; endSlot: number }): number {
   return block.endSlot - block.startSlot;
 }
 
+/** 같은 날짜 안에서 시간대가 겹치는 블록들을 군집으로 묶는다(트랜지티브 겹침 포함) — 블록마다
+ * 자신이 속한 군집 전체(자기 자신 포함, 시작 시각순)를 찾을 수 있게 blockId로 매핑한다.
+ * 겹치는 게 하나도 없으면 자기 자신 하나짜리 배열이 나온다. 탭했을 때 겹친 블록이 여러 개면
+ * 그중 하나를 고르는 선택 팝업을 띄우는 데 쓴다(전부 같은 자리에 쌓여 있어 뒤에 깔린 블록은
+ * 직접 탭할 수 없으므로). */
+function computeOverlapClusters(
+  blocks: ScheduleBlockResponse[],
+): Map<string, ScheduleBlockResponse[]> {
+  const clusters = new Map<string, ScheduleBlockResponse[]>();
+  const byDate = new Map<string, ScheduleBlockResponse[]>();
+  for (const block of blocks) {
+    const arr = byDate.get(block.startDate) ?? [];
+    arr.push(block);
+    byDate.set(block.startDate, arr);
+  }
+
+  for (const dayBlocks of byDate.values()) {
+    const sorted = [...dayBlocks].sort(
+      (a, b) => a.startSlot - b.startSlot || a.endSlot - b.endSlot,
+    );
+    // 시작순 정렬 상태에서 "지금까지의 군집 최대 endSlot"보다 이전에 시작하면 그 군집에 합류 —
+    // 병합 구간(merge intervals) 스윕과 동일한 방식으로 트랜지티브 겹침 군집을 나눈다.
+    let clusterStart = 0;
+    while (clusterStart < sorted.length) {
+      let clusterEnd = sorted[clusterStart]!.endSlot;
+      let i = clusterStart + 1;
+      while (i < sorted.length && sorted[i]!.startSlot < clusterEnd) {
+        clusterEnd = Math.max(clusterEnd, sorted[i]!.endSlot);
+        i++;
+      }
+      const cluster = sorted.slice(clusterStart, i);
+      for (const block of cluster) clusters.set(block.blockId, cluster);
+      clusterStart = i;
+    }
+  }
+  return clusters;
+}
+
+/** 블록 목록/선택 팝업에 보여줄 라벨 — 제목이 없으면 트랙 제목, 그마저 없으면 "(빈 블록)". */
+function blockLabel(block: ScheduleBlockResponse, trackById: Map<string, SetlistTrackResponse>) {
+  const trackTitles = block.trackIds
+    .map((id) => trackById.get(id)?.title)
+    .filter(Boolean)
+    .join(', ');
+  return block.title || trackTitles || '(빈 블록)';
+}
+
+/** 보드의 적용 시작일~종료일(windowFrom/To) 안에 드는 날짜인지 — 미설정 보드는 항상 허용.
+ * 그리드 헤더/셀 비활성 표시와, 기존 블록 위로 드롭할 때의 기간 밖 가드 둘 다에 쓰인다. */
+function isDateInWindow(
+  board: Pick<ScheduleBoardResponse, 'windowFrom' | 'windowTo'>,
+  date: string,
+): boolean {
+  if (!board.windowFrom || !board.windowTo) return true;
+  return date >= board.windowFrom && date <= board.windowTo;
+}
+
 /** 드롭 지점(slot)에 길이 span짜리 블록을 놓을 때의 시작 슬롯 — 백엔드 요청 검증(startSlot 0~47,
  * endSlot 1~48)을 만족하도록 자정 경계 너머로 넘어가지 않게 고정한다. 그대로 두면 23:30(slot 47)
  * 근처에 드롭했을 때 endSlot이 48을 넘어 자동 배치와 별개로 이 저장 요청 자체가 400으로 실패한다. */
@@ -1134,6 +1191,14 @@ export function SetlistScheduleBoard({
   const activeBoard = boards?.find((b) => b.boardId === activeBoardId) ?? null;
   const selectedBlock = activeBoard?.blocks.find((b) => b.blockId === selectedBlockId) ?? null;
 
+  // 겹치는 블록들을 탭했을 때 고를 수 있는 선택 팝업을 띄우기 위한 군집 매핑 — 전부 같은 자리에
+  // 쌓여 있어 뒤에 깔린 블록은 직접 탭할 수 없으므로, 탭하면 겹친 블록 목록에서 고르게 한다.
+  const blockClusters = useMemo(
+    () => computeOverlapClusters(activeBoard?.blocks ?? []),
+    [activeBoard?.blocks],
+  );
+  const [overlapPickerBlockId, setOverlapPickerBlockId] = useState<string | null>(null);
+
   const days = useMemo(() => {
     const monday = mondayOf(new Date());
     monday.setDate(monday.getDate() + weekOffset * 7);
@@ -1612,11 +1677,7 @@ export function SetlistScheduleBoard({
                 slotEnd={SLOT_END}
                 // 적용 시작일~종료일(windowFrom/To) 밖의 날짜는 회색으로 비활성 표시하고 블록을
                 // 못 넣게 막는다 — 미설정 보드는 기존처럼 전체 허용.
-                isInWindow={(date) =>
-                  !activeBoard.windowFrom || !activeBoard.windowTo
-                    ? true
-                    : date >= activeBoard.windowFrom && date <= activeBoard.windowTo
-                }
+                isInWindow={(date) => isDateInWindow(activeBoard, date)}
                 className="h-full"
                 fillWidth
                 dayColMinWidth={72}
@@ -1647,6 +1708,8 @@ export function SetlistScheduleBoard({
                   // 30분(1슬롯)짜리 블록은 상하 리사이즈 핸들(각 8px)을 다 얹으면 제목/아이콘 줄과
                   // 겹쳐 잘려 보인다 — 이땐 핸들을 얇게 줄이고 손잡이 표시(grip bar)는 생략.
                   const compactBlock = displaySpan <= 1;
+                  const cluster = blockClusters.get(block.blockId) ?? [block];
+                  const hasOverlap = cluster.length > 1;
                   const blockEl = (
                     <div
                       key={block.blockId}
@@ -1659,9 +1722,34 @@ export function SetlistScheduleBoard({
                             }
                           : undefined
                       }
+                      // 블록 자체가 그 아래 그리드 셀 위에 얹힌 별도 엘리먼트라, 여기 onDragOver/onDrop이
+                      // 없으면 브라우저가 기본적으로 드롭을 거부해 "이미 블록이 있는 자리엔 못 놓는"
+                      // 것처럼 보였다 — 겹쳐 놓기를 허용하려고 셀과 동일한 드롭 처리를 그대로 위임한다.
+                      onDragOver={canEdit ? (e) => e.preventDefault() : undefined}
+                      onDrop={
+                        canEdit && isDateInWindow(activeBoard, block.startDate)
+                          ? (e) => {
+                              e.preventDefault();
+                              // 자기 자신 위로 다시 놓은 경우는 무시(불필요한 API 호출 방지).
+                              const movingBlockId = e.dataTransfer.getData(BLOCK_DRAG_TYPE);
+                              if (movingBlockId === block.blockId) return;
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const offsetSlots = Math.round((e.clientY - rect.top) / SLOT_HEIGHT);
+                              handleDropOnCell(block.startDate, displayStartSlot + offsetSlots)(e);
+                            }
+                          : undefined
+                      }
                       onClick={() => {
                         setPendingResize(null);
                         setSelectedCell(null);
+                        // 겹친 블록이 여러 개면(뒤에 깔린 블록은 직접 탭할 수 없으니) 바로
+                        // 선택하지 않고 목록에서 고르게 한다.
+                        if (hasOverlap) {
+                          setOverlapPickerBlockId((prev) =>
+                            prev === block.blockId ? null : block.blockId,
+                          );
+                          return;
+                        }
                         setSelectedBlockId((prev) =>
                           prev === block.blockId ? null : block.blockId,
                         );
@@ -1680,6 +1768,9 @@ export function SetlistScheduleBoard({
                       style={{
                         gridRow: `${displayStartSlot - SLOT_START + 2} / span ${displaySpan}`,
                         gridColumn: dIdx + 2,
+                        // 겹친 블록 중 선택된(또는 방금 고른) 블록을 맨 위로 올려서 리사이즈
+                        // 핸들·설정/삭제 버튼 등 자체 컨트롤이 직접 눌리도록 한다.
+                        zIndex: isSelected ? 20 : 1,
                       }}
                     >
                       <div className="flex items-start justify-between gap-1">
@@ -1768,7 +1859,51 @@ export function SetlistScheduleBoard({
                       )}
                     </div>
                   );
-                  if (!canEdit || !isSelected) return [blockEl];
+                  const pickerEl = overlapPickerBlockId === block.blockId && hasOverlap && (
+                    <div
+                      key={`${block.blockId}-picker`}
+                      style={{
+                        gridRow: `${displayStartSlot - SLOT_START + 2} / span 1`,
+                        gridColumn: dIdx + 2,
+                        zIndex: 30,
+                      }}
+                      className="relative"
+                    >
+                      {/* 바깥 클릭 시 닫기 */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setOverlapPickerBlockId(null)}
+                        aria-hidden="true"
+                      />
+                      <div className="bg-surface border-border absolute top-0 left-0 z-20 w-44 rounded-md border shadow-xl">
+                        <div className="text-foreground-muted border-border border-b px-3 py-1.5 text-[11px] font-semibold">
+                          겹친 블록 {cluster.length}개
+                        </div>
+                        {cluster.map((b) => (
+                          <button
+                            key={b.blockId}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBlockId(b.blockId);
+                              setOverlapPickerBlockId(null);
+                            }}
+                            className="hover:bg-card flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left"
+                          >
+                            <span className="text-caption truncate font-semibold">
+                              {blockLabel(b, trackById)}
+                            </span>
+                            <span className="text-foreground-muted font-mono text-[11px]">
+                              {slotToTime(b.startSlot)}~{slotToTime(b.endSlot)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                  if (!canEdit || !isSelected) {
+                    return pickerEl ? [blockEl, pickerEl] : [blockEl];
+                  }
                   const confirmEl = (
                     <button
                       key={`${block.blockId}-confirm`}
@@ -1781,13 +1916,14 @@ export function SetlistScheduleBoard({
                       style={{
                         gridRow: `${displayEndSlot - SLOT_START + 1} / span 1`,
                         gridColumn: dIdx + 2,
+                        zIndex: 21,
                       }}
                       className="z-20 h-5 w-5 translate-x-1/3 translate-y-1/3 self-end justify-self-end rounded-full bg-white text-neutral-900 shadow-md hover:bg-neutral-100"
                     >
                       <Check className="mx-auto h-3.5 w-3.5" />
                     </button>
                   );
-                  return [blockEl, confirmEl];
+                  return pickerEl ? [blockEl, confirmEl, pickerEl] : [blockEl, confirmEl];
                 })}
               />
             </div>
