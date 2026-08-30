@@ -141,6 +141,9 @@ export function WeeklyScheduleGrid({
           return (
             <div
               key={`h-${d}-${i}`}
+              title={
+                !inWindow ? '적용 기간 밖이라 이 날짜에는 블록을 배치할 수 없습니다.' : undefined
+              }
               className={cn(
                 'bg-surface border-border sticky top-0 z-20 flex flex-col items-center justify-center gap-0.5 border-b px-2 pt-1 pb-2 text-center',
                 !inWindow && 'opacity-30',
@@ -184,6 +187,7 @@ export function WeeklyScheduleGrid({
             return (
               <div
                 key={`c-${d}-${s}`}
+                title={!inWindow ? '적용 기간 밖이라 블록을 배치할 수 없습니다.' : undefined}
                 data-paint-cell={onPaintStart && inWindow ? '1' : undefined}
                 data-cell-date={d}
                 data-cell-slot={s}
@@ -223,7 +227,7 @@ export function WeeklyScheduleGrid({
                   !inWindow && 'bg-surface/40',
                   (onCellClick || onPaintStart) &&
                     inWindow &&
-                    'hover:bg-accent/40 hover:ring-accent cursor-pointer touch-none select-none hover:ring-2 hover:ring-inset',
+                    'hover:bg-foreground-sub/30 hover:ring-foreground-sub cursor-pointer touch-none select-none hover:ring-2 hover:ring-inset',
                   extraClass,
                 )}
                 style={{ gridRow: sIdx + 2, gridColumn: dIdx + 2 }}

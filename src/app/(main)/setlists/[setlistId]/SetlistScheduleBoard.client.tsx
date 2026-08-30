@@ -16,12 +16,15 @@ import {
   X,
 } from 'lucide-react';
 import {
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type DragEvent,
   type FormEvent,
   type PointerEvent as ReactPointerEvent,
+  type UIEvent,
 } from 'react';
 
 import { Avatar } from '@/components/ui/avatar';
@@ -45,6 +48,7 @@ import {
   WeeklyScheduleGrid,
 } from '@/domain/schedule-coordination/components/WeeklyScheduleGrid.client';
 import {
+  addDays,
   dayOfWeek,
   enumerateDays,
   slotToTime,
@@ -78,10 +82,15 @@ import { cn } from '@/lib/cn';
 /** 표시 범위 0:00~24:00 (slot 0=00:00, 30분 단위). */
 const SLOT_START = 0;
 const SLOT_END = 48;
+/** 자동 배치 마법사의 "선호 시작 시각" 기본값 — 오전 9시(slot 18). 종료는 SLOT_END(24:00) 그대로. */
+const DEFAULT_START_TIME_PREFERENCE = 18;
 /** 새 블록 배치 시 기본 길이 — 곡 실제 재생시간과 무관하게 1시간(2슬롯)으로 고정, 이후 드래그로 조정. */
 const DEFAULT_BLOCK_SPAN_SLOTS = 2;
 /** 리사이즈 드래그 시 블록 최소 길이 — 30분(1슬롯). */
 const MIN_BLOCK_SPAN_SLOTS = 1;
+/** 자동 배치 잼 1곡당 길이(슬롯) — 마법사에 이 값을 물어보는 화면이 없어 항상 고정값으로 보낸다.
+ * 백엔드 ScheduleAutoPlaceRequest.DEFAULT_JAM_DURATION_SLOTS(4슬롯=2시간)와 동일하게 맞춘다. */
+const AUTO_SCHEDULE_JAM_DURATION_SLOTS = 4;
 
 const TRACK_DRAG_TYPE = 'application/x-track-id';
 const BLOCK_DRAG_TYPE = 'application/x-block-id';
@@ -98,6 +107,70 @@ function mondayOf(base: Date): Date {
 
 function spanOf(block: { startSlot: number; endSlot: number }): number {
   return block.endSlot - block.startSlot;
+}
+
+/** 같은 날짜 안에서 시간대가 겹치는 블록들을 군집으로 묶는다(트랜지티브 겹침 포함) — 블록마다
+ * 자신이 속한 군집 전체(자기 자신 포함, 시작 시각순)를 찾을 수 있게 blockId로 매핑한다.
+ * 겹치는 게 하나도 없으면 자기 자신 하나짜리 배열이 나온다. 탭했을 때 겹친 블록이 여러 개면
+ * 그중 하나를 고르는 선택 팝업을 띄우는 데 쓴다(전부 같은 자리에 쌓여 있어 뒤에 깔린 블록은
+ * 직접 탭할 수 없으므로). */
+function computeOverlapClusters(
+  blocks: ScheduleBlockResponse[],
+): Map<string, ScheduleBlockResponse[]> {
+  const clusters = new Map<string, ScheduleBlockResponse[]>();
+  const byDate = new Map<string, ScheduleBlockResponse[]>();
+  for (const block of blocks) {
+    const arr = byDate.get(block.startDate) ?? [];
+    arr.push(block);
+    byDate.set(block.startDate, arr);
+  }
+
+  for (const dayBlocks of byDate.values()) {
+    const sorted = [...dayBlocks].sort(
+      (a, b) => a.startSlot - b.startSlot || a.endSlot - b.endSlot,
+    );
+    // 시작순 정렬 상태에서 "지금까지의 군집 최대 endSlot"보다 이전에 시작하면 그 군집에 합류 —
+    // 병합 구간(merge intervals) 스윕과 동일한 방식으로 트랜지티브 겹침 군집을 나눈다.
+    let clusterStart = 0;
+    while (clusterStart < sorted.length) {
+      let clusterEnd = sorted[clusterStart]!.endSlot;
+      let i = clusterStart + 1;
+      while (i < sorted.length && sorted[i]!.startSlot < clusterEnd) {
+        clusterEnd = Math.max(clusterEnd, sorted[i]!.endSlot);
+        i++;
+      }
+      const cluster = sorted.slice(clusterStart, i);
+      for (const block of cluster) clusters.set(block.blockId, cluster);
+      clusterStart = i;
+    }
+  }
+  return clusters;
+}
+
+/** 블록 목록/선택 팝업에 보여줄 라벨 — 제목이 없으면 트랙 제목, 그마저 없으면 "(빈 블록)". */
+function blockLabel(block: ScheduleBlockResponse, trackById: Map<string, SetlistTrackResponse>) {
+  const trackTitles = block.trackIds
+    .map((id) => trackById.get(id)?.title)
+    .filter(Boolean)
+    .join(', ');
+  return block.title || trackTitles || '(빈 블록)';
+}
+
+/** 보드의 적용 시작일~종료일(windowFrom/To) 안에 드는 날짜인지 — 미설정 보드는 항상 허용.
+ * 그리드 헤더/셀 비활성 표시와, 기존 블록 위로 드롭할 때의 기간 밖 가드 둘 다에 쓰인다. */
+function isDateInWindow(
+  board: Pick<ScheduleBoardResponse, 'windowFrom' | 'windowTo'>,
+  date: string,
+): boolean {
+  if (!board.windowFrom || !board.windowTo) return true;
+  return date >= board.windowFrom && date <= board.windowTo;
+}
+
+/** 드롭 지점(slot)에 길이 span짜리 블록을 놓을 때의 시작 슬롯 — 백엔드 요청 검증(startSlot 0~47,
+ * endSlot 1~48)을 만족하도록 자정 경계 너머로 넘어가지 않게 고정한다. 그대로 두면 23:30(slot 47)
+ * 근처에 드롭했을 때 endSlot이 48을 넘어 자동 배치와 별개로 이 저장 요청 자체가 400으로 실패한다. */
+function clampBlockStartSlot(slot: number, span: number): number {
+  return Math.max(SLOT_START, Math.min(slot, SLOT_END - span));
 }
 
 /** 특정 날짜가 속한 주(월요일 기준)가 이번 주로부터 몇 주 떨어져 있는지. 자동 배치로 생긴 블록이
@@ -137,7 +210,9 @@ function MemberRow({
 }
 
 /** 30분 단위 슬롯 값을 'HH:MM' 표기로 보여주는 커스텀 스텝퍼 — 네이티브 time input은
- * 브라우저/OS 로케일에 따라 12시간·오전/오후 표기로 렌더돼 형식을 직접 통제할 수 없어 대체. */
+ * 브라우저/OS 로케일에 따라 12시간·오전/오후 표기로 렌더돼 형식을 직접 통제할 수 없어 대체.
+ * 화살표로만 30분씩 올리고 내리는 게 불편해서, 시(hour)는 키보드로 직접 입력하고 분은
+ * 슬롯 규약(30분 단위)에 맞게 00/30 중에서만 고르도록 병행 제공한다. */
 function SlotTimeStepper({
   label,
   slot,
@@ -151,15 +226,57 @@ function SlotTimeStepper({
   max: number;
   onChange: (slot: number) => void;
 }) {
+  const hour = Math.floor(slot / 2);
+  const isHalf = slot % 2 === 1;
+
+  function commit(nextHour: number, nextIsHalf: boolean) {
+    if (Number.isNaN(nextHour)) return;
+    const clampedHour = Math.max(0, Math.min(24, Math.trunc(nextHour)));
+    const computed = clampedHour * 2 + (nextIsHalf ? 1 : 0);
+    onChange(Math.max(min, Math.min(max, computed)));
+  }
+
   return (
     <Field label={label}>
       {({ inputId }) => (
         <div
           id={inputId}
-          className="border-border hover:border-border-hi bg-surface flex h-10 w-full items-center justify-between rounded-[5px] border px-3"
+          className="border-border hover:border-border-hi bg-surface flex h-10 w-full items-center gap-1.5 rounded-[5px] border px-2"
         >
-          <span className="text-foreground font-mono text-sm">{slotToTime(slot)}</span>
-          <div className="flex flex-col">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={24}
+            value={hour}
+            onChange={(e) => commit(e.target.valueAsNumber, isHalf)}
+            aria-label={`${label} 시`}
+            className="text-foreground w-8 [appearance:textfield] bg-transparent text-center font-mono text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <span className="text-foreground-muted text-sm">:</span>
+          <div className="gap-s-1 flex">
+            {(['00', '30'] as const).map((m) => {
+              const selected = (m === '30') === isHalf;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => commit(hour, m === '30')}
+                  aria-pressed={selected}
+                  aria-label={`${label} ${m}분`}
+                  className={cn(
+                    'rounded px-1.5 py-0.5 text-xs font-semibold transition-colors',
+                    selected
+                      ? 'bg-white text-neutral-900'
+                      : 'text-foreground-muted hover:text-foreground',
+                  )}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+          <div className="ml-auto flex flex-col">
             <button
               type="button"
               aria-label={`${label} 30분 증가`}
@@ -183,13 +300,6 @@ function SlotTimeStepper({
   );
 }
 
-const ALL_AUTO_SCHEDULE_INTERVALS: ScheduleAutoScheduleInterval[] = [
-  'ONCE',
-  'DAILY',
-  'WEEKLY',
-  'BIWEEKLY',
-  'MONTHLY',
-];
 const AUTO_SCHEDULE_INTERVAL_LABEL: Record<ScheduleAutoScheduleInterval, string> = {
   ONCE: '한 번만',
   DAILY: '매일',
@@ -215,22 +325,64 @@ const DOW_SHORT_LABEL: Record<ScheduleAutoScheduleDayOfWeek, string> = {
   SATURDAY: '토',
   SUNDAY: '일',
 };
+type OnceOrRecurrence = 'ONCE' | 'RECURRENCE';
+/** "하루만"/"하루 이상" — 기획 플로우차트의 "More than a Day?" 를 board.windowFrom/To 로
+ * 자동 판정하지 않고, 마법사 첫 화면에서 사용자가 직접 고르게 한다(윈도우 미설정 보드가 많아
+ * 자동 판정만으로는 이 분기 자체에 도달하기 어려웠음). */
+type DayScope = 'SAME_DAY' | 'MULTI_DAY';
+
 type AutoScheduleWizardStep =
-  | 'interval'
-  | 'duration'
+  | 'dayChoice'
+  | 'onceOrRecurrence'
+  | 'weekChoice'
+  | 'twoWeekChoice'
+  | 'monthChoice'
+  | 'intervalChoice'
   | 'maxJamsPerDay'
   | 'gap'
-  | 'dayPreference'
-  | 'timePreference';
+  | 'dayTimePreference'
+  | 'confirmOnly';
 
-const AUTO_SCHEDULE_STEPS: AutoScheduleWizardStep[] = [
-  'interval',
-  'duration',
-  'maxJamsPerDay',
-  'gap',
-  'dayPreference',
-  'timePreference',
-];
+/** Recurrence 선택 후 "1주 이상/2주 이상/1달 이상인가요?" 세 질문의 답으로 고를 수 있는 반복 주기
+ * 옵션을 결정한다 — board.windowFrom/To 로 자동 판정하지 않고 전부 사용자가 직접 답한다.
+ * twoWeeksOrMore가 false면 이 함수까지 안 오고 [DAILY, WEEKLY] 두 개로 고정. */
+function recurrenceIntervalOptions(
+  twoWeeksOrMore: boolean,
+  monthOrMore: boolean,
+): ScheduleAutoScheduleInterval[] {
+  if (!twoWeeksOrMore) return ['DAILY', 'WEEKLY'];
+  if (!monthOrMore) return ['DAILY', 'WEEKLY', 'BIWEEKLY'];
+  return ['DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY'];
+}
+
+/** 자동 배치 마법사의 화면 순서 — dayScope/Once-Recurrence 선택과 "1주·2주·1달 이상인가요?" 답에
+ * 따라 뒷 단계를 건너뛴다. (기획 플로우차트 그대로: 하루만은 전부 생략, Recurrence + 1주 미만은
+ * "매일"로 고정돼 세부 옵션 자체가 필요 없음. 세 질문 전부 사용자가 직접 답하는 명시적 선택.) */
+function buildAutoScheduleSteps(
+  dayScope: DayScope | null,
+  onceOrRecurrence: OnceOrRecurrence | null,
+  weekOrMore: boolean | null,
+  twoWeeksOrMore: boolean | null,
+  monthOrMore: boolean | null,
+): AutoScheduleWizardStep[] {
+  if (!dayScope || dayScope === 'SAME_DAY') return ['dayChoice'];
+  if (!onceOrRecurrence) return ['dayChoice', 'onceOrRecurrence'];
+  if (onceOrRecurrence === 'ONCE') {
+    return ['dayChoice', 'onceOrRecurrence', 'maxJamsPerDay', 'gap', 'dayTimePreference'];
+  }
+  // RECURRENCE
+  const base: AutoScheduleWizardStep[] = ['dayChoice', 'onceOrRecurrence', 'weekChoice'];
+  if (weekOrMore === null) return base;
+  if (!weekOrMore) return [...base, 'confirmOnly'];
+  base.push('twoWeekChoice');
+  if (twoWeeksOrMore === null) return base;
+  if (!twoWeeksOrMore) {
+    return [...base, 'intervalChoice', 'maxJamsPerDay', 'gap', 'dayTimePreference'];
+  }
+  base.push('monthChoice');
+  if (monthOrMore === null) return base;
+  return [...base, 'intervalChoice', 'maxJamsPerDay', 'gap', 'dayTimePreference'];
+}
 
 function slotsToDurationLabel(slots: number): string {
   const minutes = slots * 30;
@@ -241,46 +393,90 @@ function slotsToDurationLabel(slots: number): string {
   return `${h}시간 ${m}분`;
 }
 
-/** 슬롯 값을 시각(SlotTimeStepper)이 아닌 '소요 시간'으로 보여주는 스텝퍼 — 곡당 합주 시간,
- * 합주 사이 허용 공백처럼 시각이 아니라 길이를 다루는 값에 사용. */
-function SlotDurationStepper({
+/** "합주 사이 허용 공백" 휠 피커의 후보값 — 백엔드 maxEmptySlotsBetweenJams 범위(0~46)와 동일. */
+const GAP_SLOT_VALUES = Array.from({ length: 47 }, (_, i) => i);
+
+const WHEEL_ITEM_HEIGHT = 32;
+
+/** 소요 시간(슬롯 단위) 값을 세로 스크롤 휠로 고르는 피커 — "합주 사이 허용 공백"처럼 화살표
+ * 한 칸씩 누르기엔 후보가 많은(0~46) 값에 사용. iOS 스타일 휠(가운데 하이라이트 밴드 + 스냅
+ * 스크롤)이며, 마우스 휠/터치 스크롤과 클릭 둘 다로 선택 가능. */
+function SlotWheelPicker({
   label,
-  slots,
-  min,
-  max,
+  values,
+  value,
   onChange,
 }: {
   label: string;
-  slots: number;
-  min: number;
-  max: number;
-  onChange: (slots: number) => void;
+  values: number[];
+  value: number;
+  onChange: (v: number) => void;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const lockRef = useRef(false);
+  const unlockTimerRef = useRef<number | undefined>(undefined);
+  const idx = Math.max(0, values.indexOf(value));
+
+  useEffect(() => {
+    if (ref.current && !lockRef.current) {
+      ref.current.scrollTop = idx * WHEEL_ITEM_HEIGHT;
+    }
+  }, [idx]);
+
+  const handleScroll = useCallback(
+    (e: UIEvent<HTMLDivElement>) => {
+      lockRef.current = true;
+      const i = Math.round(e.currentTarget.scrollTop / WHEEL_ITEM_HEIGHT);
+      const next = values[Math.max(0, Math.min(values.length - 1, i))];
+      if (next !== undefined && next !== value) onChange(next);
+      window.clearTimeout(unlockTimerRef.current);
+      unlockTimerRef.current = window.setTimeout(() => {
+        lockRef.current = false;
+      }, 150);
+    },
+    [onChange, value, values],
+  );
+
   return (
     <Field label={label}>
-      {({ inputId }) => (
-        <div
-          id={inputId}
-          className="border-border hover:border-border-hi bg-surface flex h-10 w-full items-center justify-between rounded-[5px] border px-3"
-        >
-          <span className="text-foreground font-mono text-sm">{slotsToDurationLabel(slots)}</span>
-          <div className="flex flex-col">
-            <button
-              type="button"
-              aria-label={`${label} 증가`}
-              onClick={() => onChange(Math.min(max, slots + 1))}
-              className="text-foreground-muted hover:text-foreground"
-            >
-              <ChevronUp className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              aria-label={`${label} 감소`}
-              onClick={() => onChange(Math.max(min, slots - 1))}
-              className="text-foreground-muted hover:text-foreground"
-            >
-              <ChevronDown className="h-3 w-3" />
-            </button>
+      {() => (
+        <div className="bg-surface border-border relative overflow-hidden rounded-md border">
+          <div
+            className="pointer-events-none absolute right-0 left-0 z-10 border-y border-white/40 bg-white/10"
+            style={{ top: WHEEL_ITEM_HEIGHT * 2, height: WHEEL_ITEM_HEIGHT }}
+            aria-hidden="true"
+          />
+          <div
+            ref={ref}
+            role="listbox"
+            tabIndex={0}
+            aria-label={label}
+            onScroll={handleScroll}
+            className="scrollbar-hide focus-visible:outline-none"
+            style={{
+              height: WHEEL_ITEM_HEIGHT * 5,
+              overflowY: 'scroll',
+              scrollSnapType: 'y mandatory',
+              paddingTop: WHEEL_ITEM_HEIGHT * 2,
+              paddingBottom: WHEEL_ITEM_HEIGHT * 2,
+              scrollbarWidth: 'none',
+            }}
+          >
+            {values.map((v) => (
+              <div
+                key={v}
+                role="option"
+                aria-selected={v === value}
+                onClick={() => onChange(v)}
+                className={cn(
+                  'flex cursor-pointer items-center justify-center text-sm font-semibold transition-colors',
+                  v === value ? 'text-foreground' : 'text-foreground-muted',
+                )}
+                style={{ height: WHEEL_ITEM_HEIGHT, scrollSnapAlign: 'center' }}
+              >
+                {slotsToDurationLabel(v)}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -302,26 +498,32 @@ function AutoScheduleModal({
   isPending: boolean;
 }) {
   const [step, setStep] = useState(0);
+  const [dayScope, setDayScope] = useState<DayScope | null>(null);
+  const [onceOrRecurrence, setOnceOrRecurrence] = useState<OnceOrRecurrence | null>(null);
+  const [weekOrMore, setWeekOrMore] = useState<boolean | null>(null);
+  const [twoWeeksOrMore, setTwoWeeksOrMore] = useState<boolean | null>(null);
+  const [monthOrMore, setMonthOrMore] = useState<boolean | null>(null);
   const [recurrenceInterval, setRecurrenceInterval] =
-    useState<ScheduleAutoScheduleInterval>('ONCE');
-  const [jamDurationSlots, setJamDurationSlots] = useState(DEFAULT_BLOCK_SPAN_SLOTS);
+    useState<ScheduleAutoScheduleInterval>('DAILY');
   const [maxJamsPerDay, setMaxJamsPerDay] = useState(1);
   const [maxEmptySlotsBetweenJams, setMaxEmptySlotsBetweenJams] = useState(1);
-  const [dayPreference, setDayPreference] = useState<ScheduleAutoScheduleDayOfWeek[]>([
-    ...DOW_ORDER,
-  ]);
-  const [startTimePreference, setStartTimePreference] = useState(SLOT_START);
+  const [dayPreference, setDayPreference] = useState<ScheduleAutoScheduleDayOfWeek[]>([]);
+  const [startTimePreference, setStartTimePreference] = useState(DEFAULT_START_TIME_PREFERENCE);
   const [endTimePreference, setEndTimePreference] = useState(SLOT_END);
 
   useEffect(() => {
     if (!open) return;
     setStep(0);
-    setRecurrenceInterval('ONCE');
-    setJamDurationSlots(DEFAULT_BLOCK_SPAN_SLOTS);
+    setDayScope(null);
+    setOnceOrRecurrence(null);
+    setWeekOrMore(null);
+    setTwoWeeksOrMore(null);
+    setMonthOrMore(null);
+    setRecurrenceInterval('DAILY');
     setMaxJamsPerDay(1);
     setMaxEmptySlotsBetweenJams(1);
-    setDayPreference([...DOW_ORDER]);
-    setStartTimePreference(SLOT_START);
+    setDayPreference([]);
+    setStartTimePreference(DEFAULT_START_TIME_PREFERENCE);
     setEndTimePreference(SLOT_END);
   }, [open, board?.boardId]);
 
@@ -332,9 +534,43 @@ function AutoScheduleModal({
   }
 
   function handleFinalSubmit() {
+    // "하루만"은 질문을 하나도 안 거쳤으니 그 무엇도 사용자가 정한 값이 아니다 — 전부 null로 보내
+    // 백엔드 기본값에 맡긴다.
+    if (dayScope === 'SAME_DAY') {
+      onSubmit({
+        interval: null,
+        jamDurationSlots: null,
+        maxJamsPerDay: null,
+        maxEmptySlotsBetweenJams: null,
+        dayPreference: null,
+        startTimePreference: null,
+        endTimePreference: null,
+      } as unknown as ScheduleAutoScheduleRequest);
+      return;
+    }
+    // "반복 + 1주 미만"도 마찬가지로 interval="DAILY" 말고는 아무것도 사용자가 정한 값이 아니다 —
+    // maxJamsPerDay/gap/dayTimePreference 화면 자체를 안 거쳤으니 그 필드들은 null로 보낸다.
+    if (onceOrRecurrence === 'RECURRENCE' && weekOrMore === false) {
+      onSubmit({
+        interval: 'DAILY',
+        jamDurationSlots: null,
+        maxJamsPerDay: null,
+        maxEmptySlotsBetweenJams: null,
+        dayPreference: null,
+        startTimePreference: null,
+        endTimePreference: null,
+      } as unknown as ScheduleAutoScheduleRequest);
+      return;
+    }
+    // 그 외 경로(한 번만 / 반복+1주 이상)는 마법사가 실제로 화면을 다 거쳐서 값을 정하므로, 요청
+    // 바디의 필드를 전부 채워서 보낸다 — 필드를 생략해도 백엔드가 옵셔널 필드의 기본값을 적용해줄
+    // 거라 기대했는데(스펙상 전부 옵셔널), 실제로는 생략한 요청이 검증 실패(INVALID_INPUT_VALUE)로
+    // 거부되는 걸 확인해서(BD-287) 안전하게 FE가 직접 값을 채워 넣는 쪽으로 바꿨다.
+    const interval: ScheduleAutoScheduleInterval =
+      onceOrRecurrence === 'ONCE' ? 'ONCE' : recurrenceInterval;
     onSubmit({
-      interval: recurrenceInterval,
-      jamDurationSlots,
+      interval,
+      jamDurationSlots: AUTO_SCHEDULE_JAM_DURATION_SLOTS,
       maxJamsPerDay,
       maxEmptySlotsBetweenJams,
       dayPreference,
@@ -343,10 +579,31 @@ function AutoScheduleModal({
     });
   }
 
-  const steps = AUTO_SCHEDULE_STEPS;
+  const steps = buildAutoScheduleSteps(
+    dayScope,
+    onceOrRecurrence,
+    weekOrMore,
+    twoWeeksOrMore,
+    monthOrMore,
+  );
   const currentStep = steps[step];
-  const isLastStep = step === steps.length - 1;
-  const canGoNext = currentStep !== 'dayPreference' || dayPreference.length > 0;
+  // steps.length 로 판정하면, 아직 선택하지 않아 스텝 배열이 1개짜리(가지치기 전)일 때 "이게
+  // 마지막 스텝"으로 잘못 판정돼 "다음" 대신 (비활성화된) "자동 배치 실행"이 떠 버린다 — 실제로
+  // 마법사를 끝맺는 조건(하루만 선택 / 질문 없이 바로 실행 / 요일·시간 선호)으로 직접 판정한다.
+  const isLastStep =
+    currentStep === 'confirmOnly' ||
+    currentStep === 'dayTimePreference' ||
+    (currentStep === 'dayChoice' && dayScope === 'SAME_DAY');
+  const canGoNext =
+    (currentStep !== 'dayTimePreference' || dayPreference.length > 0) &&
+    (currentStep !== 'onceOrRecurrence' || onceOrRecurrence !== null) &&
+    (currentStep !== 'dayChoice' || dayScope !== null) &&
+    (currentStep !== 'weekChoice' || weekOrMore !== null) &&
+    (currentStep !== 'twoWeekChoice' || twoWeeksOrMore !== null) &&
+    (currentStep !== 'monthChoice' || monthOrMore !== null);
+  // twoWeeksOrMore/monthOrMore 는 intervalChoice 화면에 도달했을 때만 의미가 있고, 그땐 이미
+  // weekOrMore=true 가 확정된 상태다 — false 폴백은 타입만 맞추기 위함(실제로 안 쓰임).
+  const intervalOptions = recurrenceIntervalOptions(twoWeeksOrMore ?? true, monthOrMore ?? true);
 
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange}>
@@ -358,11 +615,166 @@ function AutoScheduleModal({
         </ResponsiveSheetHeader>
         <ResponsiveSheetBody>
           <div className="gap-s-3 flex flex-col">
-            {currentStep === 'interval' && (
+            {currentStep === 'confirmOnly' && (
+              <p className="text-foreground-muted text-caption">
+                선택한 기간이 1주 이하라 매일 반복으로 자동 배치를 실행합니다.
+              </p>
+            )}
+            {currentStep === 'dayChoice' && (
+              <div className="gap-s-2 flex flex-col">
+                <p className="text-foreground-muted text-caption">배치 기간이 하루 이상인가요?</p>
+                <div className="gap-s-2 flex flex-wrap">
+                  {(
+                    [
+                      ['MULTI_DAY', '예'],
+                      ['SAME_DAY', '아니오'],
+                    ] as const
+                  ).map(([opt, label]) => {
+                    const selected = dayScope === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setDayScope(opt)}
+                        className={cn(
+                          'text-caption rounded-[5px] border px-3 py-1.5 font-semibold transition-colors',
+                          selected
+                            ? 'border-white bg-white text-neutral-900'
+                            : 'border-border text-foreground-muted hover:text-foreground',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {currentStep === 'onceOrRecurrence' && (
+              <div className="gap-s-2 flex flex-col">
+                <p className="text-foreground-muted text-caption">배치 방식을 선택하세요.</p>
+                <div className="gap-s-2 flex flex-wrap">
+                  {(
+                    [
+                      ['ONCE', '한 번만'],
+                      ['RECURRENCE', '반복'],
+                    ] as const
+                  ).map(([opt, label]) => {
+                    const selected = onceOrRecurrence === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setOnceOrRecurrence(opt)}
+                        className={cn(
+                          'text-caption rounded-[5px] border px-3 py-1.5 font-semibold transition-colors',
+                          selected
+                            ? 'border-white bg-white text-neutral-900'
+                            : 'border-border text-foreground-muted hover:text-foreground',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {currentStep === 'weekChoice' && (
+              <div className="gap-s-2 flex flex-col">
+                <p className="text-foreground-muted text-caption">기간이 1주 이상인가요?</p>
+                <div className="gap-s-2 flex flex-wrap">
+                  {(
+                    [
+                      [true, '예'],
+                      [false, '아니오'],
+                    ] as const
+                  ).map(([opt, label]) => {
+                    const selected = weekOrMore === opt;
+                    return (
+                      <button
+                        key={String(opt)}
+                        type="button"
+                        onClick={() => setWeekOrMore(opt)}
+                        className={cn(
+                          'text-caption rounded-[5px] border px-3 py-1.5 font-semibold transition-colors',
+                          selected
+                            ? 'border-white bg-white text-neutral-900'
+                            : 'border-border text-foreground-muted hover:text-foreground',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {currentStep === 'twoWeekChoice' && (
+              <div className="gap-s-2 flex flex-col">
+                <p className="text-foreground-muted text-caption">기간이 2주 이상인가요?</p>
+                <div className="gap-s-2 flex flex-wrap">
+                  {(
+                    [
+                      [true, '예'],
+                      [false, '아니오'],
+                    ] as const
+                  ).map(([opt, label]) => {
+                    const selected = twoWeeksOrMore === opt;
+                    return (
+                      <button
+                        key={String(opt)}
+                        type="button"
+                        onClick={() => setTwoWeeksOrMore(opt)}
+                        className={cn(
+                          'text-caption rounded-[5px] border px-3 py-1.5 font-semibold transition-colors',
+                          selected
+                            ? 'border-white bg-white text-neutral-900'
+                            : 'border-border text-foreground-muted hover:text-foreground',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {currentStep === 'monthChoice' && (
+              <div className="gap-s-2 flex flex-col">
+                <p className="text-foreground-muted text-caption">기간이 1달 이상인가요?</p>
+                <div className="gap-s-2 flex flex-wrap">
+                  {(
+                    [
+                      [true, '예'],
+                      [false, '아니오'],
+                    ] as const
+                  ).map(([opt, label]) => {
+                    const selected = monthOrMore === opt;
+                    return (
+                      <button
+                        key={String(opt)}
+                        type="button"
+                        onClick={() => setMonthOrMore(opt)}
+                        className={cn(
+                          'text-caption rounded-[5px] border px-3 py-1.5 font-semibold transition-colors',
+                          selected
+                            ? 'border-white bg-white text-neutral-900'
+                            : 'border-border text-foreground-muted hover:text-foreground',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {currentStep === 'intervalChoice' && (
               <div className="gap-s-2 flex flex-col">
                 <p className="text-foreground-muted text-caption">반복 주기를 선택하세요.</p>
                 <div className="gap-s-2 flex flex-wrap">
-                  {ALL_AUTO_SCHEDULE_INTERVALS.map((opt) => {
+                  {intervalOptions.map((opt) => {
                     const selected = recurrenceInterval === opt;
                     return (
                       <button
@@ -383,24 +795,29 @@ function AutoScheduleModal({
                 </div>
               </div>
             )}
-            {currentStep === 'duration' && (
-              <SlotDurationStepper
-                label="곡(합주)당 소요 시간"
-                slots={jamDurationSlots}
-                min={1}
-                max={SLOT_END}
-                onChange={setJamDurationSlots}
-              />
-            )}
             {currentStep === 'maxJamsPerDay' && (
-              <Field label="하루 최대 합주 수">
+              <Field
+                label="하루 최대 합주 수"
+                hint="한 참여자가 하루 최대 참여 가능한 합주 수를 선택하세요."
+              >
                 {({ inputId }) => (
-                  <div
-                    id={inputId}
-                    className="border-border hover:border-border-hi bg-surface flex h-10 w-full items-center justify-between rounded-[5px] border px-3"
-                  >
-                    <span className="text-foreground font-mono text-sm">{maxJamsPerDay}개</span>
-                    <div className="flex flex-col">
+                  <div className="border-border hover:border-border-hi bg-surface flex h-10 w-full items-center rounded-[5px] border px-3">
+                    <input
+                      id={inputId}
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={20}
+                      value={maxJamsPerDay}
+                      onChange={(e) => {
+                        const n = e.target.valueAsNumber;
+                        if (Number.isNaN(n)) return;
+                        setMaxJamsPerDay(Math.max(1, Math.min(20, Math.trunc(n))));
+                      }}
+                      className="text-foreground w-10 [appearance:textfield] bg-transparent font-mono text-sm outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <span className="text-foreground-muted ml-1 text-sm">개</span>
+                    <div className="ml-auto flex flex-col">
                       <button
                         type="button"
                         aria-label="하루 최대 합주 수 증가"
@@ -423,57 +840,56 @@ function AutoScheduleModal({
               </Field>
             )}
             {currentStep === 'gap' && (
-              <SlotDurationStepper
+              <SlotWheelPicker
                 label="합주 사이 허용 공백"
-                slots={maxEmptySlotsBetweenJams}
-                min={0}
-                max={46}
+                values={GAP_SLOT_VALUES}
+                value={maxEmptySlotsBetweenJams}
                 onChange={setMaxEmptySlotsBetweenJams}
               />
             )}
-            {currentStep === 'dayPreference' && (
-              <div className="gap-s-2 flex flex-col">
-                <p className="text-foreground-muted text-caption">
-                  배치를 허용할 요일을 선택하세요.
-                </p>
-                <div className="gap-s-2 flex flex-wrap">
-                  {DOW_ORDER.map((day) => {
-                    const selected = dayPreference.includes(day);
-                    return (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => toggleDay(day)}
-                        className={cn(
-                          'text-caption h-9 w-9 rounded-[5px] border font-semibold transition-colors',
-                          selected
-                            ? 'border-white bg-white text-neutral-900'
-                            : 'border-border text-foreground-muted hover:text-foreground',
-                        )}
-                      >
-                        {DOW_SHORT_LABEL[day]}
-                      </button>
-                    );
-                  })}
+            {currentStep === 'dayTimePreference' && (
+              <div className="gap-s-6 flex flex-col">
+                <div className="gap-s-2 flex flex-col">
+                  <p className="text-foreground-muted text-caption">
+                    배치를 허용할 요일을 선택하세요.
+                  </p>
+                  <div className="gap-s-2 flex flex-wrap">
+                    {DOW_ORDER.map((day) => {
+                      const selected = dayPreference.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => toggleDay(day)}
+                          className={cn(
+                            'text-caption h-9 w-9 rounded-[5px] border font-semibold transition-colors',
+                            selected
+                              ? 'border-white bg-white text-neutral-900'
+                              : 'border-border text-foreground-muted hover:text-foreground',
+                          )}
+                        >
+                          {DOW_SHORT_LABEL[day]}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
-            {currentStep === 'timePreference' && (
-              <div className="grid grid-cols-2 gap-3">
-                <SlotTimeStepper
-                  label="선호 시작 시각"
-                  slot={startTimePreference}
-                  min={SLOT_START}
-                  max={endTimePreference - 1}
-                  onChange={setStartTimePreference}
-                />
-                <SlotTimeStepper
-                  label="선호 종료 시각"
-                  slot={endTimePreference}
-                  min={startTimePreference + 1}
-                  max={SLOT_END}
-                  onChange={setEndTimePreference}
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <SlotTimeStepper
+                    label="선호 시작 시각"
+                    slot={startTimePreference}
+                    min={SLOT_START}
+                    max={endTimePreference - 1}
+                    onChange={setStartTimePreference}
+                  />
+                  <SlotTimeStepper
+                    label="선호 종료 시각"
+                    slot={endTimePreference}
+                    min={startTimePreference + 1}
+                    max={SLOT_END}
+                    onChange={setEndTimePreference}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -502,7 +918,7 @@ function AutoScheduleModal({
               variant="primary"
               size="sm"
               loading={isPending}
-              disabled={isPending || dayPreference.length === 0}
+              disabled={isPending || !canGoNext}
               onClick={handleFinalSubmit}
               className="rounded-[5px] bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200 disabled:bg-white/30"
             >
@@ -776,6 +1192,26 @@ export function SetlistScheduleBoard({
   const activeBoard = boards?.find((b) => b.boardId === activeBoardId) ?? null;
   const selectedBlock = activeBoard?.blocks.find((b) => b.blockId === selectedBlockId) ?? null;
 
+  // 겹치는 블록들을 탭했을 때 고를 수 있는 선택 팝업을 띄우기 위한 군집 매핑 — 전부 같은 자리에
+  // 쌓여 있어 뒤에 깔린 블록은 직접 탭할 수 없으므로, 탭하면 겹친 블록 목록에서 고르게 한다.
+  const blockClusters = useMemo(
+    () => computeOverlapClusters(activeBoard?.blocks ?? []),
+    [activeBoard?.blocks],
+  );
+  const [overlapPickerBlockId, setOverlapPickerBlockId] = useState<string | null>(null);
+
+  // Ctrl/Cmd+C로 복사한 블록 내용 — 트랙 구성·길이·제목/메모에 더해 원본의 날짜·시작 슬롯도
+  // 같이 들고 있는다. Ctrl/Cmd+V 시점에 다른 자리를 선택해뒀으면 그 자리(겹쳐 놓기 포함)에,
+  // 아무것도 선택 안 해뒀으면 원본과 같은 요일·시간에 새 블록을 만든다.
+  const [blockClipboard, setBlockClipboard] = useState<{
+    trackIds: string[];
+    title?: string;
+    note?: string;
+    span: number;
+    originDate: string;
+    originSlot: number;
+  } | null>(null);
+
   const days = useMemo(() => {
     const monday = mondayOf(new Date());
     monday.setDate(monday.getDate() + weekOffset * 7);
@@ -783,6 +1219,87 @@ export function SetlistScheduleBoard({
     sunday.setDate(sunday.getDate() + 6);
     return enumerateDays(toLocalISODate(monday), toLocalISODate(sunday));
   }, [weekOffset]);
+
+  useEffect(() => {
+    if (!canEdit || !activeBoard) return;
+    const board = activeBoard;
+
+    function isEditableTarget(target: EventTarget | null) {
+      if (!(target instanceof HTMLElement)) return false;
+      return (
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+      );
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || isEditableTarget(e.target)) return;
+      const key = e.key.toLowerCase();
+
+      if (key === 'c') {
+        if (!selectedBlock) return;
+        e.preventDefault();
+        setBlockClipboard({
+          trackIds: selectedBlock.trackIds,
+          title: selectedBlock.title ?? undefined,
+          note: selectedBlock.note ?? undefined,
+          span: spanOf(selectedBlock),
+          originDate: selectedBlock.startDate,
+          originSlot: selectedBlock.startSlot,
+        });
+        // 복사한 원본 블록 선택을 그대로 두면, 그 뒤로 다른 주로 이동해서 붙여넣기를 눌러도
+        // "선택된 블록이 있으니 그 자리에" 우선순위에 걸려 계속 원본 자리로만 붙여넣기가
+        // 됐다(사실상 선택 해제 전까지 원본을 벗어날 수 없었음) — 복사 직후엔 선택을 풀어서,
+        // 명시적으로 다른 자리를 새로 클릭하지 않는 한 "지금 보고 있는 주의 같은 요일"
+        // 기본값이 적용되게 한다.
+        setSelectedBlockId(null);
+        setSelectedCell(null);
+        toast.success('블록을 복사했습니다.');
+        return;
+      }
+
+      if (key === 'v') {
+        if (!blockClipboard) return;
+        // 붙여넣을 자리 — 블록이 선택돼 있으면 그 블록의 시작 지점(겹쳐 놓기), 선택된 게 없으면
+        // 클릭해 둔 빈 셀, 그마저 없으면 원본과 같은 요일·시간. 지금 보고 있는 주의 그 요일로
+        // 계산하되, 그게 원본과 정확히 같은 날짜(=원본과 같은 주를 보고 있는 경우)면 다음 주
+        // 같은 요일로 한 번 더 밀어서 원본 위에 그대로 겹쳐 생성되는 걸 막는다.
+        let sameWeekdayFallback =
+          days.find((d) => dayOfWeek(d) === dayOfWeek(blockClipboard.originDate)) ??
+          blockClipboard.originDate;
+        if (sameWeekdayFallback === blockClipboard.originDate) {
+          sameWeekdayFallback = addDays(blockClipboard.originDate, 7);
+        }
+        const pasteTarget = selectedBlock
+          ? { date: selectedBlock.startDate, slot: selectedBlock.startSlot }
+          : (selectedCell ?? { date: sameWeekdayFallback, slot: blockClipboard.originSlot });
+        e.preventDefault();
+        const startSlot = clampBlockStartSlot(pasteTarget.slot, blockClipboard.span);
+        upsertBlock.mutate(
+          {
+            boardId: board.boardId,
+            blockId: crypto.randomUUID(),
+            body: {
+              trackIds: blockClipboard.trackIds,
+              startDate: pasteTarget.date,
+              startSlot,
+              endDate: pasteTarget.date,
+              endSlot: startSlot + blockClipboard.span,
+              pinned: false,
+              title: blockClipboard.title,
+              note: blockClipboard.note,
+            },
+          },
+          {
+            onSuccess: () => toast.success('블록을 붙여넣었습니다.'),
+            onError: () => toast.error('블록 붙여넣기에 실패했습니다.'),
+          },
+        );
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [canEdit, activeBoard, selectedBlock, selectedCell, blockClipboard, upsertBlock, toast, days]);
 
   const rangeLabel = (() => {
     if (days.length === 0) return '';
@@ -935,7 +1452,7 @@ export function SetlistScheduleBoard({
           )[0];
           if (firstBlock) setWeekOffset(weekOffsetForDate(firstBlock.startDate));
         },
-        onError: () => toast.error('자동 배치에 실패했습니다.'),
+        onError: (err) => toast.error(err.message || '자동 배치에 실패했습니다.'),
       },
     );
   }
@@ -980,15 +1497,16 @@ export function SetlistScheduleBoard({
         const block = activeBoard.blocks.find((b) => b.blockId === movingBlockId);
         if (!block || block.pinned) return;
         const span = spanOf(block);
+        const startSlot = clampBlockStartSlot(slot, span);
         upsertBlock.mutate({
           boardId: activeBoard.boardId,
           blockId: movingBlockId,
           body: {
             trackIds: block.trackIds,
             startDate: date,
-            startSlot: slot,
+            startSlot,
             endDate: date,
-            endSlot: slot + span,
+            endSlot: startSlot + span,
             pinned: block.pinned,
             title: block.title,
           },
@@ -1001,15 +1519,16 @@ export function SetlistScheduleBoard({
         const track = trackById.get(trackId);
         if (!track) return;
         const span = DEFAULT_BLOCK_SPAN_SLOTS;
+        const startSlot = clampBlockStartSlot(slot, span);
         upsertBlock.mutate({
           boardId: activeBoard.boardId,
           blockId: crypto.randomUUID(),
           body: {
             trackIds: [trackId],
             startDate: date,
-            startSlot: slot,
+            startSlot,
             endDate: date,
-            endSlot: slot + span,
+            endSlot: startSlot + span,
             pinned: false,
           },
         });
@@ -1250,6 +1769,9 @@ export function SetlistScheduleBoard({
                 days={days}
                 slotStart={SLOT_START}
                 slotEnd={SLOT_END}
+                // 적용 시작일~종료일(windowFrom/To) 밖의 날짜는 회색으로 비활성 표시하고 블록을
+                // 못 넣게 막는다 — 미설정 보드는 기존처럼 전체 허용.
+                isInWindow={(date) => isDateInWindow(activeBoard, date)}
                 className="h-full"
                 fillWidth
                 dayColMinWidth={72}
@@ -1280,6 +1802,8 @@ export function SetlistScheduleBoard({
                   // 30분(1슬롯)짜리 블록은 상하 리사이즈 핸들(각 8px)을 다 얹으면 제목/아이콘 줄과
                   // 겹쳐 잘려 보인다 — 이땐 핸들을 얇게 줄이고 손잡이 표시(grip bar)는 생략.
                   const compactBlock = displaySpan <= 1;
+                  const cluster = blockClusters.get(block.blockId) ?? [block];
+                  const hasOverlap = cluster.length > 1;
                   const blockEl = (
                     <div
                       key={block.blockId}
@@ -1292,9 +1816,34 @@ export function SetlistScheduleBoard({
                             }
                           : undefined
                       }
+                      // 블록 자체가 그 아래 그리드 셀 위에 얹힌 별도 엘리먼트라, 여기 onDragOver/onDrop이
+                      // 없으면 브라우저가 기본적으로 드롭을 거부해 "이미 블록이 있는 자리엔 못 놓는"
+                      // 것처럼 보였다 — 겹쳐 놓기를 허용하려고 셀과 동일한 드롭 처리를 그대로 위임한다.
+                      onDragOver={canEdit ? (e) => e.preventDefault() : undefined}
+                      onDrop={
+                        canEdit && isDateInWindow(activeBoard, block.startDate)
+                          ? (e) => {
+                              e.preventDefault();
+                              // 자기 자신 위로 다시 놓은 경우는 무시(불필요한 API 호출 방지).
+                              const movingBlockId = e.dataTransfer.getData(BLOCK_DRAG_TYPE);
+                              if (movingBlockId === block.blockId) return;
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const offsetSlots = Math.round((e.clientY - rect.top) / SLOT_HEIGHT);
+                              handleDropOnCell(block.startDate, displayStartSlot + offsetSlots)(e);
+                            }
+                          : undefined
+                      }
                       onClick={() => {
                         setPendingResize(null);
                         setSelectedCell(null);
+                        // 겹친 블록이 여러 개면(뒤에 깔린 블록은 직접 탭할 수 없으니) 바로
+                        // 선택하지 않고 목록에서 고르게 한다.
+                        if (hasOverlap) {
+                          setOverlapPickerBlockId((prev) =>
+                            prev === block.blockId ? null : block.blockId,
+                          );
+                          return;
+                        }
                         setSelectedBlockId((prev) =>
                           prev === block.blockId ? null : block.blockId,
                         );
@@ -1313,6 +1862,9 @@ export function SetlistScheduleBoard({
                       style={{
                         gridRow: `${displayStartSlot - SLOT_START + 2} / span ${displaySpan}`,
                         gridColumn: dIdx + 2,
+                        // 겹친 블록 중 선택된(또는 방금 고른) 블록을 맨 위로 올려서 리사이즈
+                        // 핸들·설정/삭제 버튼 등 자체 컨트롤이 직접 눌리도록 한다.
+                        zIndex: isSelected ? 20 : 1,
                       }}
                     >
                       <div className="flex items-start justify-between gap-1">
@@ -1401,7 +1953,51 @@ export function SetlistScheduleBoard({
                       )}
                     </div>
                   );
-                  if (!canEdit || !isSelected) return [blockEl];
+                  const pickerEl = overlapPickerBlockId === block.blockId && hasOverlap && (
+                    <div
+                      key={`${block.blockId}-picker`}
+                      style={{
+                        gridRow: `${displayStartSlot - SLOT_START + 2} / span 1`,
+                        gridColumn: dIdx + 2,
+                        zIndex: 30,
+                      }}
+                      className="relative"
+                    >
+                      {/* 바깥 클릭 시 닫기 */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setOverlapPickerBlockId(null)}
+                        aria-hidden="true"
+                      />
+                      <div className="bg-surface border-border absolute top-0 left-0 z-20 w-44 rounded-md border shadow-xl">
+                        <div className="text-foreground-muted border-border border-b px-3 py-1.5 text-[11px] font-semibold">
+                          겹친 블록 {cluster.length}개
+                        </div>
+                        {cluster.map((b) => (
+                          <button
+                            key={b.blockId}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBlockId(b.blockId);
+                              setOverlapPickerBlockId(null);
+                            }}
+                            className="hover:bg-card flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left"
+                          >
+                            <span className="text-caption truncate font-semibold">
+                              {blockLabel(b, trackById)}
+                            </span>
+                            <span className="text-foreground-muted font-mono text-[11px]">
+                              {slotToTime(b.startSlot)}~{slotToTime(b.endSlot)}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                  if (!canEdit || !isSelected) {
+                    return pickerEl ? [blockEl, pickerEl] : [blockEl];
+                  }
                   const confirmEl = (
                     <button
                       key={`${block.blockId}-confirm`}
@@ -1414,13 +2010,14 @@ export function SetlistScheduleBoard({
                       style={{
                         gridRow: `${displayEndSlot - SLOT_START + 1} / span 1`,
                         gridColumn: dIdx + 2,
+                        zIndex: 21,
                       }}
                       className="z-20 h-5 w-5 translate-x-1/3 translate-y-1/3 self-end justify-self-end rounded-full bg-white text-neutral-900 shadow-md hover:bg-neutral-100"
                     >
                       <Check className="mx-auto h-3.5 w-3.5" />
                     </button>
                   );
-                  return [blockEl, confirmEl];
+                  return pickerEl ? [blockEl, confirmEl, pickerEl] : [blockEl, confirmEl];
                 })}
               />
             </div>
