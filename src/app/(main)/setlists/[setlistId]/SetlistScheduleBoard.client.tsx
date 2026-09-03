@@ -1932,9 +1932,10 @@ export function SetlistScheduleBoard({
                           // 그 안에서 겹친 순서(laneIndex)만큼 1/N 칸씩 옆으로 밀어 원래 크기
                           // 그대로 나란히 보이게 한다. 접힌 상태(기본)는 그대로 겹쳐 쌓이고, 그중
                           // 선택된 블록만 위로 올려서 리사이즈 핸들·설정/삭제 버튼이 직접
-                          // 눌리도록 한다. z-index는 상단 sticky 요일 헤더(z-20)·좌측 시간
-                          // 라벨(z-25)보다 항상 낮게 유지해서 스크롤 시 블록이 그 위로 올라와
-                          // 겹쳐 보이지 않게 한다.
+                          // 눌리도록 한다. 선택된 블록(접힌 상태 포함)도 z-20을 쓰면 상단 sticky
+                          // 요일 헤더(z-20)와 세로 스크롤 시 겹칠 때 DOM 순서상 블록이 나중에
+                          // 그려져 헤더 위로 올라와 버린다 — 모든 블록 z-index를 헤더(z-20)·
+                          // 좌측 시간 라벨(z-25)보다 항상 낮게 유지한다.
                           ...(isExpanded
                             ? {
                                 position: 'relative' as const,
@@ -1942,7 +1943,7 @@ export function SetlistScheduleBoard({
                                 width: `${(1 / cluster.length) * 100}%`,
                               }
                             : null),
-                          zIndex: isExpanded ? (isSelected ? 16 : 12) : isSelected ? 20 : 1,
+                          zIndex: isExpanded ? (isSelected ? 16 : 12) : isSelected ? 15 : 1,
                         }}
                       >
                         <div className="flex items-start justify-between gap-1">
@@ -1974,7 +1975,15 @@ export function SetlistScheduleBoard({
                                   })
                                 }
                                 aria-label={block.pinned ? '고정 해제' : '고정'}
-                                className="text-foreground-muted hover:text-foreground rounded p-0.5"
+                                className={cn(
+                                  'rounded p-0.5',
+                                  // 고정된 블록은 아이콘 색만 밝게(흰색) — 배경까지 채우면
+                                  // 너무 튀어서, 배경 없이 나머지 컨트롤 호버 색과 같은
+                                  // text-foreground 톤으로 눈에 띄게만 한다.
+                                  block.pinned
+                                    ? 'text-foreground'
+                                    : 'text-foreground-muted hover:text-foreground',
+                                )}
                               >
                                 {block.pinned ? (
                                   <Pin className="h-3 w-3" />
@@ -2120,7 +2129,9 @@ export function SetlistScheduleBoard({
                         style={{
                           gridRow: `${displayEndSlot - SLOT_START + 1} / span 1`,
                           gridColumn: dIdx + 2,
-                          zIndex: 21,
+                          // 16: 선택된 블록(z-15) 바로 위, 그리고 상단 sticky 요일 헤더(z-20)
+                          // 보다는 낮게 — 안 그러면 스크롤 시 이 버튼이 헤더 위로 올라와 겹친다.
+                          zIndex: 16,
                         }}
                         className="pointer-events-none flex items-end justify-end"
                       >
