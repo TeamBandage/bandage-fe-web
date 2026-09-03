@@ -38,6 +38,21 @@
   --color-blue: oklch(0.62 0.22 250);
   --color-blue-dim: oklch(0.62 0.22 250 / 0.15);
 
+  /* 시간표 블록 팔레트 전용 — accent/success/warn/amber/danger/blue(hue 25~250)와 이어서
+     빈 hue 구간(90~360)을 채우는 6색. palette.ts PALETTE_TONES(12색)에서만 사용. */
+  --color-lime: oklch(0.74 0.17 120);
+  --color-lime-dim: oklch(0.74 0.17 120 / 0.15);
+  --color-teal: oklch(0.72 0.14 185);
+  --color-teal-dim: oklch(0.72 0.14 185 / 0.15);
+  --color-sky: oklch(0.7 0.15 215);
+  --color-sky-dim: oklch(0.7 0.15 215 / 0.15);
+  --color-violet: oklch(0.66 0.19 280);
+  --color-violet-dim: oklch(0.66 0.19 280 / 0.15);
+  --color-purple: oklch(0.64 0.2 305);
+  --color-purple-dim: oklch(0.64 0.2 305 / 0.15);
+  --color-pink: oklch(0.7 0.19 335);
+  --color-pink-dim: oklch(0.7 0.19 335 / 0.15);
+
   /* Role colors */
   --color-role-leader: oklch(0.72 0.18 48);
   --color-role-admin: oklch(0.62 0.22 250);

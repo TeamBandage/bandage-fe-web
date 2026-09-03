@@ -44,7 +44,11 @@ import {
   ResponsiveSheetTitle,
 } from '@/components/ui/responsive-sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { songTone } from '@/domain/schedule-coordination/components/palette';
+import {
+  assignPaletteTones,
+  PALETTE_TONES,
+  songTone,
+} from '@/domain/schedule-coordination/components/palette';
 import {
   SLOT_HEIGHT,
   WeeklyScheduleGrid,
@@ -1170,6 +1174,12 @@ export function SetlistScheduleBoard({
     endSlot: number;
   } | null>(null);
   const [mode, setMode] = useState<'view' | 'edit'>('view');
+  // 블록을 드래그로 옮길 때, 블록 상단이 아니라 블록 중간 어딘가를 잡고 시작하는 경우가
+  // 많다 — 그 잡은 지점을 그대로 새 시작 슬롯으로 쓰면(보정 없이) 잡은 지점만큼 블록이
+  // 아래로 밀려서 놓이는 것처럼 보인다(3시에 놨는데 5시에 가 있는 등). 드래그 시작 시점에
+  // "블록 상단에서 몇 슬롯 내려가서 잡았는지"를 기록해뒀다가, 드롭 시 그만큼 빼서 블록
+  // 상단이 실제로 놓은 시간 선에 오도록 보정한다.
+  const dragGrabOffsetSlotsRef = useRef(0);
   const hasBoards = Boolean(boards && boards.length > 0);
   // 시간표 생성/삭제는 보기/편집 모드와 무관하게 매니저면 항상 가능. 편집 모드는 블록(트랙 배치)
   // 편집 권한만 통제.
@@ -1304,6 +1314,13 @@ export function SetlistScheduleBoard({
   })();
 
   const trackById = useMemo(() => new Map(tracks.map((t) => [t.setlistTrackId, t])), [tracks]);
+  // 트랙 목록 순서 그대로 색을 하나씩 배정 — 트랙이 12개(팔레트 크기) 이하면 색이 겹치는
+  // 트랙이 하나도 없고, 넘으면 최대한 고르게 순환하며 겹친다. songTone(해시 기반)은 트랙
+  // 몇 개만 있어도 우연히 겹칠 수 있어서 여기선 안 쓴다.
+  const trackToneById = useMemo(
+    () => assignPaletteTones(tracks.map((t) => t.setlistTrackId)),
+    [tracks],
+  );
 
   // 트랙별 배치 횟수 — 서버가 보드별로 집계해주는 값을 그대로 사용(블록 등록/삭제/자동배치 후
   // 각 훅이 이 쿼리를 함께 invalidate 하므로 항상 최신 상태로 재조회된다).
@@ -1492,7 +1509,9 @@ export function SetlistScheduleBoard({
         const block = activeBoard.blocks.find((b) => b.blockId === movingBlockId);
         if (!block || block.pinned) return;
         const span = spanOf(block);
-        const startSlot = clampBlockStartSlot(slot, span);
+        // 드롭한 지점(slot)은 "커서가 놓인 자리"지 "블록 상단이 놓일 자리"가 아니다 — 드래그를
+        // 블록 중간 어딘가에서 잡았으면 잡은 만큼 빼줘야 블록 상단이 실제로 놓은 시간 선에 온다.
+        const startSlot = clampBlockStartSlot(slot - dragGrabOffsetSlotsRef.current, span);
         upsertBlock.mutate({
           boardId: activeBoard.boardId,
           blockId: movingBlockId,
@@ -1799,7 +1818,11 @@ export function SetlistScheduleBoard({
                       .map((id) => trackById.get(id)?.title)
                       .filter(Boolean)
                       .join(', ');
-                    const tone = songTone(block.trackIds[0] ?? block.blockId, 0);
+                    // 배치된 첫 트랙 색을 그대로 쓴다(트랙 목록과 동일 배정) — 트랙이 아예
+                    // 없는 빈 블록만 blockId 해시로 대체 색을 낸다.
+                    const tone = block.trackIds[0]
+                      ? (trackToneById.get(block.trackIds[0]) ?? songTone(block.blockId, 0))
+                      : songTone(block.blockId, 0);
                     const isSelected = selectedBlockId === block.blockId;
                     const displayStartSlot =
                       pendingResize?.blockId === block.blockId
@@ -1838,6 +1861,12 @@ export function SetlistScheduleBoard({
                             ? (e) => {
                                 e.dataTransfer.setData(BLOCK_DRAG_TYPE, block.blockId);
                                 e.dataTransfer.effectAllowed = 'move';
+                                // 블록의 어디를 잡고 드래그를 시작했는지(상단에서 몇 슬롯
+                                // 내려간 지점인지) 기록 — 드롭 시 이만큼 빼서 보정한다.
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                dragGrabOffsetSlotsRef.current = Math.round(
+                                  (e.clientY - rect.top) / SLOT_HEIGHT,
+                                );
                               }
                             : undefined
                         }
@@ -2124,7 +2153,7 @@ export function SetlistScheduleBoard({
               ) : (
                 <ul className="gap-s-1 flex flex-col py-2 pr-2 pl-4.5">
                   {sortedTracks.map((track) => {
-                    const tone = songTone(track.setlistTrackId, 0);
+                    const tone = trackToneById.get(track.setlistTrackId) ?? PALETTE_TONES[0]!;
                     const placedCount = placementCountByTrackId.get(track.setlistTrackId) ?? 0;
                     const placed = placedCount > 0;
                     return (
