@@ -53,6 +53,12 @@ export interface WeeklyScheduleGridProps {
   fillWidth?: boolean;
   /** fillWidth 모드에서 일자 컬럼의 최소 폭(minmax 하한). 기본값 DAY_COL_WIDTH. */
   dayColMinWidth?: number;
+  /**
+   * 특정 일자 컬럼(days 배열 인덱스 → 폭 배수)을 넓히고 싶을 때 사용 — 겹친 블록을 여러 개
+   * 동시에 펼쳐서 원래 크기 그대로 나란히 보여줄 때, 펼친 만큼 그 컬럼들 트랙 자체를 넓혀서
+   * 뒤 요일들이 겹치지 않고 오른쪽으로 밀려나게 한다. 기본값 없음(전부 동일 폭).
+   */
+  wideDayFactors?: Record<number, number>;
 }
 
 /** 행=시간 슬롯, 열=일자. 좌측 시간 라벨 sticky, 상단 일자 헤더 sticky. */
@@ -74,13 +80,23 @@ export function WeeklyScheduleGrid({
   className,
   fillWidth = false,
   dayColMinWidth = DAY_COL_WIDTH,
+  wideDayFactors,
 }: WeeklyScheduleGridProps) {
   const slotCount = slotEnd - slotStart;
   const slots = Array.from({ length: slotCount }, (_, i) => slotStart + i);
+  // wideDayFactors에 들어있는 컬럼만 배수로 넓힌 트랙을 각자 만들어 이어 붙인다 — repeat()
+  // 축약형으로는 컬럼마다 다른 폭을 줄 수 없어서, 하나라도 넓힐 일이 있으면 일자 수만큼
+  // 트랙을 개별로 나열한다. 여러 요일을 동시에 펼쳐도(각자 다른 컬럼 인덱스) 문제없이 반영됨.
+  const dayTracks = days
+    .map((_, i) => {
+      const factor = wideDayFactors?.[i] ?? 1;
+      return fillWidth
+        ? `minmax(${dayColMinWidth * factor}px, ${factor}fr)`
+        : `${DAY_COL_WIDTH * factor}px`;
+    })
+    .join(' ');
   const gridStyle: CSSProperties = {
-    gridTemplateColumns: fillWidth
-      ? `${TIME_COL_WIDTH}px repeat(${days.length}, minmax(${dayColMinWidth}px, 1fr))`
-      : `${TIME_COL_WIDTH}px repeat(${days.length}, ${DAY_COL_WIDTH}px)`,
+    gridTemplateColumns: `${TIME_COL_WIDTH}px ${dayTracks}`,
     gridTemplateRows: `44px repeat(${slotCount}, ${SLOT_HEIGHT}px)`,
   };
 
@@ -161,11 +177,14 @@ export function WeeklyScheduleGrid({
           );
         })}
 
-        {/* 시간 라벨 — 정시(짝수 슬롯)만 노출. */}
+        {/* 시간 라벨 — 정시(짝수 슬롯)만 노출. z-25: 겹친 블록을 펼쳤을 때 그 블록들의
+            z-index(overlay 쪽 참고, 최대 17)보다 항상 위에 그려지도록 — 안 그러면 가로 스크롤로
+            이 sticky 컬럼이 펼쳐진 블록 위로 겹쳐 지나갈 때 시간 숫자와 블록 텍스트가 서로
+            겹쳐 보인다. */}
         {slots.map((s, idx) => (
           <div
             key={`tl-${s}`}
-            className="bg-surface border-border sticky left-0 z-10 border-r px-1 text-right font-mono"
+            className="bg-surface border-border sticky left-0 z-[25] border-r px-1 text-right font-mono"
             style={{
               gridRow: idx + 2,
               gridColumn: 1,
