@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronsDownUp,
   ChevronUp,
   Eye,
   Pencil,
@@ -24,6 +25,7 @@ import {
   type DragEvent,
   type FormEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactElement,
   type UIEvent,
 } from 'react';
 
@@ -145,15 +147,6 @@ function computeOverlapClusters(
     }
   }
   return clusters;
-}
-
-/** 블록 목록/선택 팝업에 보여줄 라벨 — 제목이 없으면 트랙 제목, 그마저 없으면 "(빈 블록)". */
-function blockLabel(block: ScheduleBlockResponse, trackById: Map<string, SetlistTrackResponse>) {
-  const trackTitles = block.trackIds
-    .map((id) => trackById.get(id)?.title)
-    .filter(Boolean)
-    .join(', ');
-  return block.title || trackTitles || '(빈 블록)';
 }
 
 /** 보드의 적용 시작일~종료일(windowFrom/To) 안에 드는 날짜인지 — 미설정 보드는 항상 허용.
@@ -1192,13 +1185,15 @@ export function SetlistScheduleBoard({
   const activeBoard = boards?.find((b) => b.boardId === activeBoardId) ?? null;
   const selectedBlock = activeBoard?.blocks.find((b) => b.blockId === selectedBlockId) ?? null;
 
-  // 겹치는 블록들을 탭했을 때 고를 수 있는 선택 팝업을 띄우기 위한 군집 매핑 — 전부 같은 자리에
-  // 쌓여 있어 뒤에 깔린 블록은 직접 탭할 수 없으므로, 탭하면 겹친 블록 목록에서 고르게 한다.
+  // 겹치는 블록들을 탭했을 때 그 시간대를 가로로 펼쳐서 보여주기 위한 군집 매핑 — 전부 같은
+  // 자리에 쌓여 있어 뒤에 깔린 블록은 직접 탭할 수 없으므로, 탭하면 군집 전체를 나란히 펼친다.
   const blockClusters = useMemo(
     () => computeOverlapClusters(activeBoard?.blocks ?? []),
     [activeBoard?.blocks],
   );
-  const [overlapPickerBlockId, setOverlapPickerBlockId] = useState<string | null>(null);
+  // 현재 펼쳐진 군집들의 키(군집의 첫 블록 id) — 여러 군집을 동시에 펼칠 수 있어 Set으로
+  // 관리한다. 비어 있으면 전부 접힌(겹쳐 쌓인) 상태.
+  const [expandedClusterIds, setExpandedClusterIds] = useState<Set<string>>(() => new Set());
 
   // Ctrl/Cmd+C로 복사한 블록 내용 — 트랙 구성·길이·제목/메모에 더해 원본의 날짜·시작 슬롯도
   // 같이 들고 있는다. Ctrl/Cmd+V 시점에 다른 자리를 선택해뒀으면 그 자리(겹쳐 놓기 포함)에,
@@ -1763,265 +1758,354 @@ export function SetlistScheduleBoard({
             )}
           </div>
         ) : (
-          activeBoard && (
-            <div className="min-h-0 flex-1 px-4 py-3">
-              <WeeklyScheduleGrid
-                days={days}
-                slotStart={SLOT_START}
-                slotEnd={SLOT_END}
-                // 적용 시작일~종료일(windowFrom/To) 밖의 날짜는 회색으로 비활성 표시하고 블록을
-                // 못 넣게 막는다 — 미설정 보드는 기존처럼 전체 허용.
-                isInWindow={(date) => isDateInWindow(activeBoard, date)}
-                className="h-full"
-                fillWidth
-                dayColMinWidth={72}
-                onCellDragOver={canEdit ? () => (e) => e.preventDefault() : undefined}
-                onCellDrop={canEdit ? handleDropOnCell : undefined}
-                onCellClick={(date, slot) => {
-                  setSelectedBlockId(null);
-                  setSelectedCell({ date, slot });
-                }}
-                overlay={activeBoard.blocks.flatMap((block) => {
-                  const dIdx = days.indexOf(block.startDate);
-                  if (dIdx === -1) return [];
-                  const trackTitles = block.trackIds
-                    .map((id) => trackById.get(id)?.title)
-                    .filter(Boolean)
-                    .join(', ');
-                  const tone = songTone(block.trackIds[0] ?? block.blockId, 0);
-                  const isSelected = selectedBlockId === block.blockId;
-                  const displayStartSlot =
-                    pendingResize?.blockId === block.blockId
-                      ? pendingResize.startSlot
-                      : block.startSlot;
-                  const displayEndSlot =
-                    pendingResize?.blockId === block.blockId
-                      ? pendingResize.endSlot
-                      : block.endSlot;
-                  const displaySpan = displayEndSlot - displayStartSlot;
-                  // 30분(1슬롯)짜리 블록은 상하 리사이즈 핸들(각 8px)을 다 얹으면 제목/아이콘 줄과
-                  // 겹쳐 잘려 보인다 — 이땐 핸들을 얇게 줄이고 손잡이 표시(grip bar)는 생략.
-                  const compactBlock = displaySpan <= 1;
-                  const cluster = blockClusters.get(block.blockId) ?? [block];
-                  const hasOverlap = cluster.length > 1;
-                  const blockEl = (
-                    <div
-                      key={block.blockId}
-                      draggable={canEdit && !block.pinned}
-                      onDragStart={
-                        canEdit
-                          ? (e) => {
-                              e.dataTransfer.setData(BLOCK_DRAG_TYPE, block.blockId);
-                              e.dataTransfer.effectAllowed = 'move';
-                            }
-                          : undefined
-                      }
-                      // 블록 자체가 그 아래 그리드 셀 위에 얹힌 별도 엘리먼트라, 여기 onDragOver/onDrop이
-                      // 없으면 브라우저가 기본적으로 드롭을 거부해 "이미 블록이 있는 자리엔 못 놓는"
-                      // 것처럼 보였다 — 겹쳐 놓기를 허용하려고 셀과 동일한 드롭 처리를 그대로 위임한다.
-                      onDragOver={canEdit ? (e) => e.preventDefault() : undefined}
-                      onDrop={
-                        canEdit && isDateInWindow(activeBoard, block.startDate)
-                          ? (e) => {
-                              e.preventDefault();
-                              // 자기 자신 위로 다시 놓은 경우는 무시(불필요한 API 호출 방지).
-                              const movingBlockId = e.dataTransfer.getData(BLOCK_DRAG_TYPE);
-                              if (movingBlockId === block.blockId) return;
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const offsetSlots = Math.round((e.clientY - rect.top) / SLOT_HEIGHT);
-                              handleDropOnCell(block.startDate, displayStartSlot + offsetSlots)(e);
-                            }
-                          : undefined
-                      }
-                      onClick={() => {
-                        setPendingResize(null);
-                        setSelectedCell(null);
-                        // 겹친 블록이 여러 개면(뒤에 깔린 블록은 직접 탭할 수 없으니) 바로
-                        // 선택하지 않고 목록에서 고르게 한다.
-                        if (hasOverlap) {
-                          setOverlapPickerBlockId((prev) =>
+          activeBoard &&
+          (() => {
+            // 펼쳐진 군집마다 그 군집이 속한 요일 컬럼 자체를 군집 크기(cluster.length)배로
+            // 넓혀서, 겹친 블록들을 원래 크기 그대로 나란히 넣을 자리를 만든다 — 뒤 요일들은
+            // 겹치지 않고 자연스럽게 오른쪽으로 밀려난다. 여러 군집을 동시에 펼쳐도(요일이
+            // 다르면) 각자 컬럼을 넓히고, 같은 요일에 두 군집이 겹쳐 펼쳐지는 드문 경우엔 더
+            // 큰 쪽 배수를 쓴다.
+            const wideDayFactors: Record<number, number> = {};
+            for (const id of expandedClusterIds) {
+              const cluster = blockClusters.get(id);
+              if (!cluster || cluster.length < 2) continue;
+              const dayIndex = days.indexOf(cluster[0]!.startDate);
+              if (dayIndex === -1) continue;
+              wideDayFactors[dayIndex] = Math.max(wideDayFactors[dayIndex] ?? 1, cluster.length);
+            }
+            return (
+              <div className="min-h-0 flex-1 px-4 py-3">
+                <WeeklyScheduleGrid
+                  days={days}
+                  slotStart={SLOT_START}
+                  slotEnd={SLOT_END}
+                  // 적용 시작일~종료일(windowFrom/To) 밖의 날짜는 회색으로 비활성 표시하고 블록을
+                  // 못 넣게 막는다 — 미설정 보드는 기존처럼 전체 허용.
+                  isInWindow={(date) => isDateInWindow(activeBoard, date)}
+                  className="h-full"
+                  fillWidth
+                  dayColMinWidth={72}
+                  wideDayFactors={wideDayFactors}
+                  onCellDragOver={canEdit ? () => (e) => e.preventDefault() : undefined}
+                  onCellDrop={canEdit ? handleDropOnCell : undefined}
+                  onCellClick={(date, slot) => {
+                    setSelectedBlockId(null);
+                    setSelectedCell({ date, slot });
+                  }}
+                  overlay={activeBoard.blocks.flatMap((block) => {
+                    const dIdx = days.indexOf(block.startDate);
+                    if (dIdx === -1) return [];
+                    const trackTitles = block.trackIds
+                      .map((id) => trackById.get(id)?.title)
+                      .filter(Boolean)
+                      .join(', ');
+                    const tone = songTone(block.trackIds[0] ?? block.blockId, 0);
+                    const isSelected = selectedBlockId === block.blockId;
+                    const displayStartSlot =
+                      pendingResize?.blockId === block.blockId
+                        ? pendingResize.startSlot
+                        : block.startSlot;
+                    const displayEndSlot =
+                      pendingResize?.blockId === block.blockId
+                        ? pendingResize.endSlot
+                        : block.endSlot;
+                    const displaySpan = displayEndSlot - displayStartSlot;
+                    // 30분(1슬롯)짜리 블록은 상하 리사이즈 핸들(각 8px)을 다 얹으면 제목/아이콘 줄과
+                    // 겹쳐 잘려 보인다 — 이땐 핸들을 얇게 줄이고 손잡이 표시(grip bar)는 생략.
+                    const compactBlock = displaySpan <= 1;
+                    const cluster = blockClusters.get(block.blockId) ?? [block];
+                    const hasOverlap = cluster.length > 1;
+                    // "군집의 첫(시작 시각이 가장 이른) 블록 id"를 펼침 키로 고정해서 썼더니,
+                    // 리사이즈·드래그로 군집 내 정렬 순서가 바뀌면(누가 0번인지 바뀌면) 펼칠 때
+                    // 저장한 id와 접을 때 지우려는 id가 서로 달라져 못 지우고 남는 경우가
+                    // 있었다(접었는데도 그 요일 컬럼이 넓은 채로 남아 블록이 뚱뚱하게 보이던
+                    // 원인) — 그래서 군집 "전체 멤버 중 하나라도 펼침 목록에 있으면 펼친 것"으로
+                    // 판정하고, 펼칠 땐 지금 탭한 블록 자신의 id를, 접을 땐 지금 군집 멤버 전원의
+                    // id를 한꺼번에 지운다(정렬 순서와 무관하게 항상 정확히 지워짐).
+                    const clusterKey = cluster[0]!.blockId;
+                    const laneIndex = cluster.findIndex((b) => b.blockId === block.blockId);
+                    const isExpanded =
+                      hasOverlap && cluster.some((b) => expandedClusterIds.has(b.blockId));
+                    // "접기" 버튼은 군집당 한 번만 필요하므로 첫 블록 차례(laneIndex 0)에서만
+                    // 만든다.
+                    const isClusterAnchor = isExpanded && laneIndex === 0;
+                    const blockEl = (
+                      <div
+                        key={block.blockId}
+                        draggable={canEdit && !block.pinned}
+                        onDragStart={
+                          canEdit
+                            ? (e) => {
+                                e.dataTransfer.setData(BLOCK_DRAG_TYPE, block.blockId);
+                                e.dataTransfer.effectAllowed = 'move';
+                              }
+                            : undefined
+                        }
+                        // 블록 자체가 그 아래 그리드 셀 위에 얹힌 별도 엘리먼트라, 여기 onDragOver/onDrop이
+                        // 없으면 브라우저가 기본적으로 드롭을 거부해 "이미 블록이 있는 자리엔 못 놓는"
+                        // 것처럼 보였다 — 겹쳐 놓기를 허용하려고 셀과 동일한 드롭 처리를 그대로 위임한다.
+                        onDragOver={canEdit ? (e) => e.preventDefault() : undefined}
+                        onDrop={
+                          canEdit && isDateInWindow(activeBoard, block.startDate)
+                            ? (e) => {
+                                e.preventDefault();
+                                // 자기 자신 위로 다시 놓은 경우는 무시(불필요한 API 호출 방지).
+                                const movingBlockId = e.dataTransfer.getData(BLOCK_DRAG_TYPE);
+                                if (movingBlockId === block.blockId) return;
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const offsetSlots = Math.round(
+                                  (e.clientY - rect.top) / SLOT_HEIGHT,
+                                );
+                                handleDropOnCell(
+                                  block.startDate,
+                                  displayStartSlot + offsetSlots,
+                                )(e);
+                              }
+                            : undefined
+                        }
+                        onClick={() => {
+                          setPendingResize(null);
+                          setSelectedCell(null);
+                          // 겹친 블록이 여러 개면(뒤에 깔린 블록은 직접 탭할 수 없으니) 처음
+                          // 탭했을 땐 바로 선택하지 않고 그 시간대를 가로로 펼쳐서 원래 크기
+                          // 그대로 나란히 보여준다. 이미 펼쳐진 상태에서 탭하면(각자 제자리로
+                          // 나뉘어 있으니) 그때는 일반 블록처럼 바로 선택한다.
+                          if (hasOverlap && !isExpanded) {
+                            // 다른 군집이 이미 펼쳐져 있어도 그대로 두고 이 군집만 추가로
+                            // 펼친다 — 여러 군집을 동시에 펼쳐볼 수 있게. 지금 탭한 블록
+                            // 자신의 id를 넣는다(군집 정렬 순서가 바뀌어도 안전하게 지우려면
+                            // 접을 때 군집 멤버 전원의 id를 지우면 되므로).
+                            setExpandedClusterIds((prev) => new Set(prev).add(block.blockId));
+                            return;
+                          }
+                          setSelectedBlockId((prev) =>
                             prev === block.blockId ? null : block.blockId,
                           );
-                          return;
-                        }
-                        setSelectedBlockId((prev) =>
-                          prev === block.blockId ? null : block.blockId,
-                        );
-                      }}
-                      className={cn(
-                        'relative m-px flex flex-col overflow-hidden rounded-sm px-1.5 text-left',
-                        // 30분~1시간짜리 짧은 블록은 위아래 여백을 넉넉히 주면 제목/시간 텍스트가
-                        // 리사이즈 핸들과 겹치거나 잘린다 — 블록이 충분히 길 때만 여백을 넓힌다.
-                        displaySpan <= 2 ? 'py-1' : 'py-2',
-                        tone.softBg,
-                        isSelected ? cn('border-2', tone.border) : cn('border', tone.softBorder),
-                        canEdit && !block.pinned
-                          ? 'cursor-grab active:cursor-grabbing'
-                          : 'cursor-pointer',
-                      )}
-                      style={{
-                        gridRow: `${displayStartSlot - SLOT_START + 2} / span ${displaySpan}`,
-                        gridColumn: dIdx + 2,
-                        // 겹친 블록 중 선택된(또는 방금 고른) 블록을 맨 위로 올려서 리사이즈
-                        // 핸들·설정/삭제 버튼 등 자체 컨트롤이 직접 눌리도록 한다.
-                        zIndex: isSelected ? 20 : 1,
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-1">
-                        <p className={cn('truncate text-[11px] font-semibold', tone.text)}>
-                          {block.title || trackTitles || '(빈 블록)'}
+                        }}
+                        className={cn(
+                          // select-none 없으면 블록 제목/시간 텍스트 위에서 드래그를 시작할 때
+                          // 가끔 브라우저가 우리 draggable(블록 이동)이 아니라 네이티브 텍스트
+                          // 드래그로 먼저 반응해서, 잡았는데도 블록이 안 움직이는 것처럼 보였다.
+                          'relative m-px flex flex-col overflow-hidden rounded-sm px-1.5 text-left select-none',
+                          // 30분~1시간짜리 짧은 블록은 위아래 여백을 넉넉히 주면 제목/시간 텍스트가
+                          // 리사이즈 핸들과 겹치거나 잘린다 — 블록이 충분히 길 때만 여백을 넓힌다.
+                          displaySpan <= 2 ? 'py-1' : 'py-2',
+                          tone.softBg,
+                          isSelected ? cn('border-2', tone.border) : cn('border', tone.softBorder),
+                          canEdit && !block.pinned
+                            ? 'cursor-grab active:cursor-grabbing'
+                            : 'cursor-pointer',
+                        )}
+                        style={{
+                          gridRow: `${displayStartSlot - SLOT_START + 2} / span ${displaySpan}`,
+                          gridColumn: dIdx + 2,
+                          // 펼친 상태면 요일 컬럼 자체가 군집 크기만큼 넓어져 있으니(wideDayFactors),
+                          // 그 안에서 겹친 순서(laneIndex)만큼 1/N 칸씩 옆으로 밀어 원래 크기
+                          // 그대로 나란히 보이게 한다. 접힌 상태(기본)는 그대로 겹쳐 쌓이고, 그중
+                          // 선택된 블록만 위로 올려서 리사이즈 핸들·설정/삭제 버튼이 직접
+                          // 눌리도록 한다. z-index는 상단 sticky 요일 헤더(z-20)·좌측 시간
+                          // 라벨(z-25)보다 항상 낮게 유지해서 스크롤 시 블록이 그 위로 올라와
+                          // 겹쳐 보이지 않게 한다.
+                          ...(isExpanded
+                            ? {
+                                position: 'relative' as const,
+                                left: `${(laneIndex / cluster.length) * 100}%`,
+                                width: `${(1 / cluster.length) * 100}%`,
+                              }
+                            : null),
+                          zIndex: isExpanded ? (isSelected ? 16 : 12) : isSelected ? 20 : 1,
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-1">
+                          <p className={cn('truncate text-[11px] font-semibold', tone.text)}>
+                            {block.title || trackTitles || '(빈 블록)'}
+                          </p>
+                          {canEdit && (
+                            <div className="flex shrink-0 items-center gap-0.5">
+                              <button
+                                type="button"
+                                onClick={() => setBlockSettingsTarget(block)}
+                                aria-label="블록 설정"
+                                className={cn(
+                                  'rounded p-0.5',
+                                  block.title || block.note
+                                    ? 'text-foreground'
+                                    : 'text-foreground-muted hover:text-foreground',
+                                )}
+                              >
+                                <Settings className="h-3 w-3" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPin.mutate({
+                                    boardId: activeBoard.boardId,
+                                    blockId: block.blockId,
+                                    pinned: !block.pinned,
+                                  })
+                                }
+                                aria-label={block.pinned ? '고정 해제' : '고정'}
+                                className="text-foreground-muted hover:text-foreground rounded p-0.5"
+                              >
+                                {block.pinned ? (
+                                  <Pin className="h-3 w-3" />
+                                ) : (
+                                  <PinOff className="h-3 w-3" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  deleteBlock.mutate({
+                                    boardId: activeBoard.boardId,
+                                    blockId: block.blockId,
+                                  })
+                                }
+                                aria-label="블록 삭제"
+                                className="text-foreground-muted hover:text-danger rounded p-0.5"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-foreground-muted truncate text-[10px]">
+                          {slotToTime(displayStartSlot)}~{slotToTime(displayEndSlot)}
                         </p>
-                        {canEdit && (
-                          <div className="flex shrink-0 items-center gap-0.5">
-                            <button
-                              type="button"
-                              onClick={() => setBlockSettingsTarget(block)}
-                              aria-label="블록 설정"
+                        {canEdit && isSelected && (
+                          <>
+                            <div
+                              onPointerDown={startBlockEdgeDrag(block, 'start')}
+                              aria-label="블록 시작 시간 조절"
                               className={cn(
-                                'rounded p-0.5',
-                                block.title || block.note
-                                  ? 'text-foreground'
-                                  : 'text-foreground-muted hover:text-foreground',
+                                'absolute inset-x-0 top-0 flex cursor-ns-resize touch-none items-center justify-center',
+                                compactBlock ? 'h-1' : 'h-2',
                               )}
                             >
-                              <Settings className="h-3 w-3" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setPin.mutate({
-                                  boardId: activeBoard.boardId,
-                                  blockId: block.blockId,
-                                  pinned: !block.pinned,
-                                })
-                              }
-                              aria-label={block.pinned ? '고정 해제' : '고정'}
-                              className="text-foreground-muted hover:text-foreground rounded p-0.5"
-                            >
-                              {block.pinned ? (
-                                <Pin className="h-3 w-3" />
-                              ) : (
-                                <PinOff className="h-3 w-3" />
+                              {!compactBlock && (
+                                <span className="h-0.5 w-6 rounded-full bg-white/70" />
                               )}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deleteBlock.mutate({
-                                  boardId: activeBoard.boardId,
-                                  blockId: block.blockId,
-                                })
-                              }
-                              aria-label="블록 삭제"
-                              className="text-foreground-muted hover:text-danger rounded p-0.5"
+                            </div>
+                            <div
+                              onPointerDown={startBlockEdgeDrag(block, 'end')}
+                              aria-label="블록 종료 시간 조절"
+                              className={cn(
+                                'absolute inset-x-0 bottom-0 flex cursor-ns-resize touch-none items-center justify-center',
+                                compactBlock ? 'h-1' : 'h-2',
+                              )}
                             >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
+                              {!compactBlock && (
+                                <span className="h-0.5 w-6 rounded-full bg-white/70" />
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
-                      <p className="text-foreground-muted truncate text-[10px]">
-                        {slotToTime(displayStartSlot)}~{slotToTime(displayEndSlot)}
-                      </p>
-                      {canEdit && isSelected && (
-                        <>
-                          <div
-                            onPointerDown={startBlockEdgeDrag(block, 'start')}
-                            aria-label="블록 시작 시간 조절"
-                            className={cn(
-                              'absolute inset-x-0 top-0 flex cursor-ns-resize touch-none items-center justify-center',
-                              compactBlock ? 'h-1' : 'h-2',
-                            )}
-                          >
-                            {!compactBlock && (
-                              <span className="h-0.5 w-6 rounded-full bg-white/70" />
-                            )}
-                          </div>
-                          <div
-                            onPointerDown={startBlockEdgeDrag(block, 'end')}
-                            aria-label="블록 종료 시간 조절"
-                            className={cn(
-                              'absolute inset-x-0 bottom-0 flex cursor-ns-resize touch-none items-center justify-center',
-                              compactBlock ? 'h-1' : 'h-2',
-                            )}
-                          >
-                            {!compactBlock && (
-                              <span className="h-0.5 w-6 rounded-full bg-white/70" />
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                  const pickerEl = overlapPickerBlockId === block.blockId && hasOverlap && (
-                    <div
-                      key={`${block.blockId}-picker`}
-                      style={{
-                        gridRow: `${displayStartSlot - SLOT_START + 2} / span 1`,
-                        gridColumn: dIdx + 2,
-                        zIndex: 30,
-                      }}
-                      className="relative"
-                    >
-                      {/* 바깥 클릭 시 닫기 */}
-                      <div
-                        className="fixed inset-0 z-10"
-                        onClick={() => setOverlapPickerBlockId(null)}
-                        aria-hidden="true"
-                      />
-                      <div className="bg-surface border-border absolute top-0 left-0 z-20 w-44 rounded-md border shadow-xl">
-                        <div className="text-foreground-muted border-border border-b px-3 py-1.5 text-[11px] font-semibold">
-                          겹친 블록 {cluster.length}개
-                        </div>
-                        {cluster.map((b) => (
+                    );
+                    // 펼친 군집을 접는 "접기" 버튼 — 군집당 한 번만 만든다(군집의 가장 늦은
+                    // endSlot 아래에 붙여, 어느 블록과도 겹치지 않게 한다). 요일 컬럼 자체가
+                    // 이미 wideDayFactors로 넓어져 있으므로 width는 그 컬럼을 꽉 채우는 100%면
+                    // 충분하다. 바깥 클릭으로 닫는 전체 화면 백드롭은 일부러 안 둔다 — 뷰포트
+                    // 전체를 덮는 fixed 오버레이가 그 아래 세로 스크롤·모드 전환 버튼 클릭까지
+                    // 막아버려서, 접기 버튼을 눌러야만 접히게 하고 싶다는 요청과도 맞는다. 이
+                    // 군집만 접고 다른 펼친 군집은 그대로 둔다(동시에 여러 개 펼칠 수 있으니).
+                    const expandExtras: ReactElement[] = isClusterAnchor
+                      ? [
                           <button
-                            key={b.blockId}
+                            key={`${clusterKey}-expand-done`}
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedBlockId(b.blockId);
-                              setOverlapPickerBlockId(null);
+                              // 지금 군집 멤버 전원의 id를 지운다 — 펼칠 때 누구 id를 넣었든
+                              // (정렬 순서가 바뀌어 펼친 시점과 다른 멤버가 0번이 됐어도)
+                              // 항상 정확히 다 지워지도록.
+                              setExpandedClusterIds((prev) => {
+                                const next = new Set(prev);
+                                for (const b of cluster) next.delete(b.blockId);
+                                return next;
+                              });
                             }}
-                            className="hover:bg-card flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left"
+                            style={{
+                              gridRow: `${
+                                Math.max(
+                                  ...cluster.map((b) =>
+                                    pendingResize?.blockId === b.blockId
+                                      ? pendingResize.endSlot
+                                      : b.endSlot,
+                                  ),
+                                ) -
+                                SLOT_START +
+                                2
+                              } / span 1`,
+                              gridColumn: dIdx + 2,
+                              zIndex: 17,
+                            }}
+                            className="bg-foreground text-bg mt-0.5 flex items-center justify-center gap-1 rounded-sm py-1 text-[11px] font-semibold shadow-md"
                           >
-                            <span className="text-caption truncate font-semibold">
-                              {blockLabel(b, trackById)}
-                            </span>
-                            <span className="text-foreground-muted font-mono text-[11px]">
-                              {slotToTime(b.startSlot)}~{slotToTime(b.endSlot)}
-                            </span>
-                          </button>
-                        ))}
+                            <ChevronsDownUp className="h-3 w-3" /> 접기
+                          </button>,
+                        ]
+                      : [];
+                    if (!canEdit || !isSelected) {
+                      return expandExtras.length ? [blockEl, ...expandExtras] : [blockEl];
+                    }
+                    const confirmButton = (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConfirmResize(block);
+                        }}
+                        aria-label="블록 길이 확정"
+                        className="pointer-events-auto h-5 w-5 translate-x-1/3 translate-y-1/3 rounded-full bg-white text-neutral-900 shadow-md hover:bg-neutral-100"
+                      >
+                        <Check className="mx-auto h-3.5 w-3.5" />
+                      </button>
+                    );
+                    // 펼친 상태는 버튼을 자기 칸(lane) 폭·위치만큼 잡은 래퍼로 감싸 그 안에서
+                    // 오른쪽 정렬한다 — 버튼 자체에 폭(1/N)을 주면 동그란 모양이 찌그러지므로
+                    // 크기는 그대로 두고, 래퍼로만 위치를 옮긴다. 래퍼는 grid item이라 기본
+                    // stretch로 셀 전체(=블록의 마지막 행 전체 폭)를 차지하는데, 여기에
+                    // pointer-events-none을 안 주면 버튼이 없는 빈 공간까지 클릭을 가로채서
+                    // 바로 그 자리에 있는 블록 하단 리사이즈 핸들이 눌리지 않게 된다(상단
+                    // 핸들은 이 래퍼와 안 겹쳐서 멀쩡히 됐던 것) — 래퍼는 통과시키고 버튼만
+                    // pointer-events-auto로 다시 받게 한다.
+                    const confirmEl = isExpanded ? (
+                      <div
+                        key={`${block.blockId}-confirm`}
+                        style={{
+                          gridRow: `${displayEndSlot - SLOT_START + 1} / span 1`,
+                          gridColumn: dIdx + 2,
+                          position: 'relative',
+                          left: `${(laneIndex / cluster.length) * 100}%`,
+                          width: `${(1 / cluster.length) * 100}%`,
+                          zIndex: 17,
+                        }}
+                        className="pointer-events-none flex items-end justify-end"
+                      >
+                        {confirmButton}
                       </div>
-                    </div>
-                  );
-                  if (!canEdit || !isSelected) {
-                    return pickerEl ? [blockEl, pickerEl] : [blockEl];
-                  }
-                  const confirmEl = (
-                    <button
-                      key={`${block.blockId}-confirm`}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleConfirmResize(block);
-                      }}
-                      aria-label="블록 길이 확정"
-                      style={{
-                        gridRow: `${displayEndSlot - SLOT_START + 1} / span 1`,
-                        gridColumn: dIdx + 2,
-                        zIndex: 21,
-                      }}
-                      className="z-20 h-5 w-5 translate-x-1/3 translate-y-1/3 self-end justify-self-end rounded-full bg-white text-neutral-900 shadow-md hover:bg-neutral-100"
-                    >
-                      <Check className="mx-auto h-3.5 w-3.5" />
-                    </button>
-                  );
-                  return pickerEl ? [blockEl, confirmEl, pickerEl] : [blockEl, confirmEl];
-                })}
-              />
-            </div>
-          )
+                    ) : (
+                      <div
+                        key={`${block.blockId}-confirm`}
+                        style={{
+                          gridRow: `${displayEndSlot - SLOT_START + 1} / span 1`,
+                          gridColumn: dIdx + 2,
+                          zIndex: 21,
+                        }}
+                        className="pointer-events-none flex items-end justify-end"
+                      >
+                        {confirmButton}
+                      </div>
+                    );
+                    return expandExtras.length
+                      ? [blockEl, confirmEl, ...expandExtras]
+                      : [blockEl, confirmEl];
+                  })}
+                />
+              </div>
+            );
+          })()
         )}
       </div>
 
