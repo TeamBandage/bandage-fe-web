@@ -10,3 +10,9 @@
  * dev-agent.mjs와 watch-review.mjs가 같은 값을 봐야 하므로 여기 한 곳에만 둔다.
  */
 export const MAX_RETRY = 5;
+
+/**
+ * gate-d2가 "코드 판정"이 아니라 "리뷰 실행 자체"에 실패했을 때 PR 코멘트에 남기는 마커.
+ * gemini-review.mjs가 쓰고 watch-review.mjs가 읽어, API 오류로 재시도 카운터를 소모하지 않게 한다.
+ */
+export const GATE_ERROR_MARKER = '<!-- aidev-gate-error -->';
