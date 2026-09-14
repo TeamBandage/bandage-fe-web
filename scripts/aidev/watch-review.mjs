@@ -23,7 +23,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MAX_RETRY } from './config.mjs';
+import { GATE_ERROR_MARKER, MAX_RETRY } from './config.mjs';
 import { escalate, saveState } from './escalate.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -67,6 +67,15 @@ function dispatchRetry(issueKey, dir, state, reason) {
   }
 }
 
+/** gate-d2만 실패했고 가장 최근 gate-d2 코멘트가 실행 오류 마커면, Claude가 고칠 문제가 아니다. */
+function isGateError(comments, failing) {
+  if (failing.some((c) => c.name !== 'gate-d2')) return false;
+  const last = (comments ?? [])
+    .filter((c) => c.body.includes(GATE_ERROR_MARKER) || c.body.startsWith('## 🤖 Gemini 리뷰'))
+    .pop();
+  return Boolean(last?.body.includes(GATE_ERROR_MARKER));
+}
+
 /** 반환값: 체크가 아직 도는 중이면 'pending', 판단을 끝냈으면 'done'. */
 async function checkOne(issueKey) {
   const dir = join(INBOX, issueKey);
@@ -74,7 +83,13 @@ async function checkOne(issueKey) {
   const state = loadState(dir);
   if (!state.prUrl || state.escalated) return 'done';
 
-  const pr = ghJson(['pr', 'view', state.prUrl, '--json', 'state,statusCheckRollup,reviews']);
+  const pr = ghJson([
+    'pr',
+    'view',
+    state.prUrl,
+    '--json',
+    'state,statusCheckRollup,reviews,comments',
+  ]);
   if (pr.state === 'MERGED' || pr.state === 'CLOSED') return 'done';
 
   // Gate 3에서 사람이 반려해도 게이트 실패와 같은 재시도 풀을 쓴다 (config.mjs 참고).
@@ -105,6 +120,13 @@ async function checkOne(issueKey) {
   // 라벨 없이 열린 첫 이벤트는 SKIPPED, 중복 실행은 CANCELLED로 남는다 — 실패로 세면 안 된다.
   const failing = rollup.filter((c) => FAILED_CONCLUSIONS.has(c.conclusion));
   if (failing.length === 0) return 'done'; // 모두 통과 — Gate 3(사람 머지 승인) 대기
+
+  if (isGateError(pr.comments, failing)) {
+    console.warn(
+      `[watch-review] ${issueKey} Gemini 리뷰 실행 오류 — 코드 문제가 아니라 재시도하지 않습니다. 원인 해결 후 Actions에서 gate-d2를 재실행하세요.`,
+    );
+    return 'done';
+  }
 
   const names = failing.map((f) => f.name).join(', ');
   if (state.retryCount >= MAX_RETRY) {

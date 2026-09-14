@@ -93,6 +93,8 @@ jobs:
         run: node scripts/aidev/gemini-review.mjs
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # 비어 있으면 gemini-review.mjs 기본 모델을 쓴다. 모델 단종 시 리포 Variables에서 교체.
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           GH_TOKEN: ${{ github.token }}
           PR_URL: ${{ github.event.pull_request.html_url }}

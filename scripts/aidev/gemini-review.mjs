@@ -15,9 +15,11 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { GATE_ERROR_MARKER } from './config.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const MODEL = 'gemini-2.5-flash';
+// 제공 모델이 수시로 바뀐다(2.5-flash는 신규 키에 404) — 코드 수정 없이 리포 변수로 교체할 수 있게 둔다.
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const MAX_DIFF_CHARS = 180_000;
 
 function requireEnv(name) {
@@ -111,36 +113,67 @@ async function notifyNtfy(message) {
   );
 }
 
+/**
+ * API 오류·판정 줄 누락은 코드 문제가 아니다. 체크는 실패시켜 머지를 막되 마커를 남겨,
+ * watch-review.mjs가 Claude 재시도(카운터 소모) 대신 "gate-d2 재실행 필요"로 처리하게 한다.
+ */
+async function reportGateError(prUrl, signalKey, err) {
+  console.error('gate-d2 실행 실패:', err.message);
+  const body = [
+    GATE_ERROR_MARKER,
+    '## ⚠️ Gemini 리뷰 실행 오류 (gate-d2)',
+    '',
+    '코드 판정이 아니라 리뷰 실행 자체가 실패했습니다. 원인을 해결한 뒤 Actions에서 gate-d2를 재실행하세요.',
+    '',
+    '```',
+    err.message.slice(0, 1500),
+    '```',
+  ].join('\n');
+  try {
+    execFileSync('gh', ['pr', 'comment', prUrl, '--body', body], { cwd: ROOT, stdio: 'inherit' });
+  } catch {
+    console.error('실행 오류 코멘트 게시에도 실패했습니다.');
+  }
+  await notifyNtfy(`${signalKey} GATE_ERROR`);
+}
+
 async function main() {
   const apiKey = requireEnv('GEMINI_API_KEY');
   const prUrl = requireEnv('PR_URL');
   const branch = requireEnv('BRANCH');
-
-  const diff = execFileSync('gh', ['pr', 'diff', prUrl], {
-    cwd: ROOT,
-    encoding: 'utf-8',
-    maxBuffer: 1024 * 1024 * 64,
-  }).slice(0, MAX_DIFF_CHARS);
-
   const { issueKey, spec, plan } = loadInbox(branch);
-  const review = await callGemini(
-    apiKey,
-    buildPrompt({ spec, plan, diff, checklist: loadChecklist() }),
-  );
+  const signalKey = issueKey ?? branch;
 
-  const rejected = /VERDICT:\s*REQUEST_CHANGES/.test(review);
-  const body = [`## 🤖 Gemini 리뷰 (gate-d2)`, '', review].join('\n');
-  execFileSync('gh', ['pr', 'comment', prUrl, '--body', body], { cwd: ROOT, stdio: 'inherit' });
+  let rejected;
+  try {
+    const diff = execFileSync('gh', ['pr', 'diff', prUrl], {
+      cwd: ROOT,
+      encoding: 'utf-8',
+      maxBuffer: 1024 * 1024 * 64,
+    }).slice(0, MAX_DIFF_CHARS);
+
+    const review = await callGemini(
+      apiKey,
+      buildPrompt({ spec, plan, diff, checklist: loadChecklist() }),
+    );
+
+    rejected = /VERDICT:\s*REQUEST_CHANGES/.test(review);
+    if (!rejected && !/VERDICT:\s*APPROVE/.test(review)) {
+      throw new Error(`판정 줄(VERDICT)이 없는 응답:\n${review.slice(-500)}`);
+    }
+    const body = [`## 🤖 Gemini 리뷰 (gate-d2)`, '', review].join('\n');
+    execFileSync('gh', ['pr', 'comment', prUrl, '--body', body], { cwd: ROOT, stdio: 'inherit' });
+  } catch (err) {
+    await reportGateError(prUrl, signalKey, err);
+    process.exit(1);
+  }
 
   if (rejected) {
     console.error('Gemini 리뷰: 반려');
-    await notifyNtfy(`${issueKey ?? branch} REQUEST_CHANGES`);
+    await notifyNtfy(`${signalKey} REQUEST_CHANGES`);
     process.exit(1);
   }
   console.log('Gemini 리뷰: 승인');
 }
 
-main().catch((err) => {
-  console.error('gate-d2 실행 실패:', err.message);
-  process.exit(1);
-});
+main();
