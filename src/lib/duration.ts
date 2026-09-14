@@ -5,5 +5,5 @@ export function formatDuration(seconds: number): string {
 
   if (minutes === 0) return `${remainder}초`;
   if (remainder === 0) return `${minutes}분`;
-  return `${minutes}분 ${remainder}초`;
+  return `${minutes}:${remainder}`;
 }
