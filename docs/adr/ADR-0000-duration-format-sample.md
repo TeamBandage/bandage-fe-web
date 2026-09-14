@@ -1,8 +1,8 @@
 # ADR-0000: 초 단위 시간 표기를 "N분 N초" 한국어 형식으로 통일 (sandbox 테스트용 샘플)
 
-<!-- status: proposed -->
+<!-- status: accepted -->
 
-- **상태**: Proposed
+- **상태**: Accepted
 - **작성일**: 2026-09-14
 - **관련 이슈**: BD-000
 
@@ -26,5 +26,10 @@ develop 반영 시 이 파일은 가져가지 않는다.
 ## 결과 (머지 후 갱신)
 
 <!-- aidev:merge-outcome -->
+<!-- aidev:merged:BD-000:https://github.com/TeamBandage/bandage-fe-web/pull/307 -->
+- 머지일: 2026-09-14
+- PR: https://github.com/TeamBandage/bandage-fe-web/pull/307
+- 이슈: BD-000
+- Phase D(자동 게이트 + AI 리뷰) 통과 후 머지됨
 
 `scripts/aidev/update-adr.mjs` 가 Phase E1에서 이 섹션을 채운다.
