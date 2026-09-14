@@ -49,3 +49,6 @@ next-env.d.ts
 /design/
 .vscode/
 .claude/scheduled_tasks.lock
+
+# aidev 로컬 재시도 상태 (PR 본문 마커로 CI에 전달됨)
+.aidev/inbox/*/state.json

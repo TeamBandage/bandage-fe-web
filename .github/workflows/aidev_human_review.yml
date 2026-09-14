@@ -1,0 +1,22 @@
+name: AI Dev Loop — Human Review Signal
+
+# gate-d1/d2와 별개로, Gate 3(사람 머지 승인) 단계에서 사람이 "Changes requested"로
+# 반려하는 경우를 감지해 로컬 watch-review.mjs를 즉시 깨운다. 실제 반려 여부·재시도
+# 판단은 watch-review.mjs가 다시 확인하므로, 이 워크플로우는 신호만 던진다.
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  notify:
+    if: github.event.review.state == 'changes_requested' && contains(github.event.pull_request.labels.*.name, 'aidev')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 사람 반려 즉시 알림 (ntfy.sh)
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          [ -n "$NTFY_TOPIC" ] || exit 0
+          ISSUE_KEY=$(echo "$BRANCH" | grep -oE 'BD-[0-9]+' | head -1)
+          curl -s -d "$ISSUE_KEY HUMAN_CHANGES_REQUESTED" "https://ntfy.sh/$NTFY_TOPIC"

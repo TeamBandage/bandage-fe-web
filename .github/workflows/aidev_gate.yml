@@ -1,0 +1,99 @@
+name: AI Dev Loop — Phase D Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+# `gh pr create --label`은 opened와 labeled 이벤트를 연달아 보낼 수 있다 — 같은 커밋에
+# Gemini 리뷰가 두 번 돌지 않도록 PR당 최신 실행만 남긴다.
+concurrency:
+  group: aidev-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  gate-d1:
+    # needs-human 같은 다른 라벨이 붙을 때마다 게이트가 다시 돌면 안 된다.
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'aidev') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'aidev')
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_APP_ENV: dev
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      # 2026-09-12 기준 라인 커버리지 실측치는 약 55% — 여유를 두고 45%로 게이트.
+      # `pnpm test -- --coverage` 는 pnpm 인자 전달 방식 때문에 vitest에 플래그가
+      # 전달되지 않아 무음으로 통과해버리므로 반드시 `vitest run --coverage` 직접 호출.
+      COVERAGE_THRESHOLD: '45'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Unit tests + coverage
+        run: pnpm exec vitest run --coverage
+
+      # 조직 계정에서는 gitleaks-action 마켓플레이스 액션이 라이선스를 요구하므로,
+      # CLI 바이너리를 직접 받아 실행한다. 버전은 주기적으로 최신 릴리스로 올릴 것.
+      - name: Secret scan (gitleaks)
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz \
+            | tar -xz gitleaks
+          ./gitleaks detect --source . --no-git -v
+
+      # 주기 폴링이 없으므로 자동 검사 실패도 로컬 재시도 루프에 즉시 알린다.
+      - name: 실패 즉시 알림 (ntfy.sh)
+        if: failure()
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          [ -n "$NTFY_TOPIC" ] || exit 0
+          ISSUE_KEY=$(echo "$BRANCH" | grep -oE 'BD-[0-9]+' | head -1)
+          curl -s -d "$ISSUE_KEY CI_FAILED" "https://ntfy.sh/$NTFY_TOPIC" || true
+
+  gate-d2:
+    # gate-d1 이 실패하면 GitHub Actions 기본 동작으로 이 job은 자동 스킵된다.
+    needs: gate-d1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 마켓플레이스 액션 대신 Gemini REST API를 직접 호출한다 — 액션의 출력 파일
+      # 이름·형식이 문서화돼 있지 않아 조용히 깨질 수 있기 때문. 판정·PR 코멘트·
+      # ntfy 알림까지 이 스크립트 하나가 처리한다.
+      - name: Gemini 리뷰 게이트 (D2)
+        run: node scripts/aidev/gemini-review.mjs
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}

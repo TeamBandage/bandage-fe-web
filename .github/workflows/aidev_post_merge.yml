@@ -1,0 +1,56 @@
+name: AI Dev Loop — Phase E (Post-merge)
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+  # collect-metrics.mjs가 `gh pr view`로 PR 본문의 메트릭 마커를 읽는다
+  pull-requests: read
+
+jobs:
+  reflect:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'aidev')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 이슈 키 추출
+        id: issue
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          KEY=$(echo "$BRANCH" | grep -oE 'BD-[0-9]+' | head -1 || true)
+          if [ -n "$KEY" ] && [ -d ".aidev/inbox/$KEY" ]; then
+            echo "key=$KEY" >> "$GITHUB_OUTPUT"
+          else
+            echo "key=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: E1 — ADR 결과 갱신
+        if: steps.issue.outputs.key != ''
+        run: node scripts/aidev/update-adr.mjs "${{ steps.issue.outputs.key }}" "${{ github.event.pull_request.html_url }}"
+
+      - name: E2 — 메트릭 수집
+        if: steps.issue.outputs.key != ''
+        run: node scripts/aidev/collect-metrics.mjs "${{ steps.issue.outputs.key }}" "${{ github.event.pull_request.html_url }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: 문서/메트릭 변경 커밋
+        if: steps.issue.outputs.key != ''
+        run: |
+          git config user.name "aidev-bot"
+          git config user.email "aidev-bot@users.noreply.github.com"
+          git add docs/adr .aidev/metrics
+          git diff --cached --quiet && exit 0
+          git commit -m "[${{ steps.issue.outputs.key }}] docs: ADR 결과 갱신 및 메트릭 반영"
+          git push origin "${{ github.event.pull_request.base.ref }}"

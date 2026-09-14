@@ -1,0 +1,6 @@
+{
+  "issueKey": "BD-000",
+  "title": "초 단위 시간 포맷 유틸 추가",
+  "type": "feat",
+  "branchBase": "aidev-sandbox"
+}

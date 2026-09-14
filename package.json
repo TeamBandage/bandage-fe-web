@@ -14,7 +14,10 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "verify:fe-areas": "node scripts/verify-fe-areas.mjs",
-    "gen:api": "openapi-typescript openapi/openapi.json -o src/global/api/schema.d.ts"
+    "gen:api": "openapi-typescript openapi/openapi.json -o src/global/api/schema.d.ts",
+    "aidev:dev": "node scripts/aidev/dev-agent.mjs",
+    "aidev:watch": "node scripts/aidev/watch-review.mjs",
+    "aidev:metrics": "node scripts/aidev/metrics-summary.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -49,6 +52,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.5.15",
     "eslint-config-prettier": "^10.1.8",

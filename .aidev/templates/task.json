@@ -1,0 +1,7 @@
+{
+  "issueKey": "BD-000",
+  "title": "여기에 한 줄 제목",
+  "type": "feat",
+  "branchBase": "develop",
+  "adrPath": "docs/adr/ADR-0001-example.md"
+}

@@ -1,9 +1,5 @@
 # CLAUDE.md
 
-> **선행 지시 (모든 세션 시작 시 필수)**
->
-> 이 파일을 읽기 **전에**, 반드시 워크스페이스 공통 규칙 `../CLAUDE.md` 를 **가장 먼저** 읽고 메모리에 반영한다. 커밋/PR 컨벤션, Jira/GitHub/Slack 연동, AI 생성물 스타일 규칙, API 검증 절차 등 모든 운영 규칙의 권위 있는 원본은 상위 파일이며, 본 파일은 bandage-fe 스택 specific 가이드만 보유한다. 충돌 시 상위 파일이 우선한다.
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
@@ -186,74 +182,74 @@ NEXT_PUBLIC_APP_ENV=local   # local | dev | prod
 
 `NEXT_PUBLIC_*`이 아닌 값은 서버에서만 접근하며, 클라이언트 컴포넌트에서 참조하지 않습니다.
 
-## 운영 규칙 (workspace 공통)
+## 운영 규칙
 
-커밋/PR 컨벤션, Jira/GitHub/Slack 연동, AI 스타일 규칙, API 검증 절차 등은 워크스페이스 공통 문서로 추출됨: `../CLAUDE.md` 참조. 본 파일에는 bandage-fe 스택 specific 한 가이드만 둔다.
+### AI 생성물 스타일 규칙
+
+- 주석은 **WHY**가 비자명한 경우에만. WHAT 설명 주석 금지
+- 다국어: 변수·함수명은 영문, 사용자 대면 텍스트는 한국어
+- 생성 코드에 `// TODO`, `// FIXME`를 남길 경우 Jira 이슈 번호 병기
+- 불필요한 추상화·패턴 도입 금지 (YAGNI)
+
+### 코드 리뷰 체크리스트
+
+- [ ] 타입 안전성 (any 미사용, 명시적 반환 타입)
+- [ ] 에러 핸들링 (API 에러 → ApiError 정규화)
+- [ ] 접근성 (ARIA, 키보드 내비)
+- [ ] 모바일 반응형 (360px 최소 너비 기준)
+- [ ] 불필요한 리렌더 없음 (메모이제이션 과잉 금지)
+
+gate-d2(`scripts/aidev/gemini-review.mjs`)가 이 목록을 그대로 읽어 리뷰 기준으로 쓴다 —
+절 제목(`### 코드 리뷰 체크리스트`)을 바꾸면 인용이 끊긴다.
 
 ## MCP 영향평가 — 도메인 작업 시 선행 조회 (필수)
 
 도메인/화면 작업에 착수하기 **전에**, 대상 영역(`fe_area`)으로 MCP Tool `check_impacting_changes` 를 호출해 영향을 주는 최근 BE 변경을 먼저 확인한다. 영역 정의·매핑은 `fe-areas.json`, 판정/절차/상태 규칙은 `docs/mcp-impact/` 참조. breaking 변경이 보고되면 무시하지 말고 사용자에게 보고 후 구현 계획에 반영한다. `mock-only` 영역은 "미연동" 반환이므로 생략 가능. 맵 변경 시 `pnpm verify:fe-areas` 로 정합성 검증.
 
-## Task-master CLI (FE 전용)
+## AI 개발 루프 자동화 (aidev)
 
-Task-master 태스크를 실행하라는 지시를 받으면 본 절을 따른다.
+Phase A(설계)·B(계획)의 산출물(스펙, 구현 계획, Jira 이슈 + `task.json`)이
+`.aidev/inbox/<BD-번호>/`에 들어온다고 가정한다. 이 리포는 그 이후 Phase C(개발) → D(검증) →
+E(반영)를 자동화한다. 예전에 쓰던 task-master CLI 기반 워크플로우(태그·PRD 생성)는
+폐기됐다 — `.taskmaster/`, `API_SPEC.md`는 삭제됨.
 
-`task-master` 바이너리는 nvm 관리 Node(`/Users/sunwoo/.nvm/versions/node/v20.20.2/bin/task-master`)에 설치되어 있으나 기본 쉘 `PATH` 에 없다. AI 에이전트 / 새 쉘 세션 어디서든 아래 규칙을 따른다.
+- `pnpm aidev:dev <BD-번호>` — Phase C(개발 → 자가 검증 → PR 생성). Claude Code
+  Pro 헤드리스(`claude -p`)를 로컬에서 실행하므로 이 명령도 로컬에서만 돈다.
+- `pnpm aidev:watch` — Phase D 반려/실패를 감지해 재시도를 닫는 상시 루프.
+  재시도 상한은 `scripts/aidev/config.mjs`의 `MAX_RETRY` 한 곳에서 관리한다.
+- `pnpm aidev:metrics` — Phase E 누적 메트릭 요약.
+- 입력 계약·아키텍처 세부사항은 `.aidev/README.md` 참조.
 
-- **모든 task-master 호출 앞에 `source ~/.nvm/nvm.sh && ` 를 붙여 실행**. 예:
-  ```bash
-  source ~/.nvm/nvm.sh && task-master list
-  source ~/.nvm/nvm.sh && task-master show <id>
-  source ~/.nvm/nvm.sh && task-master next
-  source ~/.nvm/nvm.sh && task-master set-status --id=<id> --status=in-progress
-  source ~/.nvm/nvm.sh && task-master expand --id=<id> --num=5
-  source ~/.nvm/nvm.sh && task-master generate
-  source ~/.nvm/nvm.sh && task-master tags use <name>
-  ```
-- `which task-master` 가 비어 있더라도 위 패턴으로 **항상** 호출 가능 (nvm 활성화로 PATH 확보).
-- `npx task-master-ai` 는 쓰지 않는다 (항상 네트워크 의존·느림·캐시된 전역 설치를 놔두고 새로 받음).
-- 전역 설치를 건드려야 할 때 외에는 `npm install -g` 로 재설치하지 않는다 (기존 0.43.1 버전 유지).
-
-### 태그 생성 시 필수 워크플로우
-
-새 태그를 만들 때는 반드시 아래 순서를 따른다:
-
-1. **태그 생성 + 태스크 추가** (`task-master tags add` → `add-task` → `expand`)
-   - 요구사항 기반으로 태스크와 서브태스크 먼저 생성한 뒤 구현 시작
-
-2. **md 파일 생성** (`task-master generate`)
-   - 태스크 추가 후 바로 실행해도 됨 (구현 전 계획 스냅샷)
-   - 완료 후 재실행하면 최종 상태 반영
-   - 생성 위치: `.taskmaster/tasks/task_001_<tag>.md` (파생물이므로 편집 불필요)
-
-3. **구현**
-
-4. **태스크 완료 처리** (`task-master set-status --id=<id> --status=done`)
-
-5. **PRD 작성** — 구현 완료 후 사후 문서화
-   - 위치: `.taskmaster/docs/<tag-name>_prd.md` (언더스코어 구분, `_prd.md` 접미사)
-   - 형식: `<context>` 섹션(배경·목표·논고올·기존 아키텍처) + `<PRD>` 섹션(스코프·검증 전략)
-   - API 연동이 없는 UI 전용 태그도 PRD 필수
-
-6. **API 연동 태스크인 경우에만** → 실서버 검증 보고서 작성 (아래 §참조)
-
-### 작업 단위(태스크) 별 커밋
-- Task-master 태스크의 서브태스크(또는 논리적 작업 단위) 하나 = 커밋 하나. 여러 서브태스크 변경을 한 커밋에 몰아넣지 않는다.
-- 커밋 형식은 `../CLAUDE.md` §2 참조 (Jira `[ISSUE-KEY]` prefix).
+### 작업 단위 별 커밋
+- 논리적으로 구분되는 작업 단위(서브태스크) 하나 = 커밋 하나. 여러 단위 변경을 한
+  커밋에 몰아넣지 않는다.
+- 커밋 형식: `[BD-N] type: 제목` (Jira 이슈 키 prefix) — `scripts/aidev/dev-agent.mjs` 참조.
 
 ### 커밋 전 체크리스트
-이 체크리스트는 task-master 자동 커밋·푸시(`git commit` / `git push` 권한 허용) 흐름에서도 반드시 적용한다.
+이 체크리스트는 aidev 자동화(`dev-agent.mjs`)의 자동 커밋·푸시 흐름에서도 반드시 적용한다.
 
 - UI 컴포넌트를 수정했다면 `pnpm test` 실행 후 **스냅샷 불일치**와 **유닛 테스트 실패** 여부를 반드시 확인한다. 클래스명·구조 변경은 스냅샷과 하드코딩된 클래스 검증 테스트를 동시에 깨뜨릴 수 있다.
 - `src/middleware.ts` 는 인증 미들웨어로 별도 관리한다. UI/도메인 작업 커밋에 포함하지 않는다.
 
 ### API 연동 태스크 후 실서버 검증
 
-도메인 API 통신 코드를 추가한 태스크(예: Task 3 · 6 · 7 · 8 · 9)는 구현 커밋 후 PR 전에 실서버 검증 절차를 수행한다. 절차 본문은 `../CLAUDE.md` §9 참조. FE 컨텍스트 보강:
-- 백엔드 base URL: `http://localhost:8080`
-- 프론트 호출 지점: `src/domain/<name>/api/*.ts`
-- `ApiResponse<T>` 언래핑 결과까지 기록
-- 보고서 위치: `.taskmaster/report/<domain>-api-verification-YYYY-MM-DD.md`
+도메인 API 통신 코드를 추가한 태스크는 구현 커밋 후 PR 전에 아래 절차를 수행한다.
+
+1. 백엔드 서버 로컬 구동 확인 (`http://localhost:8080`)
+2. 구현한 API 함수(`src/domain/<name>/api/*.ts`) 호출 경로별 정상 응답 확인
+3. `ApiResponse<T>` 언래핑 결과 데이터 구조 검증
+4. 에러 케이스(401·403·404·400·5xx) 각각 시나리오 확인
+5. 보고서 저장: `.aidev/reports/<domain>-api-verification-YYYY-MM-DD.md` (`.taskmaster/`
+   삭제로 경로 변경됨 — 이전 보고서 이력은 git history의 `.taskmaster/report/`에 남아있음)
+
+보고서 형식:
+```markdown
+## 검증 일시
+## 대상 API 목록
+## 정상 응답 확인
+## 에러 케이스 확인
+## 이슈 사항
+```
 
 
 
